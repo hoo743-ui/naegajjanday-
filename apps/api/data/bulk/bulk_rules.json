@@ -208,6 +208,128 @@
       }
     }
   },
+  "marks": {
+    "_note": "이미 있는 장소에 붙이는 공식 표식. 새 장소를 만들지 않는다. 도로명주소(시도+시군구+길+건물번호)가 같은 건물 안에서 상호가 name_match_min 이상 비슷한 곳에 붙인다. tag = 맞은 곳 전부에 다는 태그, age_tags = 인허가일자로 계산한 업력이 min_years 이상일 때만, hide = 코스 후보에서 뺀다(place.status=hidden, 다음 실행 때 파일에서 빠졌으면 되돌린다). 실행: `ingest-bulk marks --kind <키>`. 원본 파일은 sources.json 의 같은 키.",
+    "_note_wording": "'백년가게'·'모범음식점'은 기관이 지정한 사실 그대로의 이름이다. 업력 태그는 영업신고(인허가)일 기준이라, 주인이 바뀌며 새로 신고한 노포는 빠질 수 있다 — 있는 것만 말한다.",
+    "centurystore": {
+      "provider": "centurystore",
+      "name_column": "업체명",
+      "address_columns": [
+        "업체주소"
+      ],
+      "keep_columns": [
+        "연락처"
+      ],
+      "tag": "백년가게",
+      "name_match_min": 0.75
+    },
+    "model_restaurants": {
+      "provider": "model_restaurant",
+      "name_column": "업소명",
+      "address_columns": [
+        "도로명주소"
+      ],
+      "id_column": "관리번호",
+      "status_column": "영업상태코드",
+      "open_values": [
+        "01"
+      ],
+      "revoked_column": "지정취소일자",
+      "redesignated_column": "재지정일자",
+      "keep_columns": [
+        "지정일자",
+        "재지정일자",
+        "음식의유형",
+        "주된음식종류"
+      ],
+      "tag": "모범음식점",
+      "name_match_min": 0.75
+    },
+    "lic_restaurants": {
+      "provider": "lic_restaurant",
+      "name_column": "사업장명",
+      "address_columns": [
+        "도로명주소"
+      ],
+      "id_column": "관리번호",
+      "status_column": "영업상태코드",
+      "open_values": [
+        "01"
+      ],
+      "licensed_column": "인허가일자",
+      "keep_columns": [
+        "인허가일자",
+        "업태구분명"
+      ],
+      "age_tags": [
+        {
+          "min_years": 30,
+          "tag": "30년 넘은 집"
+        }
+      ],
+      "name_match_min": 0.75
+    },
+    "lic_cafes": {
+      "provider": "lic_cafe",
+      "name_column": "사업장명",
+      "address_columns": [
+        "도로명주소"
+      ],
+      "id_column": "관리번호",
+      "status_column": "영업상태코드",
+      "open_values": [
+        "01"
+      ],
+      "licensed_column": "인허가일자",
+      "keep_columns": [
+        "인허가일자",
+        "업태구분명"
+      ],
+      "age_tags": [
+        {
+          "min_years": 30,
+          "tag": "30년 넘은 집"
+        }
+      ],
+      "name_match_min": 0.75
+    },
+    "lic_danran": {
+      "provider": "lic_danran",
+      "name_column": "사업장명",
+      "address_columns": [
+        "도로명주소"
+      ],
+      "id_column": "관리번호",
+      "status_column": "영업상태코드",
+      "open_values": [
+        "01"
+      ],
+      "keep_columns": [
+        "인허가일자",
+        "업태구분명"
+      ],
+      "hide": true,
+      "name_match_min": 0.85
+    },
+    "lic_yuheung": {
+      "provider": "lic_yuheung",
+      "name_column": "사업장명",
+      "address_columns": [
+        "도로명주소"
+      ],
+      "id_column": "관리번호",
+      "status_column": "영업상태코드",
+      "open_values": [
+        "01"
+      ],
+      "keep_columns": [
+        "인허가일자",
+        "업태구분명"
+      ],
+      "hide": true,
+      "name_match_min": 0.85
+    }
+  },
   "tourapi": {
     "_note": "한국관광공사 TourAPI(KorService2) 전국 적재. 분류는 신 분류체계 lclsSystm3 기준(구 cat3 은 1/3 이 비어 있다). 키는 8자(소분류) → 4자(중분류) → 2자(대분류) 순으로 찾고, null 은 '당일 코스로 가는 곳이 아님'. 이미 있는 장소와 이름·거리로 맞으면 새로 만들지 않고 사진·전화만 보강한다.",
     "content_types": {

@@ -168,6 +168,21 @@
       "is_selectable": false
     },
     {
+      "name": "백년가게",
+      "group": "feature",
+      "is_selectable": false
+    },
+    {
+      "name": "모범음식점",
+      "group": "feature",
+      "is_selectable": false
+    },
+    {
+      "name": "30년 넘은 집",
+      "group": "feature",
+      "is_selectable": false
+    },
+    {
       "name": "간편식",
       "group": "feature",
       "is_selectable": false

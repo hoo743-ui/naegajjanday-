@@ -1,5 +1,5 @@
 {
-  "_note": "공공데이터포털(data.go.kr) 파일데이터·표준데이터 중 로그인/키 없이 받을 수 있고 이용허락범위 제한이 없는 것만 등록한다. kind=file 은 포털의 '다운로드' 버튼 흐름, kind=standard 는 표준데이터 페이지의 'CSV 다운로드' 버튼 흐름을 그대로 따른다.",
+  "_note": "공공데이터포털(data.go.kr) 파일데이터·표준데이터 중 로그인/키 없이 받을 수 있고 이용허락범위 제한이 없는 것만 등록한다. kind=file 은 포털의 '다운로드' 버튼 흐름, kind=standard 는 표준데이터 페이지의 'CSV 다운로드' 버튼 흐름을 그대로 따른다. kind=localdata 는 2026년에 공공데이터포털로 이관된 지방행정 인허가·생활편의 파일(포털 표기 '기관자체에서 다운로드')로, file.localdata.go.kr 의 '전국 파일 다운로드' 버튼 흐름을 따른다(slug = 그 사이트의 데이터셋 이름). `download --source all` 은 일반음식점(수백 MB)까지 받으므로 평소에는 --source 로 하나씩 받는다.",
   "sources": {
     "semas": {
       "kind": "file",
@@ -42,6 +42,46 @@
       "public_data_pk": "15012894",
       "title": "전국전통시장표준데이터",
       "filename": "std_markets.csv"
+    },
+    "centurystore": {
+      "kind": "file",
+      "public_data_pk": "15132695",
+      "title": "소상공인시장진흥공단_전국 백년가게 지정리스트 현황 정보",
+      "filename": "badge_centurystore.csv"
+    },
+    "model_restaurants": {
+      "kind": "localdata",
+      "public_data_pk": "15155052",
+      "slug": "excellent_restaurant_info",
+      "title": "행정안전부_모범음식점정보",
+      "filename": "badge_model_restaurants.csv"
+    },
+    "lic_restaurants": {
+      "kind": "localdata",
+      "public_data_pk": "15096283",
+      "slug": "general_restaurants",
+      "title": "행정안전부_식품_일반음식점 (인허가)",
+      "filename": "lic_general_restaurants.csv"
+    },
+    "lic_cafes": {
+      "kind": "localdata",
+      "slug": "rest_cafes",
+      "title": "행정안전부_식품_휴게음식점 (인허가)",
+      "filename": "lic_rest_cafes.csv"
+    },
+    "lic_danran": {
+      "kind": "localdata",
+      "public_data_pk": "15045017",
+      "slug": "singing_bars",
+      "title": "행정안전부_식품_단란주점영업 (인허가)",
+      "filename": "lic_singing_bars.csv"
+    },
+    "lic_yuheung": {
+      "kind": "localdata",
+      "public_data_pk": "15045018",
+      "slug": "entertainment_bars",
+      "title": "행정안전부_식품_유흥주점영업 (인허가)",
+      "filename": "lic_entertainment_bars.csv"
     }
   }
 }

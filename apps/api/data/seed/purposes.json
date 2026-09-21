@@ -14,14 +14,14 @@
         "version": 3,
         "weights": {
           "budget": 0.22,
-          "distance": 0.1,
+          "distance": 0.06,
           "rating": 0.03,
           "sentiment": 0.02,
           "congestion": 0.04,
           "time_fit": 0.08,
           "preference": 0.18,
           "purpose_fit": 0.24,
-          "curated": 0.09
+          "curated": 0.13
         },
         "params": {
           "budget_target_util": 0.85,
@@ -579,14 +579,14 @@
         "version": 3,
         "weights": {
           "budget": 0.22,
-          "distance": 0.08,
+          "distance": 0.04,
           "rating": 0.03,
           "sentiment": 0.02,
           "congestion": 0.04,
           "time_fit": 0.08,
           "preference": 0.16,
           "purpose_fit": 0.26,
-          "curated": 0.11
+          "curated": 0.15
         },
         "params": {
           "budget_target_util": 0.85,
@@ -1132,14 +1132,14 @@
         "version": 3,
         "weights": {
           "budget": 0.22,
-          "distance": 0.12,
+          "distance": 0.08,
           "rating": 0.03,
           "sentiment": 0.02,
           "congestion": 0.06,
           "time_fit": 0.08,
           "preference": 0.12,
           "purpose_fit": 0.24,
-          "curated": 0.11
+          "curated": 0.15
         },
         "params": {
           "budget_target_util": 0.85,
@@ -1645,14 +1645,14 @@
         "version": 3,
         "weights": {
           "budget": 0.24,
-          "distance": 0.1,
+          "distance": 0.06,
           "rating": 0.03,
           "sentiment": 0.02,
           "congestion": 0.04,
           "time_fit": 0.08,
           "preference": 0.16,
           "purpose_fit": 0.24,
-          "curated": 0.09
+          "curated": 0.13
         },
         "params": {
           "budget_target_util": 0.85,
@@ -2173,14 +2173,14 @@
         "version": 3,
         "weights": {
           "budget": 0.28,
-          "distance": 0.12,
+          "distance": 0.08,
           "rating": 0.03,
           "sentiment": 0.02,
           "congestion": 0.06,
           "time_fit": 0.08,
           "preference": 0.12,
           "purpose_fit": 0.2,
-          "curated": 0.09
+          "curated": 0.13
         },
         "params": {
           "budget_target_util": 0.85,

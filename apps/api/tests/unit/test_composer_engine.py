@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Sequence
 from datetime import date
 
 import pytest
@@ -57,7 +58,7 @@ class FakeSource:
         self.calls: list[tuple[str, float]] = []
 
     async def fetch(
-        self, role: str, origin: GeoPoint, radius_m: float, on_date: date
+        self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
     ) -> list[PlaceCandidate]:
         self.calls.append((role, radius_m))
         return [p for p in self.places if p.course_role == role and haversine_m(origin, p.point) <= radius_m]

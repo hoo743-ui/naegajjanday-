@@ -9,14 +9,23 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infra.db.models import Category, Event, Place, PlaceSource, Region
+from app.infra.db.base import utcnow
+from app.infra.db.models import Category, Event, Place, PlaceSource, PlaceTag, Region, Tag
 from app.infra.db.session import Database
 from app.infra.ingestion import dedupe
-from app.infra.ingestion.bulk import goodprice, semas_store, std_datasets, tourapi_bulk
-from app.infra.ingestion.bulk.common import BulkEvent, BulkPlace, BulkReport, GridIndex, iter_csv, load_json
+from app.infra.ingestion.bulk import goodprice, official_marks, semas_store, std_datasets, tourapi_bulk
+from app.infra.ingestion.bulk.common import (
+    BulkEvent,
+    BulkPlace,
+    BulkReport,
+    GridIndex,
+    chunked,
+    iter_csv,
+    load_json,
+)
 from app.infra.ingestion.bulk.price_prior import PricePrior
 from app.infra.ingestion.bulk.regions import RegionIndex, build_region_rows, upsert_generated_regions
 from app.infra.ingestion.bulk.writer import BulkWriter
@@ -225,6 +234,136 @@ async def load_std(db: Database, kind: str, path: Path, *, log: Log = print) -> 
         await writer.write_all(keep)
         await _finish(session)
     return writer.report
+
+
+MARK_CHUNK = 5000
+ID_CHUNK = 900  # stays below SQLite's bound-parameter limit on old builds
+
+
+def mark_kinds() -> list[str]:
+    return [k for k in load_json("bulk_rules.json")["marks"] if not k.startswith("_")]
+
+
+async def load_marks(db: Database, kind: str, path: Path, *, log: Log = print) -> BulkReport:
+    """백년가게 · 모범음식점 · 인허가(업력, 단란/유흥주점) → tags / hidden status on places we already have.
+
+    Re-runnable: everything this mark wrote last time (its `place_source` rows, the tags on those
+    places, the places it hid) is taken back first, so a revoked designation or a closed licence
+    disappears with the next file."""
+    specs = load_json("bulk_rules.json")["marks"]
+    if kind not in specs or kind.startswith("_"):
+        raise BulkIngestError(f"unknown mark '{kind}' (choose from {', '.join(mark_kinds())})")
+    spec = specs[kind]
+    provider = str(spec["provider"])
+    aliases = _sido_aliases(load_json("regions_kr.json"))
+    report = BulkReport()
+    today = date.today()
+    async with db.sessionmaker() as session:
+        index = official_marks.PlaceAddressIndex()
+        stmt = (
+            select(Place.id, Place.name, Place.road_address, Place.address)
+            .where(Place.status.in_(("approved", "hidden")))
+            .execution_options(yield_per=20_000)
+        )
+        async for pid, name, road_address, address in await session.stream(stmt):
+            index.add(pid, name, road_address or address, aliases)
+        log(f"{kind}: {len(index):,} buildings with a place; reading {path.name}…")
+        matches = official_marks.match_rows(
+            official_marks.iter_rows(iter_csv(path), spec, report, aliases),
+            index,
+            float(spec.get("name_match_min", 0.75)),
+            report,
+        )
+        log(f"{kind}: {len(matches):,} places matched")
+
+        tag_names = [str(spec["tag"])] if spec.get("tag") else []
+        tag_names += [str(r["tag"]) for r in spec.get("age_tags", [])]
+        tag_ids: dict[str, int] = {}
+        for tag_name in tag_names:
+            tag_id = await session.scalar(select(Tag.id).where(Tag.name == tag_name))
+            if tag_id is None:
+                tag = Tag(name=tag_name, group="feature", is_selectable=False)
+                session.add(tag)
+                await session.flush()
+                tag_id = tag.id
+            tag_ids[tag_name] = tag_id
+
+        # take back what the previous run of this mark wrote
+        previous = (
+            await session.execute(
+                select(PlaceSource.place_id, PlaceSource.raw).where(
+                    PlaceSource.provider == provider, PlaceSource.place_id.is_not(None)
+                )
+            )
+        ).all()
+        keep_hidden = {m.place_id for m in matches} if spec.get("hide") else set()
+        unhide = [pid for pid, raw in previous if (raw or {}).get("hidden") and pid not in keep_hidden]
+        if tag_ids:
+            for id_chunk in chunked([pid for pid, _raw in previous], ID_CHUNK):
+                await session.execute(
+                    delete(PlaceTag).where(
+                        PlaceTag.place_id.in_(id_chunk),
+                        PlaceTag.tag_id.in_(list(tag_ids.values())),
+                        PlaceTag.source == "provider",
+                    )
+                )
+        for id_chunk in chunked(unhide, ID_CHUNK):
+            await session.execute(
+                update(Place).where(Place.id.in_(id_chunk), Place.status == "hidden").values(status="approved")
+            )
+        report.reopened += len(unhide)
+        await session.execute(delete(PlaceSource).where(PlaceSource.provider == provider))
+
+        # tags — never on top of a tag an admin (or another mark) already put there
+        wanted = [
+            (m.place_id, tag_ids[tag_name], weight)
+            for m in matches
+            for tag_name, weight in official_marks.tags_for(m, spec, today).items()
+        ]
+        taken: set[tuple[int, int]] = set()
+        if wanted:
+            pairs = await session.execute(
+                select(PlaceTag.place_id, PlaceTag.tag_id).where(PlaceTag.tag_id.in_(list(tag_ids.values())))
+            )
+            taken = {(pid, tid) for pid, tid in pairs}
+        tag_rows = [
+            {"place_id": pid, "tag_id": tid, "weight": weight, "source": "provider"}
+            for pid, tid, weight in wanted
+            if (pid, tid) not in taken
+        ]
+        for tag_chunk in chunked(tag_rows, MARK_CHUNK):
+            await session.execute(insert(PlaceTag), list(tag_chunk))
+
+        hidden: set[int] = set()
+        if spec.get("hide"):
+            for id_chunk in chunked([m.place_id for m in matches], ID_CHUNK):
+                await session.execute(
+                    update(Place).where(Place.id.in_(id_chunk), Place.status == "approved").values(status="hidden")
+                )
+                hidden.update(id_chunk)
+            report.closed += len(hidden)
+
+        now = utcnow()
+        source_rows = [
+            {
+                "provider": provider,
+                "external_id": m.row.external_id,
+                "place_id": m.place_id,
+                "raw": {**m.row.raw, **({"hidden": True} if m.place_id in hidden else {})},
+                "fetched_at": now,
+                "content_hash": m.content_hash,
+                "match_confidence": min(0.99, m.similarity),  # < 1.0: an enrichment, never the owner
+            }
+            for m in matches
+        ]
+        for source_chunk in chunked(source_rows, MARK_CHUNK):
+            await session.execute(insert(PlaceSource), list(source_chunk))
+        await session.commit()
+        report.merged = len(matches)
+        report.created = len(tag_rows)
+        log(f"{kind}: tags written {len(tag_rows):,}; hidden {len(hidden):,}; un-hidden {len(unhide):,}")
+        await _finish(session)
+    return report
 
 
 TOURAPI_FOOD_PREFIXES = ("food", "cafe", "dessert", "bar")

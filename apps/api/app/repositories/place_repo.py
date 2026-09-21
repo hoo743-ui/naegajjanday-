@@ -18,7 +18,15 @@ from app.repositories.geo import nearest_first, within
 
 EVENT_ROLES = {"ATTRACTION", "CULTURE"}
 CURATED_TAG = "관광공사 소개"  # derived by tag_rules.json › listed_by_kto
-CANDIDATE_LIMIT = 400  # per role; nearest first, so dense areas keep the walkable core
+# A busy district holds thousands of places per role and the engine can weigh a few hundred. Taking
+# the nearest N made "within the radius" mean "within 300 m of the centre": whole neighbourhoods and
+# nearly every place with a reason to be recommended never reached the scorer. So the pool is built
+# from three reads: the places we know something good about, the walkable core, and an even sample
+# of everything else in the radius. Distance is then one score among the others, as it should be.
+NOTABLE_LIMIT = 200  # a real photo (tourism board), a measured price, or a local-specialty sign
+CORE_LIMIT = 400  # nearest first
+SPREAD_LIMIT = 150  # spread over the whole radius
+SPREAD_MULTIPLIER, SPREAD_MODULUS = 7919, 1009  # a fixed shuffle of ids: same request, same pool
 OVEREXPOSED_TOP_RATIO = 0.05
 OVEREXPOSED_MIN_POOL = 20
 
@@ -120,19 +128,35 @@ class SqlPlaceRepository:
     # --- CandidateSource (domain Protocol) ---------------------------------------------------
 
     async def fetch(
-        self, role: str, origin: GeoPoint, radius_m: float, on_date: date
+        self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
     ) -> list[PlaceCandidate]:
-        stmt = (
+        base = (
             select(Place, PlaceStats.recommend_count)
             .join(Category, Category.id == Place.category_id)
             .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
             .where(Place.status == "approved", Category.course_role == role)
             .where(within(Place, origin, radius_m, self._dialect))
-            .order_by(nearest_first(Place, origin), Place.id)
             .options(*FULL_LOAD)
-            .limit(CANDIDATE_LIMIT)
         )
-        rows = (await self._s.execute(stmt)).all()
+        near = nearest_first(Place, origin)
+        notable = or_(
+            Place.thumbnail_url.is_not(None),
+            Place.price_is_estimated.is_(False),
+            *(Place.name.contains(word) for word in name_words),
+        )
+        shuffled = (Place.id * SPREAD_MULTIPLIER) % SPREAD_MODULUS
+        reads = (
+            base.where(notable).order_by(near, Place.id).limit(NOTABLE_LIMIT),
+            base.order_by(near, Place.id).limit(CORE_LIMIT),
+            base.order_by(shuffled, Place.id).limit(SPREAD_LIMIT),
+        )
+        seen: set[int] = set()
+        rows = []
+        for stmt in reads:
+            for row in (await self._s.execute(stmt)).all():
+                if row[0].id not in seen:
+                    seen.add(row[0].id)
+                    rows.append(row)
         out: list[PlaceCandidate] = []
         exposure: list[tuple[int, PlaceCandidate]] = []
         rules = get_tag_rules()

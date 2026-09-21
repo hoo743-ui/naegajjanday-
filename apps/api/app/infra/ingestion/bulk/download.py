@@ -5,6 +5,9 @@ It follows exactly what the portal's own download buttons do and nothing more:
 * file data    : dataset page → `selectFileDataDownload.do` (metadata) → `check-limit.json` →
   `fileDownload.do`
 * standard data: `columList.json` (header) → `standard.json` pages (10 000 rows each) → CSV
+* localdata    : the 인허가 / 생활편의 files that moved from localdata.go.kr to the portal in 2026 are
+  "downloaded at the provider": dataset page → `file.localdata.go.kr/file/<slug>/info` →
+  `validate/download-count` (the site's own rate limit — a 429 stops us) → `download/<slug>/info`
 
 If the portal asks for a captcha (or anything else interactive) we stop with
 `ManualDownloadRequiredError` — never work around it. Every loader accepts a local `--path`, so a
@@ -32,6 +35,7 @@ SOURCES_FILE = API_ROOT / "data" / "bulk" / "sources.json"
 USER_AGENT = "Mozilla/5.0 (compatible; bulk-file-download)"  # generic; never carries personal info
 STD_PAGE_SIZE = 10_000
 PAGE_DELAY_S = 0.3
+LOCALDATA = "https://file.localdata.go.kr"
 _DETAIL_PK_RE = re.compile(r"fn_fileDataDown\('(\d+)',\s*'([^']+)',\s*'[^']*',\s*'(\d+)'")
 
 
@@ -42,13 +46,16 @@ class ManualDownloadRequiredError(RuntimeError):
 @dataclass(frozen=True, slots=True)
 class BulkSource:
     key: str
-    kind: Literal["file", "standard"]
+    kind: Literal["file", "standard", "localdata"]
     public_data_pk: str
     title: str
     filename: str
+    slug: str = ""  # kind=localdata: the dataset name in file.localdata.go.kr/file/<slug>/info
 
     @property
     def page_url(self) -> str:
+        if self.kind == "localdata":
+            return f"{LOCALDATA}/file/{self.slug}/info"
         suffix = "fileData.do" if self.kind == "file" else "standard.do"
         return f"{PORTAL}/data/{self.public_data_pk}/{suffix}"
 
@@ -73,16 +80,21 @@ def load_sources(path: Path = SOURCES_FILE) -> dict[str, BulkSource]:
         key: BulkSource(
             key=key,
             kind=row["kind"],
-            public_data_pk=str(row["public_data_pk"]),
+            public_data_pk=str(row.get("public_data_pk", "")),
             title=row["title"],
             filename=row["filename"],
+            slug=str(row.get("slug", "")),
         )
         for key, row in data["sources"].items()
     }
 
 
 def manual_steps(source: BulkSource, target: Path) -> str:
-    button = "'다운로드' 버튼" if source.kind == "file" else "'CSV' 행의 '다운로드' 버튼"
+    button = {
+        "file": "'다운로드' 버튼",
+        "standard": "'CSV' 행의 '다운로드' 버튼",
+        "localdata": "'전국 파일 다운로드' 버튼",
+    }[source.kind]
     return (
         f"자동 다운로드 불가: {source.title}\n"
         f"  1) 브라우저로 {source.page_url} 접속\n"
@@ -185,6 +197,32 @@ async def _download_standard(client: httpx.AsyncClient, source: BulkSource, targ
     tmp.replace(target)
 
 
+async def _download_localdata(client: httpx.AsyncClient, source: BulkSource, target: Path) -> None:
+    """What the '전국 파일 다운로드' button does: open the page, ask the site whether another download
+    is allowed right now, then fetch the file. A refusal is final — we do not retry around it."""
+    if not source.slug:
+        raise ManualDownloadRequiredError(manual_steps(source, target))
+    referer = {"Referer": source.page_url}
+    page = await client.get(source.page_url, headers={"Referer": PORTAL + "/"})
+    page.raise_for_status()
+    if f"/file/download/{source.slug}/info" not in page.text:
+        raise ManualDownloadRequiredError(manual_steps(source, target))
+    allowed = await client.get(f"{LOCALDATA}/file/validate/download-count", headers=referer)
+    if allowed.status_code != 200:
+        raise ManualDownloadRequiredError(manual_steps(source, target))
+    tmp = target.with_suffix(target.suffix + ".part")
+    async with client.stream(
+        "GET", f"{LOCALDATA}/file/download/{source.slug}/info", headers=referer
+    ) as resp:
+        resp.raise_for_status()
+        if "html" in resp.headers.get("content-type", ""):
+            raise ManualDownloadRequiredError(manual_steps(source, target))
+        with tmp.open("wb") as fh:
+            async for chunk in resp.aiter_bytes(1 << 20):
+                fh.write(chunk)
+    tmp.replace(target)
+
+
 def target_path(source: BulkSource, raw_dir: Path) -> Path:
     raw_dir.mkdir(parents=True, exist_ok=True)
     return raw_dir / source.filename
@@ -209,6 +247,8 @@ async def download(source: BulkSource, target: Path, client: httpx.AsyncClient |
     try:
         if source.kind == "file":
             await _download_file(http, source, target)
+        elif source.kind == "localdata":
+            await _download_localdata(http, source, target)
         else:
             await _download_standard(http, source, target)
     finally:

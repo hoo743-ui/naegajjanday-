@@ -55,9 +55,10 @@ MMR_POOL = 25
 
 class CandidateSource(Protocol):
     async def fetch(
-        self, role: str, origin: GeoPoint, radius_m: float, on_date: date
+        self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
     ) -> list[PlaceCandidate]:
-        """Approved places (and, for ATTRACTION/CULTURE, events running on `on_date`) within the radius."""
+        """Approved places (and, for ATTRACTION/CULTURE, events running on `on_date`) within the radius.
+        `name_words`: signs carrying one of these words are wanted even when they are not the nearest."""
         ...
 
 
@@ -205,7 +206,7 @@ class RecommendationEngine:
                 key = (sb.slot.course_role, radius)
                 if key not in cache:
                     cache[key] = await self._source.fetch(
-                        sb.slot.course_role, ctx.origin, radius, ctx.start_at.date()
+                        sb.slot.course_role, ctx.origin, radius, ctx.start_at.date(), ctx.local_words
                     )
                 pool = hard_filter(cache[key], fc, params)
                 if not pool and ctx.avoid_tags_by_role:

@@ -284,6 +284,36 @@ def bulk_tourapi(
         raise _fail(str(exc)) from exc
 
 
+@bulk_cli.command("marks")
+def bulk_marks(
+    kind: Annotated[str, typer.Option(help="all | centurystore | model_restaurants | lic_restaurants | …")] = "all",
+    path: Annotated[Path | None, typer.Option(help="CSV (only with a single --kind)")] = None,
+) -> None:
+    """백년가게 · 모범음식점 · 인허가(업력 30년+, 단란/유흥주점 제외) → 이미 있는 장소에 태그 / 숨김.
+
+    Creates no place, so run it after `semas`. `all` takes every file that was downloaded."""
+    kinds = bulk.mark_kinds() if kind == "all" else [kind]
+    if path is not None and len(kinds) != 1:
+        raise _fail("--path needs a single --kind")
+
+    async def job(db: Database, _settings: Settings) -> None:
+        for k in kinds:
+            if kind == "all":
+                file = bulk_download.default_raw_dir() / bulk_download.load_sources()[k].filename
+                if not file.exists():
+                    typer.secho(f"[marks:{k}] skipped — {file} not found", fg=typer.colors.YELLOW)
+                    continue
+            else:
+                file = _raw_file(k, path)
+            report = await bulk.load_marks(db, k, file, log=typer.echo)
+            typer.echo(f"[marks:{k}] {report.line()}")
+
+    try:
+        _run(job)
+    except (bulk.BulkIngestError, KeyError) as exc:
+        raise _fail(str(exc)) from exc
+
+
 @bulk_cli.command("all")
 def bulk_all() -> None:
     """Everything that was downloaded, in dependency order: semas → goodprice → std kinds."""
