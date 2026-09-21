@@ -212,3 +212,22 @@ SSE 이벤트: `token`(텍스트) · `tool_call` · `course`(코스 카드 paylo
 - 접근 안내: OpenStreetMap 추출본 `apps/api/data/transit/*.tsv` (지하철 출구 4,500 · 역 1,321 · 버스 정류장 100,642, 2026-09-21 추출). **ODbL** 이므로 자체 장소 테이블과 병합하지 않고 별도 파일로 두며 화면에 출처를 표기한다. 갱신은 Overpass 재추출.
 - 지도: 웹은 `NEXT_PUBLIC_KAKAO_MAP_KEY` 가 있으면 카카오맵, 없으면 Leaflet + OpenStreetMap 타일(키 불필요), 타일도 못 받으면 SVG 약도 순으로 떨어진다. 운영 트래픽에서는 OSM 공용 타일 대신 타일 공급자(또는 카카오맵 키)를 쓴다.
 - 환승 노선·실시간 도착 같은 상세 대중교통 안내는 구간별 **카카오맵 길찾기 링크**(`map.kakao.com/link/by/{walk|traffic|car}/…`)로 넘긴다. 앱 내 환승 경로가 필요해지면 ODsay·TMAP 대중교통 API(키 필요) 어댑터를 같은 자리에 붙인다.
+
+## 부록: 2026-09-21 에 늘어난 요청 · 응답 (코스 생성)
+
+`POST /v1/courses/generate` 에 아래 필드가 추가됐다. 모두 선택이고, 안 주면 예전과 똑같이 동작한다.
+
+| 필드 | 뜻 |
+|---|---|
+| `purposes: string[]` | 함께 고른 다른 목적(최대 3). 첫 목적(`purpose`)이 하루의 틀을, 모든 목적이 가중치 · 취향을 정한다. 한 목적의 금기(가족 → 술집)는 전체에 적용 |
+| `regions: string[]` | 여러 동네를 잇는다(당일 최대 3). 예산 · 시간을 나눠 쓰고 남은 돈은 다음 동네로. 응답 스톱의 `from_prev.hop_to` 가 동네 이동 구간 |
+| `nights: 0~3` | 몇 박. 날짜별 코스가 `1일차 · 2일차 …` 라벨로 온다(상세의 `siblings` 가 탭). 상세 `request.day / days / trip_budget_total` |
+| `focus: string` | 꼭 넣을 동네 명물(`GET /v1/meta/regions/{slug}/signature` 의 word). 생략 = 가장 뚜렷한 명물을 자동으로, `"-"` = 넣지 않음. 못 넣으면 경고 `FOCUS_UNAVAILABLE` |
+| `extras: string[]` | 꼭 넣을 자리. `BAR`(술 한잔), `BASEBALL`(1군 구장 — 요청했을 때만 후보가 된다) |
+| `conditions: string[]` | 그날의 사정. `rain` = 실내 위주 |
+| `skip_roles: string[]` | 코스에서 뺄 자리 |
+
+새 엔드포인트: `GET /v1/meta/regions/{slug}/signature` · `GET /v1/stays?lat&lng&radius_m&limit` · `GET /v1/performances?lat&lng&start_at&duration_min`(KOPIS 키가 없으면 `available=false`).
+`GET /v1/places/{id}` 에 `since_year` · `licensed_as` · `marks[]` 추가. `GET /v1/directions/walk` 의 `legs[].coordinates`.
+규칙 파일: `data/recommendation/{purpose_blend,multi_region,extra_roles,conditions}.json`, `data/signature/signature_rules.json`.
+
