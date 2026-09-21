@@ -1,0 +1,33 @@
+{
+  "_comment": "그날의 사정(요청의 conditions). 스타일과 같은 장치를 쓴다: 태그 친화도 · 자리 교체 · 자리별 회피. rain = 비 · 폭염 · 한파처럼 밖에 오래 있기 어려운 날. 날씨를 자동으로 알려면 기상청 단기예보 키가 필요하고(docs/20), 그 전까지는 사용자가 고른다.",
+  "rain": {
+    "affinity_add": {
+      "실내": 0.5,
+      "우천OK": 0.6,
+      "야외": -0.8,
+      "산책하기좋은": -0.5
+    },
+    "swap_roles": {
+      "ATTRACTION": {
+        "role": "CULTURE",
+        "share": 0.12,
+        "take_from": "MEAL"
+      },
+      "NIGHTVIEW": {
+        "role": "DESSERT",
+        "share": 0.1,
+        "take_from": "MEAL"
+      }
+    },
+    "avoid_tags": {
+      "야외": [
+        "ATTRACTION",
+        "ACTIVITY",
+        "CULTURE",
+        "CAFE",
+        "DESSERT",
+        "NIGHTVIEW"
+      ]
+    }
+  }
+}

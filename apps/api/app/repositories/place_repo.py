@@ -244,7 +244,12 @@ class SqlPlaceRepository:
         stmt = (
             select(Place)
             .where(Place.public_id == public_id)
-            .options(*FULL_LOAD, selectinload(Place.menu_items), selectinload(Place.region))
+            .options(
+                *FULL_LOAD,
+                selectinload(Place.menu_items),
+                selectinload(Place.region),
+                selectinload(Place.sources),  # the licence record: opening year, kind of business
+            )
         )
         return await self._s.scalar(stmt)
 

@@ -58,6 +58,7 @@ from app.domain.recommendation.itinerary import (
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
+    day_conditions,
     extra_roles,
     opt_in_categories,
     resolve_style,
@@ -321,6 +322,14 @@ class CourseService:
         if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
             ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
+        for name in req.conditions:  # a rainy day: indoors, and a gallery instead of a walk
+            condition = day_conditions().get(name)
+            if condition is None:
+                continue
+            ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
+            for tag, roles in styled_avoidance(condition).items():
+                ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
+            templates = styled_templates(templates, condition)
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
             entry = extra_roles().get(role)
             if entry is not None and entry["role"] not in vetoed:
@@ -409,6 +418,7 @@ class CourseService:
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
             "extras": [r for r in req.extras if r in extra_roles()],
+            "conditions": [c for c in req.conditions if c in day_conditions()],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
         }
@@ -754,6 +764,7 @@ class CourseService:
                 style=(row.request or {}).get("style") or DEFAULT_STYLE,
                 focus=(row.request or {}).get("focus"),
                 extras=list((row.request or {}).get("extras") or []),
+                conditions=list((row.request or {}).get("conditions") or []),
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[

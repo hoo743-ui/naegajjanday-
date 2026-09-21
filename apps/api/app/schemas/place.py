@@ -57,8 +57,18 @@ class ReviewSummary(BaseModel):
     aspects: dict[str, float]
 
 
+class OfficialMark(BaseModel):
+    """Who vouches for the place, in the words of the source (no ranking is implied)."""
+
+    tag: str
+    by: str
+
+
 class PlaceDetail(PlaceBrief):
     role: str
+    since_year: int | None = Field(default=None, description="영업 신고(인허가) 연도 — 공식 인허가 데이터")
+    licensed_as: str | None = Field(default=None, description="인허가상의 업태 (호프/통닭 · 한식 · 까페 …)")
+    marks: list[OfficialMark] = Field(default_factory=list)
     region: str | None = None
     phone: str | None = None
     description: str | None = None

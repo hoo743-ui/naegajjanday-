@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SwapMenu } from "./SwapMenu";
 import { stopColor } from "./colors";
+import { PlaceSheet } from "./PlaceSheet";
 import { RoadviewPeek } from "./RoadviewPeek";
 
 interface StopCardProps {
@@ -48,6 +49,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const panelId = useId();
   const { place } = stop;
   const index = stop.position - 1;
@@ -129,7 +131,16 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {clock(stop.arrive_at)} – {clock(stop.leave_at)}
             </span>
           </p>
-          <h3 className="truncate text-[17px] font-extrabold tracking-tight sm:text-lg">{place.name}</h3>
+          <h3 className="truncate text-[17px] font-extrabold tracking-tight sm:text-lg">
+            {/* 이름을 누르면 우리가 가진 그 가게의 정보(조사된 메뉴 가격 · 사진 · 영업시간 · 개업 연도)를 연다 */}
+            {stop.place.kind === "event" ? (
+              place.name
+            ) : (
+              <button type="button" onClick={() => setSheet(true)} className="max-w-full truncate text-left underline decoration-line decoration-2 underline-offset-4 hover:decoration-blue-deep">
+                {place.name}
+              </button>
+            )}
+          </h3>
           <p className="truncate text-[13px] text-muted-foreground">
             {place.category_name ?? place.category}
             {place.address ? ` · ${place.address}` : ""}
@@ -259,6 +270,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         ) : null}
       </AnimatePresence>
 
+      {sheet ? <PlaceSheet place={stop.place} partySize={partySize} onClose={() => setSheet(false)} /> : null}
       {swapping ? <span aria-hidden className="skeleton-shimmer absolute inset-0 opacity-60" /> : null}
     </motion.article>
   );

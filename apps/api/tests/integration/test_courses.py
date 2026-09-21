@@ -169,6 +169,21 @@ class TestGenerate:
         assert second["request"]["start_at"].startswith("2026-09-23T10:00")
         assert [s["label"] for s in first["siblings"]] == ["1일차", "2일차"]  # the days are the tabs
 
+    async def test_a_rainy_day_keeps_the_course_indoors(self, client: httpx.AsyncClient) -> None:
+        dry = (await generate(client, alternatives=0)).json()["courses"][0]
+        wet_resp = await generate(client, alternatives=0, conditions=["rain", "nonsense"])
+        assert wet_resp.status_code == 200, wet_resp.text
+        wet = wet_resp.json()["courses"][0]
+        assert "ATTRACTION" in [s["role"] for s in dry["stops"]]  # the usual evening has a walk in it
+        assert "ATTRACTION" not in [
+            s["role"] for s in wet["stops"]
+        ]  # in the rain the walk becomes something indoors
+        outdoors = [s["place"]["name"] for s in wet["stops"] if "야외" in s["place"]["tags"]]
+        assert outdoors == []
+        assert wet["totals"]["price"] <= 40000
+        echo = (await client.get(f"/v1/courses/{wet['id']}")).json()["request"]
+        assert echo["conditions"] == ["rain"]  # an unknown condition is dropped, not an error
+
     async def test_bigger_budget_keeps_the_bar_slot(self, client: httpx.AsyncClient) -> None:
         body = (await generate(client, budget_total=160000, alternatives=0)).json()
         course = body["courses"][0]

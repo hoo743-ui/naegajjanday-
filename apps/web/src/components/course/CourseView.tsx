@@ -11,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { useAccessHints, useCourse, useCourseNarrative, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop, useWalkRoute } from "@/lib/api/hooks";
-import type { CourseWarning, SwapStrategy } from "@/lib/api/types";
+import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
+import { BudgetTools } from "./BudgetTools";
 import { LocalCard } from "./LocalCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
@@ -174,11 +175,8 @@ export function CourseView({ id }: { id: string }) {
 
   /** fork: 친구 코스를 같은 조건 그대로 내 코스로 새로 만든다 (지금 장소를 빼지 않는다). 아니면 다른 장소들로 다시 짠다. */
   /** focus: 이 동네 명물을 골라(또는 FOCUS_OFF 로 빼고) 다시 짠다. 안 주면 처음 조건 그대로 */
-  const onReroll = (fork = false, focus?: string) => {
-    setForking(fork);
-    track("reroll_clicked", { course_id: id, ...(fork ? { from_shared: true } : {}), ...(focus ? { focus } : {}) });
-    reroll.mutate(
-      {
+  /** 이 코스를 만든 조건 그대로. 다시 짜기 · 예산 what-if 가 여기서 필요한 것만 바꿔 보낸다 */
+  const baseRequest: GenerateCourseRequest = {
         region: request.region?.slug,
         ...(hopping ? { regions: request.regions!.map((r) => r.slug) } : {}),
         ...((request.purposes?.length ?? 0) > 1 ? { purposes: request.purposes!.slice(1).map((p) => p.code) } : {}),
@@ -192,15 +190,26 @@ export function CourseView({ id }: { id: string }) {
         // 다시 짜도 처음에 정한 만남 시간은 그대로
         ...(request.duration_min ? { duration_min: request.duration_min } : {}),
         ...(request.style ? { style: request.style } : {}),
-        ...(focus ? { focus } : {}),
+        ...(request.focus ? { focus: request.focus } : {}),
         ...(request.extras?.length ? { extras: request.extras } : {}),
-        // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
+        ...(request.conditions?.length ? { conditions: request.conditions } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
-          exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id),
+          exclude_place_ids: [],
         },
         alternatives: 2,
+  };
+
+  const onReroll = (fork = false, focus?: string) => {
+    setForking(fork);
+    track("reroll_clicked", { course_id: id, ...(fork ? { from_shared: true } : {}), ...(focus ? { focus } : {}) });
+    reroll.mutate(
+      {
+        ...baseRequest,
+        ...(focus ? { focus } : {}),
+        // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
+        preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },
       },
       {
         onSuccess: (res) => {
@@ -241,7 +250,7 @@ export function CourseView({ id }: { id: string }) {
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <p className="tabular flex flex-wrap gap-x-2 text-[13px] font-extrabold text-blue-deep">
-                {[request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
+                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
               </p>
               <h1 className="sr-only">
                 {data.label}: {data.summary}
@@ -278,6 +287,18 @@ export function CourseView({ id }: { id: string }) {
                 stops={data.stops}
                 heading={[request.region?.name, request.purpose.name, `${request.party_size}명`].filter(Boolean).join(" · ")}
               />
+
+              {!readOnly ? (
+                <BudgetTools
+                  baseRequest={baseRequest}
+                  budget={request.budget_total}
+                  partySize={request.party_size}
+                  stops={data.stops}
+                  total={data.totals.price}
+                  heading={[dateLabel(request.start_at), placeLabel].filter(Boolean).join(" · ")}
+                  courseUrl={typeof window === "undefined" ? "" : window.location.href}
+                />
+              ) : null}
 
               <dl className="tabular grid grid-cols-3 gap-2 text-center">
                 {[

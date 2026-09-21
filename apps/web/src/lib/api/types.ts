@@ -75,6 +75,20 @@ export interface Features {
   performances?: boolean;
 }
 
+/** 장소 상세 (GET /places/{id}): 조사된 메뉴 · 사진 · 전화 · 영업시간 · 개업 연도 · 공적 표식 */
+export interface PlaceDetail extends PlaceSummary {
+  phone: string | null;
+  description: string | null;
+  images: string[];
+  menus: { name: string; price: number; is_signature: boolean }[];
+  opening_hours: { dow: number; open: string | null; close: string | null; is_closed: boolean }[];
+  /** 영업 신고(인허가) 연도 */
+  since_year: number | null;
+  /** 인허가상의 업태 (호프/통닭 · 한식 · 까페 …) */
+  licensed_as: string | null;
+  marks: { tag: string; by: string }[];
+}
+
 /** 관광공사에 등재된 숙소. 요금은 공식 데이터가 없어 주지 않는다 */
 export interface Stay {
   id: string;
@@ -196,6 +210,8 @@ export interface GenerateCourseRequest {
   style?: CourseStyle;
   /** 꼭 넣을 자리. ["BAR"] = 술 한잔 포함 */
   extras?: string[];
+  /** 그날의 사정. ["rain"] = 비 오는 날(실내 위주) */
+  conditions?: string[];
   /** 함께 고른 다른 목적들. 가중치·취향은 평균, 한 목적의 금기(가족 → 술집)는 전체에 적용 */
   purposes?: string[];
   /** 하루에 여러 동네를 잇는다(방문 순서, 최대 3). 주면 region 대신 쓰인다 */
@@ -248,6 +264,8 @@ export interface PlaceSummary {
   price_is_estimated?: boolean;
   is_free?: boolean;
   tags: string[];
+  /** event = 기간이 있는 행사(장소 상세가 없다) */
+  kind?: "place" | "event";
 }
 
 export interface TravelLeg {
@@ -350,6 +368,7 @@ export interface CourseDetail extends Course {
     /** 이 코스가 실제로 중심에 둔 동네 명물 (자동으로 골랐든 사용자가 골랐든) */
     focus?: string | null;
     extras?: string[];
+    conditions?: string[];
     /** 첫 목적 포함, 고른 순서대로 */
     purposes?: { code: string; name: string }[];
     /** 여러 동네를 이은 코스일 때만 */

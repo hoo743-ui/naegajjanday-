@@ -33,6 +33,7 @@ import type {
   AuthProviderStatus,
   Page,
   PerformanceList,
+  PlaceDetail,
   Preferences,
   PreferencesPayload,
   ProblemDetails,
@@ -684,6 +685,17 @@ export function usePerformances(params: { lat: number; lng: number; start_at: st
     queryKey: ["performances", params],
     queryFn: ({ signal }) => api.get("/performances", { query: { ...params!, radius_m: 4000 }, signal }),
     enabled: params !== null,
+    staleTime: 30 * 60_000,
+    retry: false,
+  });
+}
+
+/** 장소 상세. 시트를 열 때만 부른다. */
+export function usePlaceDetail(id: string | null) {
+  return useQuery<PlaceDetail, ApiError>({
+    queryKey: ["place", id],
+    queryFn: ({ signal }) => api.get(`/places/${encodeURIComponent(id ?? "")}`, { signal }),
+    enabled: id !== null,
     staleTime: 30 * 60_000,
     retry: false,
   });

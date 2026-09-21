@@ -105,6 +105,18 @@ def _swap_roles(template: Template, swaps: Mapping[str, Mapping[str, Any]]) -> T
     return replace(template, slots=tuple(slots))
 
 
+CONDITIONS_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "conditions.json"
+
+
+@lru_cache(maxsize=1)
+def day_conditions(path: Path = CONDITIONS_PATH) -> dict[str, dict[str, Any]]:
+    """What the day is like (rain, …), each described with the same knobs a style has."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
 EXTRA_ROLES_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "extra_roles.json"
 
 

@@ -39,6 +39,7 @@ class TagRules:
     listed_photo_host: str = ""
     listed_tags: Mapping[str, float] = field(default_factory=dict)
     quality_tags: frozenset[str] = frozenset()  # an official body vouches for the place
+    mark_sources: Mapping[str, str] = field(default_factory=dict)  # tag → who says so
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> TagRules:
@@ -60,6 +61,7 @@ class TagRules:
             listed_photo_host=str(data.get("listed_by_kto", {}).get("photo_host", "")),
             listed_tags=dict(data.get("listed_by_kto", {}).get("tags", {})),
             quality_tags=frozenset(data.get("quality_tags", {}).get("names", [])),
+            mark_sources=dict(data.get("quality_tags", {}).get("sources", {})),
             strip_prefix=tuple(w.upper() for w in data.get("unlisted_names", {}).get("strip_prefix", [])),
             legal_forms=tuple(data.get("unlisted_names", {}).get("legal_forms", [])),
         )

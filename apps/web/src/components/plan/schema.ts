@@ -22,6 +22,8 @@ export const planSchema = z
     with_bar: z.boolean(),
     /** 야구 보러 가요: 동네에 1군 구장이 있으면 코스에 넣는다 (경기 일정은 직접 확인) */
     with_baseball: z.boolean(),
+    /** 비 오는 날: 실내 위주로, 산책 대신 전시 · 실내 놀거리 */
+    rainy: z.boolean(),
     /** 몇 박. 0 = 당일 */
     nights: z.number().int().min(0).max(3),
     /** "" = 오늘, 아니면 "YYYY-MM-DD" */
@@ -50,6 +52,7 @@ export const PLAN_DEFAULTS: PlanValues = {
   focus: "",
   with_bar: false,
   with_baseball: false,
+  rainy: false,
   nights: 0,
   meet_day: "",
   start_time: "",
@@ -60,7 +63,7 @@ export const STEPS = [
   { key: "region", title: "지역", question: "어디서 놀까요?", fields: ["region", "regions_before"] },
   { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "nights", "meet_day", "start_time", "duration_min"] },
-  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "focus", "with_bar", "with_baseball", "liked_tags", "disliked_tags", "transport"] },
+  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags", "transport"] },
 ] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
 
 export type StepKey = (typeof STEPS)[number]["key"];

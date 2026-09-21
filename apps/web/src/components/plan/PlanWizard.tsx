@@ -149,6 +149,7 @@ export function PlanWizard() {
       ...(data.focus ? { focus: data.focus } : {}),
       ...(data.with_bar || data.with_baseball ? { extras: [...(data.with_bar ? ["BAR"] : []), ...(data.with_baseball ? ["BASEBALL"] : [])] } : {}),
       ...(data.nights > 0 ? { nights: data.nights } : {}),
+      ...(data.rainy ? { conditions: ["rain"] } : {}),
       transport: data.transport,
       preferences: { liked_tags: data.liked_tags, disliked_tags: data.disliked_tags, exclude_place_ids: [] },
       alternatives: 2,

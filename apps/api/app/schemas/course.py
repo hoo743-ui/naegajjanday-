@@ -62,6 +62,7 @@ class CourseGenerateRequest(BaseModel):
     )
     transport: Transport = "walk"
     include_roles: list[str] | None = None
+    conditions: list[str] = Field(default_factory=list, max_length=3, description='그날의 사정. 예: ["rain"]')
     skip_roles: list[str] = Field(
         default_factory=list, max_length=6, description='코스에서 뺄 자리 (예: ["CAFE"])'
     )
@@ -261,6 +262,7 @@ class CourseRequestEcho(BaseModel):
     style: str = "efficient"
     focus: str | None = None
     extras: list[str] = Field(default_factory=list)
+    conditions: list[str] = Field(default_factory=list)
 
 
 class SiblingRef(BaseModel):

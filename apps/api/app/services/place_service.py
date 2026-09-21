@@ -14,10 +14,16 @@ from app.domain.models import GeoPoint, PlaceCandidate
 from app.infra.db.base import utcnow
 from app.infra.db.models import Category, Event, Place, PlaceRevision, PlaceSource, Region, User
 from app.infra.search.client import PlaceSearch, SearchQuery
+from app.infra.tagging import get_tag_rules
 from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.schemas import place as dto
 from app.services.course_service import place_brief
+
+# the licence registry rows attached by `ingest-bulk marks` (keys are the registry's own column names)
+LICENCE_PROVIDERS = ("lic_restaurant", "lic_cafe")
+LICENCE_DATE_KEY = "\uc778\ud5c8\uac00\uc77c\uc790"
+LICENCE_KIND_KEY = "\uc5c5\ud0dc\uad6c\ubd84\uba85"
 
 logger = get_logger(__name__)
 
@@ -157,6 +163,9 @@ class PlaceService:
 
         cand = to_candidate(place)
         today = datetime.now(self._tz).weekday()
+        licence = next((s.raw for s in place.sources if s.provider in LICENCE_PROVIDERS and s.raw), {})
+        since = str(licence.get(LICENCE_DATE_KEY) or "")[:4]
+        mark_by = get_tag_rules().mark_sources
         stats = place.stats
         return dto.PlaceDetail(
             **place_brief(cand).model_dump(),
@@ -164,6 +173,11 @@ class PlaceService:
             region=place.region.slug,
             phone=place.phone,
             description=place.description,
+            since_year=int(since)
+            if since.isdigit() and 1900 < int(since) <= datetime.now(self._tz).year
+            else None,
+            licensed_as=(str(licence.get(LICENCE_KIND_KEY)) or None) if licence else None,
+            marks=[dto.OfficialMark(tag=t, by=mark_by[t]) for t in cand.tags if t in mark_by],
             images=list(place.images or []),
             menus=[
                 dto.MenuOut(name=m.name, price=m.price, is_signature=m.is_signature)

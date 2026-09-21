@@ -2,7 +2,7 @@
 
 import { useId, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, Trophy, Wine, type LucideIcon } from "lucide-react";
+import { Car, CloudRain, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, Trophy, Wine, type LucideIcon } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
@@ -373,6 +373,7 @@ export function TasteStep() {
   const style = useWatch<PlanValues, "style">({ name: "style" });
   const focus = useWatch<PlanValues, "focus">({ name: "focus" });
   const withBar = useWatch<PlanValues, "with_bar">({ name: "with_bar" });
+  const rainy = useWatch<PlanValues, "rainy">({ name: "rainy" });
   const withBaseball = useWatch<PlanValues, "with_baseball">({ name: "with_baseball" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
@@ -416,6 +417,18 @@ export function TasteStep() {
           ))}
         </div>
       </fieldset>
+
+      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+        <input type="checkbox" className="peer sr-only" checked={rainy} onChange={(e) => setValue("rainy", e.target.checked, { shouldDirty: true })} />
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", rainy ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+          ✓
+        </span>
+        <CloudRain aria-hidden className="size-6 shrink-0 text-blue-deep" />
+        <span className="min-w-0">
+          <b className="block text-[15px] font-extrabold">비 오는 날이에요</b>
+          <span className="block text-[12.5px] text-muted-foreground">실내 위주로 짜요. 골목 산책 대신 전시 · 실내 놀거리를 넣고, 야외 자리는 빼요. (덥거나 추운 날에도 좋아요)</span>
+        </span>
+      </label>
 
       <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
         <input type="checkbox" className="peer sr-only" checked={withBar} onChange={(e) => setValue("with_bar", e.target.checked, { shouldDirty: true })} />
