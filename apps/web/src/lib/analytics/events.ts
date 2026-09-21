@@ -26,7 +26,7 @@ export interface AnalyticsEvents {
   stop_swapped: { course_id: string; position: number; strategy: string };
   stop_reason_opened: { course_id: string; position: number };
   /** 스톱 카드에서 지도 앱의 장소 페이지(실제 사진·메뉴)로 나간 클릭 */
-  place_link_clicked: { course_id: string; position: number; to: "kakaomap" };
+  place_link_clicked: { course_id: string; position: number; to: "kakaomap" | "roadview" };
   /** from_shared: 친구가 짠 코스에서 "이 코스로 내 코스 만들기"를 누른 경우 */
   reroll_clicked: { course_id: string; from_shared?: boolean };
   share_clicked: { course_id: string; method: "web_share" | "clipboard" };

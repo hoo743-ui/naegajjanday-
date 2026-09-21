@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronDown, ChevronUp, Clock, ExternalLink, Star, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, ExternalLink, Eye, Star, Users } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
 import type { ScoreFeature, Stop, SwapStrategy } from "@/lib/api/types";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SwapMenu } from "./SwapMenu";
 import { stopColor } from "./colors";
+import { RoadviewPeek } from "./RoadviewPeek";
 
 interface StopCardProps {
   courseId: string;
@@ -40,11 +41,13 @@ function congestionTone(value: number) {
 
 /** 야구장은 경기가 있는 날에만 의미가 있다. 경기 일정은 공식 오픈 데이터가 없어 우리가 알 수 없으므로 KBO 공식 일정으로 보낸다. */
 const STADIUM = "activity.stadium";
+const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
 export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const [street, setStreet] = useState(false);
   const panelId = useId();
   const { place } = stop;
   const index = stop.position - 1;
@@ -190,6 +193,20 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           왜 여기?
           <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
         </button>
+        {KAKAO_KEY ? (
+          <button
+            type="button"
+            aria-expanded={street}
+            onClick={() => {
+              setStreet((v) => !v);
+              if (!street) track("place_link_clicked", { course_id: courseId, position: stop.position, to: "roadview" });
+            }}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-[#F0F4FA] hover:text-ink"
+          >
+            <Eye aria-hidden className="size-3.5" />
+            {street ? "거리뷰 닫기" : "가게 앞 거리뷰"}
+          </button>
+        ) : null}
         {stop.place.category === STADIUM ? (
           <a
             href={KBO_SCHEDULE}
@@ -224,6 +241,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </div>
         ) : null}
       </div>
+
+      {street && KAKAO_KEY ? <RoadviewPeek apiKey={KAKAO_KEY} lat={stop.place.lat} lng={stop.place.lng} name={stop.place.name} /> : null}
 
       <AnimatePresence initial={false}>
         {open ? (

@@ -35,7 +35,7 @@ interface KMap {
 interface KOverlay {
   setMap(map: KMap | null): void;
 }
-interface KakaoMaps {
+export interface KakaoMaps {
   load(callback: () => void): void;
   LatLng: new (lat: number, lng: number) => KLatLng;
   LatLngBounds: new () => KBounds;
@@ -55,7 +55,8 @@ const MAX_FIT_LEVEL = 4;
 
 let sdkPromise: Promise<KakaoMaps> | null = null;
 
-function loadKakao(key: string): Promise<KakaoMaps> {
+/** 지도와 로드뷰(RoadviewPeek)가 같은 SDK 를 한 번만 받는다 */
+export function loadKakao(key: string): Promise<KakaoMaps> {
   sdkPromise ??= new Promise<KakaoMaps>((resolve, reject) => {
     const ready = () => {
       const maps = kakaoMaps();
@@ -242,9 +243,9 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
         className="jj-map size-full bg-[#EAF1FF]"
         role="application"
         aria-label={`코스 지도: ${stops.map((s) => `${s.position}. ${s.place.name}`).join(", ")}`}
-      >
-        {!maps ? <span className="skeleton-shimmer block size-full" aria-hidden /> : null}
-      </div>
+      />
+      {/* 지도 컨테이너는 카카오 SDK 가 DOM 을 직접 만진다 → 그 안에 React 자식을 두지 않는다 (RoadviewPeek 에서 실제로 터졌다) */}
+      {!maps ? <span className="skeleton-shimmer pointer-events-none absolute inset-0" aria-hidden /> : null}
       <button
         type="button"
         onClick={() => fitRef.current()}
