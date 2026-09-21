@@ -54,7 +54,15 @@ function dispatch(job: (adapter: AnalyticsAdapter) => void) {
   run(job);
 }
 
+/** 방금 센 이벤트인지 (클라이언트 라우팅에서는 모듈 상태가 이어진다). 같은 일을 두 곳에서 세지 않으려고 쓴다 */
+const lastTracked = new Map<string, number>();
+export function trackedWithin(event: AnalyticsEventName, ms: number): boolean {
+  const at = lastTracked.get(event);
+  return at !== undefined && Date.now() - at < ms;
+}
+
 export function track<E extends AnalyticsEventName>(event: E, props: AnalyticsEvents[E]): void {
+  lastTracked.set(event, Date.now());
   if (process.env.NODE_ENV === "development") console.debug("[analytics]", event, props);
   dispatch((a) => a.track(event, props as Record<string, unknown>));
 }

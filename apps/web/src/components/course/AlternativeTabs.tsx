@@ -7,12 +7,14 @@ import { cn } from "@/lib/utils";
 interface AlternativeTabsProps {
   /** 같은 요청에서 나온 코스들 (라벨은 API 가 준다: 추천 코스 / 가성비 코스 / 덜 걷는 코스 …) */
   items: { id: string; label: string }[];
+  /** 탭이 무엇인지: 당일 코스는 대안 코스들, 여행 일정은 날짜들 */
+  label?: string;
   currentId: string;
   onSelect: (id: string) => void;
 }
 
 /** WAI-ARIA tabs 패턴: ←/→ 로 이동, Home/End 지원 */
-export function AlternativeTabs({ items, currentId, onSelect }: AlternativeTabsProps) {
+export function AlternativeTabs({ items, currentId, onSelect, label = "다른 코스 보기" }: AlternativeTabsProps) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   if (items.length <= 1) return null;
 
@@ -32,7 +34,7 @@ export function AlternativeTabs({ items, currentId, onSelect }: AlternativeTabsP
   };
 
   return (
-    <div role="tablist" aria-label="다른 코스 보기" className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-[#EAF0FA] p-1">
+    <div role="tablist" aria-label={label} className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-[#EAF0FA] p-1">
       {items.map((item, i) => {
         const selected = item.id === currentId;
         return (

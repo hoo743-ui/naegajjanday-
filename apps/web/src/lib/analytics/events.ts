@@ -28,7 +28,19 @@ export interface AnalyticsEvents {
   /** 스톱 카드에서 지도 앱의 장소 페이지(실제 사진·메뉴)로 나간 클릭 */
   place_link_clicked: { course_id: string; position: number; to: "kakaomap" | "roadview" };
   /** from_shared: 친구가 짠 코스에서 "이 코스로 내 코스 만들기"를 누른 경우 */
-  reroll_clicked: { course_id: string; from_shared?: boolean };
+  /** focus: 동네 명물을 골라(또는 빼고) 다시 짠 경우 그 말 */
+  reroll_clicked: { course_id: string; from_shared?: boolean; focus?: string };
+  stop_reordered: { course_id: string; position: number; delta: -1 | 1 };
+  /** 장소 이름을 눌러 메뉴 · 사진 · 영업시간 시트를 연 경우 */
+  place_sheet_opened: { course_id: string; position: number };
+  /** "예산을 바꾸면?": 그 예산으로 짜 본 것 / 그 코스를 열어 본 것 */
+  budget_whatif_tried: { budget_total: number; from_budget: number };
+  budget_whatif_opened: { course_id: string; budget_total: number };
+  settlement_copied: { party_size: number; total: number };
+  stay_clicked: { day: number };
+  performance_clicked: { performance_id: string };
+  course_feedback_sent: { course_id: string; rating: number };
+  banner_clicked: { banner_id: string; placement: string };
   share_clicked: { course_id: string; method: "web_share" | "clipboard" };
   event_clicked: { event_id: string; from: "course" | "explore" };
   /** 둘러보기 카드 → 상세 시트 */

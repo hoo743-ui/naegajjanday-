@@ -46,6 +46,7 @@ export function SavedCourses() {
           <li key={c.id} className="group relative rounded-card border border-line bg-white p-5 shadow-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card">
             <p className="tabular text-xs font-extrabold text-blue-deep">
               {[c.region_name, c.purpose_name, `${c.party_size}명`].filter(Boolean).join(" · ")}
+              {c.day && c.days && c.days > 1 ? <span className="ml-2 rounded-full bg-blue-soft px-2 py-0.5">{`${c.days - 1}박 ${c.days}일 · ${c.day}일차`}</span> : null}
               {c.visited ? <span className="ml-2 rounded-full bg-success-soft px-2 py-0.5 text-success">다녀옴</span> : null}
             </p>
             <h3 className="mt-1 text-[17px] font-extrabold tracking-tight">

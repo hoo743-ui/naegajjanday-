@@ -120,6 +120,8 @@ export const userHandlers = [
         },
         stop_names: s.course.stops.map((st) => st.place.name),
         visited: false,
+        day: null,
+        days: null,
       }))
       .reverse();
     return HttpResponse.json(paginate(items, new URL(request.url), 20));

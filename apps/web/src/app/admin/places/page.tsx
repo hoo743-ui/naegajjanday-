@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Check, CheckCheck, Search, X } from "lucide-react";
+import { Check, CheckCheck, ImagePlus, Search, X } from "lucide-react";
 import { z } from "zod";
 import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
 import { flattenCategories } from "@/components/admin/categories";
@@ -16,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAdminPlaces, useApprovePlace, useBulkApprovePlaces, usePlaceRevisions, useRejectPlace, useUpdatePlace } from "@/lib/api/admin";
-import { useCategories, useDebounced } from "@/lib/api/hooks";
+import { MAX_PHOTO_BYTES, useAdminPlaces, useApprovePlace, useBulkApprovePlaces, usePlaceRevisions, useRejectPlace, useUpdatePlace, useUploadPlacePhoto } from "@/lib/api/admin";
+import { useCategories, useDebounced, usePlaceDetail } from "@/lib/api/hooks";
 import type { AdminPlace, PlaceStatus } from "@/lib/api/types";
 import { dateShort, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
@@ -154,6 +155,7 @@ function PlaceDetail({ place, onClose }: { place: AdminPlace; onClose: () => voi
           <TabsList>
             <TabsTrigger value="diff">원본 비교</TabsTrigger>
             <TabsTrigger value="edit">장소 수정</TabsTrigger>
+            <TabsTrigger value="photos">사진</TabsTrigger>
             <TabsTrigger value="history">수정 이력</TabsTrigger>
           </TabsList>
           <TabsContent value="diff" className="pt-3">
@@ -161,6 +163,9 @@ function PlaceDetail({ place, onClose }: { place: AdminPlace; onClose: () => voi
           </TabsContent>
           <TabsContent value="edit" className="pt-3">
             <PlaceEditForm place={place} />
+          </TabsContent>
+          <TabsContent value="photos" className="pt-3">
+            <PlacePhotos id={place.id} name={place.name} />
           </TabsContent>
           <TabsContent value="history" className="pt-3">
             <Revisions id={place.id} />
@@ -278,6 +283,74 @@ function Revisions({ id }: { id: string }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+// ── 사진 ────────────────────────────────────────────────────
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/** 그 가게의 실제 사진을 올린다. 사진이 없는 곳은 코스 화면에서 "예시 사진"으로 보인다 → 여기서 올리면 바로 실제 사진으로 바뀐다 */
+function PlacePhotos({ id, name }: { id: string; name: string }) {
+  const detail = usePlaceDetail(id);
+  const upload = useUploadPlacePhoto();
+  const [file, setFile] = useState<File | null>(null);
+  const [makeCover, setMakeCover] = useState(true);
+  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+
+  const problem = !file ? null : !PHOTO_TYPES.includes(file.type) ? "JPEG · PNG · WebP 사진만 올릴 수 있어요." : file.size > MAX_PHOTO_BYTES ? "사진이 너무 커요 (최대 6MB)." : null;
+  const photos = detail.data?.images ?? [];
+
+  return (
+    <div className="grid gap-4">
+      <section aria-labelledby="photos-now">
+        <h3 id="photos-now" className="mb-2 text-[13px] font-extrabold text-ink-2">
+          지금 보이는 사진
+        </h3>
+        {detail.isPending ? (
+          <Skeleton className="h-24 rounded-xl" />
+        ) : photos.length === 0 ? (
+          <p className="rounded-xl bg-soft p-3 text-[13px] text-ink-2">실제 사진이 아직 없어요. 코스 화면에서는 업종별 “예시 사진”으로 보여요.</p>
+        ) : (
+          <ul className="grid grid-cols-3 gap-2">
+            {photos.map((url, i) => (
+              <li key={url} className="relative aspect-[4/3] overflow-hidden rounded-xl border bg-soft">
+                <Image src={url} alt={`${name} 사진 ${i + 1}`} fill sizes="200px" unoptimized className="object-cover" />
+                {i === 0 ? <span className="absolute top-1.5 left-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-extrabold text-white">대표</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <form
+        noValidate
+        className="grid gap-3 rounded-xl border p-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (file && !problem) upload.mutate({ id, file, makeCover }, { onSuccess: () => setFile(null) });
+        }}
+      >
+        <Field id="p-photo" label="올릴 사진" hint="직접 찍었거나 가게가 제공한, 써도 되는 사진만 올려 주세요. JPEG · PNG · WebP, 6MB 이하." error={problem ?? undefined}>
+          <Input id="p-photo" key={file ? "picked" : "empty"} type="file" accept={PHOTO_TYPES.join(",")} aria-describedby="p-photo-desc" aria-invalid={Boolean(problem)} onChange={(e) => { upload.reset(); setFile(e.target.files?.[0] ?? null); }} />
+        </Field>
+        {preview && !problem ? (
+          <div className="relative aspect-[4/3] w-40 overflow-hidden rounded-xl border bg-soft">
+            <Image src={preview} alt="올릴 사진 미리보기" fill sizes="160px" unoptimized className="object-cover" />
+          </div>
+        ) : null}
+        <label className="flex items-center gap-2 text-sm font-bold text-ink-2">
+          <input type="checkbox" className="size-4 accent-[#2F6BEA]" checked={makeCover} onChange={(e) => setMakeCover(e.target.checked)} /> 대표 사진으로 쓰기
+        </label>
+        <div aria-live="polite" className="grid gap-2">
+          {upload.isSuccess && !file ? <FormMessage tone="success">사진을 올렸어요. 코스 화면에 바로 반영돼요.</FormMessage> : null}
+          {upload.error ? <FormMessage tone="error">{upload.error.detail ?? mascotCopyForError(upload.error).description}</FormMessage> : null}
+        </div>
+        <Button type="submit" disabled={!file || Boolean(problem) || upload.isPending} className="justify-self-end">
+          <ImagePlus aria-hidden /> {upload.isPending ? "올리는 중…" : "사진 올리기"}
+        </Button>
+      </form>
+    </div>
   );
 }
 

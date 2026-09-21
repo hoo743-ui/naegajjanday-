@@ -167,6 +167,16 @@ export const adminHandlers = [
     return HttpResponse.json({ job_id: job.id, accepted: Math.max(1, Math.round(file.size / 120)) }, { status: 202 });
   }),
 
+  http.post(u("/admin/places/:id/photos"), async ({ params, request }) => {
+    await latency(700);
+    const place = places.find((p) => p.id === params.id);
+    if (!place) return problem(404, "NOT_FOUND", "장소를 찾을 수 없어요");
+    const file = (await request.formData()).get("file");
+    if (!(file instanceof File) || !/^image\/(jpeg|png|webp)$/.test(file.type)) return problem(422, "VALIDATION_ERROR", "입력을 확인해 주세요", "JPEG · PNG · WebP 사진만 올릴 수 있어요.");
+    place.updated_at = now();
+    return HttpResponse.json(place);
+  }),
+
   http.post(u("/admin/places"), async ({ request }) => {
     await latency(450);
     const input = (await request.json()) as AdminPlaceInput;

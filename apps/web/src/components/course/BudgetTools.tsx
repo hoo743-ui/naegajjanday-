@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Check, Copy, Minus, Plus } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { useGenerateCourse } from "@/lib/api/hooks";
 import type { Course, GenerateCourseRequest, Stop } from "@/lib/api/types";
 import { roleLabel, won } from "@/lib/format";
@@ -36,6 +37,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
 
   const tryBudget = (next: number) => {
     setTried(null);
+    track("budget_whatif_tried", { budget_total: next, from_budget: budget });
     whatIf.mutate(
       { ...baseRequest, budget_total: next, alternatives: 0 },
       { onSuccess: (res) => res.courses[0] && setTried({ budget: next, course: res.courses[0] }) },
@@ -53,6 +55,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
     ];
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
+      track("settlement_copied", { party_size: partySize, total });
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
     } catch {
@@ -96,7 +99,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
             </p>
             <p className="text-[13px] leading-relaxed text-ink-2">{tried.course.stops.map((s) => `${roleLabel(s.role)} ${s.place.name}`).join(" → ")}</p>
             {added.length > 0 ? <p className="text-[12.5px] text-muted-foreground">달라지는 곳: {added.map((s) => s.place.name).join(", ")}</p> : null}
-            <Link href={`/course/${encodeURIComponent(tried.course.id)}`} className="inline-flex items-center gap-1 text-[13.5px] font-extrabold text-blue-deep hover:underline">
+            <Link href={`/course/${encodeURIComponent(tried.course.id)}`} onClick={() => track("budget_whatif_opened", { course_id: tried.course.id, budget_total: tried.budget })} className="inline-flex items-center gap-1 text-[13.5px] font-extrabold text-blue-deep hover:underline">
               이 코스 열어 보기 <ArrowRight aria-hidden className="size-4" />
             </Link>
           </div>

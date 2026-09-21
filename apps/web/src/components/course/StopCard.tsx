@@ -31,6 +31,9 @@ interface StopCardProps {
   onHover: (position: number | null) => void;
   onSwap: (strategy: SwapStrategy) => void;
   onMove: (delta: -1 | 1) => void;
+  /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }
 
 /** 혼잡도 value(0~1, 높을수록 붐빔) → 배지 색. 문구(level)는 API 가 준 그대로 쓴다. */
@@ -45,7 +48,7 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove, canMoveUp = true, canMoveDown = true }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
@@ -136,7 +139,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             {stop.place.kind === "event" ? (
               place.name
             ) : (
-              <button type="button" onClick={() => setSheet(true)} className="max-w-full truncate text-left underline decoration-line decoration-2 underline-offset-4 hover:decoration-blue-deep">
+              <button type="button" onClick={() => { setSheet(true); track("place_sheet_opened", { course_id: courseId, position: stop.position }); }} className="max-w-full truncate text-left underline decoration-line decoration-2 underline-offset-4 hover:decoration-blue-deep">
                 {place.name}
               </button>
             )}
@@ -242,10 +245,10 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         </a>
         {editable ? (
           <div className="flex items-center gap-1.5">
-            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1 || !canMoveUp} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
               <ChevronUp aria-hidden className="size-4" />
             </button>
-            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count || !canMoveDown} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
               <ChevronDown aria-hidden className="size-4" />
             </button>
             <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} />

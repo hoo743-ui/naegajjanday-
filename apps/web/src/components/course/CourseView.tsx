@@ -20,6 +20,7 @@ import { BudgetTools } from "./BudgetTools";
 import { LocalCard } from "./LocalCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
+import { VisitedCard } from "./VisitedCard";
 import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
@@ -72,7 +73,7 @@ export function CourseView({ id }: { id: string }) {
   useEffect(() => {
     if (course.data && viewed.current !== id) {
       viewed.current = id;
-      track("course_viewed", { course_id: id, label: course.data.label, shared: !document.referrer.includes("/plan") });
+      track("course_viewed", { course_id: id, label: course.data.label, shared: course.data.can_edit === false });
     }
   }, [course.data, id]);
 
@@ -91,6 +92,8 @@ export function CourseView({ id }: { id: string }) {
 
   // 지역 중심이 아니라 역·장소 주변으로 짠 코스면 그 이름으로 부른다 ("영등포구"가 아니라 "신도림역 주변")
   const hopping = (request.regions?.length ?? 0) > 1;
+  // 여행 일정의 하루: 탭은 대안 코스가 아니라 날짜이고, 다시 짜면 그 날의 자리에 그대로 들어간다
+  const tripDay = (request.days ?? 0) > 1;
   const firstStop = data.stops[0];
   const lastStop = data.stops[data.stops.length - 1];
   const placeLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
@@ -142,6 +145,7 @@ export function CourseView({ id }: { id: string }) {
     if (from < 0 || to < 0 || to >= order.length) return;
     [order[from], order[to]] = [order[to]!, order[from]!];
     setNotice(null);
+    track("stop_reordered", { course_id: id, position, delta });
     reorder.mutate({ order }, { onSuccess: () => setNotice({ mood: "think", title: "순서를 바꿔서 이동 시간을 다시 계산했어요" }), onError: fail });
   };
 
@@ -208,6 +212,7 @@ export function CourseView({ id }: { id: string }) {
       {
         ...baseRequest,
         ...(focus ? { focus } : {}),
+        ...(tripDay && !fork ? { replaces: id } : {}),
         // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
         preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },
       },
@@ -237,7 +242,7 @@ export function CourseView({ id }: { id: string }) {
     <>
       {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={forking ? FORK_STAGES : REROLL_STAGES} interval={900} /> : null}
 
-      <div className="lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)]">
+      <div inert={reroll.isPending || reroll.isSuccess} className="lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)]">
         {/* 지도: 모바일·태블릿은 위에 붙어 있고(sticky), 데스크톱은 왼쪽에 고정 */}
         <div className="sticky top-[68px] z-0 h-[40dvh] sm:h-[44dvh] lg:h-[calc(100dvh-68px)]">
           <RouteMap stops={data.stops} activeStop={activeStop} onSelect={setActiveStop} route={walkRoute.data} access={accessHints.data?.items} />
@@ -250,7 +255,7 @@ export function CourseView({ id }: { id: string }) {
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <p className="tabular flex flex-wrap gap-x-2 text-[13px] font-extrabold text-blue-deep">
-                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
+                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}${tripDay && request.trip_budget_total ? ` (여행 전체 ${won(request.trip_budget_total)})` : ""}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
               </p>
               <h1 className="sr-only">
                 {data.label}: {data.summary}
@@ -277,7 +282,7 @@ export function CourseView({ id }: { id: string }) {
 
             {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
 
-            <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} />
+            <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} label={tripDay ? "날짜별 코스" : undefined} />
 
             <div id="course-panel" role={data.siblings.length > 1 ? "tabpanel" : undefined} aria-label={data.label} className="grid gap-4">
               <BudgetBar
@@ -285,7 +290,7 @@ export function CourseView({ id }: { id: string }) {
                 budget={request.budget_total}
                 partySize={request.party_size}
                 stops={data.stops}
-                heading={[request.region?.name, request.purpose.name, `${request.party_size}명`].filter(Boolean).join(" · ")}
+                heading={[placeLabel, purposeLabel, `${request.party_size}명`].filter(Boolean).join(" · ")}
               />
 
               {!readOnly ? (
@@ -347,6 +352,9 @@ export function CourseView({ id }: { id: string }) {
                 onSwap={onSwap}
                 onMove={onMove}
               />
+
+              {/* 저장한 내 코스: 다녀온 뒤 별점 하나 → ‘다녀옴’ 표시 + 다음 추천의 취향 학습 */}
+              {data.is_saved && !readOnly ? <VisitedCard courseId={id} visited={data.status === "completed"} /> : null}
 
               {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 */}
               {lastStop && request.day && request.days && request.day < request.days ? (

@@ -228,6 +228,8 @@ export interface GenerateCourseRequest {
     exclude_place_ids?: string[];
   };
   alternatives?: number;
+  /** 여행 일정의 하루를 다시 짤 때: 바꿀 그 날의 코스 id. 새 코스가 같은 여행의 같은 날 자리에 들어간다 */
+  replaces?: string;
 }
 
 export type CourseStyle = "efficient" | "fun";
@@ -414,6 +416,9 @@ export interface SavedCourse {
   totals: Pick<CourseTotals, "price" | "duration_min"> & Partial<Pick<CourseTotals, "budget_left" | "travel_min">>;
   stop_names: string[];
   visited: boolean;
+  /** 여행 일정의 하루면 몇 일차 / 며칠짜리 */
+  day: number | null;
+  days: number | null;
 }
 
 /**
@@ -432,6 +437,8 @@ export interface SavedCoursePayload {
   region_name?: string | null;
   purpose_name?: string | null;
   stop_names?: string[] | null;
+  day?: number | null;
+  days?: number | null;
   // 목 핸들러가 주는 화면 모양
   saved_at?: string | null;
   totals?: Partial<SavedCourse["totals"]> | null;

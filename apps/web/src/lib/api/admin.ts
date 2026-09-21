@@ -359,6 +359,24 @@ export function useUpdatePlace() {
   });
 }
 
+/** 그 장소의 실제 사진 올리기 (JPEG · PNG · WebP, 6MB 이하). 공공데이터에 사진이 없는 97% 를 메우는 유일한 길이다 */
+export const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
+export function useUploadPlacePhoto() {
+  const client = useQueryClient();
+  return useMutation<AdminPlace, ApiError, { id: string; file: File; makeCover: boolean }>({
+    mutationFn: async ({ id, file, makeCover }) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("make_cover", makeCover ? "true" : "false");
+      return toAdminPlace(await api.post<Raw>(`/admin/places/${enc(id)}/photos`, form, { timeoutMs: 60_000 }), NO_LABELS);
+    },
+    onSuccess: (_place, { id }) => {
+      void client.invalidateQueries({ queryKey: ["place", id] });
+      void client.invalidateQueries({ queryKey: adminKeys.revisions(id) });
+    },
+  });
+}
+
 /** `id` 를 `into` 로 합친다. API 는 남는 쪽이 경로, 흡수되는 쪽이 본문이다: POST /places/{into}/merge {duplicate_id: id} */
 export function useMergePlace() {
   const invalidate = useInvalidatePlaces();

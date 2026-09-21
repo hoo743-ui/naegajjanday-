@@ -43,6 +43,8 @@ function kakaoDirections(mode: Transport, to: Stop, from?: Stop) {
 function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature[] {
   const flat = (key: ScoreFeature) => stops.every((s) => (s.score_breakdown[key] ?? 0) === (stops[0]?.score_breakdown[key] ?? 0));
   const hidden: ScoreFeature[] = [];
+  // 평점 자료도 아직 없다: 모든 장소가 같은 중립값이면 "평점이 강점"이라고 그리지 않는다
+  if (flat("rating")) hidden.push("rating");
   if (flat("sentiment")) hidden.push("sentiment");
   if (flat("congestion")) hidden.push("congestion");
   if (style !== "fun" && stops.every((s) => !s.score_breakdown.buzz)) hidden.push("buzz");
@@ -136,6 +138,9 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 swapping={swappingPosition === stop.position}
                 busy={busy}
                 editable={editable}
+                // 여러 동네를 잇는 코스: 순서는 그 동네 안에서만 바꾼다 (동네 경계를 넘기면 "○○(으)로 이동" 구간이 어긋난다)
+                canMoveUp={!leg?.hop_to}
+                canMoveDown={!course.stops[i + 1]?.from_prev?.hop_to}
                 onHover={onHover}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
                 onMove={(delta) => onMove(stop.position, delta)}

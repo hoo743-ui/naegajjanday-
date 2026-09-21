@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { BedDouble } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { useStays } from "@/lib/api/hooks";
 import { distance } from "@/lib/format";
 
@@ -31,7 +32,7 @@ export function StayCard({ at, day }: StayCardProps) {
       <ul className="grid gap-2.5 sm:grid-cols-2">
         {stays.data.items.map((stay) => (
           <li key={stay.id}>
-            <a href={kakaoSearch(stay.name)} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-line p-2.5 hover:border-blue-deep">
+            <a href={kakaoSearch(stay.name)} target="_blank" rel="noreferrer" onClick={() => track("stay_clicked", { day })} className="flex items-center gap-3 rounded-2xl border border-line p-2.5 hover:border-blue-deep">
               <span className="relative block size-16 shrink-0 overflow-hidden rounded-xl bg-soft">
                 {stay.thumbnail_url ? <Image src={stay.thumbnail_url} alt="" fill sizes="64px" unoptimized className="object-cover" /> : null}
               </span>

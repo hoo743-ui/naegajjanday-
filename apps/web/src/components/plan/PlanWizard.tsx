@@ -10,7 +10,7 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
-import { track } from "@/lib/analytics";
+import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { decodeStation, useGenerateCourse, usePurposes, useRegions } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
@@ -63,7 +63,8 @@ export function PlanWizard() {
   const purpose = purposes.data?.items.find((p) => p.code === values.purpose);
 
   useEffect(() => {
-    track("plan_started", { entry: params.get("purpose") || params.get("region") ? "landing_cta" : "direct" });
+    // 헤더 · 랜딩의 버튼을 눌러서 왔으면 그 클릭이 이미 셌다 (entry 가 둘로 남지 않게)
+    if (!trackedWithin("plan_started", 5000)) track("plan_started", { entry: params.get("purpose") || params.get("region") ? "landing_cta" : "direct" });
     // 최초 1회만
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -192,7 +193,7 @@ export function PlanWizard() {
       {loading ? <JjaniLoader fullscreen stages={stages} interval={900} /> : null}
 
       {/* overflow-x-clip: 단계가 옆에서 밀려 들어오는 동안(16px) 모바일에서 가로 스크롤이 순간 생기던 것을 막는다 */}
-      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12" aria-hidden={loading || undefined}>
+      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12" aria-hidden={loading || undefined} inert={loading}>
         {/* 진행 표시 */}
         <ol className="mb-8 flex items-center gap-2" aria-label="진행 단계">
           {STEPS.map((s, i) => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useFeatures } from "@/lib/api/hooks";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { Jjani } from "@/components/mascot/Jjani";
 
 const COLUMNS = [
@@ -24,6 +25,7 @@ const COLUMNS = [
 
 export function SiteFooter() {
   const chatOff = useFeatures().data?.chat === false; // 헤더와 같은 규칙
+  const signedIn = useAuth().status === "authenticated"; // 로그인한 사람에게 "로그인"을 권하지 않는다
   return (
     <footer className="mt-16 border-t bg-soft/60 text-sm text-muted-foreground">
       <div className="wrap grid gap-10 py-12 md:grid-cols-[1.6fr_1fr_1fr]">
@@ -49,7 +51,7 @@ export function SiteFooter() {
             </h2>
             <ul className="mt-3 grid gap-2.5">
               {col.links
-                .filter((link) => !(chatOff && link.href === "/chat"))
+                .filter((link) => !(chatOff && link.href === "/chat") && !(signedIn && link.href === "/login"))
                 .map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="hover:text-ink">

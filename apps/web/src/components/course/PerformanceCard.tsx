@@ -1,6 +1,7 @@
 "use client";
 
 import { Ticket } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { useFeatures, usePerformances } from "@/lib/api/hooks";
 import { distance } from "@/lib/format";
 
@@ -27,7 +28,7 @@ export function PerformanceCard({ at, startAt, durationMin }: PerformanceCardPro
       <ul className="grid gap-2">
         {shows.data.items.slice(0, 5).map((show) => (
           <li key={show.id} className="rounded-2xl border border-line p-3">
-            <a href={show.detail_url ?? undefined} target="_blank" rel="noreferrer" className="block text-[14.5px] font-extrabold text-ink hover:text-blue-deep">
+            <a href={show.detail_url ?? undefined} target="_blank" rel="noreferrer" onClick={() => track("performance_clicked", { performance_id: show.id })} className="block text-[14.5px] font-extrabold text-ink hover:text-blue-deep">
               {show.title}
             </a>
             <p className="tabular mt-0.5 text-[12.5px] text-muted-foreground">

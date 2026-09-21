@@ -356,6 +356,8 @@ export function toSavedCourse(raw: SavedCoursePayload): SavedCourse {
     },
     stop_names: Array.isArray(raw.stop_names) ? raw.stop_names.filter((n): n is string => typeof n === "string") : [],
     visited: raw.visited ?? raw.status === "completed",
+    day: raw.day ?? null,
+    days: raw.days ?? null,
   };
 }
 
