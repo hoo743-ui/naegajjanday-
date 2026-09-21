@@ -22,7 +22,7 @@ const WEIGHT_EPS = 0.001;
 const EPS = 0.005;
 const sumOf = (values: number[]) => values.reduce((a, b) => a + b, 0);
 
-const TIME_BAND_LABEL: Record<string, string> = { lunch: "점심", afternoon: "오후", evening: "저녁", fullday: "하루 종일" };
+const TIME_BAND_LABEL: Record<string, string> = { lunch: "점심", afternoon: "오후", evening: "저녁", night: "밤 · 새벽", fullday: "하루 종일" };
 
 /** 피처 키는 API 가 정한다. 아는 키는 화면 순서대로, 새로 생긴 키는 그 뒤에 그대로 보여준다 (하드코딩한 개수에 기대지 않는다) */
 function featureKeys(weights: Record<string, number>): string[] {
