@@ -84,6 +84,13 @@ class TestPlaces:
         assert near and all(i["role"] == "CAFE" for i in near)
         assert (await client.get("/v1/places/does-not-exist")).json()["code"] == "PLACE_NOT_FOUND"
 
+    async def test_parks_everywhere_are_parks_and_not_nothing(self, client: httpx.AsyncClient) -> None:
+        """With no region the type used to be filtered AFTER the first 300 sights were cut: on the real
+        data those were all markets, and "parks, everywhere" came back empty."""
+        items = (await client.get("/v1/attractions", params={"type": "park"})).json()["items"]
+        assert items and {i["type"] for i in items} == {"park"}
+        assert all(i["category"].startswith("attraction.park") for i in items)
+
     async def test_attractions_and_events(self, client: httpx.AsyncClient) -> None:
         resp = await client.get(
             "/v1/attractions", params={"region": "seoul-hongdae", "type": "park,festival"}

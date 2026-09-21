@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,7 +12,16 @@ from app.core.config import Settings
 from app.core.logging import get_logger
 from app.domain.models import GeoPoint, PlaceCandidate
 from app.infra.db.base import utcnow
-from app.infra.db.models import Category, Event, Place, PlaceRevision, PlaceSource, Region, User
+from app.infra.db.models import (
+    Category,
+    Event,
+    Place,
+    PlaceRevision,
+    PlaceSource,
+    PlaceStats,
+    Region,
+    User,
+)
 from app.infra.search.client import PlaceSearch, SearchQuery
 from app.infra.tagging import get_tag_rules
 from app.repositories.place_repo import SqlPlaceRepository
@@ -271,17 +280,26 @@ class PlaceService:
         items: list[dto.AttractionItem] = []
         # category ids first: `category_id IN (…) AND status` rides ix_place_category_status_lat_lng and
         # touches only the ~30k sights, where the join made SQLite walk all 800k places (2.2 s → ms)
-        sight_ids = (
-            await self._s.scalars(
-                select(Category.id).where(Category.course_role.in_(["ATTRACTION", "CULTURE", "NIGHTVIEW"]))
+        sights = await self._s.execute(
+            select(Category.id, Category.code).where(
+                Category.course_role.in_(["ATTRACTION", "CULTURE", "NIGHTVIEW"])
             )
-        ).all()
+        )
+        # the asked-for types are filtered HERE, before the 300-row cap. Filtering afterwards meant that
+        # "parks, everywhere" came back empty: the first 300 sights with a photo were all markets.
+        sight_ids = [cid for cid, code in sights if type_of(code) is not None]
         stmt = (
             select(Place)
+            .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
             .where(Place.category_id.in_(sight_ids), Place.status == "approved")
             .options(selectinload(Place.category), selectinload(Place.stats))
-            # a card with the place's own photo is worth more than one with a stand-in → those first
-            .order_by(Place.thumbnail_url.is_(None), Place.id.desc())
+            # a card with the place's own photo is worth more than one with a stand-in → those first;
+            # then where people really go (measured navigation rank), then the newest
+            .order_by(
+                Place.thumbnail_url.is_(None),
+                func.coalesce(PlaceStats.popularity, 0.0).desc(),
+                Place.id.desc(),
+            )
             .limit(300)
         )
         if region is not None:
@@ -339,6 +357,14 @@ class PlaceService:
                         thumbnail_url=e.thumbnail_url,
                     )
                 )
+        if len(wanted) > 1:
+            # several kinds at once ("everything"): deal them out in turn. Ranked as one list the first
+            # screen was markets only — every district's most visited place is its market.
+            by_kind: dict[str, list[dto.AttractionItem]] = {}
+            for item in items:
+                by_kind.setdefault(item.type, []).append(item)
+            turns = list(by_kind.values())
+            items = [row[i] for i in range(max(map(len, turns), default=0)) for row in turns if i < len(row)]
         return dto.AttractionList(items=items)
 
     async def suggest(self, req: dto.PlaceSuggestRequest, user: User) -> dto.PlaceSuggestResponse:
