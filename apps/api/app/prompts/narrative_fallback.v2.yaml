@@ -150,6 +150,11 @@ fact_lines:
   관광공사 소개: 한국관광공사가 소개한 곳이에요.
   착한가격업소: 정부가 지정한 착한가격업소예요.
 
+# 동네 특색(domain.signature)에 해당하는 스톱에만 붙는다. 간판 통계에서 나온 사실만 말한다.
+local_lines:
+  specialty: "이 동네는 간판에 '{{ word }}'가 유독 많은, {{ word }} 동네예요."
+  landmark: 이 동네 가게들이 이름을 빌려 쓸 만큼, 동네를 대표하는 곳이에요.
+
 congestion_levels:
   - max: 0.35
     label: 여유

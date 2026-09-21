@@ -149,7 +149,14 @@ class NarrativeService:
             parts.append(fb.render_text(prices[key], party=party, price=_won(stop.est_price)))
         # a tag is mentioned only when the purpose (or the user's picks) actually likes it
         liked = {t: w * tag_affinity[t] for t, w in stop.place.tags.items() if tag_affinity.get(t, 0.0) > 0}
-        if liked:
+        local_lines = d.get("local_lines") or {}
+        if stop.place.local_score > 0 and local_lines:
+            # what the neighbourhood is known for outranks any taste tag: it is why people come here
+            if stop.place.local_word:
+                parts.append(fb.render_text(local_lines["specialty"], word=stop.place.local_word))
+            else:
+                parts.append(str(local_lines["landmark"]))
+        elif liked:
             tag = max(liked, key=lambda t: liked[t])
             fact = (d.get("fact_lines") or {}).get(tag)
             parts.append(str(fact) if fact else fb.render_text(d["tag_line"], tag=tag))

@@ -88,3 +88,23 @@ class Features(BaseModel):
     """What this deployment can actually do — the web hides entry points it cannot honour."""
 
     chat: bool = Field(description="챗봇 사용 가능 여부 (LLM 제공자가 설정돼 있을 때만 true)")
+
+
+class LocalSpecialty(BaseModel):
+    word: str
+    count: int = Field(description="이 동네에서 간판에 이 말이 들어간 가게 수")
+    lift: float = Field(description="전국 평균 대비 몇 배나 몰려 있는지")
+
+
+class LocalSight(BaseModel):
+    name: str
+    mentions: int = Field(default=0, description="주변 가게가 이 이름을 간판에 빌려 쓴 횟수")
+
+
+class LocalSignature(BaseModel):
+    """이 동네가 무엇으로 알려져 있는지. 사람이 적은 글이 아니라 장소 이름에서 계산한 값이다."""
+
+    region: str
+    shops: int = 0
+    specialties: list[LocalSpecialty] = Field(default_factory=list)
+    sights: list[LocalSight] = Field(default_factory=list)

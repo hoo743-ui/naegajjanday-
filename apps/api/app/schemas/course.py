@@ -6,6 +6,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.common import LatLng
+from app.schemas.meta import LocalSignature
 
 Transport = Literal["walk", "transit", "car"]
 SwapStrategy = Literal["cheaper", "closer", "higher_rated", "random_top"]
@@ -34,6 +35,11 @@ class CourseGenerateRequest(BaseModel):
     duration_min: int | None = Field(default=None, ge=60, le=960)
     style: Literal["efficient", "fun"] = Field(
         default="efficient", description="efficient=가깝고 알뜰하게 · fun=붐비는 거리·놀거리 위주"
+    )
+    focus: str | None = Field(
+        default=None,
+        max_length=12,
+        description="꼭 넣을 동네 명물(signature 의 word). 생략=가장 뚜렷한 명물을 자동으로, '-'=넣지 않음",
     )
     transport: Transport = "walk"
     include_roles: list[str] | None = None
@@ -145,6 +151,7 @@ class CourseGenerateResponse(BaseModel):
     request_id: str
     courses: list[CourseOut]
     nearby_events: list[NearbyEvent] = Field(default_factory=list)
+    local: LocalSignature | None = None
     meta: GenerateMeta
 
 
@@ -213,6 +220,7 @@ class CourseRequestEcho(BaseModel):
     start_at: datetime
     duration_min: int | None = None
     style: str = "efficient"
+    focus: str | None = None
 
 
 class SiblingRef(BaseModel):
@@ -228,6 +236,7 @@ class CourseDetailResponse(BaseModel):
         default_factory=list, description="같은 요청에서 나온 코스들 (자기 자신 포함, 탭 순서)"
     )
     nearby_events: list[NearbyEvent] = Field(default_factory=list)
+    local: LocalSignature | None = Field(default=None, description="이 동네의 명물 · 보러 오는 곳")
     # viewer context: a shared link is opened by people who do not own the course
     is_owner: bool = Field(default=False, description="로그인한 조회자가 이 코스의 주인인지")
     can_edit: bool = Field(

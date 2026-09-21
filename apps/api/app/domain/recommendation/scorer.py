@@ -7,6 +7,7 @@ from datetime import datetime
 
 from app.domain.models import PlaceCandidate, RequestContext, ScoringProfile
 from app.domain.recommendation import features as F
+from app.domain.signature import get_signature_rules
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +33,7 @@ class PlaceScorer:
         self._profile = profile
         self._weights = profile.normalized_weights()
         self._ctx = ctx
+        self._listed_score = get_signature_rules().listed_score
 
     @property
     def profile(self) -> ScoringProfile:
@@ -54,7 +56,9 @@ class PlaceScorer:
                 p, ctx.liked_tags, ctx.disliked_tags, ctx.category_weights, params, now=ctx.start_at
             ),
             "purpose_fit": F.purpose_fit(p.tags, ctx.purpose_tag_affinity),
-            "curated": 1.0 if p.is_curated else 0.0,
+            # how much this place stands for the neighbourhood: a local specialty or landmark in full, a
+            # tourism-board listing a little less
+            "curated": max(p.local_score, self._listed_score if p.is_curated else 0.0),
             "buzz": p.buzz,
         }
 

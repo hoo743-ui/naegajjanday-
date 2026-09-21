@@ -14,6 +14,15 @@ async def regions(service: MetaServiceDep, parent: str | None = None, q: str | N
     return await service.regions(parent, q)
 
 
+@router.get(
+    "/regions/{slug}/signature",
+    response_model=dto.LocalSignature,
+    summary="이 동네가 무엇으로 알려져 있는지 (명물 · 보러 오는 곳)",
+)
+async def region_signature(slug: str, service: MetaServiceDep) -> dto.LocalSignature:
+    return await service.signature(slug)
+
+
 @router.get("/purposes", response_model=dto.PurposeList, summary="목적 목록 + 추천 예산 범위")
 async def purposes(service: MetaServiceDep) -> dto.PurposeList:
     return await service.purposes()

@@ -7,13 +7,16 @@ import math
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import errors
 from app.core.cache import Cache
+from app.domain.signature import Signature, get_signature_rules
 from app.infra.db.base import utcnow
 from app.infra.db.models import Banner, Region
 from app.repositories.config_repo import SqlConfigRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.schemas import meta as dto
 from app.schemas.common import LatLng
+from app.services import signature_service
 
 META_TTL_S = 3600
 
@@ -24,6 +27,15 @@ class MetaService:
         self._cache = cache
         self._regions = SqlRegionRepository(session)
         self._config = SqlConfigRepository(session)
+
+    async def signature(self, slug: str) -> dto.LocalSignature:
+        region = await self._regions.get_by_slug(slug)
+        if region is None:
+            raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
+        signature = await signature_service.load(self._s, region.id)
+        return local_signature_out(
+            region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
+        )
 
     async def regions(self, parent: str | None, q: str | None) -> dto.RegionList:
         key = f"region:list:{parent or ''}:{q or ''}"
@@ -137,3 +149,14 @@ def _per_person(total_min: int | None, total_max: int | None, party: int) -> dto
         return int(round(v / 1000.0) * 1000)
 
     return dto.PerPersonBudget(min=r(lo), max=r(hi), typical=r(math.sqrt(lo * hi)))
+
+
+def local_signature_out(region_name: str, signature: Signature) -> dto.LocalSignature:
+    return dto.LocalSignature(
+        region=region_name,
+        shops=signature.shops,
+        specialties=[
+            dto.LocalSpecialty(word=s.word, count=s.count, lift=s.lift) for s in signature.specialties
+        ],
+        sights=[dto.LocalSight(name=s.name, mentions=s.mentions) for s in signature.sights],
+    )

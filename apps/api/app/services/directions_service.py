@@ -61,6 +61,17 @@ class _Grid:
     def _key(lat: float, lng: float) -> tuple[int, int]:
         return math.floor(lat / CELL_DEG), math.floor(lng / CELL_DEG)
 
+    def within(self, at: GeoPoint, max_m: float) -> list[TransitPoint]:
+        cy, cx = self._key(at.lat, at.lng)
+        reach = max(1, math.ceil(max_m / 450.0))
+        return [
+            p
+            for dy in range(-reach, reach + 1)
+            for dx in range(-reach, reach + 1)
+            for p in self._cells.get((cy + dy, cx + dx), ())
+            if haversine_m(at, GeoPoint(p.lat, p.lng)) <= max_m
+        ]
+
     def nearest(self, at: GeoPoint, max_m: float) -> tuple[TransitPoint, float] | None:
         cy, cx = self._key(at.lat, at.lng)
         reach = max(1, math.ceil(max_m / 450.0))
@@ -135,6 +146,10 @@ class TransitIndex:
             {"name": f"{name}역", "lat": self._station_names[name][0], "lng": self._station_names[name][1]}
             for name in hits
         ]
+
+    def station_names_near(self, at: GeoPoint, max_m: float) -> set[str]:
+        """Names of every station within `max_m` (shops borrow them, so they are place words, not things)."""
+        return {p.name for p in self.stations.within(at, max_m) if p.name}
 
     def subway(self, at: GeoPoint) -> dict[str, Any] | None:
         hit = self.entrances.nearest(at, SUBWAY_MAX_M)

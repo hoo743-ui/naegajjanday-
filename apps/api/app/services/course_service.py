@@ -46,6 +46,7 @@ from app.domain.recommendation.style import (
     styled_templates,
 )
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline
+from app.domain.signature import get_signature_rules
 from app.infra.analytics.base import AnalyticsEvent, EventTracker
 from app.infra.db.base import as_utc
 from app.infra.db.models import Course, CourseFeedback, CourseStop, Purpose, RecommendationLog, Region, User
@@ -57,6 +58,9 @@ from app.repositories.region_repo import SqlRegionRepository
 from app.repositories.user_repo import SqlUserRepository
 from app.schemas import course as dto
 from app.schemas.common import LatLng, decode_cursor, encode_cursor
+from app.schemas.meta import LocalSignature
+from app.services import signature_service
+from app.services.meta_service import local_signature_out
 from app.services.narrative_service import Narrative, NarrativeService
 
 logger = get_logger(__name__)
@@ -65,6 +69,9 @@ COURSE_CACHE_TTL_S = 300
 IDEMPOTENCY_TTL_S = 86_400
 RANDOM_TOP_N = 5
 PREFERENCE_EMA_ALPHA = 0.2
+
+
+FOCUS_OFF = "-"  # request.focus value meaning "do not build the course around a local specialty"
 
 
 class CourseService:
@@ -119,6 +126,13 @@ class CourseService:
             user=user,
         )
         ctx.area_names = area_names_of(region.name)
+        rules = get_signature_rules()
+        signature = (await signature_service.load(self._s, region.id)).strong(rules.auto_focus_min_strength)
+        ctx.local_words = tuple(s.word for s in signature.specialties)
+        ctx.landmark_ids = frozenset(s.place_id for s in signature.sights)
+        ctx.focus = req.focus if req.focus in ctx.local_words else None  # only what this place is known for
+        if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
+            ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
         engine = RecommendationEngine(self._places, self._travel)
         try:
@@ -133,6 +147,14 @@ class CourseService:
                 f"{region.name}에서 조건에 맞는 코스를 찾지 못했어요. 예산이나 시간을 바꿔 볼까요?"
             ) from exc
         return region, origin, purpose, ctx, profile, out
+
+    async def _signature_out(self, region: Region) -> LocalSignature | None:
+        """What the neighbourhood is known for. None when nothing stands out: the page says nothing then."""
+        floor = get_signature_rules().auto_focus_min_strength
+        signature = (await signature_service.load(self._s, region.id)).strong(floor)
+        if not signature.specialties and not signature.sights:
+            return None
+        return local_signature_out(region.name, signature)
 
     async def dry_run(self, req: dto.CourseGenerateRequest) -> tuple[Region, RequestContext, EngineOutput]:
         """The exact production pipeline with nothing persisted — what `eval-courses` measures."""
@@ -175,6 +197,7 @@ class CourseService:
             "stay_scale": out.stay_scale,
             "duration_min": req.duration_min,
             "style": ctx.style,
+            "focus": ctx.focus,
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
         }
@@ -224,6 +247,7 @@ class CourseService:
 
         response = dto.CourseGenerateResponse(
             request_id=request_id,
+            local=await self._signature_out(region),
             courses=[self._view(row, r.stops, origin) for row, r, _ in rows],
             nearby_events=[
                 dto.NearbyEvent(
@@ -490,7 +514,9 @@ class CourseService:
                 start_at=self._out_time(row.start_at),
                 duration_min=(row.request or {}).get("duration_min"),
                 style=(row.request or {}).get("style") or DEFAULT_STYLE,
+                focus=(row.request or {}).get("focus"),
             ),
+            local=await self._signature_out(region) if region else None,
             siblings=[
                 dto.SiblingRef(id=c.public_id, label=c.label) for c in await self._courses.siblings(row)
             ],

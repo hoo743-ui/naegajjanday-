@@ -48,4 +48,16 @@ class Tag(Base, TimestampMixin):
     is_selectable: Mapped[bool] = mapped_column(default=True)
 
 
+class RegionSignature(Base, TimestampMixin):
+    """What the neighbourhood is known for, computed from the place table by `cli build-signatures`.
+    Derived data: safe to drop and rebuild, never edited by hand."""
+
+    __tablename__ = "region_signature"
+
+    region_id: Mapped[int] = mapped_column(
+        BigIntPK, ForeignKey("region.id", ondelete="CASCADE"), primary_key=True
+    )
+    payload: Mapped[json_dict]
+
+
 Index("ix_region_parent", Region.parent_id)

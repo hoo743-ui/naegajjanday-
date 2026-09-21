@@ -43,6 +43,7 @@ from app.domain.recommendation.style import assign_buzz
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import HaversineEstimator, Leg, TravelTimeError, TravelTimeProvider
+from app.domain.signature import focus_pools, get_signature_rules, mark_local
 
 NOMINAL_SLOT_MIN = 70  # stay + transfer, only used to scale stays to a requested duration
 MIN_STAY_SCALE = 0.5
@@ -216,7 +217,8 @@ class RecommendationEngine:
                 radius *= params.radius_expand_factor
             pools[sb.slot.position] = pool
         assign_buzz(p for pool in pools.values() for p in pool)
-        return pools
+        mark_local((p for pool in pools.values() for p in pool), ctx, get_signature_rules())
+        return focus_pools(pools, ctx, get_signature_rules())
 
     # --- search ------------------------------------------------------------------------------
 

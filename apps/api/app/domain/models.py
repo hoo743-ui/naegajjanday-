@@ -69,6 +69,8 @@ class PlaceCandidate:
     is_overexposed: bool = False
     is_curated: bool = False
     buzz: float = 0.0  # set per request by style.assign_buzz
+    local_score: float = 0.0  # set per request by signature.mark_local: what this neighbourhood is known for
+    local_word: str | None = None
     is_event: bool = False
     category_name: str | None = None  # display label only; never used for scoring
 
@@ -212,6 +214,13 @@ class RequestContext:
     avoid_tags_by_role: dict[str, frozenset[str]] = field(default_factory=dict)
     # names of the chosen area itself ("경주 황리단길", "홍대"): a sight called exactly that is not a stop
     area_names: frozenset[str] = frozenset()
+    # the neighbourhood's signature (domain.signature): its specialty words, its landmark sights, and the
+    # one specialty the user asked to build the course around
+    local_words: tuple[str, ...] = ()
+    landmark_ids: frozenset[int] = frozenset()
+    focus: str | None = None
+    auto_focus_words: tuple[str, ...] = ()  # specialties strong enough to claim a stop unasked
+    local_off: bool = False
     include_roles: list[str] | None = None
     liked_tags: list[str] = field(default_factory=list)
     disliked_tags: list[str] = field(default_factory=list)

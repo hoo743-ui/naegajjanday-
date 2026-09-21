@@ -390,6 +390,24 @@ def purge_accounts(
     )
 
 
+@cli.command("build-signatures")
+def build_signatures(
+    region: Annotated[list[str] | None, typer.Option(help="이 지역만 (여러 번 가능). 생략하면 전부")] = None,
+) -> None:
+    """동네 특색(명물 · 보러 오는 곳)을 장소 이름에서 계산해 region_signature 에 넣는다. 대량 적재 뒤에 돌린다."""  # noqa: E501
+    from app.services import signature_service
+
+    async def job(db: Database, _settings: Settings) -> signature_service.BuildReport:
+        await db.create_all()  # SQLite 파일에 새 테이블이 아직 없을 수 있다
+        return await signature_service.build_all(db, region)
+
+    report = _run(job)
+    typer.echo(
+        f"[build-signatures] regions={report.regions} with_specialties={report.with_specialties} "
+        f"with_sights={report.with_sights}"
+    )
+
+
 @cli.command("eval-courses")
 def eval_courses(
     scope: Annotated[str, typer.Option(help="quick(4개 지역) | full(20개 지역)")] = "quick",
