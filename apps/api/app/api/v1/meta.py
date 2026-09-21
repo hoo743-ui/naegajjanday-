@@ -16,6 +16,16 @@ async def regions(service: MetaServiceDep, parent: str | None = None, q: str | N
 
 
 @router.get(
+    "/regions/{slug}",
+    response_model=dto.RegionOut,
+    responses=PROBLEMS(404),
+    summary="지역 하나 (동 · 읍 · 면은 전체 목록에 없으므로 이름은 여기서 읽는다)",
+)
+async def region(slug: str, service: MetaServiceDep) -> dto.RegionOut:
+    return await service.region(slug)
+
+
+@router.get(
     "/regions/{slug}/signature",
     response_model=dto.LocalSignature,
     summary="이 동네가 무엇으로 알려져 있는지 (명물 · 보러 오는 곳)",

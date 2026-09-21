@@ -23,6 +23,18 @@ from app.services import signature_service
 META_TTL_S = 3600
 
 
+def _region_out(r: Region, place_count: int) -> dto.RegionOut:
+    return dto.RegionOut(
+        slug=r.slug,
+        name=r.name,
+        level=r.level,
+        center=LatLng(lat=r.center_lat, lng=r.center_lng),
+        radius_m=r.radius_m,
+        parent=dto.RegionParent(slug=r.parent.slug, name=r.parent.name) if r.parent else None,
+        place_count=place_count,
+    )
+
+
 HOT_ROLES = ("ATTRACTION", "NIGHTVIEW", "CULTURE", "ACTIVITY")
 HOT_NEAR = 1.5  # × the 동's radius
 HOT_MIN = 3  # fewer than this in a neighbourhood → answer with its district
@@ -85,22 +97,17 @@ class MetaService:
             ],
         )
 
+    async def region(self, slug: str) -> dto.RegionOut:
+        found = await self._regions.get_active(slug)
+        if found is None:
+            raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
+        return _region_out(*found)
+
     async def regions(self, parent: str | None, q: str | None) -> dto.RegionList:
         key = f"region:list:{parent or ''}:{q or ''}"
         if (cached := await self._cache.get(key)) is not None:
             return dto.RegionList.model_validate(cached)
-        items = [
-            dto.RegionOut(
-                slug=r.slug,
-                name=r.name,
-                level=r.level,
-                center=LatLng(lat=r.center_lat, lng=r.center_lng),
-                radius_m=r.radius_m,
-                parent=dto.RegionParent(slug=r.parent.slug, name=r.parent.name) if r.parent else None,
-                place_count=n,
-            )
-            for r, n in await self._regions.list_active(parent, q)
-        ]
+        items = [_region_out(r, n) for r, n in await self._regions.list_active(parent, q)]
         out = dto.RegionList(items=items)
         await self._cache.set(key, out.model_dump(mode="json"), META_TTL_S)
         return out

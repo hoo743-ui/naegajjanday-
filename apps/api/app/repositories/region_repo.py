@@ -52,6 +52,13 @@ class SqlRegionRepository:
         rows = [(region, int(n)) for region, n in (await self._s.execute(stmt)).all()]
         return await self._with_descendants(rows)
 
+    async def get_active(self, slug: str) -> tuple[Region, int] | None:
+        """One region with its place count: a 동 is in no list until its district is opened."""
+        region = await self._s.scalar(select(Region).where(Region.slug == slug, Region.status == "active"))
+        if region is None:
+            return None
+        return (await self._with_descendants([(region, 0)]))[0]
+
     async def _with_descendants(self, rows: list[tuple[Region, int]]) -> list[tuple[Region, int]]:
         """A place belongs to its most specific region only, so parents add up their children."""
         own = (

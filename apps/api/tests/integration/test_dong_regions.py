@@ -52,6 +52,10 @@ class TestDongRegions:
         assert mine["level"] == 4 and mine["place_count"] == 321 and mine["parent"]["slug"] == "seoul-mapo"
         assert any(r["level"] == 3 for r in district)  # the hotspots of the district are still there
 
+        one = (await client.get(f"/v1/meta/regions/{dong}")).json()
+        assert one == mine  # its name is read here once it is picked: it is in no list
+        assert (await client.get("/v1/meta/regions/atlantis")).status_code == 404
+
         found = (await client.get("/v1/meta/regions", params={"q": "시험동"})).json()["items"]
         assert [r["slug"] for r in found] == [dong]
 
