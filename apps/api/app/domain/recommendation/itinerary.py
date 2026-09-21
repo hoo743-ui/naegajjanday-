@@ -35,6 +35,9 @@ def itinerary_rules(path: Path = RULES_PATH) -> dict[str, Any]:
         "hop_mode": "transit",
         "hop_overhead_min": {"walk": 0, "transit": 10, "car": 8},
         "budget_round": 1000,
+        "hop_speed_kmh": {"transit": 26, "car": 28},
+        "hop_detour": 1.25,
+        "no_repeat_roles": [],
         "max_nights": 3,
         "day_start_min": 600,
         "day_end_min": 1320,
@@ -64,9 +67,13 @@ def hop_between(a: GeoPoint, b: GeoPoint, transport: str, rules: Mapping[str, An
         mode = "walk"
     else:
         mode = transport if transport != "walk" else str(rules["hop_mode"])
-    path_m = straight * DETOUR_FACTOR[mode]
+    if mode == "walk":
+        path_m, speed = straight * DETOUR_FACTOR[mode], SPEED_KMH[mode]
+    else:  # between neighbourhoods one rides a line or a main road, faster than the hops inside one
+        path_m = straight * float(rules["hop_detour"])
+        speed = float(rules["hop_speed_kmh"].get(mode, SPEED_KMH[mode]))
     overhead = float(rules["hop_overhead_min"].get(mode, 0))  # waiting for the bus, parking the car
-    minutes = path_m / 1000.0 / SPEED_KMH[mode] * 60.0 + overhead
+    minutes = path_m / 1000.0 / speed * 60.0 + overhead
     return Hop(mode=mode, minutes=max(1, round(minutes)), distance_m=round(path_m))
 
 

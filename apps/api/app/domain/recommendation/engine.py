@@ -42,7 +42,13 @@ from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import assign_buzz, wanted_pools
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
-from app.domain.routing.travel_time import HaversineEstimator, Leg, TravelTimeError, TravelTimeProvider
+from app.domain.routing.travel_time import (
+    HaversineEstimator,
+    Leg,
+    TravelTimeError,
+    TravelTimeProvider,
+    haversine_m,
+)
 from app.domain.signature import focus_pools, get_signature_rules, mark_local
 
 NOMINAL_SLOT_MIN = 70  # stay + transfer, only used to scale stays to a requested duration
@@ -51,6 +57,8 @@ GATE_MARGIN = 1.1
 RESCALE_PASSES = 3
 MAX_STAY_SCALE = 1.6  # a whole-day plan lingers; beyond this a "stay" stops being believable
 MMR_POOL = 25
+WANTED_REACH_M = 4000.0  # how far to look for something the user asked for by name
+RECENTER_BEYOND = 0.6  # further than this share of the radius from the centre: plan around it instead
 
 
 class CandidateSource(Protocol):
@@ -194,6 +202,8 @@ class RecommendationEngine:
         self, ctx: RequestContext, slot_budgets: Sequence[B.SlotBudget], profile: ScoringProfile
     ) -> dict[int, list[PlaceCandidate]]:
         params = profile.params
+        if ctx.wanted_categories and not ctx.recentered:
+            await self._recenter_on_wanted(ctx, slot_budgets)
         cache: dict[tuple[str, float], list[PlaceCandidate]] = {}
         pools: dict[int, list[PlaceCandidate]] = {}
         for i, sb in enumerate(slot_budgets):
@@ -224,6 +234,22 @@ class RecommendationEngine:
         unfiltered = [p for found in cache.values() for p in found]
         pools = wanted_pools(pools, ctx.wanted_categories)
         return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
+
+    async def _recenter_on_wanted(self, ctx: RequestContext, slot_budgets: Sequence[B.SlotBudget]) -> None:
+        """The user asked for a kind of place by name (a ballpark) and the neighbourhood's radius does
+        not reach one: look `WANTED_REACH_M` out, and if it is there plan the day around it. A course
+        whose one fixed point is a 25-minute walk from everything else is not a course."""
+        ctx.recentered = True
+        for category in ctx.wanted_categories:
+            for role in dict.fromkeys(sb.slot.course_role for sb in slot_budgets):
+                found = await self._source.fetch(role, ctx.origin, WANTED_REACH_M, ctx.start_at.date())
+                matching = [c for c in found if c.category_code == category]
+                if not matching:
+                    continue
+                nearest = min(matching, key=lambda c: haversine_m(ctx.origin, c.point))
+                if haversine_m(ctx.origin, nearest.point) > ctx.radius_m * RECENTER_BEYOND:
+                    ctx.origin = nearest.point
+                return
 
     # --- search ------------------------------------------------------------------------------
 

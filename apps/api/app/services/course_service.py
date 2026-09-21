@@ -216,6 +216,7 @@ class CourseService:
         legs: list[CourseResult] = []
         hops: list[Hop] = []
         segments: list[dict[str, Any]] = []
+        repeat: list[str] = []
         first: tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput] | None = None
         candidates = 0
         for k, slug in enumerate(slugs):
@@ -231,6 +232,8 @@ class CourseService:
                     "duration_min": leg_minutes(minutes_left, left, rules),
                     "alternatives": 0,
                     "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
+                    # two karaoke rooms in a row because the neighbourhood changed is not a plan
+                    "skip_roles": [*req.skip_roles, *repeat],
                 }
             )
             planned = await self._plan_one(leg_req, user)
@@ -252,6 +255,8 @@ class CourseService:
                 }
             )
             legs.append(course)
+            closing = course.stops[-1].role
+            repeat = [closing] if closing in rules["no_repeat_roles"] else []
             remaining = max(0, remaining - course.total_price)
             excluded += [s.place.public_id for s in course.stops if not s.place.is_event]
             if k + 1 < len(slugs):
@@ -286,6 +291,7 @@ class CourseService:
         purpose = purposes[0]  # the first one gives the day its shape; all of them weigh in below
         profile = blend_profiles([await self._config.scoring_profile(p.id, p.code) for p in purposes])
         vetoed = vetoed_roles([p.code for p in purposes])
+        vetoed |= frozenset(r.upper() for r in req.skip_roles)
         templates = without_roles(await self._config.templates_for(purpose.id, purpose.code), vetoed)
         ctx = await self._build_context(
             origin=origin,

@@ -62,6 +62,9 @@ class CourseGenerateRequest(BaseModel):
     )
     transport: Transport = "walk"
     include_roles: list[str] | None = None
+    skip_roles: list[str] = Field(
+        default_factory=list, max_length=6, description='코스에서 뺄 자리 (예: ["CAFE"])'
+    )
     preferences: Preferences = Field(default_factory=Preferences)
     alternatives: int = Field(default=2, ge=0, le=3)
 

@@ -225,6 +225,7 @@ class RequestContext:
     # no official schedule exists): the ones asked for, and the ones to keep out
     wanted_categories: tuple[str, ...] = ()
     blocked_categories: frozenset[str] = frozenset()
+    recentered: bool = False  # the engine moved the origin onto a place asked for by name
     # a day across several neighbourhoods (recommendation.itinerary): one entry per neighbourhood with
     # its centre, the stop positions it covers and the hop that leads into it
     segments: list[dict[str, Any]] = field(default_factory=list)

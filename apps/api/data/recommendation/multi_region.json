@@ -16,5 +16,18 @@
   "day_start_min": 600,
   "day_end_min": 1320,
   "full_day_min": 540,
-  "first_day_floor_min": 120
+  "first_day_floor_min": 120,
+  "_hop": "동네 사이 이동은 지하철·간선도로를 탄다: 동네 안에서 쓰는 속도(대중교통 18km/h)로 재면 홍대→성수가 67분으로 부풀려진다.",
+  "hop_speed_kmh": {
+    "transit": 26,
+    "car": 28
+  },
+  "hop_detour": 1.25,
+  "no_repeat_roles": [
+    "ACTIVITY",
+    "CAFE",
+    "DESSERT",
+    "BAR",
+    "CULTURE"
+  ]
 }
