@@ -17,6 +17,11 @@ const outDir = args.find((a) => !a.startsWith("--")) ?? "button-audit";
 const only = (args.find((a) => a.startsWith("--only=")) ?? "").replace("--only=", "").split(",").filter(Boolean);
 const tokenFile = (args.find((a) => a.startsWith("--token=")) ?? "").replace("--token=", "");
 const mobile = args.includes("--mobile");
+// --retry=<앞선 실행의 button-audit.json>: 정상이 아니었던 것만 다시 누른다 (한 탭씩 돌려 도구 탓인지 가릴 때: AUDIT_PARALLEL=1)
+const retryFile = (args.find((a) => a.startsWith("--retry=")) ?? "").replace("--retry=", "");
+const retry = retryFile ? JSON.parse(readFileSync(retryFile, "utf8")).filter((r) => ["ERROR", "DEAD", "GONE"].includes(r.verdict)) : null;
+const retryKey = (r) => `${r.scene}|${r.tag}|${r.name}|${r.nth}`;
+const retryKeys = retry ? new Set(retry.map(retryKey)) : null;
 mkdirSync(outDir, { recursive: true });
 
 const d = new Date();
@@ -46,7 +51,7 @@ const SCENES = [
   { key: "terms", url: "/terms" },
   { key: "not-found", url: "/no-such-page" },
   ...(tokenFile ? ["", "/regions", "/places", "/attractions", "/events", "/banners", "/scoring", "/recommendations", "/users"].map((s) => ({ key: `admin${s.replace("/", "-")}`, url: `/admin${s}`, admin: true })) : []),
-].filter((s) => only.length === 0 || only.some((o) => s.key.startsWith(o)));
+].filter((s) => (only.length === 0 || only.some((o) => s.key.startsWith(o))) && (!retry || retry.some((r) => r.scene === s.key)));
 
 const SELECTOR = "button, a[href], [role=tab], [role=radio], [role=checkbox], [role=switch], [role=menuitem], summary, input[type=checkbox], input[type=radio], label:has(input.sr-only)";
 
@@ -132,7 +137,8 @@ for (const scene of SCENES) {
   await context.route("**/v1/performances**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], partial: false }) }));
   if (scene.admin && adminToken) await context.route("**/v1/auth/refresh", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: adminToken, token_type: "Bearer", expires_in: 900 }) }));
   const first = await open(context, scene);
-  const controls = await collect(first);
+  // 코스 화면의 이름은 코스마다 다르다(가게 이름이 들어간다) → 그 화면은 통째로 다시 본다
+  const controls = (await collect(first)).filter((c) => !retryKeys || scene.key === "course" || retryKeys.has(retryKey({ scene: scene.key, ...c })));
   await first.close();
   console.log(`\n[${scene.key}] 누를 수 있는 것 ${controls.length}개`);
 
