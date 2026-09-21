@@ -32,6 +32,7 @@ import type {
   OAuthProvider,
   AuthProviderStatus,
   Page,
+  PerformanceList,
   Preferences,
   PreferencesPayload,
   ProblemDetails,
@@ -40,6 +41,7 @@ import type {
   ReorderRequest,
   SavedCourse,
   SavedCoursePayload,
+  StayList,
   SwapRequest,
   Tag,
 } from "./types";
@@ -657,6 +659,32 @@ export function useLocalSignature(regionSlug: string | undefined) {
     queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(regionSlug ?? "")}/signature`, { signal }),
     enabled: Boolean(regionSlug) && !regionSlug?.startsWith("station:"),
     staleTime: 60 * 60_000,
+    retry: false,
+  });
+}
+
+/** 이 지점 근처의 숙소 (관광공사 등재분). 가까이에 없으면 반경을 넓혀 다시 찾는다 — 등재 숙소는 전국 3천 곳뿐이다. */
+export function useStays(at: { lat: number; lng: number } | null) {
+  return useQuery<StayList, ApiError>({
+    queryKey: ["stays", at?.lat.toFixed(4), at?.lng.toFixed(4)],
+    queryFn: async ({ signal }) => {
+      const query = { lat: at!.lat, lng: at!.lng, limit: 6 };
+      const near = await api.get<StayList>("/stays", { query: { ...query, radius_m: 3000 }, signal });
+      return near.items.length >= 3 ? near : api.get<StayList>("/stays", { query: { ...query, radius_m: 12000 }, signal });
+    },
+    enabled: at !== null,
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
+}
+
+/** 고른 시간대에 근처에서 실제로 하는 공연. 키가 없는 환경이면 부르지 않는다(useFeatures().performances). */
+export function usePerformances(params: { lat: number; lng: number; start_at: string; duration_min: number } | null) {
+  return useQuery<PerformanceList, ApiError>({
+    queryKey: ["performances", params],
+    queryFn: ({ signal }) => api.get("/performances", { query: { ...params!, radius_m: 4000 }, signal }),
+    enabled: params !== null,
+    staleTime: 30 * 60_000,
     retry: false,
   });
 }

@@ -17,6 +17,8 @@ import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { LocalCard } from "./LocalCard";
+import { PerformanceCard } from "./PerformanceCard";
+import { StayCard } from "./StayCard";
 import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
@@ -88,6 +90,8 @@ export function CourseView({ id }: { id: string }) {
 
   // 지역 중심이 아니라 역·장소 주변으로 짠 코스면 그 이름으로 부른다 ("영등포구"가 아니라 "신도림역 주변")
   const hopping = (request.regions?.length ?? 0) > 1;
+  const firstStop = data.stops[0];
+  const lastStop = data.stops[data.stops.length - 1];
   const placeLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
   // 목적을 여러 개 골랐으면 모두 보여 준다 (첫 번째가 하루의 틀)
   const purposeLabel = (request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name;
@@ -237,7 +241,7 @@ export function CourseView({ id }: { id: string }) {
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <p className="tabular flex flex-wrap gap-x-2 text-[13px] font-extrabold text-blue-deep">
-                {[placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
+                {[request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
               </p>
               <h1 className="sr-only">
                 {data.label}: {data.summary}
@@ -323,6 +327,13 @@ export function CourseView({ id }: { id: string }) {
                 onMove={onMove}
               />
 
+              {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 */}
+              {lastStop && request.day && request.days && request.day < request.days ? (
+                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} />
+              ) : null}
+              {firstStop ? (
+                <PerformanceCard at={{ lat: firstStop.place.lat, lng: firstStop.place.lng }} startAt={request.start_at} durationMin={request.duration_min ?? Math.max(120, data.totals.duration_min ?? 240)} />
+              ) : null}
               <NearbyEvents events={data.nearby_events} region={request.region?.slug} startAt={request.start_at} />
 
               {data.meta ? (

@@ -38,6 +38,10 @@ function congestionTone(value: number) {
   return "bg-pink-soft text-pink-deep";
 }
 
+/** 야구장은 경기가 있는 날에만 의미가 있다. 경기 일정은 공식 오픈 데이터가 없어 우리가 알 수 없으므로 KBO 공식 일정으로 보낸다. */
+const STADIUM = "activity.stadium";
+const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
+
 export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
@@ -186,6 +190,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           왜 여기?
           <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
         </button>
+        {stop.place.category === STADIUM ? (
+          <a
+            href={KBO_SCHEDULE}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-full bg-gold-soft px-2.5 py-1.5 text-[13px] font-extrabold text-gold-ink hover:brightness-95"
+          >
+            오늘 경기 있는지 확인
+            <ExternalLink aria-hidden className="size-3.5" />
+          </a>
+        ) : null}
         {/* 그 가게의 실제 사진·메뉴판·후기는 지도 앱에 있다(우리가 긁어 올 수는 없다) → 한 번 탭으로 넘긴다. 카카오맵 공식 링크 규격. */}
         <a
           href={`https://map.kakao.com/link/search/${encodeURIComponent(placeQuery)}`}

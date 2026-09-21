@@ -71,6 +71,53 @@ export interface Region {
 export interface Features {
   /** LLM 제공자가 설정돼 있을 때만 true */
   chat: boolean;
+  /** 공연 정보(KOPIS) 키가 설정돼 있을 때만 true */
+  performances?: boolean;
+}
+
+/** 관광공사에 등재된 숙소. 요금은 공식 데이터가 없어 주지 않는다 */
+export interface Stay {
+  id: string;
+  name: string;
+  category: string;
+  category_label: string;
+  address: string | null;
+  lat: number;
+  lng: number;
+  distance_m: number;
+  thumbnail_url: string | null;
+  photo_credit: boolean;
+}
+
+export interface StayList {
+  items: Stay[];
+  radius_m: number;
+  source: string;
+  has_price: boolean;
+  price_note: string;
+}
+
+/** 고른 시간대에 실제로 하는 공연 (KOPIS) */
+export interface Performance {
+  id: string;
+  title: string;
+  genre: string | null;
+  venue: { name: string; address: string | null; lat: number; lng: number; distance_m: number };
+  period_from: string;
+  period_to: string;
+  show_times: string[];
+  runtime_min: number | null;
+  price_text: string | null;
+  poster_url: string | null;
+  detail_url: string | null;
+}
+
+export interface PerformanceList {
+  items: Performance[];
+  available: boolean;
+  reason: string | null;
+  partial: boolean;
+  attribution: string;
 }
 
 export interface Purpose {
@@ -153,6 +200,8 @@ export interface GenerateCourseRequest {
   purposes?: string[];
   /** 하루에 여러 동네를 잇는다(방문 순서, 최대 3). 주면 region 대신 쓰인다 */
   regions?: string[];
+  /** 몇 박. 1 이상이면 날짜별 코스(1일차 · 2일차 …)가 온다. 숙박비는 예산 밖 */
+  nights?: number;
   /** 꼭 넣을 동네 명물. 생략 = 가장 뚜렷한 명물을 자동으로, FOCUS_OFF = 넣지 않음 */
   focus?: string;
   transport?: Transport;
@@ -305,6 +354,10 @@ export interface CourseDetail extends Course {
     purposes?: { code: string; name: string }[];
     /** 여러 동네를 이은 코스일 때만 */
     regions?: { slug: string; name: string }[];
+    /** 여행 일정이면 몇 일차 / 전체 며칠 / 여행 전체 예산 (budget_total 은 그날 몫) */
+    day?: number | null;
+    days?: number | null;
+    trip_budget_total?: number | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

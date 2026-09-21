@@ -2,7 +2,7 @@
 
 import { useId, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, Wine, type LucideIcon } from "lucide-react";
+import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, Trophy, Wine, type LucideIcon } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
@@ -175,6 +175,43 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
 }
 
 // ── 3. 인원 · 예산 ──────────────────────────────────────────
+const NIGHTS = [
+  { value: 0, label: "당일" },
+  { value: 1, label: "1박 2일" },
+  { value: 2, label: "2박 3일" },
+  { value: 3, label: "3박 4일" },
+];
+
+/** 몇 박 며칠: 날마다 코스를 하나씩 짠다. 예산은 여행 전체 금액이고, 숙박비는 들어 있지 않다(공식 요금 데이터가 없다). */
+function NightsCard() {
+  const { setValue } = useFormContext<PlanValues>();
+  const nights = useWatch<PlanValues, "nights">({ name: "nights" });
+  return (
+    <section aria-labelledby="nights-title" className="rounded-card bg-white p-6 shadow-soft">
+      <h3 id="nights-title" className="text-sm font-extrabold text-muted-foreground">며칠 일정인가요?</h3>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="일정 길이">
+        {NIGHTS.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={nights === o.value}
+            onClick={() => setValue("nights", o.value, { shouldDirty: true })}
+            className={cn("rounded-2xl border-2 px-3 py-3 text-[15px] font-extrabold", nights === o.value ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line bg-white text-ink-2 hover:border-blue-deep")}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {nights > 0 ? (
+        <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
+          위 예산을 <b>{nights + 1}일</b>에 나눠 써요(첫날은 만나는 시각부터). 남은 돈은 다음 날로 넘기고, 갔던 곳은 다시 넣지 않아요. 숙박비는 예산에 들어 있지 않아요 — 코스 화면에서 그날 동선 끝 근처의 숙소를 보여 드릴게요.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 const QUICK = [
   { label: "알뜰하게", pick: (r: Purpose["budget_range"]) => r.min * 1.3 },
   { label: "적당히", pick: (r: Purpose["budget_range"]) => r.typical ?? (r.min + r.max) / 2 },
@@ -297,6 +334,8 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
         />
       </details>
 
+      <NightsCard />
+
       <MeetTimeCard />
 
       <JjaniBubble mood={reaction.mood} title={reaction.line} bubbleKey={reaction.mood} live size={84} />
@@ -334,6 +373,7 @@ export function TasteStep() {
   const style = useWatch<PlanValues, "style">({ name: "style" });
   const focus = useWatch<PlanValues, "focus">({ name: "focus" });
   const withBar = useWatch<PlanValues, "with_bar">({ name: "with_bar" });
+  const withBaseball = useWatch<PlanValues, "with_baseball">({ name: "with_baseball" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
   // 이 동네가 무엇으로 알려져 있는지 먼저 알려 준다 — 뚜렷한 명물이 없는 동네면 이 칸은 아예 안 나온다
@@ -386,6 +426,18 @@ export function TasteStep() {
         <span className="min-w-0">
           <b className="block text-[15px] font-extrabold">술 한잔 포함</b>
           <span className="block text-[12.5px] text-muted-foreground">저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 그만큼 떼어 둘게요.</span>
+        </span>
+      </label>
+
+      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+        <input type="checkbox" className="peer sr-only" checked={withBaseball} onChange={(e) => setValue("with_baseball", e.target.checked, { shouldDirty: true })} />
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBaseball ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+          ✓
+        </span>
+        <Trophy aria-hidden className="size-6 shrink-0 text-blue-deep" />
+        <span className="min-w-0">
+          <b className="block text-[15px] font-extrabold">야구 보러 가요</b>
+          <span className="block text-[12.5px] text-muted-foreground">고른 동네에 프로야구 1군 구장이 있으면 코스에 넣어요. 경기 일정은 코스 화면의 링크로 직접 확인해 주세요.</span>
         </span>
       </label>
 
