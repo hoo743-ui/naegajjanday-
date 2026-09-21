@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
@@ -25,6 +26,14 @@ from typing import Any
 from app.infra.ingestion import dedupe
 from app.infra.ingestion.bulk.common import BulkReport
 from app.infra.ingestion.bulk.goodprice import AddressKey, address_key
+
+
+_SPLIT_ROAD_RE = re.compile(r"(로|길)\s+(\d+(?:번)?[가-힣]?길)")
+
+
+def mark_address_key(address: str, sido_aliases: Mapping[str, str] | None = None) -> AddressKey | None:
+    """`address_key`, tolerant of hand-typed lists: '중앙로 129번길 35-17' is '중앙로129번길 35-17'."""
+    return address_key(_SPLIT_ROAD_RE.sub(r"", address or ""), sido_aliases)
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,7 +98,7 @@ def iter_rows(
             report.skip("not_current")
             continue
         name = row.get(name_col, "").strip()
-        key = next((k for c in address_cols if (k := address_key(row.get(c, ""), sido_aliases))), None)
+        key = next((k for c in address_cols if (k := mark_address_key(row.get(c, ""), sido_aliases))), None)
         if not name:
             report.skip("no_name")
             continue
@@ -116,7 +125,7 @@ class PlaceAddressIndex:
     _by_key: dict[AddressKey, list[tuple[int, str]]] = field(default_factory=lambda: defaultdict(list))
 
     def add(self, place_id: int, name: str, road_address: str | None, aliases: Mapping[str, str]) -> None:
-        key = address_key(road_address or "", aliases)
+        key = mark_address_key(road_address or "", aliases)
         if key is not None:
             self._by_key[key].append((place_id, name))
 
