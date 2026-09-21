@@ -13,12 +13,17 @@ from app.domain.signature import Signature, get_signature_rules
 from app.infra.db.base import utcnow
 from app.infra.db.models import Banner, Region
 from app.repositories.config_repo import SqlConfigRepository
+from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.schemas import meta as dto
 from app.schemas.common import LatLng
 from app.services import signature_service
 
 META_TTL_S = 3600
+
+
+HOT_ROLES = ("ATTRACTION", "NIGHTVIEW", "CULTURE", "ACTIVITY")
+HOT_MIN = 3  # fewer than this in a neighbourhood → answer with its district
 
 
 class MetaService:
@@ -35,6 +40,38 @@ class MetaService:
         signature = await signature_service.load(self._s, region.id)
         return local_signature_out(
             region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
+        )
+
+    async def hot_places(self, slug: str, limit: int) -> dto.HotPlaces:
+        """Where people really go around here. A small neighbourhood with little of its own is answered
+        with its district: someone who does not know the area wants to know what is near, not nothing."""
+        region = await self._regions.get_by_slug(slug)
+        if region is None:
+            raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
+        places = SqlPlaceRepository(self._s)
+        scope = region
+        found = await places.hot_places(await self._regions.ids_under(region.id), HOT_ROLES, limit)
+        if len(found) < HOT_MIN and region.parent is not None:
+            scope = region.parent
+            found = await places.hot_places(await self._regions.ids_under(scope.id), HOT_ROLES, limit)
+        return dto.HotPlaces(
+            region=region.name,
+            scope=scope.name,
+            items=[
+                dto.HotPlace(
+                    id=p.public_id,
+                    name=p.name,
+                    category=p.category.code,
+                    category_name=p.category.name,
+                    rank=round((1.0 - (p.stats.popularity if p.stats else 0.0)) * 100) + 1,
+                    lat=p.lat,
+                    lng=p.lng,
+                    address=p.road_address or p.address,
+                    thumbnail_url=p.thumbnail_url,
+                    is_free=p.is_free,
+                )
+                for p in found
+            ],
         )
 
     async def regions(self, parent: str | None, q: str | None) -> dto.RegionList:

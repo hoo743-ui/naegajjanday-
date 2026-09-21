@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
+from app.api.v1.responses import PROBLEMS
 from app.core.deps import ContainerDep, rate_limit
 from app.schemas import meta as dto
 from app.services.factory import MetaServiceDep
@@ -21,6 +22,18 @@ async def regions(service: MetaServiceDep, parent: str | None = None, q: str | N
 )
 async def region_signature(slug: str, service: MetaServiceDep) -> dto.LocalSignature:
     return await service.signature(slug)
+
+
+@router.get(
+    "/regions/{slug}/hot",
+    response_model=dto.HotPlaces,
+    responses=PROBLEMS(404),
+    summary="이 지역에서 사람들이 실제로 많이 가는 곳 (내비게이션 실측 순위)",
+)
+async def region_hot_places(
+    slug: str, service: MetaServiceDep, limit: int = Query(default=8, ge=1, le=30)
+) -> dto.HotPlaces:
+    return await service.hot_places(slug, limit)
 
 
 @router.get("/purposes", response_model=dto.PurposeList, summary="목적 목록 + 추천 예산 범위")

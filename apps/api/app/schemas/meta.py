@@ -102,6 +102,28 @@ class LocalSight(BaseModel):
     mentions: int = Field(default=0, description="주변 가게가 이 이름을 간판에 빌려 쓴 횟수")
 
 
+class HotPlace(BaseModel):
+    id: str
+    name: str
+    category: str
+    category_name: str | None = None
+    rank: int = Field(description="그 시군구에서 사람들이 찾아간 순위 (티맵 내비게이션 실측, 1이 가장 많이)")
+    lat: float
+    lng: float
+    address: str | None = None
+    thumbnail_url: str | None = None
+    is_free: bool = False
+
+
+class HotPlaces(BaseModel):
+    """그 지역에서 사람들이 실제로 많이 가는 곳. 리뷰나 별점이 아니라 내비게이션 실측 순위다."""
+
+    region: str
+    scope: str = Field(description="순위를 읽은 범위의 이름: 그 동네에 자료가 적으면 그 동네가 속한 시군구")
+    source: str = "한국관광공사 · 티맵모빌리티 (내비게이션 목적지 실측)"
+    items: list[HotPlace] = Field(default_factory=list)
+
+
 class LocalSignature(BaseModel):
     """이 동네가 무엇으로 알려져 있는지. 사람이 적은 글이 아니라 장소 이름에서 계산한 값이다."""
 

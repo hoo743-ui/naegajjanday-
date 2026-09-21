@@ -240,6 +240,24 @@ class SqlPlaceRepository:
 
     # --- read side ---------------------------------------------------------------------------
 
+    async def hot_places(self, region_ids: Sequence[int], roles: Sequence[str], limit: int) -> list[Place]:
+        """The most visited places of these regions, most visited first (category and stats loaded)."""
+        rows = await self._s.scalars(
+            select(Place)
+            .join(PlaceStats, PlaceStats.place_id == Place.id)
+            .join(Category, Category.id == Place.category_id)
+            .where(
+                Place.region_id.in_(list(region_ids)),
+                Place.status == "approved",
+                PlaceStats.popularity > 0,
+                Category.course_role.in_(list(roles)),
+            )
+            .options(selectinload(Place.category), selectinload(Place.stats))
+            .order_by(PlaceStats.popularity.desc(), Place.thumbnail_url.is_(None), Place.id)
+            .limit(limit)
+        )
+        return list(rows.all())
+
     async def popular_sights(
         self, region_ids: Sequence[int], roles: Sequence[str], min_popularity: float, limit: int
     ) -> list[tuple[int, str, GeoPoint, float, str]]:
