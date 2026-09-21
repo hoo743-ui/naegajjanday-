@@ -84,6 +84,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                       <Icon aria-hidden className="size-4 text-blue-deep" />
                       <span aria-hidden>
                         {i === 0 ? "출발지에서 " : ""}
+                        {leg.hop_to ? `${leg.hop_to}(으)로 ` : ""}
                         {transportLabel(mode)} {minutes(travelMin)} · {distance(distanceM)}
                       </span>
                       <a

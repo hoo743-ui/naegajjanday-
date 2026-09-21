@@ -9,7 +9,7 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLocalSignature, usePurposes, useTags } from "@/lib/api/hooks";
+import { decodeStation, useLocalSignature, usePurposes, useRegions, useTags } from "@/lib/api/hooks";
 import { FOCUS_OFF, type CourseStyle, type Purpose, type Tag, type Transport } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
@@ -33,12 +33,53 @@ function FieldError({ name }: { name: keyof PlanValues }) {
 
 // ── 1. 지역 ─────────────────────────────────────────────────
 /** 시도 → 시·군 → 구 → 동네로 들어가며 고르고, 검색하면 지역과 지하철역이 함께 나온다 (RegionPicker). */
+const MAX_REGIONS = 3;
+
 export function RegionStep() {
   const { setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "region">({ name: "region" });
+  const before = useWatch<PlanValues, "regions_before">({ name: "regions_before" });
+  const regions = useRegions();
+  const nameOf = (slug: string) => regions.data?.items.find((r) => r.slug === slug)?.name ?? slug;
+  // 역 주변 코스는 한 지점이 기준이라 다른 동네와 잇지 않는다
+  const canAdd = Boolean(selected) && !decodeStation(selected) && before.length < MAX_REGIONS - 1 && !before.includes(selected);
+  const addAnother = () => {
+    setValue("regions_before", [...before, selected], { shouldDirty: true });
+    setValue("region", "", { shouldDirty: true });
+  };
   return (
-    <div>
+    <div className="grid gap-4">
+      {before.length > 0 ? (
+        <section aria-label="들를 동네 순서" className="rounded-card bg-white p-5 shadow-soft">
+          <h3 className="text-sm font-extrabold text-muted-foreground">이 순서로 들러요</h3>
+          <ol className="mt-2.5 flex flex-wrap items-center gap-2">
+            {before.map((slug, i) => (
+              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-blue-deep bg-blue-soft py-1.5 pr-1.5 pl-3 text-[14px] font-bold text-blue-deep">
+                <span className="tabular">{i + 1}.</span> {nameOf(slug)}
+                <button
+                  type="button"
+                  aria-label={`${nameOf(slug)} 빼기`}
+                  onClick={() => setValue("regions_before", before.filter((s) => s !== slug), { shouldDirty: true })}
+                  className="grid size-6 place-items-center rounded-full hover:bg-white"
+                >
+                  <X aria-hidden className="size-3.5" />
+                </button>
+              </li>
+            ))}
+            <li className="text-[14px] font-bold text-ink-2">
+              <span className="tabular">{before.length + 1}.</span> {selected ? nameOf(selected) : "아래에서 다음 동네를 골라 주세요"}
+            </li>
+          </ol>
+          <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted-foreground">예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네 사이는 대중교통(또는 고른 이동수단)으로 이어요.</p>
+        </section>
+      ) : null}
       <RegionPicker value={selected} onChange={(next) => setValue("region", next, { shouldValidate: true, shouldDirty: true })} />
+      {canAdd ? (
+        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-[15px] font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
+          <Plus aria-hidden className="size-4" />
+          {nameOf(selected)} 다음에 다른 동네도 들르기
+        </button>
+      ) : null}
       <FieldError name="region" />
     </div>
   );
@@ -48,6 +89,7 @@ export function RegionStep() {
 export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void }) {
   const { register, setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "purpose">({ name: "purpose" });
+  const extra = useWatch<PlanValues, "purposes_extra">({ name: "purposes_extra" });
   const purposes = usePurposes();
 
   if (purposes.isPending) {
@@ -76,6 +118,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
               checked={selected === p.code}
               onChange={() => {
                 setValue("purpose", p.code, { shouldValidate: true, shouldDirty: true });
+                setValue("purposes_extra", extra.filter((c) => c !== p.code), { shouldDirty: true });
                 onPicked(p);
               }}
             />
@@ -95,6 +138,38 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
         ))}
       </div>
       <FieldError name="purpose" />
+      {selected && purposes.data.items.length > 1 ? (
+        <div className="mt-5 rounded-card bg-white p-5 shadow-soft" role="group" aria-label="함께 고를 목적">
+          <h3 className="text-sm font-extrabold text-muted-foreground">다른 목적도 겹치나요? (선택)</h3>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
+            위에서 고른 것이 하루의 틀이 되고, 여기서 더 고른 것까지 모두 맞는 곳을 찾아요. 예를 들어 가족이 함께면 술집은 빠져요.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {purposes.data.items
+              .filter((p) => p.code !== selected)
+              .map((p) => {
+                const on = extra.includes(p.code);
+                const full = !on && extra.length >= 2;
+                return (
+                  <button
+                    key={p.code}
+                    type="button"
+                    aria-pressed={on}
+                    disabled={full}
+                    onClick={() => setValue("purposes_extra", on ? extra.filter((c) => c !== p.code) : [...extra, p.code], { shouldDirty: true })}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[14px] font-bold disabled:opacity-40",
+                      on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep",
+                    )}
+                  >
+                    <PurposeIcon icon={p.icon} className="size-4" />
+                    {p.name}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      ) : null}
     </fieldset>
   );
 }

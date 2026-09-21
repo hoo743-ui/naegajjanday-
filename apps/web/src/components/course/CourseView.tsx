@@ -87,7 +87,10 @@ export function CourseView({ id }: { id: string }) {
   const mood: JjaniMood = data.is_saved ? "cheers" : over ? "sorry" : data.totals.budget_left > 0 ? "wink" : "done";
 
   // 지역 중심이 아니라 역·장소 주변으로 짠 코스면 그 이름으로 부른다 ("영등포구"가 아니라 "신도림역 주변")
-  const placeLabel = request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
+  const hopping = (request.regions?.length ?? 0) > 1;
+  const placeLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
+  // 목적을 여러 개 골랐으면 모두 보여 준다 (첫 번째가 하루의 틀)
+  const purposeLabel = (request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name;
 
   const fail = (error: unknown) => {
     const copy = mascotCopyForError(error);
@@ -173,6 +176,8 @@ export function CourseView({ id }: { id: string }) {
     reroll.mutate(
       {
         region: request.region?.slug,
+        ...(hopping ? { regions: request.regions!.map((r) => r.slug) } : {}),
+        ...((request.purposes?.length ?? 0) > 1 ? { purposes: request.purposes!.slice(1).map((p) => p.code) } : {}),
         // 역·장소 주변으로 짠 코스는 그 지점을 다시 보낸다 — 안 보내면 구 중심으로 옮겨 가 버린다
         ...(request.origin ? { origin: request.origin, ...(request.origin_label ? { origin_label: request.origin_label } : {}) } : {}),
         purpose: request.purpose.code,
@@ -232,7 +237,7 @@ export function CourseView({ id }: { id: string }) {
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <p className="tabular flex flex-wrap gap-x-2 text-[13px] font-extrabold text-blue-deep">
-                {[placeLabel, request.purpose.name, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
+                {[placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
               </p>
               <h1 className="sr-only">
                 {data.label}: {data.summary}

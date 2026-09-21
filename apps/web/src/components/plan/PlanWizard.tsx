@@ -137,7 +137,10 @@ export function PlanWizard() {
     const body: GenerateCourseRequest = {
       // 역을 골랐으면 지역 대신 그 역의 좌표를 출발점으로 보낸다 (API 는 region 또는 origin 을 받는다)
       ...(station ? { origin: { lat: station.lat, lng: station.lng }, origin_label: station.name } : { region: data.region }),
+      // 여러 동네: 먼저 들를 동네들 → 마지막 동네 순서로 잇는다 (역 주변은 한 동네 코스만)
+      ...(!station && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
       purpose: data.purpose,
+      ...(data.purposes_extra.length > 0 ? { purposes: data.purposes_extra } : {}),
       party_size: data.party_size,
       budget_total: data.budget_total,
       start_at: toKstIso(start),

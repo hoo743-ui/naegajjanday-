@@ -149,6 +149,10 @@ export interface GenerateCourseRequest {
   style?: CourseStyle;
   /** 꼭 넣을 자리. ["BAR"] = 술 한잔 포함 */
   extras?: string[];
+  /** 함께 고른 다른 목적들. 가중치·취향은 평균, 한 목적의 금기(가족 → 술집)는 전체에 적용 */
+  purposes?: string[];
+  /** 하루에 여러 동네를 잇는다(방문 순서, 최대 3). 주면 region 대신 쓰인다 */
+  regions?: string[];
   /** 꼭 넣을 동네 명물. 생략 = 가장 뚜렷한 명물을 자동으로, FOCUS_OFF = 넣지 않음 */
   focus?: string;
   transport?: Transport;
@@ -201,6 +205,8 @@ export interface TravelLeg {
   travel_min: number;
   distance_m: number;
   mode: Transport;
+  /** 다른 동네로 넘어가는 구간이면 그 동네 이름 (여러 동네를 이은 코스) */
+  hop_to?: string | null;
 }
 
 export interface Congestion {
@@ -295,6 +301,10 @@ export interface CourseDetail extends Course {
     /** 이 코스가 실제로 중심에 둔 동네 명물 (자동으로 골랐든 사용자가 골랐든) */
     focus?: string | null;
     extras?: string[];
+    /** 첫 목적 포함, 고른 순서대로 */
+    purposes?: { code: string; name: string }[];
+    /** 여러 동네를 이은 코스일 때만 */
+    regions?: { slug: string; name: string }[];
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];
