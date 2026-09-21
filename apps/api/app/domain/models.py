@@ -221,6 +221,9 @@ class RequestContext:
     focus: str | None = None  # the specialty the course was actually built around (set by the engine)
     focus_request: str | None = None  # the one the user picked
     purpose_codes: tuple[str, ...] = ()  # every purpose chosen for this meeting, first one first
+    # a day across several neighbourhoods (recommendation.itinerary): one entry per neighbourhood with
+    # its centre, the stop positions it covers and the hop that leads into it
+    segments: list[dict[str, Any]] = field(default_factory=list)
     focus_from_price: int | None = None  # cheapest shop serving the pick, when the pick did not fit
     auto_focus_words: tuple[str, ...] = ()  # specialties strong enough to claim a stop unasked
     local_off: bool = False

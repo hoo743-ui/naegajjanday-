@@ -1,0 +1,10 @@
+{
+  "_comment": "하루에 여러 동네를 잇는 코스의 규칙. 동네마다 엔진을 돌려 조각을 만들고, 남은 예산과 시각을 다음 동네로 넘긴다. 시각은 분.",
+  "max_regions": 3,
+  "leg_default_min": 180,
+  "leg_min_min": 90,
+  "walk_hop_max_m": 1500,
+  "hop_mode": "transit",
+  "hop_overhead_min": { "walk": 0, "transit": 10, "car": 8 },
+  "budget_round": 1000
+}

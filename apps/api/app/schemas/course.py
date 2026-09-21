@@ -22,6 +22,11 @@ class CourseGenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     region: str | None = Field(default=None, examples=["seoul-hongdae"])
+    regions: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description="하루에 여러 동네를 잇는다(방문 순서). region/origin 대신 쓰이고 예산·시간을 나눠 쓴다",
+    )
     origin: LatLng | None = None
     origin_label: str | None = Field(
         default=None,
@@ -56,6 +61,11 @@ class CourseGenerateRequest(BaseModel):
 
     @model_validator(mode="after")
     def _region_or_origin(self) -> CourseGenerateRequest:
+        if len(self.regions) >= 2:
+            self.region, self.origin, self.origin_label = self.regions[0], None, None
+        elif self.regions:
+            self.region = self.region or self.regions[0]
+            self.regions = []
         if not self.region and self.origin is None:
             raise ValueError("region 또는 origin 중 하나는 필요해요")
         return self
@@ -83,6 +93,7 @@ class FromPrev(BaseModel):
     travel_min: int
     distance_m: int
     mode: Transport
+    hop_to: str | None = Field(default=None, description="다른 동네로 넘어가는 구간이면 그 동네 이름")
 
 
 class Congestion(BaseModel):
@@ -223,6 +234,9 @@ class CourseRequestEcho(BaseModel):
     preferences: EchoPreferences = Field(default_factory=EchoPreferences)
     purpose: CodeName
     purposes: list[CodeName] = Field(default_factory=list, description="첫 목적 포함, 고른 순서대로")
+    regions: list[SlugName] = Field(
+        default_factory=list, description="여러 동네를 이은 코스일 때만, 방문 순서"
+    )
     party_size: int
     budget_total: int
     transport: Transport

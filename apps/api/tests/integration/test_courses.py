@@ -125,6 +125,29 @@ class TestGenerate:
         unknown = await generate(client, purposes=["nope"])
         assert unknown.status_code == 404
 
+    async def test_a_day_across_two_neighbourhoods(self, client: httpx.AsyncClient) -> None:
+        resp = await generate(
+            client, regions=["seoul-hongdae", "seoul-seongsu"], budget_total=120000, alternatives=2,
+            start_at="2026-09-22T12:00:00+09:00", duration_min=420,
+        )  # fmt: skip
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert len(body["courses"]) == 1  # one joined course; alternatives are per neighbourhood, not per day
+        course = body["courses"][0]
+        assert course["totals"]["price"] <= 120000
+        assert course["totals"]["price"] == sum(s["est_price"] for s in course["stops"])
+        hops = [s for s in course["stops"] if s["from_prev"].get("hop_to")]
+        assert len(hops) == 1 and hops[0]["from_prev"]["mode"] in ("transit", "car")
+        assert hops[0]["position"] > 1
+        times = [s["arrive_at"] for s in course["stops"]]
+        assert times == sorted(times)  # the second neighbourhood starts after the first one ends
+        ids = [s["place"]["id"] for s in course["stops"]]
+        assert len(ids) == len(set(ids))
+        detail = (await client.get(f"/v1/courses/{course['id']}")).json()
+        assert [r["slug"] for r in detail["request"]["regions"]] == ["seoul-hongdae", "seoul-seongsu"]
+        missing = await generate(client, regions=["seoul-hongdae", "atlantis"])
+        assert missing.status_code == 404
+
     async def test_bigger_budget_keeps_the_bar_slot(self, client: httpx.AsyncClient) -> None:
         body = (await generate(client, budget_total=160000, alternatives=0)).json()
         course = body["courses"][0]

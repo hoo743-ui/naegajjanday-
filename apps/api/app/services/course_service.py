@@ -8,7 +8,8 @@ import random
 import time
 import uuid
 from collections.abc import AsyncIterator, Sequence
-from datetime import datetime
+from dataclasses import asdict, replace
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -43,6 +44,14 @@ from app.domain.recommendation.candidates import FilterContext, area_names_of, h
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
 from app.domain.recommendation.features import is_open
+from app.domain.recommendation.itinerary import (
+    Hop,
+    hop_between,
+    itinerary_rules,
+    leg_budget,
+    leg_minutes,
+    merge_legs,
+)
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
@@ -113,6 +122,89 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
+        if len(req.regions) >= 2:
+            return await self._plan_across(req, user)
+        return await self._plan_one(req, user)
+
+    async def _plan_across(
+        self, req: dto.CourseGenerateRequest, user: User | None
+    ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
+        """One day across several neighbourhoods: each is planned as a leg of its own, and money and
+        time are handed forward (see `domain.recommendation.itinerary`)."""
+        rules = itinerary_rules()
+        slugs = list(dict.fromkeys(req.regions))[: int(rules["max_regions"])]
+        remaining = req.budget_total
+        minutes_left = req.duration_min
+        start_at = self._local(req.start_at)
+        excluded = list(req.preferences.exclude_place_ids)
+        legs: list[CourseResult] = []
+        hops: list[Hop] = []
+        segments: list[dict[str, Any]] = []
+        first: tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput] | None = None
+        candidates = 0
+        for k, slug in enumerate(slugs):
+            left = len(slugs) - k
+            leg_req = req.model_copy(
+                update={
+                    "region": slug,
+                    "regions": [],
+                    "origin": None,
+                    "origin_label": None,
+                    "budget_total": leg_budget(remaining, left, rules),
+                    "start_at": start_at,
+                    "duration_min": leg_minutes(minutes_left, left, rules),
+                    "alternatives": 0,
+                    "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
+                }
+            )
+            planned = await self._plan_one(leg_req, user)
+            region, _origin, _purpose, _ctx, _profile, out = planned
+            first = first or planned
+            course = out.courses[0]
+            candidates += out.candidates_count
+            position = sum(len(leg.stops) for leg in legs) + 1
+            segments.append(
+                {
+                    "slug": region.slug,
+                    "name": region.name,
+                    "lat": region.center_lat,
+                    "lng": region.center_lng,
+                    "radius_m": region.radius_m,
+                    "from_position": position,
+                    "to_position": position + len(course.stops) - 1,
+                    "hop": asdict(hops[-1]) if hops else None,
+                }
+            )
+            legs.append(course)
+            remaining = max(0, remaining - course.total_price)
+            excluded += [s.place.public_id for s in course.stops if not s.place.is_event]
+            if k + 1 < len(slugs):
+                nxt = await self._regions.get_by_slug(slugs[k + 1])
+                if nxt is None:
+                    raise errors.RegionNotFound(f"'{slugs[k + 1]}' 지역은 아직 없어요.")
+                last = course.stops[-1]
+                hop = hop_between(
+                    last.place.point, GeoPoint(nxt.center_lat, nxt.center_lng), req.transport, rules
+                )
+                hops.append(hop)
+                start_at = last.leave_at + timedelta(minutes=hop.minutes)
+                if minutes_left is not None:
+                    spent = int((start_at - self._local(req.start_at)).total_seconds() // 60)
+                    minutes_left = max(0, req.duration_min - spent) if req.duration_min else None
+        assert first is not None
+        region, origin, purpose, ctx, profile, out = first
+        merged, _hop_at = merge_legs(legs, hops)
+        ctx.segments = segments
+        ctx.budget_total = req.budget_total
+        ctx.duration_min = req.duration_min
+        merged_out = replace(
+            out, courses=[merged], candidates_count=candidates, warnings=list(merged.warnings)
+        )
+        return region, origin, purpose, ctx, profile, merged_out
+
+    async def _plan_one(
+        self, req: dto.CourseGenerateRequest, user: User | None
+    ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         region, origin = await self._resolve_region(req)
         purposes = await self._purposes(req)
         purpose = purposes[0]  # the first one gives the day its shape; all of them weigh in below
@@ -228,6 +320,7 @@ class CourseService:
             "style": ctx.style,
             "focus": ctx.focus,
             "purposes": list(ctx.purpose_codes),
+            "segments": ctx.segments,
             "extras": [r for r in req.extras if r in extra_roles()],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
@@ -427,6 +520,8 @@ class CourseService:
     def _view(self, row: Course, stops: Sequence[StopResult], origin: GeoPoint) -> dto.CourseOut:
         reasons = {s.position: s.reason for s in row.stops}
         budget = row.budget_total
+        segments = (row.request or {}).get("segments") or []
+        hops = {seg["from_position"]: seg for seg in segments if seg.get("hop")}
         return dto.CourseOut(
             id=row.public_id,
             label=row.label,
@@ -454,7 +549,11 @@ class CourseService:
                     from_prev=dto.FromPrev(
                         travel_min=s.travel_min_from_prev,
                         distance_m=s.distance_m_from_prev,
-                        mode=row.transport,
+                        # the ride into the next neighbourhood is not the walk the rest of the day is
+                        mode=(hops[s.position]["hop"] or {}).get("mode", row.transport)
+                        if s.position in hops
+                        else row.transport,
+                        hop_to=hops[s.position]["name"] if s.position in hops else None,
                     ),
                     score=s.score,
                     score_breakdown=s.score_breakdown,
@@ -539,6 +638,10 @@ class CourseService:
                     disliked_tags=list(prefs.get("disliked_tags") or []),
                 ),
                 purpose=dto.CodeName(code=purpose.code, name=purpose.name),
+                regions=[
+                    dto.SlugName(slug=seg["slug"], name=seg["name"])
+                    for seg in (row.request or {}).get("segments") or []
+                ],
                 purposes=await self._purpose_names((row.request or {}).get("purposes") or [purpose.code]),
                 party_size=row.party_size,
                 budget_total=row.budget_total,
@@ -651,6 +754,11 @@ class CourseService:
         sb = SlotBudget(target.slot, target.slot_share, target.slot_base_budget)
         region = await self._s.get(Region, row.region_id) if row.region_id else None
         radius = (region.radius_m if region else 1200) * profile.params.radius_expand_factor
+        # in a course across neighbourhoods a stop is replaced from its own neighbourhood
+        for seg in (row.request or {}).get("segments") or []:
+            if seg["from_position"] <= target.position <= seg["to_position"]:
+                origin = ctx.origin = GeoPoint(seg["lat"], seg["lng"])
+                radius = seg["radius_m"] * profile.params.radius_expand_factor
         pool = await self._places.fetch(target.role, origin, radius, ctx.start_at.date())
         fc = FilterContext.build(ctx, target.role, max(sb.budget, target.slot_budget), target.arrive_at)
         pool = [p for p in hard_filter(pool, fc, profile.params) if p.public_id != target.place.public_id]
