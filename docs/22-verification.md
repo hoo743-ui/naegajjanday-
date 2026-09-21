@@ -53,6 +53,7 @@ API 를 고쳤으면 `apps/api` 에서 `uv run ruff check app tests` · `uv run 
 |---|---|
 | `trip-reroll-audit.mjs` | 1박 2일의 1일차를 "다시 짜기" 해도 일차 · 탭 · 여행 전체 예산이 그대로인지, 가족 + 술 한잔이면 결과 화면이 그 사실을 말하는지, 자료 없는 평점 막대를 그리지 않는지 |
 | `upload-audit.mjs <토큰 파일>` | 관리자 › 장소 › 사진 탭: 미리보기, 사진 아닌 파일 거절, multipart 모양(`file` + `make_cover`). 실제 가게에 시험 사진이 남지 않게 업로드 요청은 가로채서 내용만 확인한다 |
+| `motion-audit.mjs` | 영수증 "출력" 애니메이션이 끝난 뒤 모든 줄이 온전히 보이는지, 모션을 줄인 환경(`prefers-reduced-motion`)에서는 처음부터 다 보이는지 |
 | `map-audit` · `local-audit` · `trip-audit` · `roadview-audit` · `place-audit` | 지도 경로 · 동네 특색 · 여행 일정 · 거리뷰 · 장소 시트 |
 
 ## 검증기가 실제로 잡은 것 (기록)

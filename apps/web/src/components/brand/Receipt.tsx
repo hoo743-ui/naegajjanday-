@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Money } from "./Money";
 
@@ -30,7 +30,7 @@ export function Receipt({ heading, caption, items, budget, footer, className }: 
   const left = budget - total;
   return (
     <div className={cn("receipt-wrap", className)}>
-      <div className="receipt px-6 pt-7 pb-6 sm:px-7">
+      <div className="receipt receipt-print px-6 pt-7 pb-6 sm:px-7">
         <p className="text-center font-round text-[19px] tracking-tight text-ink">내가짠데이</p>
         <p className="tabular mt-1 text-center text-[12.5px] font-bold text-muted-foreground">{heading}</p>
         {caption ? <p className="mt-0.5 text-center text-[11.5px] text-muted-foreground">{caption}</p> : null}
@@ -39,7 +39,7 @@ export function Receipt({ heading, caption, items, budget, footer, className }: 
 
         <ol className="grid gap-2.5">
           {items.map((item, i) => (
-            <li key={`${item.label}-${item.name}`} className="flex items-baseline gap-2 text-[14.5px]">
+            <li key={`${item.label}-${item.name}`} style={{ "--i": i } as CSSProperties} className="receipt-line flex items-baseline gap-2 text-[14.5px]">
               <span className="tabular w-5 shrink-0 text-[12px] font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
               <span className="min-w-0 shrink truncate font-bold text-ink">
                 <span className="text-muted-foreground">{item.label}</span> {item.name}
@@ -54,7 +54,7 @@ export function Receipt({ heading, caption, items, budget, footer, className }: 
 
         <hr className="receipt-rule my-4" />
 
-        <dl className="grid gap-1.5 text-[14px]">
+        <dl style={{ "--i": items.length + 1 } as CSSProperties} className="receipt-line grid gap-1.5 text-[14px]">
           <div className="flex items-baseline justify-between">
             <dt className="font-bold text-muted-foreground">예산</dt>
             <dd className="tabular font-bold text-ink-2">{budget.toLocaleString("ko-KR")}원</dd>
@@ -68,7 +68,10 @@ export function Receipt({ heading, caption, items, budget, footer, className }: 
         </dl>
 
         {/* 이 서비스의 약속이 한 줄로 보이는 곳: 예산을 넘지 않고, 얼마가 남는지 */}
-        <div className={cn("mt-4 flex items-center justify-between rounded-2xl px-4 py-3", left >= 0 ? "bg-gold-soft text-gold-ink" : "bg-pink-soft text-pink-deep")}>
+        <div
+          style={{ "--i": items.length + 3 } as CSSProperties}
+          className={cn("receipt-line mt-4 flex items-center justify-between rounded-2xl px-4 py-3", left >= 0 ? "coin-gleam bg-gold-soft text-gold-ink" : "bg-pink-soft text-pink-deep")}
+        >
           <span className="text-[13.5px] font-extrabold">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
           <Money value={Math.abs(left)} className="text-[22px] leading-none font-extrabold tracking-tight" />
         </div>
