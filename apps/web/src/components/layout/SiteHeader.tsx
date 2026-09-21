@@ -24,9 +24,9 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ overlay = false }: SiteHeaderProps) {
-  // 채팅을 쓸 수 없는 환경(LLM 미설정)에서는 메뉴에 올리지 않는다 — 눌러 봐야 "준비 중"이다.
-  // 확인 전(undefined)에는 그대로 둬서 메뉴가 깜빡이지 않게 한다.
-  const chatOff = useFeatures().data?.chat === false;
+  // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 보인다. 확인 전에 보여 주면, LLM 이 없는 환경(지금의 실제 환경)에서는
+  // 입구가 떴다가 1~2초 뒤에 사라진다 — 누르려던 버튼이 손 밑에서 바뀐다(버튼 전수 검사가 잡았다).
+  const chatOff = useFeatures().data?.chat !== true;
   const LINKS = chatOff
     ? ALL_LINKS.filter((l) => l.href !== "/chat")
     : ALL_LINKS;
@@ -45,6 +45,9 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
   useEffect(() => setOpen(false), [pathname]);
 
   const solid = scrolled || open || !overlay;
+  // 코스를 짜는 중이거나 결과를 보는 중에는 "무료로 추천받기"를 띄우지 않는다: /plan 에서는 제자리 링크(눌러도 아무 일 없음)이고,
+  // 결과 화면에서는 방금 받은 사람에게 또 받으라고 하는 셈이다.
+  const showCta = !pathname.startsWith("/plan") && !pathname.startsWith("/course");
 
   return (
     <header
@@ -60,6 +63,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
           href="/"
           className="-ml-1 flex items-center gap-2 rounded-xl px-1 font-round text-[22px] leading-none hover:opacity-80"
           aria-label="내가짠데이 홈"
+          aria-current={pathname === "/" ? "page" : undefined}
         >
           <Jjani mood="hi" size={32} animated={false} decorative />
           내가짠데이
@@ -100,19 +104,13 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
               로그인
             </Link>
           ) : null}
-          <Button
-            asChild
-            variant="brand"
-            size="md"
-            className="hidden sm:inline-flex"
-          >
-            <Link
-              href="/plan"
-              onClick={() => track("plan_started", { entry: "nav" })}
-            >
-              무료로 추천받기
-            </Link>
-          </Button>
+          {showCta ? (
+            <Button asChild variant="brand" size="md" className="hidden sm:inline-flex">
+              <Link href="/plan" onClick={() => track("plan_started", { entry: "nav" })}>
+                무료로 추천받기
+              </Link>
+            </Button>
+          ) : null}
           <button
             type="button"
             className="grid size-11 place-items-center rounded-xl text-ink md:hidden"
@@ -148,14 +146,13 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
               {link.label}
             </Link>
           ))}
-          <Button asChild variant="brand" size="xl" className="mt-2">
-            <Link
-              href="/plan"
-              onClick={() => track("plan_started", { entry: "nav" })}
-            >
-              무료로 추천받기
-            </Link>
-          </Button>
+          {showCta ? (
+            <Button asChild variant="brand" size="xl" className="mt-2">
+              <Link href="/plan" onClick={() => track("plan_started", { entry: "nav" })}>
+                무료로 추천받기
+              </Link>
+            </Button>
+          ) : null}
         </nav>
       ) : null}
     </header>

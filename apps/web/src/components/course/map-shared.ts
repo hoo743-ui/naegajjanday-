@@ -53,6 +53,9 @@ export function pinHtml(position: number, name: string, color: string, active: b
 const PIN_BOX_W = 64;
 const PIN_BOX_H = 74;
 const FAN_GAP = 74; // 펼쳤을 때 이웃 핀 사이 간격 (핀 너비 46px + 숨 쉴 틈)
+const EDGE = 34; // 지도 가장자리에서 핀 중심까지 (핀 반너비 23px + 여유): 지도는 overflow-hidden 이라 넘으면 잘린다
+const PIN_TOP = 70; // 핀 머리는 기준점에서 이만큼 위에 있다
+const ROW_H = PIN_BOX_H + 6;
 
 /**
  * 겹치는 핀을 항상 펼쳐 둔다(Spiderfy 방식이되, 눌러야 펼쳐지는 게 아니라 상시).
@@ -61,8 +64,10 @@ const FAN_GAP = 74; // 펼쳤을 때 이웃 핀 사이 간격 (핀 너비 46px +
  *
  * 1) 핀 상자가 겹치는 것끼리 무리로 묶고(가로만이 아니라 세로 겹침도 본다)
  * 2) 무리의 중심 위쪽에 순번 순서대로 부채꼴로 놓는다 → 왼쪽부터 1, 2, 3 … 으로 읽힌다.
+ * 3) 부채꼴이 지도 상자(`box`)를 넘으면 줄을 지어 놓는다(윗줄부터 1, 2, 3 …): 좁은 모바일 지도에 일곱 곳이 한 무리가 되면
+ *    부채꼴 반지름이 231px 가 돼 바깥 핀이 지도 밖으로 잘렸다(대량 검증의 PIN_MISSING "핀 5/7").
  */
-export function spreadOverlaps(points: { x: number; y: number }[]): Spread[] {
+export function spreadOverlaps(points: { x: number; y: number }[], box?: { w: number; h: number }): Spread[] {
   const group = points.map((_, i) => i);
   const find = (i: number): number => (group[i] === i ? i : (group[i] = find(group[i]!)));
   for (let i = 0; i < points.length; i += 1) {
@@ -82,6 +87,26 @@ export function spreadOverlaps(points: { x: number; y: number }[]): Spread[] {
     // 부채꼴: 핀 사이 호의 길이가 FAN_GAP 이 되도록 반지름을 정한다 (위쪽 ±55° 안에서)
     const span = Math.min((110 * Math.PI) / 180, (ids.length - 1) * 0.72);
     const radius = Math.max(58, (FAN_GAP * (ids.length - 1)) / Math.max(span, 0.01));
+    if (box) {
+      const half = radius * Math.sin(span / 2);
+      const top = cy - radius + radius * 0.55 - PIN_TOP;
+      if (cx - half < EDGE || cx + half > box.w - EDGE || top < 0) {
+        const perRow = Math.max(2, Math.floor((box.w - 2 * EDGE) / FAN_GAP) + 1);
+        const rows = Math.ceil(ids.length / perRow);
+        const each = Math.ceil(ids.length / rows);
+        const bottom = Math.min(Math.max(cy, rows * ROW_H), Math.max(rows * ROW_H, box.h - 8));
+        ids.forEach((id, k) => {
+          const row = Math.floor(k / each);
+          const inRow = Math.min(each, ids.length - row * each);
+          const rowHalf = ((inRow - 1) * FAN_GAP) / 2;
+          const mid = Math.min(Math.max(cx, EDGE + rowHalf), Math.max(EDGE + rowHalf, box.w - EDGE - rowHalf));
+          const tx = mid + (k - row * each) * FAN_GAP - rowHalf;
+          const ty = bottom - (rows - 1 - row) * ROW_H;
+          out[id] = { dx: Math.round(tx - points[id]!.x), dy: Math.round(ty - points[id]!.y), crowded: true };
+        });
+        continue;
+      }
+    }
     ids.forEach((id, k) => {
       const angle = ids.length === 1 ? 0 : -span / 2 + (span * k) / (ids.length - 1);
       const tx = cx + radius * Math.sin(angle);

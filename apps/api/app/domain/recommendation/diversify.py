@@ -22,8 +22,11 @@ DEFAULT_VARIANTS: list[dict[str, Any]] = [
         "params": {"budget_target_util": 0.6, "utilization_lo": 0.5, "utilization_hi": 0.8},
     },
     {
-        "label": "평점 우선 코스",
-        "weight_mult": {"rating": 1.8, "sentiment": 1.5, "budget": 0.7},
+        # Was "평점 우선 코스" on rating × 1.8: there are no ratings in the data (every place scores the same
+        # neutral value), so the twist did nothing and the label promised what we do not have. `curated` is
+        # the selection signal we do have: vouched for by a public body, or measurably visited.
+        "label": "검증된 곳 코스",
+        "weight_mult": {"curated": 1.8, "budget": 0.7},
         "params": {},
     },
     {

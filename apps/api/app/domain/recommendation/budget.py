@@ -28,6 +28,13 @@ def is_night(start_at: datetime) -> bool:
     return start_at.hour >= NIGHT_FROM_H or start_at.hour < NIGHT_UNTIL_H
 
 
+def evening_minute(at: datetime) -> int:
+    """Minutes since midnight, where the small hours belong to the evening before: 01:00 is 1500, not 60.
+    A rule such as "a drink, from 17:00" (1020) must still hold at 1 a.m. — 00:01 is not a morning."""
+    minute = at.hour * 60 + at.minute
+    return minute + 24 * 60 if at.hour < NIGHT_UNTIL_H else minute
+
+
 def time_band_for(start_at: datetime, duration_min: int | None) -> str:
     hour = start_at.hour + start_at.minute / 60
     if is_night(start_at):

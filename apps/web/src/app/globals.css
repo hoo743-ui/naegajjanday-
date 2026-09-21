@@ -586,9 +586,10 @@
   text-shadow: 0 1px 2px rgba(20, 33, 61, 0.35);
 }
 /* 코스가 처음 그려질 때: 핀이 순번대로 12px 위에서 내려앉는다. --t 는 이미 지난 시간(다시 그려도 이어서 재생) */
+/* opacity 는 건드리지 않는다: 지연(240ms + 순번×90ms) 동안 `both` 가 첫 프레임에 붙잡아 두므로, 투명에서 시작하면
+   경로는 그려졌는데 핀이 하나도 없는 지도가 최대 0.8초 보인다 */
 @keyframes pin-land {
   from {
-    opacity: 0;
     translate: var(--dx, 0px) calc(var(--dy, 0px) - 12px);
   }
 }

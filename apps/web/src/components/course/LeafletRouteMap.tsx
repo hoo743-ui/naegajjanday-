@@ -145,7 +145,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
       }).addTo(layer);
     }
 
-    const spread = spreadOverlaps(pinsPx);
+    const spread = spreadOverlaps(pinsPx, hostRef.current ? { w: hostRef.current.clientWidth, h: hostRef.current.clientHeight } : undefined);
     const landing = landingRef.current(stops.map((s) => s.place.id).join(","));
     stops.forEach((stop, i) => {
       const active = stop.position === activeStop;

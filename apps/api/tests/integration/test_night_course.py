@@ -7,7 +7,7 @@ from datetime import datetime
 
 import httpx
 
-from app.domain.recommendation.budget import time_band_for
+from app.domain.recommendation.budget import evening_minute, time_band_for
 from app.infra.default_hours import HOURS_PATH, get_default_hours
 from tests.conftest import GENERATE_BODY
 
@@ -19,6 +19,15 @@ def test_the_band_after_the_kitchens_close_is_night() -> None:
     assert time_band_for(datetime(2026, 9, 22, 21, 0), None) == "night"
     assert time_band_for(datetime(2026, 9, 23, 2, 0), 600) == "night"  # never a "full day" from 2 a.m.
     assert time_band_for(datetime(2026, 9, 23, 5, 0), None) == "lunch"
+
+
+def test_one_in_the_morning_is_still_the_evening_before() -> None:
+    # "a drink, from 17:00" (1020) was refused at 00:01 (minute 1): nothing to offer after midnight
+    assert evening_minute(datetime(2026, 9, 22, 16, 59)) == 1019
+    assert evening_minute(datetime(2026, 9, 22, 23, 59)) == 1439
+    assert evening_minute(datetime(2026, 9, 23, 0, 1)) == 1441
+    assert evening_minute(datetime(2026, 9, 23, 4, 59)) == 1739
+    assert evening_minute(datetime(2026, 9, 23, 5, 0)) == 300  # the morning starts here
 
 
 def test_a_sign_that_says_so_beats_what_the_trade_usually_does() -> None:

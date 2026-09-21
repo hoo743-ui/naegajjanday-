@@ -210,7 +210,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       overlays.push(new maps.CustomOverlay({ position: toCoords(layout.chip), content: el, xAnchor: 0, yAnchor: 0, zIndex: 50 }));
     });
 
-    const spread = spreadOverlaps(pinsPx);
+    const spread = spreadOverlaps(pinsPx, boxRef.current ? { w: boxRef.current.clientWidth, h: boxRef.current.clientHeight } : undefined);
     const landing = landingRef.current(stops.map((s) => s.place.id).join(","));
     stops.forEach((stop, i) => {
       const active = stop.position === activeStop;

@@ -39,7 +39,7 @@ from app.domain.recommendation.blend import (
     vetoed_roles,
     without_roles,
 )
-from app.domain.recommendation.budget import SlotBudget, is_night
+from app.domain.recommendation.budget import SlotBudget, evening_minute, is_night
 from app.domain.recommendation.candidates import FilterContext, area_names_of, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
@@ -1130,9 +1130,11 @@ class CourseService:
         return out
 
     async def _leftover_options(
-        self, row: Course, stops: Sequence[StopResult], user: User | None
+        self, row: Course, stops: Sequence[StopResult], user: User | None, *, same_role: bool = False
     ) -> list[tuple[str, PlaceCandidate, int, int]]:
-        """(role, place, walk minutes, metres) near the last stop that the money left over can buy."""
+        """(role, place, walk minutes, metres) near the last stop that the money left over can buy.
+        `same_role`: a second cafe is not a suggestion, but a second free sight beats a course of one place
+        (the top-up asks for it only when nothing else was found)."""
         rules = suggestion_rules()
         if not rules or not stops:
             return []
@@ -1147,10 +1149,12 @@ class CourseService:
         ctx.exclude_place_ids |= {s.place.id for s in stops if not s.place.is_event}
         last = stops[-1]
         purposes = (row.request or {}).get("purposes") or []
-        vetoed = vetoed_roles([str(code) for code in purposes]) | {s.role for s in stops}
+        vetoed = vetoed_roles([str(code) for code in purposes]) | (
+            set() if same_role else {s.role for s in stops}
+        )
         reach_m = float(rules["max_walk_min"]) * float(rules["walk_m_per_min"])
         arrive_at = last.leave_at + timedelta(minutes=5)
-        minute = arrive_at.hour * 60 + arrive_at.minute
+        minute = evening_minute(self._local(arrive_at))  # 00:01 is the same evening, not a morning
         found: list[tuple[str, PlaceCandidate, int, int]] = []
         for role, rule in rules["roles"].items():
             if role in vetoed or minute < int(rule.get("earliest_start_min", 0)):
@@ -1243,7 +1247,9 @@ class CourseService:
         for _ in range(int(rules.get("max_added", 0))):
             if len(stops) >= int(rules.get("below_stops", 0)):
                 break
-            options = await self._leftover_options(row, stops, user)
+            options = await self._leftover_options(row, stops, user) or await self._leftover_options(
+                row, stops, user, same_role=True
+            )
             if not options:
                 break
             role, place, _walk_min, _metres = options[0]

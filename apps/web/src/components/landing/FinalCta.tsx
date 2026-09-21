@@ -9,7 +9,9 @@ import { useFeatures } from "@/lib/api/hooks";
 import { Reveal } from "./Reveal";
 
 export function FinalCta() {
-  const chatOff = useFeatures().data?.chat === false;
+  // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 보인다. 확인 전에 보여 주면, LLM 이 없는 환경(지금의 실제 환경)에서는
+  // 입구가 떴다가 1~2초 뒤에 사라진다 — 누르려던 버튼이 손 밑에서 바뀐다(버튼 전수 검사가 잡았다).
+  const chatOff = useFeatures().data?.chat !== true;
   return (
     <section id="start" className="pt-6 pb-10 lg:pb-16">
       <div className="wrap">
