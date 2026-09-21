@@ -51,7 +51,8 @@ const SCENES = [
   { key: "terms", url: "/terms" },
   { key: "not-found", url: "/no-such-page" },
   ...(tokenFile ? ["", "/regions", "/places", "/attractions", "/events", "/banners", "/scoring", "/recommendations", "/users"].map((s) => ({ key: `admin${s.replace("/", "-")}`, url: `/admin${s}`, admin: true })) : []),
-].filter((s) => (only.length === 0 || only.some((o) => s.key.startsWith(o))) && (!retry || retry.some((r) => r.scene === s.key)));
+  // --only=admin 은 admin 으로 시작하는 모든 화면, --only=admin$ 는 그 화면 하나(토큰이 15분이라 관리자 화면은 하나씩 돈다)
+].filter((s) => (only.length === 0 || only.some((o) => (o.endsWith("$") ? s.key === o.slice(0, -1) : s.key.startsWith(o)))) && (!retry || retry.some((r) => r.scene === s.key)));
 
 const SELECTOR = "button, a[href], [role=tab], [role=radio], [role=checkbox], [role=switch], [role=menuitem], summary, input[type=checkbox], input[type=radio], label:has(input.sr-only)";
 
@@ -136,6 +137,15 @@ for (const scene of SCENES) {
   // 공연 조회는 17초가 걸리고 이 검사의 대상이 아니다
   await context.route("**/v1/performances**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], partial: false }) }));
   if (scene.admin && adminToken) await context.route("**/v1/auth/refresh", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: adminToken, token_type: "Bearer", expires_in: 900 }) }));
+  // 관리자 화면에는 확인창 없이 실데이터를 바꾸는 버튼이 있다(승인 · 반려 · 일시정지 · 저장 · 지우기). 모든 버튼을 누르는 검사가
+  // 장소 80만 곳의 DB 를 고치면 안 된다 → 읽기(GET) 말고는 서버에 보내지 않는다. 요청이 나갔다는 사실은 그대로 "효과"로 기록된다.
+  if (scene.admin) {
+    await context.route("**/v1/**", (route) => {
+      const method = route.request().method();
+      if (method === "GET" || method === "OPTIONS" || /\/auth\/refresh/.test(route.request().url())) return route.fallback();
+      return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    });
+  }
   const first = await open(context, scene);
   // 코스 화면의 이름은 코스마다 다르다(가게 이름이 들어간다) → 그 화면은 통째로 다시 본다
   const controls = (await collect(first)).filter((c) => !retryKeys || scene.key === "course" || retryKeys.has(retryKey({ scene: scene.key, ...c })));
