@@ -108,6 +108,7 @@ class Settings(BaseSettings):
     directions_timeout_s: float = 4.0
     transit_dir: Path = API_ROOT / "data" / "transit"
     media_dir: Path = API_ROOT / "data" / "media"  # curated open-licence category images
+    upload_dir: Path | None = None  # operator-uploaded place photos; None = uploads.default_upload_dir()
 
     # --- analytics ---
     analytics_provider: Literal["none", "ga4", "posthog", "mixpanel"] = "none"

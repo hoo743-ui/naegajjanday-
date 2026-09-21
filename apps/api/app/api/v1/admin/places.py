@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Form, Query, UploadFile
 from app.api.v1.responses import PROBLEMS
 from app.core import errors
 from app.core.deps import ContainerDep, SessionDep
+from app.infra import uploads
 from app.schemas import admin as dto
 from app.services.admin_place_service import AdminPlaceService
 from app.services.audit import AuditDep
@@ -70,6 +71,31 @@ async def import_places(svc: Svc, file: UploadFile, region: Annotated[str, Form(
         path = Path(tmp) / f"upload{suffix}"
         path.write_bytes(data)
         return await svc.import_file(path, region)
+
+
+@router.post(
+    "/{place_id}/photos",
+    response_model=dto.AdminPlaceOut,
+    responses=PROBLEMS(404, 422),
+    summary="그 장소의 실제 사진 올리기 (JPEG · PNG · WebP, 6MB 이하)",
+)
+async def upload_photo(
+    place_id: str,
+    svc: Svc,
+    container: ContainerDep,
+    file: UploadFile,
+    make_cover: Annotated[bool, Form()] = False,
+) -> dto.AdminPlaceOut:
+    data = await file.read(uploads.MAX_PHOTO_BYTES + 1)
+    if len(data) > uploads.MAX_PHOTO_BYTES:
+        raise errors.ValidationFailed("사진이 너무 커요 (최대 6MB).")
+    settings = container.settings
+    try:
+        relative = uploads.save(data, place_id, settings.upload_dir or uploads.default_upload_dir())
+    except uploads.NotAnImageError as exc:
+        raise errors.ValidationFailed("JPEG · PNG · WebP 사진만 올릴 수 있어요.") from exc
+    url = f"{settings.public_base_url.rstrip('/')}{uploads.URL_PREFIX}/{relative}"
+    return await svc.add_photo(place_id, url, make_cover=make_cover)
 
 
 @router.patch("/{place_id}", response_model=dto.AdminPlaceOut, responses=PROBLEMS(404, 422))

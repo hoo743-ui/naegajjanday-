@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1 import health
@@ -26,6 +27,7 @@ from app.domain.routing.travel_time import (
     TmapProvider,
     TravelTimeProvider,
 )
+from app.infra import uploads
 from app.infra.analytics.factory import build_tracker
 from app.infra.db.session import Database
 from app.infra.llm.factory import build_llm
@@ -205,6 +207,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(api_router, prefix="/v1")
+    # operator-uploaded place photos (infra.uploads). In production object storage + a CDN serve these.
+    upload_dir = settings.upload_dir or uploads.default_upload_dir()
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    app.mount(uploads.URL_PREFIX, StaticFiles(directory=upload_dir), name="uploads")
     return app
 
 

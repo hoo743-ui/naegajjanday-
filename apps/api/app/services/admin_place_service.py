@@ -220,6 +220,18 @@ class AdminPlaceService:
                 raise errors.ValidationFailed(f"'{name}' 태그는 없어요.")
             self._s.add(PlaceTag(place_id=place_id, tag_id=tag.id, weight=weight, source="admin"))
 
+    async def add_photo(self, public_id: str, url: str, *, make_cover: bool) -> dto.AdminPlaceOut:
+        """A photo an operator took or was given for this place. The first one becomes the cover; a later
+        one only when asked, so a good cover is not replaced by accident."""
+        place = await self._get(public_id)
+        before = snapshot(place)
+        place.images = [url, *[u for u in (place.images or []) if u != url]]
+        if make_cover or not place.thumbnail_url:
+            place.thumbnail_url = url
+        self._revise(place, "edit", before)
+        await self._s.commit()
+        return await self._out(place)
+
     async def patch(self, public_id: str, body: dto.AdminPlacePatch) -> dto.AdminPlaceOut:
         place = await self._get(public_id)
         before = snapshot(place)
