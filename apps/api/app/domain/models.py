@@ -221,9 +221,15 @@ class RequestContext:
     focus: str | None = None  # the specialty the course was actually built around (set by the engine)
     focus_request: str | None = None  # the one the user picked
     purpose_codes: tuple[str, ...] = ()  # every purpose chosen for this meeting, first one first
+    # categories that only appear when asked for (a ballpark means nothing on a day without a game, and
+    # no official schedule exists): the ones asked for, and the ones to keep out
+    wanted_categories: tuple[str, ...] = ()
+    blocked_categories: frozenset[str] = frozenset()
     # a day across several neighbourhoods (recommendation.itinerary): one entry per neighbourhood with
     # its centre, the stop positions it covers and the hop that leads into it
     segments: list[dict[str, Any]] = field(default_factory=list)
+    # a trip of several days (recommendation.itinerary): per course label, what that day was planned with
+    days: dict[str, dict[str, Any]] = field(default_factory=dict)
     focus_from_price: int | None = None  # cheapest shop serving the pick, when the pick did not fit
     auto_focus_words: tuple[str, ...] = ()  # specialties strong enough to claim a stop unasked
     local_off: bool = False

@@ -24,8 +24,14 @@ class CourseGenerateRequest(BaseModel):
     region: str | None = Field(default=None, examples=["seoul-hongdae"])
     regions: list[str] = Field(
         default_factory=list,
-        max_length=3,
+        max_length=9,
         description="하루에 여러 동네를 잇는다(방문 순서). region/origin 대신 쓰이고 예산·시간을 나눠 쓴다",
+    )
+    nights: int = Field(
+        default=0,
+        ge=0,
+        le=3,
+        description="몇 박. 1 이상이면 날짜별 코스(1일차 · 2일차 …)를 만든다. 숙박비는 예산에 없다",
     )
     origin: LatLng | None = None
     origin_label: str | None = Field(
@@ -63,6 +69,8 @@ class CourseGenerateRequest(BaseModel):
     def _region_or_origin(self) -> CourseGenerateRequest:
         if len(self.regions) >= 2:
             self.region, self.origin, self.origin_label = self.regions[0], None, None
+            # a day holds three neighbourhoods at most; a trip has room for three a day
+            self.regions = self.regions[: 3 * (self.nights + 1)]
         elif self.regions:
             self.region = self.region or self.regions[0]
             self.regions = []
@@ -234,6 +242,11 @@ class CourseRequestEcho(BaseModel):
     preferences: EchoPreferences = Field(default_factory=EchoPreferences)
     purpose: CodeName
     purposes: list[CodeName] = Field(default_factory=list, description="첫 목적 포함, 고른 순서대로")
+    day: int | None = Field(default=None, description="여행 일정의 몇 일차인지 (1부터)")
+    days: int | None = Field(default=None, description="여행 일정의 전체 일수")
+    trip_budget_total: int | None = Field(
+        default=None, description="여행 전체 예산 (budget_total 은 그날 몫)"
+    )
     regions: list[SlugName] = Field(
         default_factory=list, description="여러 동네를 이은 코스일 때만, 방문 순서"
     )

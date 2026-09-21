@@ -7,11 +7,14 @@ from datetime import datetime, timedelta
 from app.domain.models import CourseResult, GeoPoint, StopResult
 from app.domain.recommendation.itinerary import (
     Hop,
+    day_budget,
+    day_weights,
     hop_between,
     itinerary_rules,
     leg_budget,
     leg_minutes,
     merge_legs,
+    regions_by_day,
 )
 from tests.factories import ORIGIN, place
 
@@ -85,3 +88,20 @@ def test_legs_are_joined_in_order_and_the_ride_counts_like_any_other_move() -> N
     assert merged.total_price == 58_000
     assert merged.total_travel_min == 5 + 5 + 23
     assert merged.duration_min >= 180  # from the first arrival to the last goodbye, the ride included
+
+
+def test_a_trip_budget_follows_the_time_each_day_has_and_the_last_day_takes_the_rest() -> None:
+    weights = day_weights(18 * 60, 2, RULES)  # meeting at six in the evening: a short first day
+    assert weights[0] < weights[1]
+    first = day_budget(300_000, weights, 0, RULES)
+    assert first < 150_000  # less than half: there is less of the day left to spend it in
+    assert day_budget(300_000 - 60_000, weights, 1, RULES) == 240_000  # what day one left is day two's
+    early = day_weights(9 * 60, 3, RULES)
+    assert early[0] == early[1] == early[2]  # an early start is a whole day like the others
+
+
+def test_neighbourhoods_are_dealt_to_the_days_in_order() -> None:
+    assert regions_by_day(["a", "b", "c"], 2) == [["a", "b"], ["c"]]
+    assert regions_by_day(["a"], 3) == [["a"], ["a"], ["a"]]  # one base for the whole trip
+    assert regions_by_day(["a", "b"], 3) == [["a"], ["b"], ["a"]]
+    assert regions_by_day([], 2) == [[], []]  # planned around a point, not a named neighbourhood

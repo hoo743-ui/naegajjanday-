@@ -32,6 +32,7 @@ class FilterContext:
     disliked_tags: frozenset[str]
     exclude_place_ids: frozenset[int]
     area_names: frozenset[str] = frozenset()
+    blocked_categories: frozenset[str] = frozenset()
 
     @classmethod
     def build(cls, ctx: RequestContext, role: str, slot_budget: float, arrive_at: datetime) -> FilterContext:
@@ -44,6 +45,7 @@ class FilterContext:
             | frozenset(t for t, roles in ctx.avoid_tags_by_role.items() if role in roles),
             exclude_place_ids=frozenset(ctx.exclude_place_ids),
             area_names=ctx.area_names,
+            blocked_categories=ctx.blocked_categories,
         )
 
 
@@ -58,6 +60,8 @@ def rejection_reason(place: PlaceCandidate, fc: FilterContext, params: ScoringPa
         return "role"
     if not place.is_event and place.id in fc.exclude_place_ids:
         return "excluded_place"
+    if place.category_code in fc.blocked_categories:
+        return "opt_in_only"  # shown only when the user asks for it
     if not price_ok(place, fc.slot_budget, params):
         return "price_cap"
     if fc.area_names and place.course_role in SIGHT_ROLES and compact_name(place.name) in fc.area_names:

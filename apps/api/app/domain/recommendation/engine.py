@@ -39,7 +39,7 @@ from app.domain.recommendation.diversify import (
     variant_profile,
 )
 from app.domain.recommendation.scorer import PlaceScorer
-from app.domain.recommendation.style import assign_buzz
+from app.domain.recommendation.style import assign_buzz, wanted_pools
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import HaversineEstimator, Leg, TravelTimeError, TravelTimeProvider
@@ -222,6 +222,7 @@ class RecommendationEngine:
         assign_buzz(p for pool in pools.values() for p in pool)
         mark_local((p for pool in pools.values() for p in pool), ctx, get_signature_rules())
         unfiltered = [p for found in cache.values() for p in found]
+        pools = wanted_pools(pools, ctx.wanted_categories)
         return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
 
     # --- search ------------------------------------------------------------------------------

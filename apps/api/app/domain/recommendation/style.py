@@ -116,6 +116,25 @@ def extra_roles(path: Path = EXTRA_ROLES_PATH) -> dict[str, dict[str, Any]]:
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+def opt_in_categories() -> frozenset[str]:
+    """Categories that enter a course only on request (every extras entry that names a category)."""
+    return frozenset(str(e["category"]) for e in extra_roles().values() if e.get("category"))
+
+
+def wanted_pools(
+    pools: Mapping[int, list[PlaceCandidate]], categories: Sequence[str]
+) -> dict[int, list[PlaceCandidate]]:
+    """The user asked for a kind of place by name: the first slot that has one offers nothing else."""
+    out = dict(pools)
+    for category in categories:
+        for position in sorted(out):
+            matching = [c for c in out[position] if c.category_code == category]
+            if matching:
+                out[position] = matching
+                break
+    return out
+
+
 def with_role(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[Template]:
     """The user asked for a role by name ("a drink, please"): every template gets that slot for certain.
 

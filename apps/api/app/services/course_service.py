@@ -46,16 +46,20 @@ from app.domain.recommendation.engine import RecommendationEngine, build_course
 from app.domain.recommendation.features import is_open
 from app.domain.recommendation.itinerary import (
     Hop,
+    day_budget,
+    day_weights,
     hop_between,
     itinerary_rules,
     leg_budget,
     leg_minutes,
     merge_legs,
+    regions_by_day,
 )
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
     extra_roles,
+    opt_in_categories,
     resolve_style,
     styled_affinity,
     styled_avoidance,
@@ -122,9 +126,81 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
+        if req.nights > 0:
+            return await self._plan_trip(req, user)
         if len(req.regions) >= 2:
             return await self._plan_across(req, user)
         return await self._plan_one(req, user)
+
+    async def _plan_trip(
+        self, req: dto.CourseGenerateRequest, user: User | None
+    ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
+        """Several days: one course a day. The budget follows the time each day has, what a day leaves
+        goes to the next, and nowhere is visited twice. Lodging is not in the budget (no official
+        prices exist); the page lists places to stay near where each day ends."""
+        rules = itinerary_rules()
+        days = min(req.nights, int(rules["max_nights"])) + 1
+        start = self._local(req.start_at)
+        weights = day_weights(start.hour * 60 + start.minute, days, rules)
+        chosen = list(dict.fromkeys(req.regions)) or ([req.region] if req.region else [])
+        by_day = regions_by_day(chosen, days)
+        remaining = req.budget_total
+        excluded = list(req.preferences.exclude_place_ids)
+        first: tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput] | None = None
+        courses: list[CourseResult] = []
+        meta: dict[str, dict[str, Any]] = {}
+        candidates = 0
+        for d in range(days):
+            day_start = start
+            if d > 0:
+                midnight = (start + timedelta(days=d)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_start = midnight + timedelta(minutes=int(rules["day_start_min"]))
+            slugs = by_day[d]
+            budget = day_budget(remaining, weights, d, rules)
+            day_req = req.model_copy(
+                update={
+                    "nights": 0,
+                    "region": slugs[0] if slugs else req.region,
+                    "regions": slugs if len(slugs) >= 2 else [],
+                    "budget_total": budget,
+                    "start_at": day_start,
+                    "duration_min": req.duration_min if d == 0 else int(rules["full_day_min"]),
+                    "alternatives": 0,
+                    "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
+                }
+            )
+            planned = await self._plan(day_req, user)
+            region, origin, _purpose, ctx, _profile, out = planned
+            first = first or planned
+            label = f"{d + 1}일차"
+            course = replace(out.courses[0], label=label)
+            courses.append(course)
+            candidates += out.candidates_count
+            meta[label] = {
+                "day": d + 1,
+                "days": days,
+                "region_id": region.id,
+                "origin": (origin.lat, origin.lng),
+                "budget_total": budget,
+                "start_at": day_start,
+                "duration_min": day_req.duration_min,
+                "segments": ctx.segments,
+                "focus": ctx.focus,
+            }
+            remaining = max(0, remaining - course.total_price)
+            excluded += [s.place.public_id for s in course.stops if not s.place.is_event]
+        assert first is not None
+        region, origin, purpose, ctx, profile, out = first
+        ctx.days = meta
+        warnings = [w for c in courses for w in c.warnings]
+        return (
+            region,
+            origin,
+            purpose,
+            ctx,
+            profile,
+            replace(out, courses=courses, candidates_count=candidates, warnings=warnings),
+        )
 
     async def _plan_across(
         self, req: dto.CourseGenerateRequest, user: User | None
@@ -229,6 +305,8 @@ class CourseService:
         ctx.area_names = area_names_of(region.name)
         ctx.purpose_tag_affinity = blend_affinity([await self._config.tag_affinity(p.id) for p in purposes])
         ctx.purpose_codes = tuple(p.code for p in purposes)
+        asked = {str(extra_roles()[r].get("category")) for r in req.extras if r in extra_roles()}
+        ctx.blocked_categories = opt_in_categories() - asked
         rules = get_signature_rules()
         signature = (await signature_service.load(self._s, region.id)).strong(rules.auto_focus_min_strength)
         ctx.local_words = tuple(s.word for s in signature.specialties)
@@ -238,8 +316,11 @@ class CourseService:
             ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
-            if role in extra_roles() and role not in vetoed:
-                templates = with_role(templates, extra_roles()[role])
+            entry = extra_roles().get(role)
+            if entry is not None and entry["role"] not in vetoed:
+                templates = with_role(templates, entry)
+                if entry.get("category"):
+                    ctx.wanted_categories = (*ctx.wanted_categories, str(entry["category"]))
         engine = RecommendationEngine(self._places, self._travel)
         try:
             out = await engine.generate(ctx, templates, profile)
@@ -327,25 +408,38 @@ class CourseService:
         }
         rows: list[tuple[Course, CourseResult, Narrative]] = []
         for result in out.courses:
+            day = ctx.days.get(result.label)  # a trip: this course is one of its days
+            day_budget_total = day["budget_total"] if day else req.budget_total
             narrative = await self._narrative.generate(
                 result,
                 party_size=req.party_size,
-                budget_total=req.budget_total,
+                budget_total=day_budget_total,
                 transport=req.transport,
                 use_llm=self._settings.narrative_inline_llm,
                 tag_affinity=ctx.purpose_tag_affinity,
             )
             row = Course(
                 user_id=user.id if user else None,
-                region_id=region.id,
+                region_id=day["region_id"] if day else region.id,
                 purpose_id=purpose.id,
                 party_size=req.party_size,
-                budget_total=req.budget_total,
+                budget_total=day_budget_total,
                 transport=req.transport,
-                origin_lat=origin.lat,
-                origin_lng=origin.lng,
-                start_at=ctx.start_at,
-                request=snapshot,
+                origin_lat=day["origin"][0] if day else origin.lat,
+                origin_lng=day["origin"][1] if day else origin.lng,
+                start_at=day["start_at"] if day else ctx.start_at,
+                request=snapshot
+                if not day
+                else {
+                    **snapshot,
+                    "duration_min": day["duration_min"],
+                    "segments": day["segments"],
+                    "focus": day["focus"],
+                    "day": day["day"],
+                    "days": day["days"],
+                    "nights": req.nights,
+                    "trip_budget_total": req.budget_total,
+                },
                 recommendation_log_id=log.id,
                 warnings=[],
             )
@@ -638,6 +732,9 @@ class CourseService:
                     disliked_tags=list(prefs.get("disliked_tags") or []),
                 ),
                 purpose=dto.CodeName(code=purpose.code, name=purpose.name),
+                day=(row.request or {}).get("day"),
+                days=(row.request or {}).get("days"),
+                trip_budget_total=(row.request or {}).get("trip_budget_total"),
                 regions=[
                     dto.SlugName(slug=seg["slug"], name=seg["name"])
                     for seg in (row.request or {}).get("segments") or []
@@ -705,6 +802,10 @@ class CourseService:
             user=user,
         )
         profile, _ = self._apply_style(ctx, profile, [], (row.request or {}).get("style"))
+        # a swap must not bring in what the course was never asked to have (a ballpark on a day off)
+        kept = (row.request or {}).get("extras") or []
+        asked = {str(extra_roles()[r].get("category")) for r in kept if r in extra_roles()}
+        ctx.blocked_categories = opt_in_categories() - asked
         stay_scale = float((row.request or {}).get("stay_scale", 1.0))
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
 

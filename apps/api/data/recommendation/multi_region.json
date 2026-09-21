@@ -5,6 +5,16 @@
   "leg_min_min": 90,
   "walk_hop_max_m": 1500,
   "hop_mode": "transit",
-  "hop_overhead_min": { "walk": 0, "transit": 10, "car": 8 },
-  "budget_round": 1000
+  "hop_overhead_min": {
+    "walk": 0,
+    "transit": 10,
+    "car": 8
+  },
+  "budget_round": 1000,
+  "_trip": "몇 박 며칠: 날마다 코스를 하나씩 짠다. 예산은 그날 쓸 수 있는 시간(첫날은 만나는 시각부터 day_end 까지)에 비례해 나누고 남은 돈은 다음 날로 넘긴다.",
+  "max_nights": 3,
+  "day_start_min": 600,
+  "day_end_min": 1320,
+  "full_day_min": 540,
+  "first_day_floor_min": 120
 }

@@ -148,6 +148,27 @@ class TestGenerate:
         missing = await generate(client, regions=["seoul-hongdae", "atlantis"])
         assert missing.status_code == 404
 
+    async def test_a_trip_of_two_days_splits_the_budget_and_never_repeats_a_place(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        resp = await generate(
+            client, nights=1, budget_total=200000, start_at="2026-09-22T14:00:00+09:00", alternatives=2
+        )
+        assert resp.status_code == 200, resp.text
+        courses = resp.json()["courses"]
+        assert [c["label"] for c in courses] == ["1일차", "2일차"]
+        assert sum(c["totals"]["price"] for c in courses) <= 200000
+        ids = [s["place"]["id"] for c in courses for s in c["stops"]]
+        assert len(ids) == len(set(ids))  # day two never goes back to a place from day one
+        first, second = [(await client.get(f"/v1/courses/{c['id']}")).json() for c in courses]
+        assert (first["request"]["day"], first["request"]["days"]) == (1, 2)
+        assert second["request"]["trip_budget_total"] == 200000
+        # each day answers to its own share, and what day one left over went to day two
+        assert first["request"]["budget_total"] + second["request"]["budget_total"] >= 200000 - 2000
+        assert second["request"]["budget_total"] >= 200000 - first["request"]["budget_total"] - 1000
+        assert second["request"]["start_at"].startswith("2026-09-23T10:00")
+        assert [s["label"] for s in first["siblings"]] == ["1일차", "2일차"]  # the days are the tabs
+
     async def test_bigger_budget_keeps_the_bar_slot(self, client: httpx.AsyncClient) -> None:
         body = (await generate(client, budget_total=160000, alternatives=0)).json()
         course = body["courses"][0]

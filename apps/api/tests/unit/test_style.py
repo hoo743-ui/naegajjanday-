@@ -94,3 +94,25 @@ def test_asking_for_a_drink_puts_the_bar_in_every_template() -> None:
     assert added.slots[-1].earliest_start_min == 1020  # never a bar stop at lunchtime
     assert [s.is_optional for s in kept.slots] == [False, False]  # "if it fits" became "for certain"
     assert kept.slots[1].budget_share == 0.5  # a template that planned for it keeps its own share
+
+
+def test_an_opt_in_category_stays_out_until_it_is_asked_for() -> None:
+    from app.domain.recommendation.candidates import FilterContext, hard_filter
+    from app.domain.recommendation.style import opt_in_categories, wanted_pools
+
+    assert "activity.stadium" in opt_in_categories()  # no schedule data: never guessed into a course
+    park = place("ACTIVITY", "activity.stadium", 15000)
+    arcade = place("ACTIVITY", "activity.arcade", 8000)
+    params = profile().params
+
+    quiet = context(blocked_categories=opt_in_categories())
+    fc = FilterContext.build(quiet, "ACTIVITY", 30000, SUNDAY_6PM)
+    assert hard_filter([park, arcade], fc, params) == [arcade]
+
+    asked = context(wanted_categories=("activity.stadium",))
+    fc = FilterContext.build(asked, "ACTIVITY", 30000, SUNDAY_6PM)
+    pools = wanted_pools(
+        {1: [place("MEAL")], 2: hard_filter([park, arcade], fc, params)}, asked.wanted_categories
+    )
+    assert pools[2] == [park]  # the slot that can hold it offers nothing else
+    assert len(pools[1]) == 1  # other slots are untouched

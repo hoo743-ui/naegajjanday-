@@ -35,6 +35,11 @@ def itinerary_rules(path: Path = RULES_PATH) -> dict[str, Any]:
         "hop_mode": "transit",
         "hop_overhead_min": {"walk": 0, "transit": 10, "car": 8},
         "budget_round": 1000,
+        "max_nights": 3,
+        "day_start_min": 600,
+        "day_end_min": 1320,
+        "full_day_min": 540,
+        "first_day_floor_min": 120,
     }
     if path.exists():
         defaults.update(
@@ -110,3 +115,36 @@ def merge_legs(legs: Sequence[CourseResult], hops: Sequence[Hop]) -> tuple[Cours
         warnings=[w for leg in legs for w in leg.warnings],
     )
     return merged, hop_at
+
+
+def day_weights(start_min: int, days: int, rules: Mapping[str, Any]) -> list[int]:
+    """Minutes each day of a trip has to spend money in: the first day from the meeting time to the end
+    of the day, the others a whole day. The budget is split in this proportion."""
+    whole = int(rules["day_end_min"]) - int(rules["day_start_min"])
+    first = max(int(rules["first_day_floor_min"]), int(rules["day_end_min"]) - start_min)
+    return [min(first, whole), *([whole] * (days - 1))]
+
+
+def day_budget(remaining: int, weights: Sequence[int], day: int, rules: Mapping[str, Any]) -> int:
+    """This day's share of what is left, by time available. The last day takes all that remains."""
+    unit = int(rules["budget_round"])
+    ahead = sum(weights[day:])
+    share = remaining if day == len(weights) - 1 else remaining * weights[day] / max(1, ahead)
+    return max(unit, int(share // unit) * unit)
+
+
+def regions_by_day(slugs: Sequence[str], days: int) -> list[list[str]]:
+    """Which neighbourhoods each day covers: in order, as evenly as they divide; with fewer
+    neighbourhoods than days they come round again."""
+    if not slugs:
+        return [[] for _ in range(days)]
+    if len(slugs) <= days:
+        return [[slugs[d % len(slugs)]] for d in range(days)]
+    size, extra = divmod(len(slugs), days)
+    out: list[list[str]] = []
+    at = 0
+    for d in range(days):
+        take = size + (1 if d < extra else 0)
+        out.append(list(slugs[at : at + take]))
+        at += take
+    return out
