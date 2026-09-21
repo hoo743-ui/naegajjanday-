@@ -39,7 +39,7 @@ from app.domain.recommendation.diversify import (
     variant_profile,
 )
 from app.domain.recommendation.scorer import PlaceScorer
-from app.domain.recommendation.style import assign_buzz, wanted_pools
+from app.domain.recommendation.style import assign_buzz, wanted_places, wanted_pools
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import (
@@ -98,7 +98,9 @@ class RecommendationEngine:
         slot_budgets = B.allocate(template, b, ctx.include_roles)
         # a short meeting window gets fewer stops, not the same stops with every stay cut in half
         start_min = ctx.start_at.hour * 60 + ctx.start_at.minute
-        slot_budgets, trimmed = B.fit_to_duration(slot_budgets, ctx.duration_min, b, start_min=start_min)
+        slot_budgets, trimmed = B.fit_to_duration(
+            slot_budgets, ctx.duration_min, b, start_min=start_min, keep_roles=ctx.keep_roles
+        )
 
         warnings: list[dict[str, Any]] = []
         pools = await self._collect(ctx, slot_budgets, profile)
@@ -121,7 +123,11 @@ class RecommendationEngine:
             stay_scale = self._stay_scale(ctx, slot_budgets)
             if stay_scale > 1.0:  # longer stays → fewer of them fit the same window
                 slot_budgets, more = B.fit_to_duration(
-                    slot_budgets, ctx.duration_min, b, per_stop_min=NOMINAL_SLOT_MIN * stay_scale
+                    slot_budgets,
+                    ctx.duration_min,
+                    b,
+                    per_stop_min=NOMINAL_SLOT_MIN * stay_scale,
+                    keep_roles=ctx.keep_roles,
                 )
                 trimmed += more
                 stay_scale = self._stay_scale(ctx, slot_budgets)
@@ -233,6 +239,7 @@ class RecommendationEngine:
         mark_local((p for pool in pools.values() for p in pool), ctx, get_signature_rules())
         unfiltered = [p for found in cache.values() for p in found]
         pools = wanted_pools(pools, ctx.wanted_categories)
+        pools = wanted_places(pools, ctx.wanted_place_ids)
         return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
 
     async def _recenter_on_wanted(self, ctx: RequestContext, slot_budgets: Sequence[B.SlotBudget]) -> None:

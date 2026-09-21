@@ -145,6 +145,18 @@ def extra_unavailable(name: str, extra: Mapping[str, Any], *, vetoed: bool) -> d
     }
 
 
+SUGGESTIONS_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "suggestions.json"
+
+
+@lru_cache(maxsize=1)
+def suggestion_rules(path: Path = SUGGESTIONS_PATH) -> dict[str, Any]:
+    """What to offer when money is left over (DATA — edit, restart)."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
 def night_notice(condition: Mapping[str, Any]) -> dict[str, Any]:
     """Hours after dark are inferred from signs and names: the page must say so."""
     return {"code": "NIGHT_HOURS_ESTIMATED", "detail": str(condition.get("notice") or ""), "meta": {}}
@@ -166,6 +178,23 @@ def wanted_pools(
             if matching:
                 out[position] = matching
                 break
+    return out
+
+
+def wanted_places(
+    pools: Mapping[int, list[PlaceCandidate]], place_ids: frozenset[int]
+) -> dict[int, list[PlaceCandidate]]:
+    """A leg planned around a well-visited area must show what the area is visited for: the first
+    slot that can hold one of those sights offers nothing else. Nothing changes when none of them
+    passed the filters (closed at that hour, over the budget)."""
+    out = dict(pools)
+    if not place_ids:
+        return out
+    for position in sorted(out):
+        matching = [c for c in out[position] if c.id in place_ids]
+        if matching:
+            out[position] = matching
+            break
     return out
 
 

@@ -224,6 +224,10 @@ class RequestContext:
     # categories that only appear when asked for (a ballpark means nothing on a day without a game, and
     # no official schedule exists): the ones asked for, and the ones to keep out
     wanted_categories: tuple[str, ...] = ()
+    # the well-visited sights of the area this leg is planned around (a whole-city trip): one of them
+    # belongs in the course — the area is named after it
+    wanted_place_ids: frozenset[int] = frozenset()
+    keep_roles: frozenset[str] = frozenset()  # never trimmed to fit the meeting length
     blocked_categories: frozenset[str] = frozenset()
     recentered: bool = False  # the engine moved the origin onto a place asked for by name
     # a day across several neighbourhoods (recommendation.itinerary): one entry per neighbourhood with

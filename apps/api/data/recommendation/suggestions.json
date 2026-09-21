@@ -1,0 +1,34 @@
+{
+  "_comment": "예산이 남았을 때 \"이런 건 어때요?\"로 권하는 곳. 코스의 마지막 장소에서 걸어갈 수 있고, 남은 돈(1인당)으로 되고, 그 시각에 열려 있는 곳을 자리(role)마다 하나씩 고른다. 이미 코스에 있는 자리 · 함께 고른 목적이 금하는 자리(가족 → 술집)는 권하지 않는다. 순서는 roles 의 순서. line 은 화면에 그대로 나가는 한 줄이다({left} = 남은 돈).",
+  "min_left_per_person": 5000,
+  "min_left_ratio": 0.15,
+  "max_walk_min": 12,
+  "walk_m_per_min": 67,
+  "limit": 3,
+  "price_floor_ratio": 0.0,
+  "roles": {
+    "DESSERT": {
+      "line": "남은 {left}으로 디저트 하나 더 어때요?"
+    },
+    "ACTIVITY": {
+      "line": "남은 {left}이면 한 판 놀고 가기에 충분해요."
+    },
+    "CULTURE": {
+      "line": "남은 {left}으로 전시 하나 보고 갈까요?"
+    },
+    "BAR": {
+      "line": "남은 {left}으로 가볍게 한잔 어때요?",
+      "earliest_start_min": 1020
+    },
+    "CAFE": {
+      "line": "남은 {left}으로 커피 한 잔 하며 마무리해요."
+    },
+    "NIGHTVIEW": {
+      "line": "돈 안 들이고 야경 보고 갈 수 있어요.",
+      "earliest_start_min": 1080
+    },
+    "ATTRACTION": {
+      "line": "돈 안 들이고 들를 만한 곳이 가까이 있어요."
+    }
+  }
+}

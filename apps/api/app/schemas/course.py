@@ -191,6 +191,25 @@ class CourseGenerateResponse(BaseModel):
     meta: GenerateMeta
 
 
+class Suggestion(BaseModel):
+    role: str
+    place: PlaceBrief
+    est_price: int = Field(description="일행 전체 금액")
+    walk_min: int = Field(description="코스의 마지막 장소에서 걸어서")
+    distance_m: int
+    line: str = Field(description="화면에 그대로 나가는 한 줄")
+
+
+class SuggestionList(BaseModel):
+    budget_left: int
+    items: list[Suggestion] = Field(default_factory=list)
+
+
+class AddStopRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    place_id: str = Field(description="suggestions 가 준 장소의 id")
+
+
 class SwapRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     position: int = Field(ge=1)
@@ -258,6 +277,9 @@ class CourseRequestEcho(BaseModel):
     )
     regions: list[SlugName] = Field(
         default_factory=list, description="여러 동네를 이은 코스일 때만, 방문 순서"
+    )
+    city: SlugName | None = Field(
+        default=None, description="시 · 도 전체를 고른 여행이면 그 도시. 다시 짤 때 region 으로 보낸다"
     )
     party_size: int
     budget_total: int

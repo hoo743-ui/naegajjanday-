@@ -58,6 +58,30 @@ async def swap(
     return await service.swap(course_id, body, user)
 
 
+@router.get(
+    "/{course_id}/suggestions",
+    response_model=dto.SuggestionList,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(404),
+    summary="예산이 남았을 때: 마지막 장소 근처에서 남은 돈으로 갈 만한 곳",
+)
+async def suggestions(course_id: str, service: CourseServiceDep, user: OptionalUser) -> dto.SuggestionList:
+    return await service.suggestions(course_id, user)
+
+
+@router.post(
+    "/{course_id}/stops",
+    response_model=dto.CourseOut,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(403, 404, 422),
+    summary="권한 곳을 코스의 끝에 넣고 시각 · 합계를 다시 계산",
+)
+async def add_stop(
+    course_id: str, body: dto.AddStopRequest, service: CourseServiceDep, user: OptionalUser
+) -> dto.CourseOut:
+    return await service.add_stop(course_id, body, user)
+
+
 @router.post(
     "/{course_id}/reorder",
     response_model=dto.CourseOut,

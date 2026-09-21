@@ -240,6 +240,26 @@ class SqlPlaceRepository:
 
     # --- read side ---------------------------------------------------------------------------
 
+    async def popular_sights(
+        self, region_ids: Sequence[int], roles: Sequence[str], min_popularity: float, limit: int
+    ) -> list[tuple[int, str, GeoPoint, float, str]]:
+        """(id, name, point, popularity, category code) of the most visited sights in these regions — measured
+        navigation ranks, see `ingestion.bulk.visit_hubs`."""
+        rows = await self._s.execute(
+            select(Place.id, Place.name, Place.lat, Place.lng, PlaceStats.popularity, Category.code)
+            .join(PlaceStats, PlaceStats.place_id == Place.id)
+            .join(Category, Category.id == Place.category_id)
+            .where(
+                Place.region_id.in_(list(region_ids)),
+                Place.status == "approved",
+                PlaceStats.popularity >= min_popularity,
+                Category.course_role.in_(list(roles)),
+            )
+            .order_by(PlaceStats.popularity.desc(), Place.id)
+            .limit(limit)
+        )
+        return [(pid, name, GeoPoint(lat, lng), float(pop), code) for pid, name, lat, lng, pop, code in rows]
+
     async def get_by_public_id(self, public_id: str) -> Place | None:
         stmt = (
             select(Place)

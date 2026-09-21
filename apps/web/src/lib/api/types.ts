@@ -328,6 +328,24 @@ export interface Course {
   warnings: CourseWarning[];
 }
 
+/** 예산이 남았을 때 권하는 곳 (GET /courses/{id}/suggestions) */
+export interface Suggestion {
+  role: CourseRole;
+  place: PlaceSummary;
+  /** 일행 전체 금액 */
+  est_price: number;
+  /** 코스의 마지막 장소에서 걸어서 */
+  walk_min: number;
+  distance_m: number;
+  /** 화면에 그대로 쓰는 한 줄 */
+  line: string;
+}
+
+export interface SuggestionList {
+  budget_left: number;
+  items: Suggestion[];
+}
+
 export interface NearbyEvent {
   id: string;
   title: string;
@@ -379,6 +397,8 @@ export interface CourseDetail extends Course {
     day?: number | null;
     days?: number | null;
     trip_budget_total?: number | null;
+    /** 시 · 도 전체를 고른 여행이면 그 도시. 다시 짤 때는 첫 구역의 구가 아니라 이 도시로 요청한다 */
+    city?: { slug: string; name: string } | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

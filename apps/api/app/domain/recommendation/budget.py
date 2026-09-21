@@ -112,13 +112,17 @@ def fit_to_duration(
     budget_per_person: float,
     per_stop_min: float = SLOT_MIN_PER_STOP,
     start_min: int | None = None,
+    keep_roles: frozenset[str] = frozenset(),
 ) -> tuple[list[SlotBudget], list[Slot]]:
     """Trim the template to the requested window instead of squeezing every stay (doc 06 §1).
 
     First go slots that cannot even begin inside the window (an 11:00–17:00 plan has no use for a
     dinner slot gated at 17:00). Then optional slots (from the back), then the slot with the smallest
     budget share — the biggest-share slot (the point of the meeting, usually the meal) is never
-    dropped. Freed shares are renormalized over what remains. Returns (kept, dropped)."""
+    dropped. Freed shares are renormalized over what remains. Returns (kept, dropped).
+
+    `keep_roles`: roles that are the point of this leg whatever their share (the sight of a
+    whole-city trip costs nothing, so by share alone it was the first to go)."""
     kept = list(slot_budgets)
     dropped: list[Slot] = []
     if duration_min is None:
@@ -132,14 +136,14 @@ def fit_to_duration(
                 kept = drop_slot(kept, sb.slot.position, budget_per_person)
     limit = max_slots_for(duration_min, per_stop_min)
     while len(kept) > limit:
-        optional = [sb for sb in kept if sb.slot.is_optional]
+        free = [sb for sb in kept if sb.slot.course_role not in keep_roles] or kept
+        optional = [sb for sb in free if sb.slot.is_optional]
         if optional:
             victim = max(optional, key=lambda sb: sb.slot.position)
         else:
             anchor = max(kept, key=lambda sb: (sb.share, -sb.slot.position))
-            victim = min(
-                (sb for sb in kept if sb is not anchor), key=lambda sb: (sb.share, -sb.slot.position)
-            )
+            others = [sb for sb in free if sb is not anchor] or [sb for sb in kept if sb is not anchor]
+            victim = min(others, key=lambda sb: (sb.share, -sb.slot.position))
         dropped.append(victim.slot)
         kept = drop_slot(kept, victim.slot.position, budget_per_person)
     return kept, dropped

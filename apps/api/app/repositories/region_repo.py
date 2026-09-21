@@ -7,6 +7,11 @@ from app.domain.models import GeoPoint
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.models import Place, Region
 
+HOTSPOT_REACH = 3  # × the hotspot's radius
+DISTRICT_REACH = 2  # × the district's radius (a district's centre is not where its edge is)
+DISTRICT_MIN_M = 8000
+DISTRICT_FAR_M = 60000
+
 
 class SqlRegionRepository:
     def __init__(self, session: AsyncSession) -> None:
@@ -62,12 +67,34 @@ class SqlRegionRepository:
                 node, hops = parents.get(node), hops + 1
         return [(region, total.get(region.id, 0)) for region, _own in rows]
 
+    async def ids_under(self, region_id: int) -> list[int]:
+        """The region and everything below it (a province → its districts → their hotspots)."""
+        found, frontier = [region_id], [region_id]
+        while frontier:
+            rows = await self._s.scalars(select(Region.id).where(Region.parent_id.in_(frontier)))
+            frontier = [i for i in rows.all() if i not in found]
+            found.extend(frontier)
+        return found
+
     async def nearest_active(self, point: GeoPoint) -> Region | None:
+        """The neighbourhood a point belongs to: a hotspot when one is close, otherwise the district
+        around it. Hotspots alone left most of the country with "no region nearby" — a station picked
+        in the wizard, or a well-visited area of a whole-city trip, failed anywhere outside the 55 of them."""
         rows = (
-            await self._s.scalars(select(Region).where(Region.status == "active", Region.level == 3))
+            await self._s.scalars(select(Region).where(Region.status == "active", Region.level.in_([2, 3])))
         ).all()
-        best = min(rows, key=lambda r: haversine_m(point, GeoPoint(r.center_lat, r.center_lng)), default=None)
-        if best is None:
-            return None
-        dist = haversine_m(point, GeoPoint(best.center_lat, best.center_lng))
-        return best if dist <= best.radius_m * 3 else None
+
+        def reach(r: Region) -> float:
+            return haversine_m(point, GeoPoint(r.center_lat, r.center_lng))
+
+        hotspots = [r for r in rows if r.level == 3 and reach(r) <= r.radius_m * HOTSPOT_REACH]
+        if hotspots:
+            return min(hotspots, key=reach)
+        districts = [
+            r for r in rows if r.level == 2 and reach(r) <= max(r.radius_m * DISTRICT_REACH, DISTRICT_MIN_M)
+        ]
+        if districts:
+            return min(districts, key=reach)
+        # a wide rural district (an island, a county): its centre can be tens of km from its coast
+        far = [r for r in rows if r.level == 2 and reach(r) <= DISTRICT_FAR_M]
+        return min(far, key=reach, default=None)

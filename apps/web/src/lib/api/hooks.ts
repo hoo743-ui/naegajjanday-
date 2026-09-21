@@ -13,6 +13,7 @@ import { getAccessToken, subscribeToken } from "@/lib/auth/token";
 import { ApiError, api, newIdempotencyKey } from "./client";
 import { safeJson, streamSse } from "./sse";
 import type {
+  SuggestionList,
   Attraction,
   AttractionType,
   Banner,
@@ -229,6 +230,25 @@ export function useSwapStop(courseId: string) {
   const client = useQueryClient();
   return useMutation<Course, ApiError, SwapRequest>({
     mutationFn: (body) => api.post(`/courses/${encodeURIComponent(courseId)}/swap`, body),
+    onSuccess: (course) => mergeCourse(client, courseId, course),
+  });
+}
+
+/** 남은 돈으로 갈 만한 곳. 남은 돈이 바뀌면(바꾸기 · 넣기) 다시 묻는다 */
+export function useSuggestions(courseId: string, budgetLeft: number) {
+  return useQuery<SuggestionList, ApiError>({
+    queryKey: ["course", courseId, "suggestions", budgetLeft],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId)}/suggestions`, { signal }),
+    enabled: budgetLeft > 0,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
+
+export function useAddStop(courseId: string) {
+  const client = useQueryClient();
+  return useMutation<Course, ApiError, { place_id: string }>({
+    mutationFn: (body) => api.post(`/courses/${encodeURIComponent(courseId)}/stops`, body),
     onSuccess: (course) => mergeCourse(client, courseId, course),
   });
 }

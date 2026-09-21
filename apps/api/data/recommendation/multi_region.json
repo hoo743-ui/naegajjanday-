@@ -29,5 +29,34 @@
     "DESSERT",
     "BAR",
     "CULTURE"
-  ]
+  ],
+  "_city": "시 · 도 전체를 고른 여행(서울 · 부산 · 제주 …). 중심 한 점 주변이 아니라, 사람들이 실제로 많이 가는 곳(티맵 인기도)을 가까운 것끼리 묶은 '인기 구역'을 돈다. from_level: 이 단계 이하(1=시도)의 지역이면 도시 여행으로 짠다. areas_per_day: 하루에 도는 구역 수(이동수단별). 구역은 가장 인기 있는 곳을 중심으로 cluster_radius_m 안의 곳을 묶는다. day_span_m: 같은 날에 도는 구역들은 그날의 첫 구역에서 이 거리 안에 있어야 한다(하루에 노량진과 노원을 오가게 하지 않는다). class_weight: 구역의 무게를 잴 때 업종별로 곱하는 값(가장 구체적인 코드가 이긴다). 구마다 내비게이션 1위가 그 동네 재래시장인 경우가 많은데, 여행자에게 동네 시장은 목적지가 아니다 — 큰 시장은 주변에 다른 볼거리가 함께 있어 여전히 구역이 된다. pin_top: 구역에서 가장 많이 찾는 이 개수의 명소 중 하나는 코스에 꼭 들어간다(구역의 이름이 된 곳을 빼고 그 옆 가게만 도는 코스를 막는다).",
+  "city": {
+    "from_level": 1,
+    "sights": 300,
+    "min_popularity": 0.2,
+    "cluster_radius_m": 2500,
+    "area_radius_m": 1500,
+    "areas_per_day": {
+      "walk": 1,
+      "transit": 2,
+      "car": 3
+    },
+    "roles": [
+      "ATTRACTION",
+      "NIGHTVIEW",
+      "CULTURE"
+    ],
+    "label_suffix": " 주변",
+    "day_span_m": {
+      "walk": 3000,
+      "transit": 9000,
+      "car": 30000
+    },
+    "class_weight": {
+      "attraction.market": 0.3,
+      "culture": 0.7
+    },
+    "pin_top": 3
+  }
 }

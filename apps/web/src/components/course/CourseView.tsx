@@ -17,6 +17,7 @@ import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { BudgetTools } from "./BudgetTools";
+import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
@@ -96,7 +97,9 @@ export function CourseView({ id }: { id: string }) {
   const tripDay = (request.days ?? 0) > 1;
   const firstStop = data.stops[0];
   const lastStop = data.stops[data.stops.length - 1];
-  const placeLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
+  // 시 · 도 전체 여행: "부산광역시 · 송도해수욕장 주변 → 부산타워 주변"
+  const areaLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
+  const placeLabel = request.city ? [request.city.name, areaLabel].filter(Boolean).join(" · ") : areaLabel;
   // 목적을 여러 개 골랐으면 모두 보여 준다 (첫 번째가 하루의 틀)
   const purposeLabel = (request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name;
 
@@ -181,11 +184,12 @@ export function CourseView({ id }: { id: string }) {
   /** focus: 이 동네 명물을 골라(또는 FOCUS_OFF 로 빼고) 다시 짠다. 안 주면 처음 조건 그대로 */
   /** 이 코스를 만든 조건 그대로. 다시 짜기 · 예산 what-if 가 여기서 필요한 것만 바꿔 보낸다 */
   const baseRequest: GenerateCourseRequest = {
-        region: request.region?.slug,
-        ...(hopping ? { regions: request.regions!.map((r) => r.slug) } : {}),
+        region: request.city?.slug ?? request.region?.slug,
+        // 도시 여행의 구역은 서버가 다시 고른다(인기 구역). 직접 고른 여러 동네만 그대로 보낸다
+        ...(hopping && !request.city ? { regions: request.regions!.map((r) => r.slug) } : {}),
         ...((request.purposes?.length ?? 0) > 1 ? { purposes: request.purposes!.slice(1).map((p) => p.code) } : {}),
         // 역·장소 주변으로 짠 코스는 그 지점을 다시 보낸다 — 안 보내면 구 중심으로 옮겨 가 버린다
-        ...(request.origin ? { origin: request.origin, ...(request.origin_label ? { origin_label: request.origin_label } : {}) } : {}),
+        ...(request.origin && !request.city ? { origin: request.origin, ...(request.origin_label ? { origin_label: request.origin_label } : {}) } : {}),
         purpose: request.purpose.code,
         party_size: request.party_size,
         budget_total: request.budget_total,
@@ -304,6 +308,14 @@ export function CourseView({ id }: { id: string }) {
                   courseUrl={typeof window === "undefined" ? "" : window.location.href}
                 />
               ) : null}
+
+              {/* 남은 돈은 자랑하고 끝낼 숫자가 아니다: 그 돈으로 갈 만한 곳을 권한다 */}
+              <LeftoverCard
+                courseId={id}
+                budgetLeft={data.totals.budget_left}
+                editable={!readOnly}
+                onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
+              />
 
               <dl className="tabular grid grid-cols-3 gap-2 text-center">
                 {[

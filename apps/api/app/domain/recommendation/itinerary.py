@@ -124,6 +124,70 @@ def merge_legs(legs: Sequence[CourseResult], hops: Sequence[Hop]) -> tuple[Cours
     return merged, hop_at
 
 
+@dataclass(frozen=True, slots=True)
+class Area:
+    """A cluster of well-visited sights, named after its most visited one."""
+
+    name: str
+    point: GeoPoint
+    weight: float
+    place_ids: tuple[int, ...]
+
+
+def cluster_areas(
+    sights: Sequence[tuple[int, str, GeoPoint, float]], radius_m: float, limit: int
+) -> list[Area]:
+    """Greedy: the most visited sight not yet taken becomes a centre and takes everything within
+    `radius_m`. `sights` = (place id, name, point, popularity). The best `limit` areas by total
+    popularity come back, best first."""
+    left = sorted(sights, key=lambda s: -s[3])
+    areas: list[Area] = []
+    while left:
+        centre = left[0]
+        members = [s for s in left if haversine_m(centre[2], s[2]) <= radius_m]
+        taken = {s[0] for s in members}
+        left = [s for s in left if s[0] not in taken]
+        areas.append(Area(centre[1], centre[2], sum(s[3] for s in members), tuple(s[0] for s in members)))
+    return sorted(areas, key=lambda a: -a.weight)[:limit]
+
+
+def route_areas(areas: Sequence[Area]) -> list[Area]:
+    """Visiting order: start at the best area, then always the nearest one not yet visited, so that
+    the areas of one day are neighbours and the trip does not zigzag across the city."""
+    if not areas:
+        return []
+    order, rest = [areas[0]], list(areas[1:])
+    while rest:
+        nxt = min(rest, key=lambda a: haversine_m(order[-1].point, a.point))
+        rest.remove(nxt)
+        order.append(nxt)
+    return order
+
+
+def areas_by_day(
+    areas: Sequence[Area], days: int, per_day: int, span_m: float = float("inf")
+) -> list[list[Area]]:
+    """Each day starts at the best area still unvisited and adds its nearest neighbours within
+    `span_m`, so nobody crosses the city twice in a day. The day is then walked nearest-first.
+    A day is never empty while there is any area at all: with fewer areas than days the best one is
+    visited again (the engine never repeats a place, so it is a different corner of it)."""
+    rest = list(areas)
+    out: list[list[Area]] = []
+    for _ in range(days):
+        if not rest:
+            out.append([areas[len(out) % len(areas)]] if areas else [])
+            continue
+        anchor = rest.pop(0)
+        near = sorted(
+            (a for a in rest if haversine_m(anchor.point, a.point) <= span_m),
+            key=lambda a: haversine_m(anchor.point, a.point),
+        )[: per_day - 1]
+        for a in near:
+            rest.remove(a)
+        out.append(route_areas([anchor, *near]))
+    return out
+
+
 def day_weights(start_min: int, days: int, rules: Mapping[str, Any]) -> list[int]:
     """Minutes each day of a trip has to spend money in: the first day from the meeting time to the end
     of the day, the others a whole day. The budget is split in this proportion."""
