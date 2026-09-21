@@ -228,6 +228,14 @@ class CourseDetailResponse(BaseModel):
         default_factory=list, description="같은 요청에서 나온 코스들 (자기 자신 포함, 탭 순서)"
     )
     nearby_events: list[NearbyEvent] = Field(default_factory=list)
+    # viewer context: a shared link is opened by people who do not own the course
+    is_owner: bool = Field(default=False, description="로그인한 조회자가 이 코스의 주인인지")
+    can_edit: bool = Field(
+        default=True, description="swap / reorder / save 가 403 없이 되는지 (주인 없는 코스는 누구나 가능)"
+    )
+    is_saved: bool = Field(
+        default=False, description="조회자 본인이 저장한 코스인지 (남의 저장 코스는 false)"
+    )
 
 
 class CourseListItem(BaseModel):

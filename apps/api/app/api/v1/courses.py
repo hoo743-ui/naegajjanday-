@@ -37,10 +37,12 @@ async def generate(
     response_model=dto.CourseDetailResponse,
     dependencies=[Depends(rate_limit("read"))],
     responses=PROBLEMS(404),
-    summary="공유 링크 조회 (OG 메타 포함)",
+    summary="공유 링크 조회 (OG 메타 + 조회자 기준 is_owner / can_edit / is_saved)",
 )
-async def get_course(course_id: str, service: CourseServiceDep) -> dto.CourseDetailResponse:
-    return await service.get(course_id)
+async def get_course(
+    course_id: str, service: CourseServiceDep, viewer: OptionalUser
+) -> dto.CourseDetailResponse:
+    return await service.get(course_id, viewer)
 
 
 @router.post(

@@ -427,6 +427,9 @@ export function getDetail(id: string): CourseDetail {
       image_url: null,
     },
     is_saved: s.saved ?? false,
+    // 목 서버에는 다른 사용자가 없다: 모든 코스는 보는 사람이 고칠 수 있고, 저장하면 내 것이 된다
+    is_owner: s.saved ?? false,
+    can_edit: true,
   };
 }
 

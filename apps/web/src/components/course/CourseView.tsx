@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, Check, Clock, RotateCw, Share2, TriangleAlert } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, RotateCw, Share2, Sparkles, TriangleAlert, Users } from "lucide-react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { JjaniLoader } from "@/components/mascot/JjaniLoader";
@@ -12,6 +12,7 @@ import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { useAccessHints, useCourse, useCourseNarrative, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop, useWalkRoute } from "@/lib/api/hooks";
 import type { CourseWarning, SwapStrategy } from "@/lib/api/types";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
@@ -22,6 +23,7 @@ import { NearbyEvents } from "./NearbyEvents";
 import { RouteMap } from "./RouteMap";
 
 const LOADING_STAGES = ["코스를 펼치는 중…", "지도에 핀 꽂는 중…"];
+const FORK_STAGES = ["친구 코스의 조건을 그대로 가져오는 중…", "예산에 맞는 곳만 고르는 중…", "내 코스로 옮겨 적는 중…"];
 const REROLL_STAGES = ["다른 곳들로 다시 살펴보는 중…", "예산에 맞는 곳만 고르는 중…", "가장 덜 걷는 동선 계산 중…"];
 
 /** "18:00 ~ 21:00" — 만남 시간을 정했을 때만. 맡겼으면 출발 시각만. */
@@ -44,6 +46,7 @@ function uniqueWarnings(warnings: CourseWarning[]): CourseWarning[] {
 
 export function CourseView({ id }: { id: string }) {
   const router = useRouter();
+  const auth = useAuth();
   const course = useCourse(id);
   const swap = useSwapStop(id);
   const reorder = useReorderStops(id);
@@ -57,6 +60,7 @@ export function CourseView({ id }: { id: string }) {
 
   const [activeStop, setActiveStop] = useState<number | null>(null);
   const [shared, setShared] = useState(false);
+  const [forking, setForking] = useState(false);
   const [notice, setNotice] = useState<{ mood: JjaniMood; title: string; body?: string } | null>(null);
   const viewed = useRef<string | null>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
@@ -74,6 +78,10 @@ export function CourseView({ id }: { id: string }) {
   const data = course.data;
   const { request } = data;
   const busy = swap.isPending || reorder.isPending;
+  // 남이 만든 코스(공유 링크): 서버가 403 을 낼 조작은 버튼째 숨기고, 같은 조건으로 내 코스를 만드는 길만 남긴다
+  const readOnly = data.can_edit === false;
+  // 새로고침 직후 세션을 복원하는 동안에는 "내 코스"인지 아직 모른다 → 그동안은 친구 코스라고 단정하지 않는다
+  const viewerKnown = auth.status !== "loading";
   const over = data.totals.budget_left < 0;
   const mood: JjaniMood = data.is_saved ? "cheers" : over ? "sorry" : data.totals.budget_left > 0 ? "wink" : "done";
 
@@ -83,8 +91,11 @@ export function CourseView({ id }: { id: string }) {
   const fail = (error: unknown) => {
     const copy = mascotCopyForError(error);
     // 공유받은 코스를 바꾸거나 저장하려 한 경우다. 관리자 화면용 "권한" 문구 대신 할 수 있는 일을 알려 준다.
-    if (copy.code === "FORBIDDEN") setNotice({ mood: "hi", title: "친구가 짠 코스예요", body: "‘다시 짜기’로 내 코스를 만들어 보세요." });
-    else setNotice({ mood: copy.mood, title: copy.title, body: copy.description });
+    // 보통은 can_edit=false 라 버튼이 없어서 여기 오지 않는다. 화면을 연 뒤에 주인이 생긴 경우(다른 사람이 먼저 저장)만 온다.
+    if (copy.code === "FORBIDDEN") {
+      setNotice({ mood: "hi", title: "친구가 짠 코스예요", body: "‘이 코스로 내 코스 만들기’로 같은 조건의 내 코스를 만들어 보세요." });
+      void course.refetch(); // 읽기 전용 화면으로 바꾼다
+    } else setNotice({ mood: copy.mood, title: copy.title, body: copy.description });
     track("error_shown", { code: copy.code, where: "course" });
     // 하단 버튼(다시 짜기·저장)에서 난 오류도 보이게 안내 말풍선으로 데려간다
     requestAnimationFrame(() => noticeRef.current?.scrollIntoView({ block: "center" }));
@@ -153,8 +164,10 @@ export function CourseView({ id }: { id: string }) {
     }
   };
 
-  const onReroll = () => {
-    track("reroll_clicked", { course_id: id });
+  /** fork: 친구 코스를 같은 조건 그대로 내 코스로 새로 만든다 (지금 장소를 빼지 않는다). 아니면 다른 장소들로 다시 짠다. */
+  const onReroll = (fork = false) => {
+    setForking(fork);
+    track("reroll_clicked", fork ? { course_id: id, from_shared: true } : { course_id: id });
     reroll.mutate(
       {
         region: request.region?.slug,
@@ -172,7 +185,7 @@ export function CourseView({ id }: { id: string }) {
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
-          exclude_place_ids: data.stops.map((s) => s.place.id),
+          exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id),
         },
         alternatives: 2,
       },
@@ -200,7 +213,7 @@ export function CourseView({ id }: { id: string }) {
 
   return (
     <>
-      {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={REROLL_STAGES} interval={900} /> : null}
+      {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={forking ? FORK_STAGES : REROLL_STAGES} interval={900} /> : null}
 
       <div className="lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)]">
         {/* 지도: 모바일·태블릿은 위에 붙어 있고(sticky), 데스크톱은 왼쪽에 고정 */}
@@ -232,6 +245,13 @@ export function CourseView({ id }: { id: string }) {
                 <p className="skeleton-shimmer h-[68px] rounded-card" aria-label="짠이가 코스 설명을 쓰는 중" />
               ) : null}
             </header>
+
+            {readOnly && viewerKnown ? (
+              <p role="note" className="flex items-center gap-2 rounded-2xl bg-blue-soft px-4 py-3 text-sm font-bold text-blue-deep">
+                <Users aria-hidden className="size-4 shrink-0" />
+                친구가 짠 코스예요. 아래 버튼으로 같은 조건의 내 코스를 만들면 바꾸고 저장할 수 있어요.
+              </p>
+            ) : null}
 
             <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} />
 
@@ -284,6 +304,7 @@ export function CourseView({ id }: { id: string }) {
                 activeStop={activeStop}
                 swappingPosition={swap.isPending ? (swap.variables?.position ?? null) : null}
                 busy={busy}
+                editable={!readOnly}
                 route={walkRoute.data}
                 access={accessHints.data?.items}
                 onHover={setActiveStop}
@@ -304,16 +325,22 @@ export function CourseView({ id }: { id: string }) {
           {/* 액션 바 */}
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/90 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-xl lg:sticky lg:bottom-0">
             <div className="mx-auto flex max-w-[640px] items-center gap-2 px-4 pt-3 sm:px-6 lg:max-w-none lg:px-7">
-              <Button type="button" variant="soft" size="xl" onClick={onReroll} disabled={reroll.isPending} className="max-sm:px-4" aria-label="다른 장소들로 코스 다시 짜기">
-                <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
-              </Button>
+              {readOnly ? null : (
+                <Button type="button" variant="soft" size="xl" onClick={() => onReroll()} disabled={reroll.isPending} className="max-sm:px-4" aria-label="다른 장소들로 코스 다시 짜기">
+                  <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
+                </Button>
+              )}
               <Button type="button" variant="soft" size="xl" onClick={() => void onShare()} className="max-sm:px-4" aria-label="코스 공유하기">
                 {shared ? <Check aria-hidden /> : <Share2 aria-hidden />} <span className="max-sm:sr-only">{shared ? "링크 복사됨" : "공유"}</span>
               </Button>
               <span role="status" className="sr-only">
                 {shared ? "링크를 복사했어요" : ""}
               </span>
-              {data.is_saved ? (
+              {readOnly ? (
+                <Button type="button" variant="brand" size="xl" className="flex-1" onClick={() => onReroll(true)} disabled={reroll.isPending || !viewerKnown}>
+                  <Sparkles aria-hidden /> 이 코스로 내 코스 만들기
+                </Button>
+              ) : data.is_saved ? (
                 <Button asChild variant="brand" size="xl" className="flex-1">
                   <Link href="/my">
                     <BookmarkCheck aria-hidden /> 저장됨 · 내 코스 보기

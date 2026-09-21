@@ -36,6 +36,15 @@ celery_app.conf.update(
     },
     beat_schedule={
         "sync-search-index": {"task": "app.workers.tasks.sync_search_index", "schedule": 60.0},
+        # retention promises made in the web copy (24 h unsaved courses, 30 d account deletion)
+        "purge-unsaved-courses-hourly": {
+            "task": "app.workers.tasks.purge_courses",
+            "schedule": crontab(minute=10),
+        },
+        "purge-deleted-accounts-daily": {
+            "task": "app.workers.tasks.purge_accounts",
+            "schedule": crontab(hour=5, minute=0),
+        },
         "refresh-stats-nightly": {
             "task": "app.workers.tasks.refresh_stats",
             "schedule": crontab(hour=4, minute=0),

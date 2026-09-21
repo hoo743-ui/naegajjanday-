@@ -22,6 +22,7 @@ from app.infra.llm.factory import build_llm
 from app.infra.search.client import build_search
 from app.infra.search.outbox import drain_outbox
 from app.prompts.loader import PromptLoader
+from app.services import retention_service as retention
 from app.services.ingestion_runner import ingest, run_job
 from app.workers.celery_app import celery_app
 
@@ -221,6 +222,18 @@ def analyze_reviews() -> dict[str, int]:
     return _run(job)
 
 
+@celery_app.task(name="app.workers.tasks.purge_courses")
+def purge_courses() -> dict[str, Any]:
+    """Never-saved courses older than `unsaved_course_ttl_hours` (same job as `cli purge-courses`)."""
+    return _run(lambda db, settings: retention.purge_unsaved_courses(db, settings)).as_dict()
+
+
+@celery_app.task(name="app.workers.tasks.purge_accounts")
+def purge_accounts() -> dict[str, Any]:
+    """Accounts past the deletion grace period (same job as `cli purge-accounts`)."""
+    return _run(lambda db, settings: retention.purge_deleted_accounts(db, settings)).as_dict()
+
+
 async def _aggregate_sentiment(session: Any, place_ids: set[int]) -> None:
     now = datetime.now(UTC)
     for place_id in place_ids:
@@ -247,6 +260,8 @@ __all__ = [
     "func",
     "ingest_active_regions",
     "ingest_region",
+    "purge_accounts",
+    "purge_courses",
     "refresh_stats",
     "run_ingestion_job",
     "sync_search_index",

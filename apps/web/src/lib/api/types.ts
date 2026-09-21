@@ -282,7 +282,12 @@ export interface CourseDetail extends Course {
   nearby_events: NearbyEvent[];
   meta?: GenerateMeta;
   og: { title: string; description: string; image_url: string | null };
+  /** 보는 사람 기준: 내가 저장한 코스일 때만 true (친구가 저장한 코스를 열면 false) */
   is_saved?: boolean;
+  /** 보는 사람이 이 코스의 주인인지 */
+  is_owner?: boolean;
+  /** 바꾸기·순서 변경·저장이 되는지. 주인 없는(비로그인 생성) 코스는 누구나 true, 남의 코스는 false. 없으면 true 로 본다 */
+  can_edit?: boolean;
 }
 
 export interface SwapRequest {
@@ -446,7 +451,10 @@ export type ChatStreamEvent =
   | { event: "error"; data: ProblemDetails };
 
 // ── 관리자 ──────────────────────────────────────────────────
-export type PlaceStatus = "pending" | "approved" | "rejected" | "hidden";
+// 여기 타입은 "화면이 쓰는 모양"이다. 실제 API(apps/api/app/schemas/admin.py)의 필드명·모양은 다르고,
+// `lib/api/admin.ts` 의 어댑터가 읽을 때(wire → 화면)·쓸 때(화면 → API 본문) 양쪽을 맞춘다.
+// API 가 주지 않는 값은 null/undefined 로 두고 화면이 "-" 나 "준비 중" 으로 보여준다 (지어내지 않는다).
+export type PlaceStatus = "pending" | "approved" | "rejected" | "hidden" | "closed";
 
 export interface AdminPlace {
   id: string;
@@ -456,6 +464,7 @@ export interface AdminPlace {
   category_name: string;
   course_role: CourseRole | null;
   region: { slug: string; name: string } | null;
+  /** API 는 null 을 줄 수 있다 → 어댑터가 "" 로 바꾼다 */
   address: string;
   lat: number;
   lng: number;
@@ -463,11 +472,16 @@ export interface AdminPlace {
   is_free: boolean;
   rating: number | null;
   review_count: number;
+  /** 태그 이름. API 는 {이름: 가중치} 로 주고받는다 → 가중치는 `tag_weights` 에 두고 저장할 때 되돌려 쓴다 */
   tags: string[];
+  tag_weights?: Record<string, number>;
+  /** 수집 출처를 ", " 로 이은 표시용 문자열 (API `sources[]`) */
   source: string;
+  /** 0~1. 실제 API 만 준다 */
+  data_quality?: number;
   created_at: string;
   updated_at: string;
-  /** 수집 원본과 정규화 결과 — 승인 화면에서 나란히 비교한다 */
+  /** 수집 원본과 정규화 결과 — 승인 화면에서 나란히 비교한다 (실제 API 는 아직 주지 않는다) */
   source_raw?: Record<string, unknown>;
   normalized?: Record<string, unknown>;
   duplicate_of?: { id: string; name: string } | null;
@@ -478,50 +492,73 @@ export type AdminPlaceInput = Partial<
     AdminPlace,
     "name" | "category" | "address" | "lat" | "lng" | "price_per_person" | "is_free" | "tags" | "status"
   >
-> & { region?: string; description?: string; opening_hours?: string };
+> & {
+  region?: string;
+  description?: string;
+  /** API 에 받는 필드가 없다 → 어댑터가 보내지 않는다 (목 전용) */
+  opening_hours?: string;
+  /** 기존 태그의 가중치. 같은 이름의 태그는 이 값을 그대로 돌려보낸다 (새 태그는 1) */
+  tag_weights?: Record<string, number>;
+};
 
 export interface PlaceRevision {
   id: string;
   actor: string;
   created_at: string;
   changes: Record<string, { from: unknown; to: unknown }>;
+  /** create | approve | reject | edit | merge … (API `action`) */
+  action?: string;
+  note?: string | null;
 }
 
 export interface AdminEvent {
   id: string;
   title: string;
+  /** 카테고리 코드 (API `category`, 예: culture.festival) */
   type: string;
   region: string | null;
   region_name?: string | null;
+  /** API `address` */
   venue: string;
+  lat?: number;
+  lng?: number;
   starts_on: string;
   ends_on: string;
   is_free: boolean;
   price: number | null;
+  /** API `booking_url` */
   link_url: string | null;
+  /** API 는 pending | approved | ended → 어댑터가 draft | published | ended 로 옮긴다 */
   status: "draft" | "published" | "ended";
+  /** 수집 출처 (admin = 직접 등록) */
+  provider?: string;
 }
-export type AdminEventInput = Omit<AdminEvent, "id" | "status" | "region_name"> & {
+export type AdminEventInput = Omit<AdminEvent, "id" | "status" | "region_name" | "provider"> & {
   status?: AdminEvent["status"];
 };
 
 export interface AdminBanner {
   id: string;
   title: string;
+  /** API 에 없는 필드 — 실제 API 에서는 항상 null */
   subtitle: string | null;
   image_url: string | null;
   link_url: string;
   placement: string;
   region: string | null;
-  starts_at: string;
-  ends_at: string;
+  /** null = 기한 없음 */
+  starts_at: string | null;
+  ends_at: string | null;
   is_active: boolean;
-  impressions: number;
-  clicks: number;
+  /** API 가 아직 집계하지 않으면 null */
+  impressions: number | null;
+  clicks: number | null;
+  priority?: number;
 }
 export type AdminBannerInput = Omit<AdminBanner, "id" | "impressions" | "clicks">;
 
-export type RegionStatus = "draft" | "collecting" | "ready" | "active" | "failed";
+/** API: draft | collecting | active | paused. ready · failed 는 목에만 있다 */
+export type RegionStatus = "draft" | "collecting" | "ready" | "active" | "paused" | "failed";
 
 export interface AdminRegion {
   slug: string;
@@ -532,8 +569,11 @@ export interface AdminRegion {
   radius_m: number;
   keywords: string[];
   status: RegionStatus;
+  /** 전체 장소 수 (API `place_counts` 의 합) */
   place_count: number;
   pending_count: number;
+  /** 승인된 장소 수 — 1곳 이상이어야 활성화할 수 있다. 목은 주지 않는다 */
+  approved_count?: number;
   last_collected_at: string | null;
   last_job?: { id: string; status: "queued" | "running" | "succeeded" | "failed"; progress: number } | null;
 }
@@ -542,6 +582,8 @@ export interface AdminRegionInput {
   slug: string;
   name: string;
   parent?: string | null;
+  /** 1 시·도 · 2 시·군·구 · 3 동네. API 필수값 — 없으면 어댑터가 3 으로 보낸다 */
+  level?: number;
   center: LatLng;
   radius_m: number;
   keywords: string[];
@@ -550,27 +592,39 @@ export interface AdminRegionInput {
 export interface ScoringProfile {
   purpose: string;
   version: number;
-  weights: ScoreBreakdown;
+  /** 키는 API 가 정한다 (`FEATURE_KEYS`). 화면은 받은 키를 전부 그린다 */
+  weights: Record<string, number>;
   params: Record<string, unknown>;
   experiment_key: string | null;
-  updated_at: string;
-  updated_by: string | null;
+  is_active?: boolean;
+  /** API 는 아직 주지 않는다 → 없으면 화면이 그 줄을 숨긴다 */
+  updated_at?: string | null;
+  updated_by?: string | null;
 }
 
 export interface TemplateSlot {
+  /** API `course_role` */
   role: CourseRole;
   budget_share: number;
-  stay_min: number;
+  /** API 에 없는 값 (목 전용) → 없으면 화면이 열을 숨긴다 */
+  stay_min?: number;
   is_optional: boolean;
   is_order_flexible: boolean;
+  /** 아래 셋은 화면에서 고치지 않지만 저장할 때 그대로 돌려보낸다 (슬롯은 통째로 교체되므로 빼면 사라진다) */
+  earliest_start?: string | null;
+  latest_start?: string | null;
+  min_slot_budget?: number | null;
 }
 
 export interface CourseTemplate {
+  /** API 는 `code` 로 식별한다 → 어댑터가 id = code 로 채운다 */
   id: string;
+  code?: string;
   name: string;
   purpose: string;
   time_band: string;
   min_budget_per_person: number;
+  /** API `party_min` / `party_max` */
   party_size_min: number;
   party_size_max: number;
   slots: TemplateSlot[];
@@ -582,8 +636,14 @@ export interface IngestionJob {
   region: string;
   provider: string;
   status: "queued" | "running" | "succeeded" | "failed";
+  /** 0~1. API 는 진행률을 주지 않는다 → 끝난 잡만 1 */
   progress: number;
+  /** API `fetched_count` */
   collected: number;
+  created_count?: number;
+  updated_count?: number;
+  failed_count?: number;
+  job_type?: string;
   started_at: string | null;
   finished_at: string | null;
   error: string | null;
@@ -599,23 +659,26 @@ export interface UserAnalytics {
   cohorts: { cohort: string; size: number; retention: number[] }[];
 }
 
+/** null = API 가 아직 집계하지 않는 값. 화면은 "-" 또는 "준비 중" 으로 보여준다 (0 으로 채우지 않는다) */
 export interface RecommendationAnalytics {
   range: { from: string; to: string };
   totals: {
     generated: number;
     save_rate: number;
     reroll_rate: number;
-    swap_rate: number;
-    avg_budget: number;
-    avg_budget_utilization: number;
+    swap_rate: number | null;
+    avg_budget: number | null;
+    avg_budget_per_person?: number | null;
+    avg_budget_utilization: number | null;
     slot_empty_rate: number;
-    p95_latency_ms: number;
+    p95_latency_ms: number | null;
+    p50_latency_ms?: number | null;
   };
-  daily: { date: string; generated: number; saved: number; rerolled: number }[];
-  by_purpose: { purpose: string; purpose_name: string; generated: number; save_rate: number }[];
-  budget_histogram: { bucket: string; count: number }[];
+  daily: { date: string; generated: number; saved: number; rerolled: number }[] | null;
+  by_purpose: { purpose: string; purpose_name: string; generated: number; save_rate: number | null }[];
+  budget_histogram: { bucket: string; count: number }[] | null;
   heatmap: { region: string; region_name: string; purpose: string; purpose_name: string; count: number }[];
-  latency: { date: string; p50: number; p95: number }[];
+  latency: { date: string; p50: number; p95: number }[] | null;
 }
 
 export interface TopPlace {
@@ -623,13 +686,23 @@ export interface TopPlace {
   name: string;
   region_name: string;
   category_name: string;
+  /** API `recommend_count` */
   impressions: number;
+  /** API `save_count` */
   saves: number;
-  swap_outs: number;
+  /** API 가 아직 집계하지 않으면 null */
+  swap_outs: number | null;
 }
 
 export interface SystemHealth {
   status: "ok" | "degraded" | "down";
-  services: { name: string; status: "ok" | "degraded" | "down"; latency_ms: number | null }[];
+  services: {
+    name: string;
+    /** disabled = 설정하지 않아 꺼 둔 구성 요소 (대체 경로로 동작) */
+    status: "ok" | "degraded" | "down" | "disabled";
+    latency_ms: number | null;
+    /** 실제로 붙어 있는 백엔드 (예: sqlite, memory, sql-fallback) */
+    backend?: string | null;
+  }[];
   checked_at: string;
 }

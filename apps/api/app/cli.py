@@ -14,6 +14,8 @@ python -m app.cli ingest-bulk tourapi [--force]              # TourAPI nationwid
 python -m app.cli ingest-bulk all                            # semas → goodprice → every std kind
 python -m app.cli ingest-bulk stats
 python -m app.cli create-admin --email me@example.com [--print-token]
+python -m app.cli purge-courses [--dry-run]                  # never-saved courses older than 24 h
+python -m app.cli purge-accounts [--dry-run]                 # accounts 30 d after DELETE /v1/me
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ from app.infra.ingestion.bulk.std_datasets import KINDS as STD_KINDS
 from app.infra.ingestion.config_loader import ConfigFormatError, load_config
 from app.infra.ingestion.registry import UnknownProviderError
 from app.repositories.user_repo import SqlUserRepository
+from app.services import retention_service as retention
 from app.services.ingestion_runner import IngestionError, ingest, run_job
 
 cli = typer.Typer(no_args_is_help=True, add_completion=False, help="내가짠데이 API operations")
@@ -358,6 +361,33 @@ def create_admin(
                 typer.echo(token)
 
     _run(job)
+
+
+@cli.command("purge-courses")
+def purge_courses(
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="지우지 않고 대상 개수만 출력")] = False,
+) -> None:
+    """Delete never-saved courses older than UNSAVED_COURSE_TTL_HOURS (default 24). Cron-friendly."""
+    report = _run(lambda db, settings: retention.purge_unsaved_courses(db, settings, dry_run=dry_run))
+    if dry_run:
+        typer.echo(f"[purge-courses] would delete courses={report.matched}")
+        return
+    typer.echo(f"[purge-courses] deleted courses={report.deleted}")
+
+
+@cli.command("purge-accounts")
+def purge_accounts(
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="지우지 않고 대상 개수만 출력")] = False,
+) -> None:
+    """Hard-purge accounts whose deletion grace period (ACCOUNT_PURGE_GRACE_DAYS, default 30) is over."""
+    report = _run(lambda db, settings: retention.purge_deleted_accounts(db, settings, dry_run=dry_run))
+    if dry_run:
+        typer.echo(f"[purge-accounts] would delete accounts={report.matched} courses={report.courses}")
+        return
+    typer.echo(
+        f"[purge-accounts] deleted accounts={report.accounts} courses={report.courses} "
+        f"logs_anonymized={report.logs_anonymized}"
+    )
 
 
 @cli.command("eval-courses")

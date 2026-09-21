@@ -58,6 +58,16 @@ class SqlUserRepository:
         await self._s.flush()
         return user
 
+    async def due_for_purge(self, cutoff: datetime, limit: int | None = None) -> list[User]:
+        """Accounts whose deletion was requested before `cutoff` and never cancelled by a new login."""
+        stmt = select(User).where(
+            User.status == "deleting",
+            User.delete_requested_at.is_not(None),
+            User.delete_requested_at <= cutoff,
+        )
+        stmt = stmt.order_by(User.id)
+        return list((await self._s.scalars(stmt.limit(limit) if limit else stmt)).all())
+
     # --- refresh tokens ----------------------------------------------------------------------
 
     async def add_refresh_token(

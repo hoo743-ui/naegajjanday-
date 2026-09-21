@@ -142,7 +142,11 @@ class TestFollowUps:
             s["place"]["id"] for s in course["stops"]
         ]
         assert [s["arrive_at"] for s in body["course"]["stops"]] == [s["arrive_at"] for s in course["stops"]]
-        assert body["og"]["url"].endswith(course["id"]) and "→" in body["og"]["description"]
+        # the web route is /course/{id} (singular) — a shared link must not 404
+        assert body["og"]["url"] == f"http://localhost:3000/course/{course['id']}"
+        assert "→" in body["og"]["description"]
+        # nobody owns an anonymously generated course: anyone may edit it, nobody has saved it
+        assert (body["is_owner"], body["can_edit"], body["is_saved"]) == (False, True, False)
         assert (await client.get("/v1/courses/nope")).json()["code"] == "COURSE_NOT_FOUND"
 
     async def test_detail_keeps_what_a_reload_and_a_reroll_need(self, client: httpx.AsyncClient) -> None:
@@ -230,7 +234,7 @@ class TestFollowUps:
         assert "event: done" in resp.text and course["stops"][0]["reason"][:6] in resp.text
 
     async def test_save_list_feedback_delete(
-        self, client: httpx.AsyncClient, user_headers: dict[str, str]
+        self, client: httpx.AsyncClient, user_headers: dict[str, str], admin_headers: dict[str, str]
     ) -> None:
         course = (await generate(client, alternatives=0)).json()["courses"][0]
         assert (await client.post(f"/v1/courses/{course['id']}/save")).status_code == 401
@@ -243,6 +247,15 @@ class TestFollowUps:
         assert item["duration_min"] == course["totals"]["duration_min"] > 0
         assert item["total_price"] == course["totals"]["price"] and item["status"] == "saved"
         assert item["region_name"] == "홍대입구" and item["purpose_name"] and item["party_size"] == 2
+        # the detail answers for the VIEWER: a friend opening the shared link is not "saved / mine"
+        url = f"/v1/courses/{course['id']}"
+        as_owner = (await client.get(url, headers=user_headers)).json()
+        assert (as_owner["is_owner"], as_owner["can_edit"], as_owner["is_saved"]) == (True, True, True)
+        as_anon = (await client.get(url)).json()
+        assert (as_anon["is_owner"], as_anon["can_edit"], as_anon["is_saved"]) == (False, False, False)
+        assert as_anon["course"]["status"] == "saved"  # the raw status alone would have lied to them
+        as_friend = (await client.get(url, headers=admin_headers)).json()
+        assert (as_friend["is_owner"], as_friend["can_edit"], as_friend["is_saved"]) == (False, False, False)
         # once owned, anonymous callers can no longer modify it
         anon = await client.post(
             f"/v1/courses/{course['id']}/swap", json={"position": 2, "strategy": "closer"}
@@ -265,6 +278,21 @@ class TestFollowUps:
             await client.delete(f"/v1/me/courses/{course['id']}", headers=user_headers)
         ).status_code == 204
         assert (await client.get(f"/v1/courses/{course['id']}")).status_code == 404
+
+    async def test_owned_but_unsaved_course_is_read_only_for_others(
+        self, client: httpx.AsyncClient, user_headers: dict[str, str]
+    ) -> None:
+        created = await client.post(
+            "/v1/courses/generate", json={**GENERATE_BODY, "alternatives": 0}, headers=user_headers
+        )
+        url = f"/v1/courses/{created.json()['courses'][0]['id']}"
+        mine = (await client.get(url, headers=user_headers)).json()
+        assert (mine["is_owner"], mine["can_edit"], mine["is_saved"]) == (True, True, False)
+        theirs = (await client.get(url)).json()
+        assert (theirs["is_owner"], theirs["can_edit"], theirs["is_saved"]) == (False, False, False)
+        # `can_edit` mirrors the write endpoints exactly
+        assert (await client.post(f"{url}/reorder", json={"order": [1, 2, 3]})).status_code == 403
+        assert (await client.get(url, headers={"Authorization": "Bearer junk"})).status_code == 401
 
 
 class TestRateLimit:

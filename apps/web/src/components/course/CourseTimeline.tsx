@@ -19,6 +19,8 @@ interface CourseTimelineProps {
   activeStop: number | null;
   swappingPosition: number | null;
   busy: boolean;
+  /** false 면 읽기 전용(친구가 짠 코스): 장소 바꾸기·순서 변경을 숨긴다 */
+  editable?: boolean;
   /** 실제 보행 경로. legs[i] 는 stops[i] → stops[i+1] 구간이다. */
   route?: WalkRoute;
   /** stops 와 같은 순서의 가까운 지하철 출구·버스 정류장 */
@@ -47,7 +49,7 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, route, access, onHover, onSwap, onMove }: CourseTimelineProps) {
+export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onSwap, onMove }: CourseTimelineProps) {
   if (course.stops.length === 0) {
     return (
       <EmptyState
@@ -132,6 +134,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 active={activeStop === stop.position}
                 swapping={swappingPosition === stop.position}
                 busy={busy}
+                editable={editable}
                 onHover={onHover}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
                 onMove={(delta) => onMove(stop.position, delta)}

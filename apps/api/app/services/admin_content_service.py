@@ -32,8 +32,9 @@ class AdminContentService:
     def _event_out(e: Event, slugs: dict[int, str]) -> dto.AdminEventOut:
         return dto.AdminEventOut(
             id=e.public_id, region=slugs.get(e.region_id, ""), title=e.title,
-            category=e.category.code if e.category else None, starts_on=e.starts_on, ends_on=e.ends_on,
-            is_free=e.is_free, price=e.price, status=e.status, provider=e.provider,
+            category=e.category.code if e.category else None, description=e.description, address=e.address,
+            lat=e.lat, lng=e.lng, starts_on=e.starts_on, ends_on=e.ends_on, is_free=e.is_free, price=e.price,
+            booking_url=e.booking_url, status=e.status, provider=e.provider,
         )  # fmt: skip
 
     async def _event(self, public_id: str) -> Event:

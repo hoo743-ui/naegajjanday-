@@ -18,11 +18,11 @@ from app.infra.db.base import as_utc, utcnow
 from app.infra.db.models import User
 from app.repositories.user_repo import SqlUserRepository
 from app.schemas import auth as dto
+from app.services import retention_service as retention
 
 logger = get_logger(__name__)
 
 OAUTH_STATE_TTL_S = 600
-ACCOUNT_PURGE_GRACE_DAYS = 30
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,8 +99,14 @@ class AuthService:
         user = await self._users.upsert_oauth_user(provider, provider_user_id, email, nickname)
         if user.status == "suspended":
             raise errors.Forbidden("이용이 정지된 계정이에요.")
-        if user.status == "deleting":  # logging in again cancels the pending deletion
-            user.status, user.delete_requested_at = "active", None
+        if user.status == "deleting":
+            if retention.is_purge_due(user, self._settings):
+                # grace period over but the batch has not run yet: the promise is "gone for good",
+                # so purge now and start a fresh account instead of resurrecting the old data
+                await retention.purge_user(self._s, user)
+                user = await self._users.upsert_oauth_user(provider, provider_user_id, email, nickname)
+            else:  # logging in again within the grace period cancels the pending deletion
+                user.status, user.delete_requested_at = "active", None
         tokens = await self.issue(user, family_id=str(uuid.uuid4()))
         await self._s.commit()
         return tokens, saved.get("redirect_to")
@@ -191,7 +197,8 @@ class AuthService:
         return await self.get_preferences(user)
 
     async def request_deletion(self, user: User) -> dto.DeleteAccountResponse:
-        """개인정보보호법: 30-day grace period, then the purge batch removes the account."""
+        """개인정보보호법: soft-delete now (every token dies, `status != active` blocks the API), then
+        `retention_service.purge_deleted_accounts` hard-deletes after `account_purge_grace_days`."""
         user.status, user.delete_requested_at = "deleting", utcnow()
         from sqlalchemy import update
 
@@ -204,5 +211,6 @@ class AuthService:
         )
         await self._s.commit()
         return dto.DeleteAccountResponse(
-            status="deleting", purge_after=utcnow() + timedelta(days=ACCOUNT_PURGE_GRACE_DAYS)
+            status="deleting",
+            purge_after=utcnow() + timedelta(days=self._settings.account_purge_grace_days),
         )

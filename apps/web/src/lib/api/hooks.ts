@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -9,6 +9,7 @@ import {
   useQueryClient,
   type QueryClient,
 } from "@tanstack/react-query";
+import { getAccessToken, subscribeToken } from "@/lib/auth/token";
 import { ApiError, api, newIdempotencyKey } from "./client";
 import { safeJson, streamSse } from "./sse";
 import type {
@@ -157,26 +158,57 @@ type CourseDetailWire = Pick<CourseDetail, "request" | "siblings"> & {
   course: Course;
   og: { title: string; description: string; image?: string | null };
   nearby_events?: CourseDetail["nearby_events"];
+  /** 보는 사람 기준 (API 가 Authorization 헤더로 판단한다) */
+  is_owner?: boolean;
+  can_edit?: boolean;
+  is_saved?: boolean;
 };
 
 function toCourseDetail(res: CourseDetail | CourseDetailWire): CourseDetail {
-  if (!("course" in res)) return res;
+  if (!("course" in res)) return { ...res, can_edit: res.can_edit ?? true };
+  const savedStatus = res.course.status === "saved" || res.course.status === "completed";
   return {
     ...res.course,
     request: res.request,
     siblings: res.siblings ?? [],
     nearby_events: res.nearby_events ?? [],
-    // API 는 저장 여부를 status 로 준다 → 새로고침해도 "저장됨"이 유지된다
-    is_saved: res.course.status === "saved" || res.course.status === "completed",
+    // status 만 보면 친구가 저장한 코스도 "저장됨"으로 보인다 → 보는 사람 기준 값을 쓴다 (새로고침해도 유지)
+    is_saved: res.is_saved ?? (res.can_edit === undefined && savedStatus),
+    is_owner: res.is_owner ?? false,
+    can_edit: res.can_edit ?? true,
     og: { title: res.og.title, description: res.og.description, image_url: res.og.image ?? null },
   };
 }
 
+const hasAccessToken = () => getAccessToken() !== null;
+const noAccessToken = () => false;
+
 export function useCourse(id: string) {
+  const client = useQueryClient();
+  // 상세 응답은 보는 사람에 따라 달라진다(is_owner·can_edit·is_saved) → 로그인 상태가 바뀌면 다시 받는다.
+  // 새로고침 직후에는 세션 복원(refresh)이 끝나기 전에 비로그인으로 한 번 받기 때문에 꼭 필요하다.
+  const signedIn = useSyncExternalStore(subscribeToken, hasAccessToken, noAccessToken);
+  const seen = useRef(signedIn);
+  useEffect(() => {
+    if (seen.current === signedIn) return;
+    seen.current = signedIn;
+    void client.invalidateQueries({ queryKey: qk.course(id) });
+  }, [client, id, signedIn]);
+
   return useQuery<CourseDetail, ApiError>({
     queryKey: qk.course(id),
-    queryFn: async ({ signal }) =>
-      toCourseDetail(await api.get<CourseDetail | CourseDetailWire>(`/courses/${encodeURIComponent(id)}`, { signal })),
+    queryFn: async ({ signal }) => {
+      const path = `/courses/${encodeURIComponent(id)}`;
+      try {
+        return toCourseDetail(await api.get<CourseDetail | CourseDetailWire>(path, { signal }));
+      } catch (error) {
+        // 공유 링크는 누구나 볼 수 있어야 한다: 세션이 죽어서(refresh 실패 → 토큰 비워짐) 난 401 이면 비로그인으로 다시 받는다
+        if (error instanceof ApiError && error.status === 401 && !hasAccessToken()) {
+          return toCourseDetail(await api.get<CourseDetail | CourseDetailWire>(path, { signal, retryOnUnauthorized: false }));
+        }
+        throw error;
+      }
+    },
     staleTime: 60_000,
     retry: (count, error) => error.retryable && count < 2,
   });
@@ -208,7 +240,10 @@ export function useSaveCourse(courseId: string) {
   return useMutation<{ id: string }, ApiError, void>({
     mutationFn: () => api.post(`/courses/${encodeURIComponent(courseId)}/save`),
     onSuccess: () => {
-      client.setQueryData<CourseDetail>(qk.course(courseId), (prev) => (prev ? { ...prev, is_saved: true } : prev));
+      client.setQueryData<CourseDetail>(qk.course(courseId), (prev) =>
+        // 저장하면 주인 없는 코스도 내 것이 된다
+        prev ? { ...prev, is_saved: true, is_owner: true, can_edit: true } : prev,
+      );
       void client.invalidateQueries({ queryKey: qk.myCourses });
     },
   });

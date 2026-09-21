@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     cors_origins: CsvList = Field(default_factory=lambda: ["http://localhost:3000"])
     webhook_secret: str | None = None
 
+    # --- retention (what the web promises users; enforced by `purge-courses` / `purge-accounts`) ---
+    unsaved_course_ttl_hours: int = Field(default=24, ge=1)  # never-saved courses are removed after this
+    account_purge_grace_days: int = Field(default=30, ge=0)  # DELETE /v1/me → hard purge after this
+
     # --- OAuth2 (official endpoints are in core/security.py) ---
     kakao_client_id: str | None = None
     kakao_client_secret: str | None = None

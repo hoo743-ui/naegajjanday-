@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from collections.abc import Sequence
+from datetime import datetime
+
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infra.db.models import Course, CourseFeedback, RecommendationLog
@@ -40,6 +43,30 @@ class SqlCourseRepository:
 
     async def delete(self, course: Course) -> None:
         await self._s.delete(course)
+
+    # --- retention: never-saved courses live for `unsaved_course_ttl_hours` ---------------------
+
+    async def count_expired_unsaved(self, cutoff: datetime) -> int:
+        stmt = select(func.count(Course.id)).where(
+            Course.status.notin_(OWNED_STATUSES), Course.created_at < cutoff
+        )
+        return int(await self._s.scalar(stmt) or 0)
+
+    async def expired_unsaved_ids(self, cutoff: datetime, limit: int) -> list[int]:
+        stmt = select(Course.id).where(Course.status.notin_(OWNED_STATUSES), Course.created_at < cutoff)
+        return list((await self._s.scalars(stmt.order_by(Course.id).limit(limit))).all())
+
+    async def delete_unsaved_by_ids(self, ids: Sequence[int]) -> int:
+        """One atomic statement; stops and feedback go with the row (`ON DELETE CASCADE`).
+
+        The status guard is repeated on purpose: a course saved after it was selected must survive.
+        """
+        if not ids:
+            return 0
+        result = await self._s.execute(
+            delete(Course).where(Course.id.in_(ids), Course.status.notin_(OWNED_STATUSES))
+        )
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def add_feedback(self, feedback: CourseFeedback) -> None:
         self._s.add(feedback)

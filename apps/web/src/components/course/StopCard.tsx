@@ -24,6 +24,8 @@ interface StopCardProps {
   active: boolean;
   swapping: boolean;
   busy: boolean;
+  /** false 면(친구가 짠 코스) 순서 변경·바꾸기 버튼을 아예 그리지 않는다 — 눌러도 403 인 버튼을 두지 않는다 */
+  editable?: boolean;
   onHover: (position: number | null) => void;
   onSwap: (strategy: SwapStrategy) => void;
   onMove: (delta: -1 | 1) => void;
@@ -36,7 +38,7 @@ function congestionTone(value: number) {
   return "bg-pink-soft text-pink-deep";
 }
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, onHover, onSwap, onMove }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -195,15 +197,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           실제 사진·메뉴 보기
           <ExternalLink aria-hidden className="size-3.5" />
         </a>
-        <div className="flex items-center gap-1.5">
-          <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
-            <ChevronUp aria-hidden className="size-4" />
-          </button>
-          <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
-            <ChevronDown aria-hidden className="size-4" />
-          </button>
-          <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} />
-        </div>
+        {editable ? (
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+              <ChevronUp aria-hidden className="size-4" />
+            </button>
+            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+              <ChevronDown aria-hidden className="size-4" />
+            </button>
+            <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} />
+          </div>
+        ) : null}
       </div>
 
       <AnimatePresence initial={false}>

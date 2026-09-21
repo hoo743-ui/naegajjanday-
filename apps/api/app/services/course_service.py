@@ -51,7 +51,7 @@ from app.infra.db.base import as_utc
 from app.infra.db.models import Course, CourseFeedback, CourseStop, Purpose, RecommendationLog, Region, User
 from app.infra.tagging import get_tag_rules
 from app.repositories.config_repo import SqlConfigRepository
-from app.repositories.course_repo import SqlCourseRepository
+from app.repositories.course_repo import OWNED_STATUSES, SqlCourseRepository
 from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.repositories.user_repo import SqlUserRepository
@@ -457,8 +457,9 @@ class CourseService:
             )
         return row, stops, GeoPoint(row.origin_lat, row.origin_lng)
 
-    async def get(self, public_id: str) -> dto.CourseDetailResponse:
+    async def get(self, public_id: str, viewer: User | None = None) -> dto.CourseDetailResponse:
         row, stops, origin = await self._load(public_id)
+        is_owner = viewer is not None and row.user_id == viewer.id
         names = " → ".join(s.place.name for s in stops)
         purpose = await self._s.get(Purpose, row.purpose_id)
         assert purpose is not None
@@ -496,7 +497,7 @@ class CourseService:
             og=dto.OgMeta(
                 title=f"내가짠데이 | {row.summary or row.label}",
                 description=names,
-                url=f"{self._settings.web_base_url.rstrip('/')}/courses/{row.public_id}",
+                url=f"{self._settings.web_base_url.rstrip('/')}/course/{row.public_id}",
                 image=next((s.place.thumbnail_url for s in stops if s.place.thumbnail_url), None),
             ),
             # same rule as `generate`: without this a reload or a shared link never showed any event
@@ -511,6 +512,9 @@ class CourseService:
                 )
                 for e, dist in events[:5]
             ],
+            is_owner=is_owner,
+            can_edit=self._can_edit(row, viewer),
+            is_saved=is_owner and row.status in OWNED_STATUSES,
         )
 
     # --- re-planning (swap / reorder) --------------------------------------------------------
@@ -667,8 +671,13 @@ class CourseService:
     # --- ownership / saved courses -----------------------------------------------------------
 
     @staticmethod
-    def _check_owner(row: Course, user: User | None) -> None:
-        if row.user_id is not None and (user is None or user.id != row.user_id):
+    def _can_edit(row: Course, user: User | None) -> bool:
+        """An ownerless (anonymously generated) course is open to anyone; an owned one to its owner only."""
+        return row.user_id is None or (user is not None and user.id == row.user_id)
+
+    @classmethod
+    def _check_owner(cls, row: Course, user: User | None) -> None:
+        if not cls._can_edit(row, user):
             raise errors.Forbidden("다른 사람의 코스는 수정할 수 없어요.")
 
     async def save(self, public_id: str, user: User) -> dto.CourseOut:

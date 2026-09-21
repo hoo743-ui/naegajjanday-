@@ -91,6 +91,12 @@ class TestModeration:
         patched = await client.patch(f"/v1/admin/places/{place_id}", headers=admin_headers,
                                      json={"price_per_person": 7000, "tags": {"가성비": 0.9}})  # fmt: skip
         assert patched.json()["price_per_person"] == 7000
+        # the admin payload carries the tags in the PATCH body's own shape, so the edit form can round-trip them
+        assert patched.json()["tags"] == {"가성비": 0.9}
+        listed = (
+            await client.get("/v1/admin/places", params={"q": body["name"]}, headers=admin_headers)
+        ).json()
+        assert [p["tags"] for p in listed["items"] if p["id"] == place_id] == [{"가성비": 0.9}]
         assert "가성비" in (await client.get(f"/v1/places/{place_id}")).json()["tags"]
 
         revisions = (
@@ -108,6 +114,35 @@ class TestModeration:
         async with container.db.sessionmaker() as s:
             n = await s.scalar(select(func.count(AuditLog.id)).where(AuditLog.entity_id == place_id))
         assert n == 3  # approve, edit, reject — every admin write is audited
+
+    async def test_an_edited_address_replaces_the_collected_road_address(
+        self, client: httpx.AsyncClient, admin_headers: dict[str, str], container: Container
+    ) -> None:
+        from app.infra.db.models import Place
+
+        created = await client.post(
+            "/v1/admin/places",
+            headers=admin_headers,
+            json={"region": "seoul-seongsu", "category": "attraction.landmark", "name": "address sample",
+                  "lat": 37.5451, "lng": 127.0561, "is_free": True, "address": "old lot address"},
+        )  # fmt: skip
+        place_id = created.json()["id"]
+        async with container.db.sessionmaker() as s:
+            place = await s.scalar(select(Place).where(Place.public_id == place_id))
+            assert place is not None
+            place.road_address = "collected road address"
+            await s.commit()
+        listed = (
+            await client.get("/v1/admin/places", params={"q": "address sample"}, headers=admin_headers)
+        ).json()
+        assert listed["items"][0]["address"] == "collected road address"
+
+        patched = await client.patch(
+            f"/v1/admin/places/{place_id}", headers=admin_headers, json={"address": "1 Corrected-ro"}
+        )
+        # readers show `road_address or address` — without clearing it the operator's fix would never appear
+        assert patched.json()["address"] == "1 Corrected-ro"
+        assert (await client.get(f"/v1/places/{place_id}")).json()["address"] == "1 Corrected-ro"
 
     async def test_create_attraction_merge_and_bulk_approve(
         self, client: httpx.AsyncClient, admin_headers: dict[str, str]
@@ -235,15 +270,27 @@ class TestConfig:
                  "lng": 126.9246, "starts_on": "2026-09-01", "ends_on": "2026-10-01", "is_free": True}  # fmt: skip
         created = await client.post("/v1/admin/events", headers=admin_headers, json=event)
         assert created.status_code == 201
+        # everything the edit form has to prefill comes back, not just the list columns
+        assert (created.json()["lat"], created.json()["lng"], created.json()["address"]) == (
+            37.5571,
+            126.9246,
+            None,
+        )
         public = await client.get(
             "/v1/events", params={"region": "seoul-hongdae", "from": "2026-09-10", "to": "2026-09-10"}
         )
         assert "관리자 샘플 전시" in [e["title"] for e in public.json()["items"]]
         event_id = created.json()["id"]
         ended = await client.patch(
-            f"/v1/admin/events/{event_id}", headers=admin_headers, json={"status": "ended"}
+            f"/v1/admin/events/{event_id}",
+            headers=admin_headers,
+            json={"status": "ended", "address": "1 Sample-ro", "booking_url": "https://example.com/e"},
         )
         assert ended.json()["status"] == "ended"
+        assert (ended.json()["address"], ended.json()["booking_url"]) == (
+            "1 Sample-ro",
+            "https://example.com/e",
+        )
         assert (await client.delete(f"/v1/admin/events/{event_id}", headers=admin_headers)).status_code == 204
 
         banner = {
