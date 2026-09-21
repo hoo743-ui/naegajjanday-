@@ -31,6 +31,13 @@ from app.domain.models import (
     StopResult,
     Template,
 )
+from app.domain.recommendation.blend import (
+    blend_affinity,
+    blend_profiles,
+    blend_rules,
+    vetoed_roles,
+    without_roles,
+)
 from app.domain.recommendation.budget import SlotBudget
 from app.domain.recommendation.candidates import FilterContext, area_names_of, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
@@ -107,11 +114,11 @@ class CourseService:
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
         region, origin = await self._resolve_region(req)
-        purpose = await self._config.get_purpose(req.purpose)
-        if purpose is None:
-            raise errors.PurposeNotFound(f"'{req.purpose}' 목적은 아직 지원하지 않아요.")
-        profile = await self._config.scoring_profile(purpose.id, purpose.code)
-        templates = await self._config.templates_for(purpose.id, purpose.code)
+        purposes = await self._purposes(req)
+        purpose = purposes[0]  # the first one gives the day its shape; all of them weigh in below
+        profile = blend_profiles([await self._config.scoring_profile(p.id, p.code) for p in purposes])
+        vetoed = vetoed_roles([p.code for p in purposes])
+        templates = without_roles(await self._config.templates_for(purpose.id, purpose.code), vetoed)
         ctx = await self._build_context(
             origin=origin,
             radius_m=region.radius_m,
@@ -128,6 +135,8 @@ class CourseService:
             user=user,
         )
         ctx.area_names = area_names_of(region.name)
+        ctx.purpose_tag_affinity = blend_affinity([await self._config.tag_affinity(p.id) for p in purposes])
+        ctx.purpose_codes = tuple(p.code for p in purposes)
         rules = get_signature_rules()
         signature = (await signature_service.load(self._s, region.id)).strong(rules.auto_focus_min_strength)
         ctx.local_words = tuple(s.word for s in signature.specialties)
@@ -137,7 +146,7 @@ class CourseService:
             ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
-            if role in extra_roles():
+            if role in extra_roles() and role not in vetoed:
                 templates = with_role(templates, extra_roles()[role])
         engine = RecommendationEngine(self._places, self._travel)
         try:
@@ -152,6 +161,21 @@ class CourseService:
                 f"{region.name}에서 조건에 맞는 코스를 찾지 못했어요. 예산이나 시간을 바꿔 볼까요?"
             ) from exc
         return region, origin, purpose, ctx, profile, out
+
+    async def _purpose_names(self, codes: Sequence[str]) -> list[dto.CodeName]:
+        found = [await self._config.get_purpose(code) for code in codes]
+        return [dto.CodeName(code=p.code, name=p.name) for p in found if p is not None]
+
+    async def _purposes(self, req: dto.CourseGenerateRequest) -> list[Purpose]:
+        """The chosen purposes in order, first one first, each once, at most `max_purposes`."""
+        codes = list(dict.fromkeys([req.purpose, *req.purposes]))[: int(blend_rules().get("max_purposes", 3))]
+        found: list[Purpose] = []
+        for code in codes:
+            purpose = await self._config.get_purpose(code)
+            if purpose is None:
+                raise errors.PurposeNotFound(f"'{code}' 목적은 아직 지원하지 않아요.")
+            found.append(purpose)
+        return found
 
     async def _signature_out(self, region: Region) -> LocalSignature | None:
         """What the neighbourhood is known for. None when nothing stands out: the page says nothing then."""
@@ -203,6 +227,7 @@ class CourseService:
             "duration_min": req.duration_min,
             "style": ctx.style,
             "focus": ctx.focus,
+            "purposes": list(ctx.purpose_codes),
             "extras": [r for r in req.extras if r in extra_roles()],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
@@ -514,6 +539,7 @@ class CourseService:
                     disliked_tags=list(prefs.get("disliked_tags") or []),
                 ),
                 purpose=dto.CodeName(code=purpose.code, name=purpose.name),
+                purposes=await self._purpose_names((row.request or {}).get("purposes") or [purpose.code]),
                 party_size=row.party_size,
                 budget_total=row.budget_total,
                 transport=row.transport,

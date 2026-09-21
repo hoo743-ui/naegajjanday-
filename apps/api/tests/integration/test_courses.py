@@ -107,6 +107,24 @@ class TestGenerate:
         assert banned not in [s["place"]["id"] for s in course["stops"]]
         assert all("웨이팅" not in s["place"]["tags"] for s in course["stops"])
 
+    async def test_several_purposes_blend_and_any_veto_holds(self, client: httpx.AsyncClient) -> None:
+        # a date alone gets the evening bar; bring the family along and the bar is gone for everyone
+        resp = await generate(client, budget_total=160000, alternatives=0, purposes=["family"])
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["meta"]["scoring_profile"].startswith("date+family@v")
+        course = body["courses"][0]
+        assert "BAR" not in [s["role"] for s in course["stops"]]
+        detail = (await client.get(f"/v1/courses/{course['id']}")).json()
+        assert [p["code"] for p in detail["request"]["purposes"]] == ["date", "family"]
+        # asking for a drink does not override the veto either
+        again = await generate(
+            client, budget_total=160000, alternatives=0, purposes=["family"], extras=["BAR"]
+        )
+        assert "BAR" not in [s["role"] for s in again.json()["courses"][0]["stops"]]
+        unknown = await generate(client, purposes=["nope"])
+        assert unknown.status_code == 404
+
     async def test_bigger_budget_keeps_the_bar_slot(self, client: httpx.AsyncClient) -> None:
         body = (await generate(client, budget_total=160000, alternatives=0)).json()
         course = body["courses"][0]

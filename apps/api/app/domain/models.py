@@ -220,6 +220,7 @@ class RequestContext:
     landmark_ids: frozenset[int] = frozenset()
     focus: str | None = None  # the specialty the course was actually built around (set by the engine)
     focus_request: str | None = None  # the one the user picked
+    purpose_codes: tuple[str, ...] = ()  # every purpose chosen for this meeting, first one first
     focus_from_price: int | None = None  # cheapest shop serving the pick, when the pick did not fit
     auto_focus_words: tuple[str, ...] = ()  # specialties strong enough to claim a stop unasked
     local_off: bool = False

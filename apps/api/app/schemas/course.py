@@ -28,7 +28,12 @@ class CourseGenerateRequest(BaseModel):
         max_length=40,
         description="origin 의 표시 이름(역·장소). 결과 화면과 다시 짜기에 그대로 돌려준다",
     )
-    purpose: str = Field(examples=["date"])
+    purpose: str = Field(examples=["date"], description="하루의 틀을 정하는 첫 목적")
+    purposes: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description="함께 고른 다른 목적들. 가중치·취향은 평균, 한 목적의 금기(가족 → 술집)는 전체에 적용",
+    )
     party_size: int = Field(ge=1, le=20)
     budget_total: int = Field(ge=1000, le=10_000_000, description="총 예산(원)")
     start_at: datetime | None = Field(default=None, description="생략 시 현재 시각")
@@ -217,6 +222,7 @@ class CourseRequestEcho(BaseModel):
     origin_label: str | None = None
     preferences: EchoPreferences = Field(default_factory=EchoPreferences)
     purpose: CodeName
+    purposes: list[CodeName] = Field(default_factory=list, description="첫 목적 포함, 고른 순서대로")
     party_size: int
     budget_total: int
     transport: Transport
