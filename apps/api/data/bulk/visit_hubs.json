@@ -1,0 +1,37 @@
+{
+  "_note": "사람들이 실제로 가는 곳. 한국관광공사 '기초지자체 중심 관광지 정보'(data.go.kr 15128559): 티맵 내비게이션에서 목적지로 찍고 실제로 이동한 기록으로, 시군구마다 다른 관광지와 가장 많이 이어지는 곳 100위를 준다. 이용허락범위 제한 없음 → 저장해도 된다. 크롤링이 아니라 공식 실측 데이터다(docs/20). 차량 이동 기준이라 걸어서 다니는 골목 가게는 잡히지 않는다 — 그래서 '인기 없음'의 증거로는 쓰지 않고, 순위에 든 곳을 올려 주는 데만 쓴다.",
+  "provider": "tmap_hub",
+  "base_url": "https://apis.data.go.kr/B551011",
+  "hub_path": "LocgoHubTarService1/areaBasedList1",
+  "codes_path": "KorService2/ldongCode2",
+  "app_name": "naegajjanday",
+  "rows": 100,
+  "daily_call_cap": 900,
+  "months_back": 6,
+  "_class_note": "hubCtgryMclsNm → 우리 업종. 여기 있는 분류만 새 장소로 만든다. 자연 · 역사 관광은 분류가 믿을 만하다. 문화관광(영화관 · 키즈카페 · 체육관까지 섞여 있다) · 쇼핑(백화점과 시장이 섞여 있다) · 레저스포츠 · 숙박은 이미 있는 장소와 맞을 때만 인기도를 올린다 — 거친 분류로 새 장소를 만들면 업종이 틀린 볼거리가 코스에 들어간다.",
+  "category_by_class": {
+    "자연관광": "attraction",
+    "역사관광": "attraction.landmark"
+  },
+  "merge": {
+    "_note": "이름이 '<곳>/<지점>', '<촬영지>/(<더 알려진 이름>)' 처럼 온다 → 전체 이름 · / 앞부분 · 괄호 속 별칭으로 비교한다(지점명 조각만으로는 비교하지 않는다: 쇼핑몰이 그 안의 식당에 붙었다). 목록에는 관광지와 숙박뿐이라 식당 · 카페 · 술집은 매칭 대상이 아니다. 넓은 곳(해변 · 시장)은 좌표가 입구와 다르므로 반경이 넉넉하다.",
+    "radius_m": 400,
+    "min_similarity": 0.74,
+    "roles": [
+      "ATTRACTION",
+      "NIGHTVIEW",
+      "CULTURE",
+      "ACTIVITY",
+      "STAY"
+    ]
+  },
+  "popularity": {
+    "_note": "인기도 = 1 - (순위-1)/100. 1위 1.0, 100위 0.01. 같은 곳이 여러 번 나오면 가장 높은 값.",
+    "ranks": 100
+  },
+  "tag": {
+    "_note": "상위 top_rank 위까지만 '사람들이 실제로 찾는 곳' 표식을 단다(tag_rules.json 의 quality_tags → 추천 점수의 curated · 후보 우선 읽기 · 화면의 표식).",
+    "name": "티맵 인기 목적지",
+    "top_rank": 30
+  }
+}

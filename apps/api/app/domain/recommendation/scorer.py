@@ -58,7 +58,9 @@ class PlaceScorer:
             "purpose_fit": F.purpose_fit(p.tags, ctx.purpose_tag_affinity),
             # how much this place stands for the neighbourhood: a local specialty or landmark in full, a
             # tourism-board listing a little less
-            "curated": max(p.local_score, self._listed_score if p.is_curated else 0.0),
+            # vouched for (a public mark), what the district is known for, or simply where people
+            # really go (measured navigation rank, 1.0 = first in its district): the best of the three
+            "curated": max(p.local_score, self._listed_score if p.is_curated else 0.0, p.popularity),
             "buzz": p.buzz,
         }
 
