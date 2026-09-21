@@ -180,7 +180,7 @@ test.describe("핵심 여정 (실제 API)", () => {
 });
 
 test.describe("페이지 스모크", () => {
-  for (const path of ["/login", "/chat", "/my", "/plan", "/explore"]) {
+  for (const path of ["/login", "/chat", "/my", "/plan", "/explore", "/terms", "/privacy"]) {
     test(`${path} 가 에러 없이 뜬다`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("banner")).toBeVisible();

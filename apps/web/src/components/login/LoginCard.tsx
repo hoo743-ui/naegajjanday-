@@ -151,6 +151,18 @@ export function LoginCard() {
           바로 코스 짜기
         </Link>
       </p>
+      {/* 로그인 = 계정 생성이다 → 무엇에 동의하는지 누르기 전에 보여 준다 */}
+      <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+        로그인하면{" "}
+        <Link href="/terms" className="font-bold underline underline-offset-2 hover:text-ink">
+          이용약관
+        </Link>
+        과{" "}
+        <Link href="/privacy" className="font-bold underline underline-offset-2 hover:text-ink">
+          개인정보처리방침
+        </Link>
+        에 동의한 것으로 봐요.
+      </p>
     </div>
   );
 }

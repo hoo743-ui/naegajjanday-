@@ -63,7 +63,15 @@ export function SiteFooter() {
       </div>
       <div className="border-t">
         <div className="wrap flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-5 text-[13px]">
-          <p>© 2026 내가짠데이</p>
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>© 2026 내가짠데이</span>
+            <Link href="/terms" className="hover:text-ink">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="font-bold text-ink-2 hover:text-ink">
+              개인정보처리방침
+            </Link>
+          </p>
           <p>예상 금액과 이동 시간은 실제와 다를 수 있어요.</p>
         </div>
       </div>
