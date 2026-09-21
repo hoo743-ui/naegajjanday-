@@ -231,3 +231,12 @@ SSE 이벤트: `token`(텍스트) · `tool_call` · `course`(코스 카드 paylo
 `GET /v1/places/{id}` 에 `since_year` · `licensed_as` · `marks[]` 추가. `GET /v1/directions/walk` 의 `legs[].coordinates`.
 규칙 파일: `data/recommendation/{purpose_blend,multi_region,extra_roles,conditions}.json`, `data/signature/signature_rules.json`.
 
+
+### 설계 점검 뒤에 더해진 것 (같은 날)
+| 어디 | 필드 | 뜻 |
+|---|---|---|
+| `POST /courses/generate` 요청 | `replaces` | 여행 일정의 **하루**를 다시 짤 때 바꿀 그 날의 코스 id. 새 코스가 같은 여행의 같은 날이 되고(일차 · 여행 전체 예산을 물려받고, 다른 날이 가는 곳은 피한다) 옛 코스는 `status="replaced"` 로 탭에서 빠진다. 당일 코스의 id 면 무시한다. 남의 여행이면 403 |
+| 코스 `warnings[]` | `EXTRA_UNAVAILABLE` | `extras` 로 부탁한 자리(술 한잔 · 야구 관람)를 코스에 넣지 못했다. `meta = {extra, label, vetoed}` — `vetoed=true` 면 함께 고른 목적 때문에 뺀 것(가족 → 술집). 문구는 `data/recommendation/extra_roles.json` 의 `missing` · `vetoed`. 여행은 어느 하루에라도 들어가면 말하지 않는다 |
+| `POST /courses/{id}/save` | — | 여행 일정의 하루를 저장하면 **여행 전체**가 저장된다 (저장 안 된 날이 보존 기한에 지워지지 않게) |
+| `GET /me/courses` 항목 | `day`, `days` | 여행 일정의 하루면 몇 일차 / 며칠짜리 |
+| `POST /admin/places/{id}/photos` | multipart `file`, `make_cover` | 그 장소의 실제 사진(JPEG · PNG · WebP, 6MB 이하). 내용(매직 바이트)으로 형식을 확인하고 `/uploads/…` 로 서빙한다 |
