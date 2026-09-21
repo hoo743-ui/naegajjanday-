@@ -6,6 +6,12 @@
   "walk_m_per_min": 67,
   "limit": 3,
   "price_floor_ratio": 0.0,
+  "_top_up": "한 곳뿐인 코스는 코스가 아니다. 예산이 나머지 자리를 감당하지 못해 below_stops 곳보다 적게 나오면(둘이서 2만원 · 새벽 2시: 열려 있는 가장 싼 식당도 예산을 넘는다), 위의 규칙으로 권했을 곳을 max_added 곳까지 코스에 직접 넣고 notice 로 그렇게 했다고 말한다({place} = 넣은 곳).",
+  "top_up": {
+    "below_stops": 2,
+    "max_added": 2,
+    "notice": "이 예산과 시간으로는 들를 곳이 너무 적어서, 걸어갈 수 있는 {place}을(를) 더했어요."
+  },
   "roles": {
     "DESSERT": {
       "line": "남은 {left}으로 디저트 하나 더 어때요?"

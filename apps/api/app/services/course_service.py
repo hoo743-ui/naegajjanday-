@@ -667,10 +667,13 @@ class CourseService:
         events = await self._places.events_near(origin, region.radius_m * 1.5, ctx.start_at.date())
         await self._s.commit()
 
+        views = [
+            await self._top_up(row, r.stops, user) or self._view(row, r.stops, origin) for row, r, _ in rows
+        ]
         response = dto.CourseGenerateResponse(
             request_id=request_id,
             local=await self._signature_out(region),
-            courses=[self._view(row, r.stops, origin) for row, r, _ in rows],
+            courses=views,
             nearby_events=[
                 dto.NearbyEvent(
                     id=e.public_id,
@@ -1035,7 +1038,14 @@ class CourseService:
     ) -> dto.CourseOut:
         # What was said about the request stays said (the hour is still night, the bar still could not be
         # added); only what is read off the stops themselves is worked out again below.
-        keep = [w for w in row.warnings or [] if w.get("code") not in RECOMPUTED_WARNINGS]
+        still_here = {s.place.public_id for s in partial.stops}
+        keep = [
+            w
+            for w in row.warnings or []
+            if w.get("code") not in RECOMPUTED_WARNINGS
+            # "we added X for you" goes when X goes
+            and (w.get("code") != "TOPPED_UP" or (w.get("meta") or {}).get("place_id") in still_here)
+        ]
         result = build_course(
             row.label, partial, row.template_id or 0, ctx, profile, row.optimizer or "manual", keep
         )
@@ -1191,6 +1201,24 @@ class CourseService:
         if req.place_id not in offered:
             raise errors.ValidationFailed("지금은 코스에 넣을 수 없는 곳이에요. 목록을 새로 고쳐 주세요.")
         role, place = offered[req.place_id]
+        out = await self._append(row, stops, role, place, user, [])
+        if out is None:
+            raise errors.ValidationFailed("이 곳을 넣으면 시간이 맞지 않아요.")
+        await self._tracker.track(
+            AnalyticsEvent("stop_added", user.public_id if user else row.public_id, {"role": role})
+        )
+        return out
+
+    async def _append(
+        self,
+        row: Course,
+        stops: Sequence[StopResult],
+        role: str,
+        place: PlaceCandidate,
+        user: User | None,
+        notes: list[dict[str, Any]],
+    ) -> dto.CourseOut | None:
+        """One of `_leftover_options` goes to the end of the course (None: the hours do not work out)."""
         ctx, profile, composer = await self._replan_tools(row, user)
         per_person = (row.budget_total - row.total_price) / max(1, row.party_size)
         slot = Slot(position=len(stops) + 1, course_role=role, budget_share=0.0, is_optional=True)
@@ -1201,11 +1229,34 @@ class CourseService:
         ]
         partial = composer.replan([*sequence, (place, SlotBudget(slot, 0.0, per_person))], strict=False)
         if partial is None:
-            raise errors.ValidationFailed("이 곳을 넣으면 시간이 맞지 않아요.")
-        out = await self._finish_replan(row, partial, ctx, profile, [])
-        await self._tracker.track(
-            AnalyticsEvent("stop_added", user.public_id if user else row.public_id, {"role": role})
-        )
+            return None
+        return await self._finish_replan(row, partial, ctx, profile, notes)
+
+    async def _top_up(
+        self, row: Course, stops: Sequence[StopResult], user: User | None
+    ) -> dto.CourseOut | None:
+        """One place is not a course. When the budget could not pay for the rest (two people, 20,000 won,
+        2 a.m.: the cheapest kitchen still open costs more), what we would have offered as "이런 건 어때요?"
+        — a walk away, open at that hour, within the money left — is put in, and the course says so."""
+        rules = (suggestion_rules() or {}).get("top_up") or {}
+        out: dto.CourseOut | None = None
+        for _ in range(int(rules.get("max_added", 0))):
+            if len(stops) >= int(rules.get("below_stops", 0)):
+                break
+            options = await self._leftover_options(row, stops, user)
+            if not options:
+                break
+            role, place, _walk_min, _metres = options[0]
+            note = {
+                "code": "TOPPED_UP",
+                "detail": str(rules.get("notice") or "").format(place=place.name),
+                "meta": {"place_id": place.public_id, "role": role},
+            }
+            added = await self._append(row, stops, role, place, user, [note])
+            if added is None:
+                break
+            out = added
+            row, stops, _origin = await self._load(row.public_id)
         return out
 
     async def reorder(self, public_id: str, req: dto.ReorderRequest, user: User | None) -> dto.CourseOut:

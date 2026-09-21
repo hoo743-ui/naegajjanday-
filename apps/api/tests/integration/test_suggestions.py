@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import httpx
+import pytest
 
+from app.domain.recommendation.style import suggestion_rules
+from app.services import course_service
 from tests.conftest import GENERATE_BODY
 
 
@@ -66,3 +69,44 @@ class TestSuggestions:
         assert again.status_code == 422
         stranger = await client.post(f"/v1/courses/{course['id']}/stops", json={"place_id": "not-a-place"})
         assert stranger.status_code == 422
+
+
+class TestTopUp:
+    """One place is not a course: what would have been offered is put in, and the course says so."""
+
+    async def test_a_course_that_came_out_too_short_is_topped_up_and_says_so(
+        self, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        plain = await course_with_money_left(client)
+        assert "TOPPED_UP" not in [w["code"] for w in plain["warnings"]]  # two stops or more: left alone
+
+        rules = suggestion_rules()
+        short_of = len(plain["stops"]) + 1  # "too short" now means: what this request normally gives
+        monkeypatch.setattr(
+            course_service,
+            "suggestion_rules",
+            lambda: {**rules, "top_up": {**rules["top_up"], "below_stops": short_of, "max_added": 1}},
+        )
+        # a start ten minutes later: the answer to the first request is cached by its body
+        resp = await client.post(
+            "/v1/courses/generate",
+            json={**GENERATE_BODY, "budget_total": 120000, "start_at": "2026-09-22T12:10:00+09:00",
+                  "duration_min": 120, "alternatives": 0},
+        )  # fmt: skip
+        assert resp.status_code == 200, resp.text
+        course = resp.json()["courses"][0]
+        notes = [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]
+        assert len(notes) == 1 and len(course["stops"]) == len(plain["stops"]) + 1
+        added = course["stops"][-1]
+        assert added["place"]["id"] == notes[0]["meta"]["place_id"]
+        assert added["place"]["name"] in notes[0]["detail"]
+        assert course["totals"]["price"] == sum(s["est_price"] for s in course["stops"]) <= 120000
+        assert added["arrive_at"] >= course["stops"][-2]["leave_at"]
+        # what was returned is what was saved
+        saved = (await client.get(f"/v1/courses/{course['id']}")).json()["course"]
+        assert [s["place"]["id"] for s in saved["stops"]] == [s["place"]["id"] for s in course["stops"]]
+
+        # the note goes when the place goes
+        swapped = await client.post(f"/v1/courses/{course['id']}/swap", json={"position": added["position"]})
+        if swapped.status_code == 200 and swapped.json()["stops"][-1]["place"]["id"] != added["place"]["id"]:
+            assert "TOPPED_UP" not in [w["code"] for w in swapped.json()["warnings"]]
