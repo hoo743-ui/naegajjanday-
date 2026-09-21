@@ -37,6 +37,7 @@ class TagRules:
     strip_prefix: tuple[str, ...] = ()
     listed_photo_host: str = ""
     listed_tags: Mapping[str, float] = field(default_factory=dict)
+    quality_tags: frozenset[str] = frozenset()  # an official body vouches for the place
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> TagRules:
@@ -57,6 +58,7 @@ class TagRules:
             unlisted_except=tuple(_compact(w) for w in data.get("unlisted_names", {}).get("except", [])),
             listed_photo_host=str(data.get("listed_by_kto", {}).get("photo_host", "")),
             listed_tags=dict(data.get("listed_by_kto", {}).get("tags", {})),
+            quality_tags=frozenset(data.get("quality_tags", {}).get("names", [])),
             strip_prefix=tuple(w.upper() for w in data.get("unlisted_names", {}).get("strip_prefix", [])),
         )
 

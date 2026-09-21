@@ -228,6 +228,8 @@ async def run(
                     "price": s.est_price,
                     "photo": bool(s.place.thumbnail_url),
                     "local": s.place.local_score > 0,
+                    # paid stops only: a free street or park is not something anyone vouches for
+                    "vouched": s.place.is_curated,
                     "specialty": bool(s.place.local_word),
                 }
                 for s in course.stops
@@ -269,6 +271,13 @@ def summarize(outcomes: list[Outcome], rules: dict[str, Any]) -> dict[str, Any]:
             / max(1, sum(1 for o in outcomes if o.has_specialty)),
             3,
         ),
+        # of the places people pay at, how many an official body vouches for (tourism board, model
+        # restaurant, century store, 30 years in business): the stand-in for reviews we do not have
+        "vouched_rate": round(
+            sum(1 for s in stops if s.get("vouched") and s["price"] > 0)
+            / max(1, sum(1 for s in stops if s["price"] > 0)),
+            3,
+        ),
         "local_rate": round(sum(1 for o in outcomes if o.local_stops) / max(1, total), 3),
         "avg_budget_use": round(
             sum(o.price / max(1, o.scenario.budget_total) for o in outcomes) / max(1, total), 3
@@ -288,6 +297,8 @@ def render(summary: dict[str, Any], outcomes: list[Outcome], *, examples: int = 
         f" · 실제 사진 {summary['real_photo_rate']:.0%}",
         f"동네다움: 명물이 뚜렷한 동네의 코스 중 {summary.get('specialty_rate', 0):.0%} 에 명물 가게 포함"
         f" · 전체 코스의 {summary.get('local_rate', 0):.0%} 에 동네 명물·대표 볼거리가 하나 이상",
+        f"보증된 곳: 돈을 쓰는 장소의 {summary.get('vouched_rate', 0):.0%} 에 공적 표식"
+        "(관광공사·모범음식점·백년가게·30년)",
         "",
         "결함 (많은 순):",
     ]
@@ -337,6 +348,7 @@ def compare(name: str, summary: dict[str, Any], outcomes: list[Outcome]) -> str:
     delta("결함 없는 코스", before["clean_rate"], summary["clean_rate"], good_up=True)
     delta("명물 포함", before.get("specialty_rate", 0.0), summary.get("specialty_rate", 0.0), good_up=True)
     delta("동네다운 코스", before.get("local_rate", 0.0), summary.get("local_rate", 0.0), good_up=True)
+    delta("보증된 곳", before.get("vouched_rate", 0.0), summary.get("vouched_rate", 0.0), good_up=True)
     delta("실제 사진", before["real_photo_rate"], summary["real_photo_rate"], good_up=True)
     delta("예산 사용", before["avg_budget_use"], summary["avg_budget_use"], good_up=True)
     delta("평균 장소 수", before["avg_stops"], summary["avg_stops"], good_up=True, pct=False)

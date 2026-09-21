@@ -156,10 +156,16 @@ class NarrativeService:
                 parts.append(fb.render_text(local_lines["specialty"], word=stop.place.local_word))
             else:
                 parts.append(str(local_lines["landmark"]))
-        elif liked:
-            tag = max(liked, key=lambda t: liked[t])
-            fact = (d.get("fact_lines") or {}).get(tag)
-            parts.append(str(fact) if fact else fb.render_text(d["tag_line"], tag=tag))
+        else:
+            facts: dict[str, str] = d.get("fact_lines") or {}
+            tag = max(liked, key=lambda t: liked[t]) if liked else None
+            stated = next((facts[t] for t in facts if t in stop.place.tags), None)
+            if tag is not None and tag in facts:
+                parts.append(str(facts[tag]))
+            elif stated is not None:  # a designation is worth saying whatever the purpose likes
+                parts.append(str(stated))
+            elif tag is not None:
+                parts.append(fb.render_text(d["tag_line"], tag=tag))
         return " ".join(parts)
 
     @staticmethod

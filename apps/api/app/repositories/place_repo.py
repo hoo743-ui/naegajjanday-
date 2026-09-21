@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.domain.models import GeoPoint, OpeningPeriod, PlaceCandidate
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.base import as_utc
-from app.infra.db.models import Category, Event, OpeningHour, Place, PlaceStats, PlaceTag, Region
+from app.infra.db.models import Category, Event, OpeningHour, Place, PlaceStats, PlaceTag, Region, Tag
 from app.infra.default_hours import get_default_hours
 from app.infra.tagging import get_tag_rules, merge_tags
 from app.repositories.geo import nearest_first, within
@@ -58,13 +58,16 @@ def to_candidate(place: Place) -> PlaceCandidate:
         and not place.is_free,
         photo_url=place.thumbnail_url,
     )
+    tags = merge_tags({pt.tag.name: pt.weight for pt in place.place_tags}, derived)
+    vouched = get_tag_rules().quality_tags or frozenset({CURATED_TAG})
     return PlaceCandidate(
         id=place.id,
         public_id=place.public_id,
         name=get_tag_rules().sign_name(place.name),
         category_code=cat.code,
         category_name=cat.name,
-        is_curated=CURATED_TAG in derived,
+        # no reviews exist: "an official body vouches for it" is the quality signal we do have
+        is_curated=any(tag in vouched for tag in tags),
         course_role=cat.course_role,
         lat=place.lat,
         lng=place.lng,
@@ -81,7 +84,7 @@ def to_candidate(place: Place) -> PlaceCandidate:
         sentiment_count=stats.sentiment_count if stats else 0,
         aspect_scores=dict(stats.aspect_scores or {}) if stats else {},
         popularity=stats.popularity if stats else 0.0,
-        tags=merge_tags({pt.tag.name: pt.weight for pt in place.place_tags}, derived),
+        tags=tags,
         # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
         # museum at 20:30; real hours always win
         opening_hours=[p for h in place.opening_hours if (p := to_opening_period(h)) is not None]
@@ -130,6 +133,7 @@ class SqlPlaceRepository:
     async def fetch(
         self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
     ) -> list[PlaceCandidate]:
+        rules = get_tag_rules()
         base = (
             select(Place, PlaceStats.recommend_count)
             .join(Category, Category.id == Place.category_id)
@@ -139,9 +143,11 @@ class SqlPlaceRepository:
             .options(*FULL_LOAD)
         )
         near = nearest_first(Place, origin)
+        vouched = select(PlaceTag.place_id).join(Tag, Tag.id == PlaceTag.tag_id)
         notable = or_(
             Place.thumbnail_url.is_not(None),
             Place.price_is_estimated.is_(False),
+            Place.id.in_(vouched.where(Tag.name.in_(sorted(rules.quality_tags)))),
             *(Place.name.contains(word) for word in name_words),
         )
         shuffled = (Place.id * SPREAD_MULTIPLIER) % SPREAD_MODULUS
