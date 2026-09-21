@@ -60,4 +60,17 @@ class RegionSignature(Base, TimestampMixin):
     payload: Mapped[json_dict]
 
 
+class RegionStat(Base, TimestampMixin):
+    """How many places stand inside a region that owns none of its own. A 동 (level 4) is a circle
+    drawn over its district: places stay assigned to the district or hotspot, so the count cannot
+    come from `place.region_id`. Derived by `ingestion.bulk.dongs`; safe to drop and rebuild."""
+
+    __tablename__ = "region_stat"
+
+    region_id: Mapped[int] = mapped_column(
+        BigIntPK, ForeignKey("region.id", ondelete="CASCADE"), primary_key=True
+    )
+    place_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
 Index("ix_region_parent", Region.parent_id)

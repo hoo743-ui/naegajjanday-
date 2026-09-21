@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from datetime import date, time
 from typing import Any
@@ -240,13 +241,31 @@ class SqlPlaceRepository:
 
     # --- read side ---------------------------------------------------------------------------
 
-    async def hot_places(self, region_ids: Sequence[int], roles: Sequence[str], limit: int) -> list[Place]:
-        """The most visited places of these regions, most visited first (category and stats loaded)."""
+    async def hot_places(
+        self,
+        region_ids: Sequence[int],
+        roles: Sequence[str],
+        limit: int,
+        *,
+        around: tuple[GeoPoint, float] | None = None,
+    ) -> list[Place]:
+        """The most visited places of these regions, most visited first (category and stats loaded).
+        `around` (centre, metres) keeps those inside a box: a 동 owns no places, it is drawn over them."""
+        inside = []
+        if around is not None:
+            centre, reach_m = around
+            d_lat = reach_m / 111_000
+            d_lng = reach_m / (111_000 * max(0.2, math.cos(math.radians(centre.lat))))
+            inside = [
+                Place.lat.between(centre.lat - d_lat, centre.lat + d_lat),
+                Place.lng.between(centre.lng - d_lng, centre.lng + d_lng),
+            ]
         rows = await self._s.scalars(
             select(Place)
             .join(PlaceStats, PlaceStats.place_id == Place.id)
             .join(Category, Category.id == Place.category_id)
             .where(
+                *inside,
                 Place.region_id.in_(list(region_ids)),
                 Place.status == "approved",
                 PlaceStats.popularity > 0,

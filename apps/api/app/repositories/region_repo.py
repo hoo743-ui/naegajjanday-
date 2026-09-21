@@ -5,12 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import GeoPoint
 from app.domain.routing.travel_time import haversine_m
-from app.infra.db.models import Place, Region
+from app.infra.db.models import Place, Region, RegionStat
 
 HOTSPOT_REACH = 3  # × the hotspot's radius
 DISTRICT_REACH = 2  # × the district's radius (a district's centre is not where its edge is)
 DISTRICT_MIN_M = 8000
 DISTRICT_FAR_M = 60000
+NEIGHBOURHOOD_LEVEL = 4  # 동 · 읍 · 면: drawn over a district, owns no places (`region_stat` counts them)
 
 
 class SqlRegionRepository:
@@ -36,12 +37,15 @@ class SqlRegionRepository:
             .where(Region.status == "active")
             .order_by(Region.level, Region.name)
         )
+        parent = await self.get_by_slug(parent_slug) if parent_slug else None
         if parent_slug:
-            parent = await self.get_by_slug(parent_slug)
             if parent is None:
                 return []
             child_ids = select(Region.id).where(Region.parent_id == parent.id)
             stmt = stmt.where(or_(Region.parent_id == parent.id, Region.parent_id.in_(child_ids)))
+        if not q and (parent is None or parent.level < NEIGHBOURHOOD_LEVEL - 2):
+            # 1,400 of them: sent when a district is opened or a name is searched, not with every list
+            stmt = stmt.where(Region.level < NEIGHBOURHOOD_LEVEL)
         if q:
             pattern = f"%{q.strip()}%"
             stmt = stmt.where(or_(Region.name.ilike(pattern), Region.slug.ilike(pattern)))
@@ -65,7 +69,9 @@ class SqlRegionRepository:
             while node is not None and hops < 4:  # level 3 → 2 → 1; the bound also stops bad cycles
                 total[node] = total.get(node, 0) + int(n)
                 node, hops = parents.get(node), hops + 1
-        return [(region, total.get(region.id, 0)) for region, _own in rows]
+        stats = await self._s.execute(select(RegionStat.region_id, RegionStat.place_count))
+        drawn = dict(stats.tuples().all())
+        return [(region, total.get(region.id, 0) or int(drawn.get(region.id, 0))) for region, _own in rows]
 
     async def ids_under(self, region_id: int) -> list[int]:
         """The region and everything below it (a province → its districts → their hotspots)."""

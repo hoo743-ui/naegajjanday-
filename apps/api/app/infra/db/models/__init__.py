@@ -25,7 +25,7 @@ from app.infra.db.models.place import (
     PopularTime,
     Review,
 )
-from app.infra.db.models.region import Category, Region, RegionSignature, Tag
+from app.infra.db.models.region import Category, Region, RegionSignature, RegionStat, Tag
 from app.infra.db.models.user import OAuthAccount, RefreshToken, User, UserPreference
 
 __all__ = [
@@ -56,6 +56,7 @@ __all__ = [
     "RefreshToken",
     "Region",
     "RegionSignature",
+    "RegionStat",
     "Review",
     "ScoringProfile",
     "SearchOutbox",
