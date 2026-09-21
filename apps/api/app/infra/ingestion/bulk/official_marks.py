@@ -27,13 +27,12 @@ from app.infra.ingestion import dedupe
 from app.infra.ingestion.bulk.common import BulkReport
 from app.infra.ingestion.bulk.goodprice import AddressKey, address_key
 
-
 _SPLIT_ROAD_RE = re.compile(r"(로|길)\s+(\d+(?:번)?[가-힣]?길)")
 
 
 def mark_address_key(address: str, sido_aliases: Mapping[str, str] | None = None) -> AddressKey | None:
     """`address_key`, tolerant of hand-typed lists: '중앙로 129번길 35-17' is '중앙로129번길 35-17'."""
-    return address_key(_SPLIT_ROAD_RE.sub(r"", address or ""), sido_aliases)
+    return address_key(_SPLIT_ROAD_RE.sub(r"\1\2", address or ""), sido_aliases)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +49,7 @@ class MarkMatch:
     row: MarkRow
     place_id: int
     similarity: float
+    place_name: str = ""  # the name we show — decides whether an age tag would be honest
 
     @property
     def content_hash(self) -> str:
@@ -132,12 +132,12 @@ class PlaceAddressIndex:
     def __len__(self) -> int:
         return len(self._by_key)
 
-    def best(self, row: MarkRow, min_similarity: float) -> tuple[int, float] | None:
-        best: tuple[int, float] | None = None
+    def best(self, row: MarkRow, min_similarity: float) -> tuple[int, float, str] | None:
+        best: tuple[int, float, str] | None = None
         for place_id, name in self._by_key.get(row.key, ()):
             sim = dedupe.name_similarity(row.name, name)
             if sim >= min_similarity and (best is None or sim > best[1]):
-                best = (place_id, sim)
+                best = (place_id, sim, name)
         return best
 
 
@@ -159,7 +159,7 @@ def match_rows(
         report.mapped += 1
         current = by_place.get(found[0])
         if current is None or found[1] > current.similarity:
-            by_place[found[0]] = MarkMatch(row, found[0], round(found[1], 3))
+            by_place[found[0]] = MarkMatch(row, found[0], round(found[1], 3), found[2])
     return list(by_place.values())
 
 
@@ -170,13 +170,26 @@ def years_open(licensed_on: date | None, today: date) -> int | None:
     return today.year - licensed_on.year - int(before_anniversary)
 
 
-def tags_for(match: MarkMatch, spec: Mapping[str, Any], today: date) -> dict[str, float]:
+_BRANCH_NAME_RE = re.compile(r"(?<!본)점$")
+
+
+def is_branch_or_chain(name: str, chain_words: Iterable[str] = ()) -> bool:
+    """A licence is inherited with the premises (지위승계), so a franchise that opened last year in
+    a 1990 restaurant carries a 1990 licence date. '30년 넘은 집' on "빽돈 을지로점" would be a lie:
+    branches ('…점', but not '…본점') and known chains never get an age tag."""
+    compact = name.replace(" ", "").upper()
+    return bool(_BRANCH_NAME_RE.search(compact)) or any(w and w in compact for w in chain_words)
+
+
+def tags_for(
+    match: MarkMatch, spec: Mapping[str, Any], today: date, chain_words: Iterable[str] = ()
+) -> dict[str, float]:
     """`tag` = every matched place gets it; `age_tags` = only places licensed that many years ago."""
     out: dict[str, float] = {}
     if spec.get("tag"):
         out[str(spec["tag"])] = float(spec.get("tag_weight", 1.0))
     age = years_open(match.row.licensed_on, today)
-    if age is not None:
+    if age is not None and not is_branch_or_chain(match.place_name or match.row.name, chain_words):
         for rule in sorted(spec.get("age_tags", []), key=lambda r: -int(r["min_years"])):
             if age >= int(rule["min_years"]):
                 out[str(rule["tag"])] = float(rule.get("weight", 1.0))

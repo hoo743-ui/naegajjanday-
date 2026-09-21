@@ -211,9 +211,7 @@ async def _download_localdata(client: httpx.AsyncClient, source: BulkSource, tar
     if allowed.status_code != 200:
         raise ManualDownloadRequiredError(manual_steps(source, target))
     tmp = target.with_suffix(target.suffix + ".part")
-    async with client.stream(
-        "GET", f"{LOCALDATA}/file/download/{source.slug}/info", headers=referer
-    ) as resp:
+    async with client.stream("GET", f"{LOCALDATA}/file/download/{source.slug}/info", headers=referer) as resp:
         resp.raise_for_status()
         if "html" in resp.headers.get("content-type", ""):
             raise ManualDownloadRequiredError(manual_steps(source, target))

@@ -29,6 +29,7 @@ from app.infra.ingestion.bulk.common import (
 from app.infra.ingestion.bulk.price_prior import PricePrior
 from app.infra.ingestion.bulk.regions import RegionIndex, build_region_rows, upsert_generated_regions
 from app.infra.ingestion.bulk.writer import BulkWriter
+from app.infra.tagging import get_tag_rules
 
 Log = Callable[[str], None]
 FOOD_ROLES = ("MEAL", "CAFE", "DESSERT", "BAR")
@@ -258,6 +259,7 @@ async def load_marks(db: Database, kind: str, path: Path, *, log: Log = print) -
     aliases = _sido_aliases(load_json("regions_kr.json"))
     report = BulkReport()
     today = date.today()
+    chain_words = get_tag_rules().chain_words
     async with db.sessionmaker() as session:
         index = official_marks.PlaceAddressIndex()
         stmt = (
@@ -309,7 +311,9 @@ async def load_marks(db: Database, kind: str, path: Path, *, log: Log = print) -
                 )
         for id_chunk in chunked(unhide, ID_CHUNK):
             await session.execute(
-                update(Place).where(Place.id.in_(id_chunk), Place.status == "hidden").values(status="approved")
+                update(Place)
+                .where(Place.id.in_(id_chunk), Place.status == "hidden")
+                .values(status="approved")
             )
         report.reopened += len(unhide)
         await session.execute(delete(PlaceSource).where(PlaceSource.provider == provider))
@@ -318,7 +322,7 @@ async def load_marks(db: Database, kind: str, path: Path, *, log: Log = print) -
         wanted = [
             (m.place_id, tag_ids[tag_name], weight)
             for m in matches
-            for tag_name, weight in official_marks.tags_for(m, spec, today).items()
+            for tag_name, weight in official_marks.tags_for(m, spec, today, chain_words).items()
         ]
         taken: set[tuple[int, int]] = set()
         if wanted:
@@ -338,7 +342,9 @@ async def load_marks(db: Database, kind: str, path: Path, *, log: Log = print) -
         if spec.get("hide"):
             for id_chunk in chunked([m.place_id for m in matches], ID_CHUNK):
                 await session.execute(
-                    update(Place).where(Place.id.in_(id_chunk), Place.status == "approved").values(status="hidden")
+                    update(Place)
+                    .where(Place.id.in_(id_chunk), Place.status == "approved")
+                    .values(status="hidden")
                 )
                 hidden.update(id_chunk)
             report.closed += len(hidden)

@@ -12,6 +12,7 @@ python -m app.cli ingest-bulk goodprice [--path goodprice.csv] [--store-path sto
 python -m app.cli ingest-bulk std --kind parks|museums|tourist|markets|festivals [--path file.csv]
 python -m app.cli ingest-bulk tourapi [--force]              # TourAPI nationwide (TOURAPI_SERVICE_KEY)
 python -m app.cli ingest-bulk all                            # semas → goodprice → every std kind
+python -m app.cli ingest-bulk marks [--kind all|centurystore|…]  # 백년가게·모범음식점·인허가 → 태그/숨김
 python -m app.cli ingest-bulk stats
 python -m app.cli create-admin --email me@example.com [--print-token]
 python -m app.cli purge-courses [--dry-run]                  # never-saved courses older than 24 h
@@ -286,7 +287,9 @@ def bulk_tourapi(
 
 @bulk_cli.command("marks")
 def bulk_marks(
-    kind: Annotated[str, typer.Option(help="all | centurystore | model_restaurants | lic_restaurants | …")] = "all",
+    kind: Annotated[
+        str, typer.Option(help="all | centurystore | model_restaurants | lic_restaurants | …")
+    ] = "all",
     path: Annotated[Path | None, typer.Option(help="CSV (only with a single --kind)")] = None,
 ) -> None:
     """백년가게 · 모범음식점 · 인허가(업력 30년+, 단란/유흥주점 제외) → 이미 있는 장소에 태그 / 숨김.
