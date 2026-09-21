@@ -59,6 +59,8 @@ MAX_STAY_SCALE = 1.6  # a whole-day plan lingers; beyond this a "stay" stops bei
 MMR_POOL = 25
 WANTED_REACH_M = 4000.0  # how far to look for something the user asked for by name
 RECENTER_BEYOND = 0.6  # further than this share of the radius from the centre: plan around it instead
+WALK_AREA_M = 1500  # how far apart the stops of a walking course may lie
+WALK_CELL_M = 500  # the grid on which the liveliest pocket of a wide district is looked for
 
 
 class CandidateSource(Protocol):
@@ -210,6 +212,7 @@ class RecommendationEngine:
         params = profile.params
         if ctx.wanted_categories and not ctx.recentered:
             await self._recenter_on_wanted(ctx, slot_budgets)
+        await self._settle_on_foot(ctx, slot_budgets)
         cache: dict[tuple[str, float], list[PlaceCandidate]] = {}
         pools: dict[int, list[PlaceCandidate]] = {}
         for i, sb in enumerate(slot_budgets):
@@ -257,6 +260,41 @@ class RecommendationEngine:
                 if haversine_m(ctx.origin, nearest.point) > ctx.radius_m * RECENTER_BEYOND:
                     ctx.origin = nearest.point
                 return
+
+    async def _settle_on_foot(self, ctx: RequestContext, slot_budgets: Sequence[B.SlotBudget]) -> None:
+        """On foot in a district wider than anyone walks: first find where to walk.
+
+        The best restaurants and the best cafés of a 5 km district rarely stand in the same street; the
+        beam took the top restaurant (a far-off mall), found nothing within a walk of it and returned a
+        one-stop course. A person would pick the liveliest pocket of the district first: the 1.5 km block
+        where the most KINDS of places for this course stand together, then the most places."""
+        if ctx.transport != "walk" or ctx.radius_m <= WALK_AREA_M or ctx.recentered or ctx.wanted_place_ids:
+            return
+        d_lat = WALK_CELL_M / 111_000
+        d_lng = d_lat / max(0.2, math.cos(math.radians(ctx.origin.lat)))
+        cells: dict[tuple[int, int], list[tuple[str, GeoPoint]]] = {}
+        for role in dict.fromkeys(sb.slot.course_role for sb in slot_budgets):
+            found = await self._source.fetch(role, ctx.origin, float(ctx.radius_m), ctx.start_at.date())
+            for c in found:
+                cells.setdefault((round(c.lat / d_lat), round(c.lng / d_lng)), []).append((role, c.point))
+        if not cells:
+            return
+
+        def block(cell: tuple[int, int]) -> list[tuple[str, GeoPoint]]:
+            return [
+                x
+                for dy in (-1, 0, 1)
+                for dx in (-1, 0, 1)
+                for x in cells.get((cell[0] + dy, cell[1] + dx), ())
+            ]
+
+        best = max(cells, key=lambda cell: (len({role for role, _ in block(cell)}), len(block(cell))))
+        points = [p for _, p in block(best)]
+        ctx.origin = GeoPoint(
+            sum(p.lat for p in points) / len(points), sum(p.lng for p in points) / len(points)
+        )
+        ctx.radius_m = WALK_AREA_M
+        ctx.recentered = True
 
     # --- search ------------------------------------------------------------------------------
 

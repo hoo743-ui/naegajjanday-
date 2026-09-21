@@ -11,6 +11,7 @@ interface LeftoverCardProps {
   courseId: string;
   /** 남은 돈이 바뀌면(장소를 바꾸거나 넣으면) 권할 곳도 다시 찾는다 */
   budgetLeft: number;
+  budget: number;
   /** 친구가 짠 코스(읽기 전용)에서는 권하기만 하고, 넣는 버튼은 없다 */
   editable: boolean;
   onAdded: (name: string, price: number) => void;
@@ -21,11 +22,21 @@ interface LeftoverCardProps {
  * 마지막 장소에서 걸어갈 수 있고, 남은 돈으로 되고, 그 시각에 여는 곳만 온다(서버가 확인한다).
  * 권할 곳이 없으면 아무것도 그리지 않는다.
  */
-export function LeftoverCard({ courseId, budgetLeft, editable, onAdded }: LeftoverCardProps) {
+/** 이만큼(예산 대비) 남았는데 권할 곳이 없으면, 말없이 넘어가지 않고 그렇다고 말한다 */
+const WORTH_SAYING = 0.4;
+
+export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }: LeftoverCardProps) {
   const suggestions = useSuggestions(courseId, budgetLeft);
   const add = useAddStop(courseId);
   const items = suggestions.data?.items ?? [];
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    if (!suggestions.isSuccess || budget <= 0 || budgetLeft / budget < WORTH_SAYING) return null;
+    return (
+      <p role="note" className="tabular border-l-2 border-line pl-3 text-[13.5px] leading-relaxed text-ink-2">
+        남은 돈으로 <b className="font-extrabold text-gold-ink">{won(budgetLeft)}</b>이 있어요. 이 시간에 마지막 장소에서 걸어갈 수 있는 거리에는 더 권할 만한 곳을 찾지 못했어요.
+      </p>
+    );
+  }
 
   return (
     <section aria-labelledby="leftover-card" className="grid gap-3 rounded-card bg-white p-5 shadow-soft">

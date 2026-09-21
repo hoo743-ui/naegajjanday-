@@ -182,6 +182,7 @@ class CourseComposer:
     ) -> tuple[list[Partial], list[int]]:
         """Returns (final beam sorted by J desc, positions of slots that could not be filled)."""
         b = self._ctx.budget_per_person
+        ranked = self._reachable(slot_budgets, ranked)
         beam: list[Partial] = [self.empty()]
         unfilled: list[int] = []
         for sb in slot_budgets:
@@ -199,6 +200,34 @@ class CourseComposer:
         finals = [p for p in beam if p.stops]
         finals.sort(key=lambda p: -objective(p, b, self._params, final=True))
         return finals, unfilled
+
+    def _reachable(
+        self, slot_budgets: Sequence[SlotBudget], ranked: Mapping[int, Sequence[PlaceCandidate]]
+    ) -> dict[int, Sequence[PlaceCandidate]]:
+        """Keeps, slot by slot from the back, only the places from which a place of the NEXT slot can be
+        reached within the longest leg allowed. The beam fills one slot at a time and never looked ahead:
+        on foot in a wide district the best-scoring restaurants all stood in one far-off mall, nothing
+        was within walking distance of it, and the course came back with a single stop.
+        A slot that would be left with nothing keeps everything it had (an honest gap beats no course)."""
+        out: dict[int, Sequence[PlaceCandidate]] = dict(ranked)
+        limit = self._params.max_leg_min(self._ctx.transport)
+        positions = [sb.slot.position for sb in slot_budgets]
+        for here, ahead in zip(reversed(positions[:-1]), reversed(positions[1:]), strict=True):
+            onward = out.get(ahead) or ()
+            if not onward:
+                continue
+            kept = [
+                p
+                for p in out.get(here, ())
+                if any(
+                    q.id != p.id
+                    and self._est.estimate(p.point, q.point, self._ctx.transport).minutes <= limit
+                    for q in onward
+                )
+            ]
+            if kept:
+                out[here] = kept
+        return out
 
     def _trim(self, ranked: list[Partial]) -> list[Partial]:
         """Beam cut that keeps some seats for partials still on their planned budget.

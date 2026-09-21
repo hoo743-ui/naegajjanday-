@@ -313,6 +313,7 @@ export function CourseView({ id }: { id: string }) {
               <LeftoverCard
                 courseId={id}
                 budgetLeft={data.totals.budget_left}
+                budget={request.budget_total}
                 editable={!readOnly}
                 onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
               />

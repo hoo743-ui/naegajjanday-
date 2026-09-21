@@ -403,7 +403,8 @@ class CourseService:
         )
         ctx = await self._build_context(
             origin=origin,
-            radius_m=int(region.radius_m * reach),
+            # a wide district times four is half a province: the pool explodes and the request times out
+            radius_m=min(int(region.radius_m * reach), max(region.radius_m, self._reach_cap(conditions))),
             region_id=region.id,
             purpose=purpose,
             party_size=req.party_size,
@@ -437,7 +438,10 @@ class CourseService:
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
             for tag, roles in styled_avoidance(condition).items():
                 ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
-            templates = styled_templates(templates, condition)
+            # a slot swap names a kind of place that must be open: at night the gallery that replaces a
+            # rainy walk is closed, and the course lost the slot altogether (one-stop courses at 1:30 a.m.)
+            if not (condition.get("swap_roles") and "night" in conditions and name != "night"):
+                templates = styled_templates(templates, condition)
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
             entry = extra_roles().get(role)
             if entry is not None and entry["role"] not in vetoed:
@@ -456,7 +460,9 @@ class CourseService:
             raise errors.NoCourseAvailable(
                 f"{region.name}에서 조건에 맞는 코스를 찾지 못했어요. 예산이나 시간을 바꿔 볼까요?"
             ) from exc
-        return region, origin, purpose, ctx, profile, out
+        # the engine may have moved the origin (onto a ballpark asked for, or the liveliest walkable pocket
+        # of a wide district): the course starts where it was planned from
+        return region, ctx.origin, purpose, ctx, profile, out
 
     async def _day_to_replace(self, req: dto.CourseGenerateRequest, user: User | None) -> Course | None:
         """`replaces` names one day of a trip. Anything else (an ordinary course) is an ordinary reroll."""
@@ -498,6 +504,15 @@ class CourseService:
         if day.status in OWNED_STATUSES:  # a saved trip stays saved, all of it
             row.user_id, row.status = day.user_id, day.status
         day.status = REPLACED
+
+    @staticmethod
+    def _reach_cap(conditions: Sequence[str]) -> int:
+        caps = [
+            int(day_conditions()[c]["radius_cap_m"])
+            for c in conditions
+            if day_conditions()[c].get("radius_cap_m")
+        ]
+        return min(caps) if caps else 10**9
 
     def _conditions(self, req: dto.CourseGenerateRequest) -> list[str]:
         """What the user said about the day, plus what the clock says (`auto`: never from the request)."""
