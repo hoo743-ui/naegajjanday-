@@ -11,6 +11,8 @@
     "gen:api": "openapi-typescript http://localhost:8000/v1/openapi.json -o src/lib/api/schema.gen.ts",
     "msw:init": "msw init public/ --save",
     "e2e": "playwright test",
+    "verify": "node e2e/site-cycle.mjs",
+    "verify:record": "node e2e/site-cycle.mjs --record && node e2e/site-cycle.mjs --record --intersect",
     "e2e:report": "playwright show-report"
   },
   "msw": {
