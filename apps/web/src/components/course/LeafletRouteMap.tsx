@@ -175,13 +175,18 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
     const map = mapRef.current;
     if (!L || !map || stops.length === 0) return;
     fitRef.current = () => {
+      const pins = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       const bounds = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       if (route?.source === "osrm") route.coordinates.forEach((at) => bounds.extend(at));
       map.invalidateSize();
       // 위쪽 여백은 핀 높이(56) + 이름표, 아래는 저작권 표기
       const target = map.getBoundsZoom(bounds, false, L.point(140, 170));
-      const zoom = Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, target));
-      map.setView(bounds.getCenter(), zoom, { animate: false });
+      // 핀은 무엇보다 먼저다: 확대 제한은 길이 돌아가서 넓어진 만큼에만 건다. 모든 번호 핀은 언제나 화면 안에 있다
+      const pinsZoom = map.getBoundsZoom(pins, false, L.point(140, 170));
+      const clamped = Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, target));
+      const zoom = Math.min(clamped, Math.max(pinsZoom, 1));
+      const fitsRoute = zoom <= target;
+      map.setView((fitsRoute ? bounds : pins).getCenter(), zoom, { animate: false });
       // 핀은 좌표 위로 55px 솟는다 → 그만큼 시야를 내려, 맨 위 스톱의 핀 머리가 잘리지 않게 한다
       map.panBy([0, -34], { animate: false });
     };

@@ -140,12 +140,21 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
     const map = mapRef.current;
     if (!maps || !map || stops.length === 0) return;
     fitRef.current = () => {
+      const pins = new maps.LatLngBounds();
+      stops.forEach((s) => pins.extend(new maps.LatLng(s.place.lat, s.place.lng)));
       const bounds = new maps.LatLngBounds();
       stops.forEach((s) => bounds.extend(new maps.LatLng(s.place.lat, s.place.lng)));
       if (route?.source === "osrm") route.coordinates.forEach(([lat, lng]) => bounds.extend(new maps.LatLng(lat, lng)));
       map.relayout();
-      map.setBounds(bounds, 170, 80, 70, 80); // 위쪽은 핀 높이 + 이름표만큼 넉넉히
-      if (map.getLevel() > MAX_FIT_LEVEL) map.setLevel(MAX_FIT_LEVEL);
+      // 핀은 무엇보다 먼저다: 차로 야경을 보러 가는 코스 · 여러 동네를 잇는 코스는 동네 하나보다 넓다.
+      // 확대 제한(MAX_FIT_LEVEL)은 "길이 돌아가서 넓어진 만큼"에만 건다 → 모든 번호 핀은 언제나 화면 안에 있다.
+      map.setBounds(pins, 170, 80, 70, 80); // 위쪽은 핀 높이 + 이름표만큼 넉넉히
+      const pinsLevel = map.getLevel();
+      map.setBounds(bounds, 170, 80, 70, 80);
+      if (map.getLevel() > Math.max(MAX_FIT_LEVEL, pinsLevel)) {
+        map.setBounds(pins, 170, 80, 70, 80);
+        if (pinsLevel < MAX_FIT_LEVEL) map.setLevel(MAX_FIT_LEVEL);
+      }
       setZoomTick((n) => n + 1);
     };
     fitRef.current();
