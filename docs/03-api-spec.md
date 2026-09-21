@@ -241,3 +241,9 @@ SSE 이벤트: `token`(텍스트) · `tool_call` · `course`(코스 카드 paylo
 | `GET /me/courses` 항목 | `day`, `days` | 여행 일정의 하루면 몇 일차 / 며칠짜리 |
 | `POST /admin/places/{id}/photos` | multipart `file`, `make_cover` | 그 장소의 실제 사진(JPEG · PNG · WebP, 6MB 이하). 내용(매직 바이트)으로 형식을 확인하고 `/uploads/…` 로 서빙한다 |
 | 코스 `warnings[]` | `NIGHT_HOURS_ESTIMATED` | 출발이 밤(21~05시)이다. 영업시간을 간판("24시")과 이름(야식 · 포차)으로 추정했으니 확인하고 가라는 안내. 밤에는 `*-night` 템플릿(`meta.template`)이 쓰이고, `conditions` 의 `night` 은 시각이 정한다(요청으로 보내도 무시, echo 에도 없다) |
+| `GET /courses/{id}/suggestions` | `budget_left`, `items[]{role, place, est_price, walk_min, distance_m, line}` | 예산이 남았을 때 "이런 건 어때요?": 마지막 장소에서 걸어서 12분 안 · 남은 돈(1인당)으로 되고 · 그 시각에 열려 있고 · 코스에 아직 없는 종류의 곳을 종류마다 하나(최대 3). 남은 돈이 1인 5,000원 미만이거나 예산의 15% 미만이면 빈 목록. 규칙 · 문구는 `data/recommendation/suggestions.json` |
+| `POST /courses/{id}/stops` | 요청 `{place_id}` → `CourseOut` | 권한 곳을 코스의 끝에 넣고 시각 · 합계를 다시 계산. **지금 `suggestions` 가 권하는 곳만** 넣을 수 있다(그 밖은 422) → 예산 · 영업시간 · 도보 거리는 이미 확인된 것 |
+| `POST /courses/generate` | `region` 이 시 · 도(level 1)일 때 | **도시 여행**: 중심점 주변이 아니라 티맵 인기도로 묶은 '인기 구역'을 돈다(도보 1 · 대중교통 2 · 차 3 구역/일, 같은 날의 구역은 서로 가까운 것). 구역의 대표 명소 하나는 코스에 꼭 들어간다. 방문 데이터가 없는 도시는 예전처럼 짠다. 규칙은 `multi_region.json › city` |
+| `GET /courses/{id}` echo | `city {slug, name}` | 도시 여행이면 그 도시. 다시 짤 때 `region` 으로 이 값을 보낸다(첫 구역이 속한 구가 아니라). `regions[]` 에는 구역 이름("송도해수욕장 주변")이 온다 |
+| `GET /attractions` | — | `type` 필터를 300곳을 자르기 **전에** 건다(전체 지역 · 공원이 비던 문제). 정렬: 그 장소의 사진 → 티맵 인기도 → 최신. 여러 유형이면 유형별로 번갈아 |
+| 좌표로 지역 찾기(`origin`) | — | 핫스팟이 가까우면 핫스팟, 아니면 그 좌표가 속한 시군구(60km 까지). 예전에는 핫스팟 55곳만 후보라 전국 대부분에서 404 였다 |
