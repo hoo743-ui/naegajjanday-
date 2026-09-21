@@ -1,0 +1,572 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ─────────────────────────────────────────────────────────────
+   디자인 토큰 — 정본은 루트 index.html 의 :root 이다. 값을 바꿀 땐 거기와 함께 바꾼다.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --blue: #4f8cff;
+  --blue-deep: #2f6bea;
+  --blue-soft: #eaf1ff;
+  --pink: #ff8fb8;
+  --pink-deep: #e0457f;
+  --pink-soft: #ffedf4;
+  --gold: #f5b93a;
+  --gold-deep: #e29a14;
+  --gold-soft: #fff3d6;
+  --gold-ink: #6b4700;
+  --violet: #8e8bff;
+  --ink: #14213d;
+  --ink-2: #34425f;
+  --muted: #5f6c87;
+  --line: #e6ecf6;
+  --bg: #ffffff;
+  --soft: #f5f8fe;
+  --navy: #0b1224;
+  --success: #12805c;
+  --success-soft: #e2f6ee;
+  --danger: #d6336c;
+
+  --grad: linear-gradient(120deg, #2f6bea 0%, #8fa8ff 48%, #ff8fb8 100%);
+  --grad-btn: linear-gradient(120deg, #2f6bea, #6c8fff 55%, #ff7fb0);
+  --grad-soft: linear-gradient(120deg, #eaf2ff 0%, #f4eeff 50%, #ffeaf3 100%);
+  /* 그림자는 3단계만 쓴다: 놓여 있음(sm) → 떠 있음(기본) → 들어 올림(lg, hover·모달) */
+  --shadow-sm: 0 0 0 1px rgba(20, 33, 61, 0.04), 0 1px 2px rgba(20, 33, 61, 0.05), 0 4px 12px rgba(20, 33, 61, 0.04);
+  --shadow: 0 0 0 1px rgba(20, 33, 61, 0.03), 0 2px 4px rgba(20, 33, 61, 0.04), 0 12px 32px rgba(47, 80, 160, 0.1);
+  --shadow-lg: 0 0 0 1px rgba(20, 33, 61, 0.03), 0 8px 16px rgba(20, 33, 61, 0.05), 0 28px 64px rgba(47, 80, 160, 0.18);
+  --r: 20px;
+
+  /* 모션 — 길이 3단계 + 이징 3종. 컴포넌트에서 임의의 ms·cubic-bezier 를 새로 만들지 않는다. */
+  --dur-1: 120ms; /* 눌림·색 변화 */
+  --dur-2: 220ms; /* hover 들림·토글 */
+  --dur-3: 420ms; /* 등장·패널 전환 */
+  --motion-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* 레이아웃 규격 — 8pt 그리드. 헤더 높이는 앵커 스크롤·sticky 오프셋이 함께 쓴다. */
+  --header-h: 68px;
+  --gutter: clamp(20px, 4vw, 32px);
+  --section-y: clamp(72px, 9vw, 128px);
+
+  /* shadcn/ui 시맨틱 토큰 → 브랜드 토큰에 매핑 */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--blue-deep);
+  --primary-foreground: #ffffff;
+  --secondary: #f0f4fa;
+  --secondary-foreground: var(--ink-2);
+  --muted-bg: #f0f4fa;
+  --muted-foreground: var(--muted);
+  --accent: var(--blue-soft);
+  --accent-foreground: var(--blue-deep);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: #d9e1f0;
+  --ring: var(--blue);
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-round: var(--font-jua), "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* 굵기 — Pretendard 는 가변 서체라 중간값을 쓸 수 있다. 화면 전반의 font-bold/extrabold 를
+     토큰에서 한 번에 낮춰, 작은 UI 글자가 뭉개지지 않게 한다. */
+  --font-weight-medium: 520;
+  --font-weight-semibold: 620;
+  --font-weight-bold: 690;
+  --font-weight-extrabold: 760;
+  --font-weight-black: 840;
+
+  /* ease-out / ease-in-out / ease-spring 유틸리티 — :root 의 --motion-* 와 같은 값 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --color-blue: var(--blue);
+  --color-blue-deep: var(--blue-deep);
+  --color-blue-soft: var(--blue-soft);
+  --color-pink: var(--pink);
+  --color-pink-deep: var(--pink-deep);
+  --color-pink-soft: var(--pink-soft);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
+  --color-violet: var(--violet);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-navy: var(--navy);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted-bg);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-card: var(--r);
+
+  --shadow-soft: var(--shadow-sm);
+  --shadow-card: var(--shadow);
+  --shadow-float: var(--shadow-lg);
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-page: page-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-dash: dash 1.4s linear infinite;
+  --animate-radar: radar 2.6s linear infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+  }
+  /* opacity 만 — transform 을 쓰면 main 안의 position:fixed 하단 바가 전환 중에 튄다 */
+  @keyframes page-in {
+    from { opacity: 0; }
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -26; }
+  }
+  @keyframes radar {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 16px);
+    -webkit-text-size-adjust: 100%;
+  }
+  /* 그리드 칸의 자식은 기본이 min-width:auto 라서, 긴 상호·문장 하나가 칸을 화면보다 넓게 밀어낸다.
+     모바일 E2E 가 위저드·결과·둘러보기에서 같은 유형을 세 번 잡았다 → 원인을 한 번에 없앤다.
+     :where() 라 명시도가 0 이어서, 필요한 곳에서는 min-w-* 유틸리티로 얼마든지 덮어쓸 수 있다. */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+  /* 스크롤바 자리를 미리 잡아 두면 모달이 열릴 때 화면이 흔들리지 않는다. 단 터치 기기에서는 쓰지 않는다:
+     position:fixed 하단 바가 그 자리까지 차지해 본문보다 2px 넓어졌다(모바일 E2E 가 잡음). */
+  @media (hover: hover) and (pointer: fine) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
+  body {
+    font-family: var(--font-sans);
+    /* Pretendard 는 가변 서체다. 본문 450 은 400 보다 또렷하고 500 보다 가볍다. */
+    font-weight: 450;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    letter-spacing: -0.011em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  /* 제목은 클수록 자간을 더 좁히고 행간을 더 붙인다 */
+  h1 {
+    letter-spacing: -0.04em;
+    line-height: 1.16;
+  }
+  h2 {
+    letter-spacing: -0.034em;
+    line-height: 1.24;
+  }
+  h3, h4 {
+    letter-spacing: -0.024em;
+    line-height: 1.36;
+  }
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: rgba(79, 140, 255, 0.24);
+    color: var(--ink);
+  }
+  button, [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  /* 모든 조작 요소의 기본 반응 속도. Tailwind transition-* 유틸리티가 있으면 그쪽이 이긴다. */
+  a, button, [role="button"], [role="tab"], input, select, textarea, summary {
+    transition:
+      color var(--dur-1) ease-out,
+      background-color var(--dur-1) ease-out,
+      border-color var(--dur-1) ease-out,
+      box-shadow var(--dur-2) var(--motion-out),
+      opacity var(--dur-1) ease-out,
+      transform var(--dur-2) var(--motion-out);
+  }
+  /* 눌림: shadcn 버튼(data-slot=button)에만 — 드래그·모션 요소의 transform 과 충돌하지 않게 */
+  [data-slot="button"]:not(:disabled):active {
+    transform: scale(0.975);
+    transition-duration: var(--dur-1);
+  }
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+  /* 얇고 조용한 스크롤바 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cfd8e8 transparent;
+  }
+  input[type="range"].jj-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #2f6bea, #ff8fb8);
+    outline-offset: 6px;
+  }
+  input[type="range"].jj-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--blue-deep);
+    box-shadow: 0 4px 12px rgba(47, 107, 234, 0.35);
+    cursor: grab;
+  }
+  input[type="range"].jj-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--blue-deep);
+    cursor: grab;
+  }
+}
+
+@utility wrap {
+  max-width: calc(1136px + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* 본문형 화면(위저드·마이·로그인)의 좁은 단 */
+@utility wrap-narrow {
+  max-width: calc(720px + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* 랜딩 섹션의 세로 리듬 */
+@utility section-y {
+  padding-block: var(--section-y);
+}
+
+/* 카드 hover: 살짝 들리며 그림자 한 단계 상승 */
+@utility lift {
+  transition:
+    transform var(--dur-2) var(--motion-out),
+    box-shadow var(--dur-2) var(--motion-out),
+    border-color var(--dur-1) ease-out;
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+  }
+}
+
+@utility gt {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility hl {
+  background: linear-gradient(180deg, transparent 62%, #ffe3ee 62%);
+}
+
+@utility bg-grad {
+  background: var(--grad);
+}
+
+@utility bg-grad-soft {
+  background: var(--grad-soft);
+}
+
+@utility bg-hero {
+  background:
+    radial-gradient(640px 520px at 0% 0%, #dce8ff 0, rgba(220, 232, 255, 0) 70%),
+    radial-gradient(600px 520px at 100% 8%, #ffe0ec 0, rgba(255, 224, 236, 0) 70%),
+    radial-gradient(520px 420px at 50% 100%, #eee8ff 0, rgba(238, 232, 255, 0) 70%);
+}
+
+/* ── 영수증: 서비스의 시그니처. 코스는 "예산 안에서 끝나는 하루의 영수증"이다 ──
+   종이(따뜻한 흰색) + 위아래 톱니 절취선 + 점선 안내선. 화면의 다른 카드(차가운 흰색·둥근 모서리)와
+   일부러 다르게 생겨서, 어디서든 "돈 얘기는 여기"라고 알아볼 수 있다. */
+@utility receipt {
+  --paper: #fffdf7;
+  --tooth: 9px;
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  /* 톱니 절취선: 위아래 가장자리를 반원으로 파낸다 */
+  -webkit-mask:
+    radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 51% repeat-x,
+    radial-gradient(circle at var(--tooth) 100%, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 100% / calc(var(--tooth) * 2) 51% repeat-x;
+  mask:
+    radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 51% repeat-x,
+    radial-gradient(circle at var(--tooth) 100%, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 100% / calc(var(--tooth) * 2) 51% repeat-x;
+}
+
+/* 마스크는 그림자까지 잘라 내므로, 그림자는 바깥 래퍼에 둔다 */
+@utility receipt-wrap {
+  filter: drop-shadow(0 1px 1px rgba(20, 33, 61, 0.06)) drop-shadow(0 18px 40px rgba(47, 80, 160, 0.16));
+}
+
+@utility receipt-rule {
+  border: 0;
+  border-top: 1.5px dashed rgba(20, 33, 61, 0.22);
+}
+
+/* 품목과 금액 사이를 잇는 점선 — 눈이 이름에서 가격으로 따라간다 */
+@utility receipt-leader {
+  flex: 1 1 12px;
+  min-width: 12px;
+  align-self: flex-end;
+  margin-bottom: 0.32em;
+  border-bottom: 1.5px dotted rgba(20, 33, 61, 0.28);
+}
+
+@utility bg-soft-band {
+  background: linear-gradient(180deg, #fff 0%, var(--soft) 14%, var(--soft) 86%, #fff 100%);
+}
+
+@utility bg-premium {
+  background:
+    radial-gradient(520px 420px at 0% 0%, rgba(47, 107, 234, 0.55) 0, rgba(47, 107, 234, 0) 70%),
+    radial-gradient(520px 420px at 100% 100%, rgba(255, 111, 165, 0.42) 0, rgba(255, 111, 165, 0) 70%),
+    var(--navy);
+}
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 40px rgba(47, 80, 160, 0.16);
+  border-radius: 20px;
+}
+
+@utility skeleton-shimmer {
+  background: linear-gradient(90deg, #eef2f8 25%, #f7f9fd 37%, #eef2f8 63%);
+  background-size: 400% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── 지도 (Leaflet) ─────────────────────────────────────────── */
+.jj-map {
+  background: #eef2f8;
+  font-family: var(--font-sans);
+  z-index: 0; /* Leaflet 의 내부 z-index(400~1000)가 헤더·하단 바 위로 올라오지 않게 가둔다 */
+}
+.jj-map .jj-tiles {
+  /* OSM 표준 타일은 색이 많다 → 거의 무채색으로 누르고 밝혀서 담백한 지도로 만든다. 색은 코스만 갖는다. */
+  filter: grayscale(0.82) brightness(1.07) contrast(0.9);
+}
+.jj-map .leaflet-control-attribution {
+  border-radius: 8px 0 0 0;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.jj-map .leaflet-bar {
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.jj-map .leaflet-bar a {
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+/* 물방울 핀 — 뾰족한 끝이 정확히 좌표에 닿는다. 번호가 지도에서 가장 먼저 읽혀야 한다. */
+.jj-pin {
+  --size: 46px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.jj-pin.is-active {
+  --size: 58px;
+}
+/* 겹치는 핀은 (--dx, --dy) 만큼 부채꼴로 펼치고, 제자리에는 점(anchor)을 남겨 선(stem)으로 잇는다 */
+.jj-pin-drop,
+.jj-pin-label {
+  translate: var(--dx, 0px) var(--dy, 0px);
+}
+.jj-pin-stem {
+  /* 길이와 각도는 pinHtml 이 인라인으로 준다: 제자리(0,0) → 펼친 핀의 끝점 */
+  position: absolute;
+  left: 0;
+  top: -1.5px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--pin);
+  box-shadow: 0 0 0 1.5px #fff;
+  transform-origin: 0 50%;
+}
+.jj-pin-anchor {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  background: var(--pin);
+  box-shadow: 0 1px 4px rgba(20, 33, 61, 0.45);
+}
+.jj-pin.is-crowded .jj-pin-label {
+  display: none; /* 무리 지은 핀의 이름표는 서로 덮는다 — 번호만 남기고, 선택하면 다시 보인다 */
+}
+.jj-pin-drop {
+  position: absolute;
+  left: calc(var(--size) / -2);
+  top: calc(var(--size) * -1.2);
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border: 3.5px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin);
+  box-shadow:
+    0 0 0 1px rgba(20, 33, 61, 0.18),
+    0 10px 22px rgba(20, 33, 61, 0.38);
+  transform: rotate(-45deg);
+  transform-origin: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    width var(--dur-2) var(--motion-spring),
+    height var(--dur-2) var(--motion-spring),
+    left var(--dur-2) var(--motion-spring),
+    top var(--dur-2) var(--motion-spring);
+}
+.jj-pin-drop b {
+  transform: rotate(45deg);
+  color: #fff;
+  font-size: calc(var(--size) * 0.46);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(20, 33, 61, 0.35);
+}
+/* 이름표는 보조 정보: 핀 아래에 작게. 선택된 스톱만 진하게 강조한다. */
+.jj-pin-label {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  max-width: 150px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 3px 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(20, 33, 61, 0.2);
+}
+.jj-pin.is-active .jj-pin-label {
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+}
+.jj-exit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 6px;
+  border: 1.5px solid #fff;
+  background: #1a7f4e;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 690;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(20, 33, 61, 0.25);
+}
+
+/* 모션 최소화: CSS 애니메이션은 여기서, JS(GSAP/Motion)는 usePrefersReducedMotion 으로 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

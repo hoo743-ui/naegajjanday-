@@ -1,0 +1,166 @@
+id: narrative_fallback
+version: 2
+description: >
+  LLM 없이도 동작하는 템플릿 설명. LLM 키가 없거나 호출이 실패하면 이 문장들을 쓴다 (doc 06 §7).
+  코드에는 문구가 없다 — 문구 수정은 이 파일만 고치면 된다.
+
+  v2 원칙 (짠이의 말투):
+    1. 알고리즘을 설명하지 않는다. "동선이 짧고 코스에 넣기 좋아요"(X) → 사용자가 궁금한 것:
+       무엇을 하나 · 얼마인가 · 얼마나 걸리나 · 그 금액이 실제 가격인가 예상인가.
+    2. 스톱마다 같은 문장을 되풀이하지 않는다 — 역할별로 여러 변형을 두고 돌려 쓴다.
+    3. 조사는 받침에 따라 달라지므로 {{ name }} · {{ what }} 뒤에는 '에서' · 쉼표처럼 받침을 타지 않는
+       말만 붙인다 (은/는, 을/를, 으로/로 금지).
+    4. 없는 사실을 말하지 않는다. 평점·리뷰 데이터가 없으면 "평이 좋아요" 같은 말을 하지 않는다.
+
+party_labels:
+  1: 혼자서
+  2: 둘이서
+  3: 셋이서
+  4: 넷이서
+party_default: "{{ party_size }}명이서"
+
+transport_labels:
+  walk: 걸어서
+  transit: 대중교통으로
+  car: 차로
+
+summary: "{{ party }} {{ price }}원, {{ transport }} {{ travel_min }}분이면 충분해요"
+summary_no_travel: "{{ party }} {{ price }}원으로 알차게 즐겨요"
+
+# ── 스톱 한 줄 = lead + body + (price) + (tag) ─────────────────────────────────────────────
+# lead: 코스 안에서의 자리. 첫 곳 / 마지막 곳 / 그 사이는 이동 시간으로 말한다.
+leads:
+  first: [먼저, 시작은]
+  last: [마지막은, 끝으로]
+  only: [오늘은]
+  # 중간 스톱: travel_min 이 max 이하인 첫 항목. {{ n }} = 이동 분
+  moves:
+    walk:
+      - { max: 2, text: 바로 옆 }
+      - { max: 7, text: "{{ n }}분만 걸어" }
+      - { max: 999, text: "{{ n }}분쯤 걸어" }
+    transit:
+      - { max: 5, text: 금방 닿는 }
+      - { max: 999, text: "{{ n }}분 이동해" }
+    car:
+      - { max: 5, text: 차로 금방인 }
+      - { max: 999, text: "차로 {{ n }}분," }
+
+# body: 역할별 변형. {{ lead }} {{ name }} {{ what }} 만 쓴다.
+bodies:
+  MEAL:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 든든하게 먹고 가요."
+    - "{{ lead }} {{ name }}에서 {{ what }} 한 끼 해요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 배부터 채워요."
+  CAFE:
+    - "{{ lead }} {{ name }}에서 {{ what }} 하며 쉬어 가요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 수다 떨기 좋은 타이밍이에요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 잠깐 앉아 다음 일정을 맞춰 봐요."
+  DESSERT:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 달달하게 입가심해요."
+    - "{{ lead }} {{ name }}에서 {{ what }} 하나 나눠 먹어요."
+  BAR:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 하루를 기분 좋게 닫아요."
+    - "{{ lead }} {{ name }}에서 {{ what }} 하며 못다 한 얘기를 해요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 천천히 분위기를 즐겨요."
+  ATTRACTION:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 소화도 시킬 겸 천천히 걸어요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 사진 남기기 좋아요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 바람 쐬며 쉬어 가요."
+  CULTURE:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 잠깐 다른 세상 구경하고 가요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 오늘 코스의 색다른 한 칸이에요."
+  ACTIVITY:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 신나게 놀아요."
+    - "{{ lead }} {{ name }}에서 {{ what }}, 승부는 양보 없이!"
+    - "{{ lead }} {{ name }}에서 {{ what }}, 오늘의 하이라이트예요."
+  NIGHTVIEW:
+    - "{{ lead }} {{ name }}에서 {{ what }}, 불빛 보며 숨 돌려요."
+  default:
+    - "{{ lead }} {{ name }}에 들러요."
+
+# what: 업종을 말투에 맞게 부르는 말 (DB 의 카테고리명이 아니다). 뒤에 쉼표나 '하며' 가 온다.
+# 'food.korean.bbq' → 'food.korean' → 'food' 순으로 찾는다.
+category_words:
+  food: 식사
+  food.korean: 한식
+  food.noodle: 면 요리
+  food.japanese: 일식
+  food.chinese: 중식
+  food.western: 양식
+  food.asian: 아시아 음식
+  food.bbq: 고기
+  food.snack: 분식
+  food.brunch: 브런치
+  cafe: 커피 한 잔
+  cafe.coffee: 커피 한 잔
+  cafe.roastery: 직접 볶은 커피 한 잔
+  cafe.view: 뷰 보며 커피 한 잔
+  cafe.book: 책 곁들인 커피 한 잔
+  cafe.tea: 따뜻한 차 한 잔
+  dessert: 디저트
+  dessert.bakery: 갓 구운 빵
+  dessert.icecream: 아이스크림
+  dessert.bingsu: 빙수
+  attraction: 구경
+  attraction.park: 공원 산책
+  attraction.street: 골목 구경
+  attraction.market: 시장 구경
+  attraction.landmark: 동네 명소 구경
+  activity: 놀거리
+  activity.arcade: 오락 한 판
+  activity.boardgame: 보드게임 한 판
+  activity.craft: 원데이 클래스
+  activity.escape: 방탈출 한 판
+  activity.sports: 한 게임
+  activity.photo: 셀프 사진 한 컷
+  activity.karaoke: 노래 몇 곡
+  culture: 전시 구경
+  culture.museum: 박물관 구경
+  culture.gallery: 미술관 구경
+  culture.exhibition: 전시 구경
+  culture.festival: 축제 구경
+  culture.cinema: 영화 한 편
+  culture.bookstore: 서점 구경
+  bar: 한잔
+  bar.pub: 맥주 한잔
+  bar.wine: 와인 한잔
+  bar.cocktail: 칵테일 한잔
+  bar.izakaya: 가볍게 한잔
+  bar.pocha: 포차에서 한잔
+  bar.makgeolli: 막걸리 한잔
+  nightview: 야경 구경
+  nightview.observatory: 전망대 야경
+  nightview.riverside: 강변 야경
+  nightview.rooftop: 루프탑 야경
+category_word_default: 구경
+
+# price: 숫자는 또렷하게, 출처는 짧게. "~쯤/정도" 같은 얼버무림은 쓰지 않는다(신빙성이 떨어진다).
+# 그렇다고 추정치를 실제 가격처럼 말하지도 않는다 — 괄호 안의 근거 한 마디가 그 차이를 알려 준다.
+price_lines:
+  free: 무료라 예산이 그대로 남아요.
+  measured: "{{ party }} {{ price }}원 (메뉴판 가격)."
+  estimated: "{{ party }} {{ price }}원 (업종 평균가)."
+
+# tag: 오늘 목적·고른 취향과 맞는 태그가 있을 때만 덧붙인다.
+tag_line: "'{{ tag }}' 취향에도 맞아요."
+
+# 취향이 아니라 사실인 태그는 "취향에도 맞아요"가 어색하다 → 그 사실을 그대로 말한다.
+fact_lines:
+  관광공사 소개: 한국관광공사가 소개한 곳이에요.
+  착한가격업소: 정부가 지정한 착한가격업소예요.
+
+congestion_levels:
+  - max: 0.35
+    label: 여유
+  - max: 0.65
+    label: 보통
+  - max: 1.01
+    label: 혼잡
+
+tips:
+  budget_left: "짠! {{ left }}원 남으니까 디저트 하나 더 어때요?"
+  budget_tight: "예산을 거의 딱 맞게 썼어요. 알뜰하게 다녀오세요!"
+  budget_over: "예산을 {{ over }}원 넘겼어요. 메뉴를 하나 줄이면 맞출 수 있어요."
+  crowded: "{{ name }}, 이 시간엔 붐벼요. 조금 서두르면 좋아요."
+budget_left_tip_min: 3000

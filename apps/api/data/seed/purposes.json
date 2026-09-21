@@ -1,0 +1,1347 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "purposes": [
+    {
+      "code": "date",
+      "name": "데이트",
+      "icon": "heart",
+      "description": "둘이서 예산 안에서 알차게 보내는 데이트 코스",
+      "budget_min": 30000,
+      "budget_max": 120000,
+      "sort_order": 1,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.22,
+          "distance": 0.1,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.18,
+          "purpose_fit": 0.24,
+          "curated": 0.09
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "mood": 0.5,
+            "taste": 0.3,
+            "service": 0.2
+          },
+          "preference_prior": {
+            "조용한": 0.6,
+            "로맨틱": 0.7,
+            "감성적인": 0.5,
+            "뷰맛집": 0.5,
+            "포토존": 0.3
+          },
+          "styles": {
+            "efficient": {
+              "avoid_tags": {
+                "체인점": [
+                  "MEAL",
+                  "CAFE",
+                  "DESSERT"
+                ]
+              }
+            }
+          }
+        },
+        "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다.",
+        "_note_styles": "데이트는 알뜰·효율 코스에서도 식사·카페·디저트의 체인점을 뺀다(기본 스타일 위에 덮어쓴다)."
+      },
+      "tag_affinities": {
+        "조용한": 0.8,
+        "로맨틱": 0.9,
+        "감성적인": 0.6,
+        "아늑한": 0.6,
+        "뷰맛집": 0.7,
+        "포토존": 0.5,
+        "야경명소": 0.7,
+        "산책하기좋은": 0.5,
+        "예약가능": 0.3,
+        "단체석": -0.3,
+        "키즈프렌들리": -0.3,
+        "혼밥OK": -0.2,
+        "웨이팅": -0.4,
+        "체인점": -0.6,
+        "착한가격업소": 0.1,
+        "디저트맛집": 0.4,
+        "체험형": 0.5,
+        "힙한": 0.5,
+        "전시공연": 0.5,
+        "시그니처메뉴": 0.3,
+        "활기찬": -0.1,
+        "관광공사 소개": 0.6,
+        "간편식": -0.9
+      },
+      "templates": [
+        {
+          "code": "date-lunch",
+          "name": "점심 데이트",
+          "time_band": "lunch",
+          "min_budget_per_person": 8000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.55,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            }
+          ]
+        },
+        {
+          "code": "date-afternoon",
+          "name": "오후 데이트",
+          "time_band": "afternoon",
+          "min_budget_per_person": 7000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.25,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.4,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            }
+          ]
+        },
+        {
+          "code": "date-evening",
+          "name": "저녁 데이트",
+          "time_band": "evening",
+          "min_budget_per_person": 8000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.42,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.13,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.43,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "슬롯 구성·순서는 그대로(식사→카페→산책→술집), 비중만 실제 가격에 맞췄다. 술집 1인 중앙값이 약 22,500원이라 BAR 0.2 로는 보통 예산에서 슬롯이 늘 비었다. BAR 는 선택 슬롯이므로 예산이 적으면 빠지고, 대표 시나리오(2인 4만원 → 식사·카페·산책)는 그대로 유지된다."
+        },
+        {
+          "code": "date-fullday",
+          "name": "하루 종일 데이트",
+          "time_band": "fullday",
+          "min_budget_per_person": 25000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.24,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.09,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.15,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        }
+      ]
+    },
+    {
+      "code": "travel",
+      "name": "여행",
+      "icon": "suitcase",
+      "description": "처음 가는 동네도 예산 걱정 없이 도는 여행 코스",
+      "budget_min": 30000,
+      "budget_max": 200000,
+      "sort_order": 2,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.22,
+          "distance": 0.08,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.16,
+          "purpose_fit": 0.26,
+          "curated": 0.11
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 1100,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "taste": 0.4,
+            "mood": 0.4,
+            "service": 0.2
+          },
+          "preference_prior": {
+            "로컬맛집": 0.7,
+            "포토존": 0.5,
+            "시그니처메뉴": 0.5,
+            "산책하기좋은": 0.4
+          }
+        },
+        "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다."
+      },
+      "tag_affinities": {
+        "로컬맛집": 0.9,
+        "시그니처메뉴": 0.6,
+        "포토존": 0.7,
+        "뷰맛집": 0.6,
+        "산책하기좋은": 0.6,
+        "야경명소": 0.7,
+        "전시공연": 0.5,
+        "레트로": 0.4,
+        "체험형": 0.4,
+        "웨이팅": -0.3,
+        "체인점": -0.7,
+        "착한가격업소": 0.3,
+        "활기찬": 0.2,
+        "야외": 0.4,
+        "가성비": 0.2,
+        "관광공사 소개": 0.8,
+        "간편식": -0.3
+      },
+      "templates": [
+        {
+          "code": "travel-lunch",
+          "name": "반나절 점심 여행",
+          "time_band": "lunch",
+          "min_budget_per_person": 8000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.5,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.25,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            }
+          ]
+        },
+        {
+          "code": "travel-afternoon",
+          "name": "오후 여행",
+          "time_band": "afternoon",
+          "min_budget_per_person": 9000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.25,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.5,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "travel-evening",
+          "name": "저녁 여행",
+          "time_band": "evening",
+          "min_budget_per_person": 9000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.6,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.0,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.35,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "travel-fullday",
+          "name": "하루 종일 여행",
+          "time_band": "fullday",
+          "min_budget_per_person": 25000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.28,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.04,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.14,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.38,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.04,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "family",
+      "name": "가족모임",
+      "icon": "home",
+      "description": "아이도 어른도 편한 가족 나들이 코스",
+      "budget_min": 40000,
+      "budget_max": 250000,
+      "sort_order": 3,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.22,
+          "distance": 0.12,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.06,
+          "time_fit": 0.08,
+          "preference": 0.12,
+          "purpose_fit": 0.24,
+          "curated": 0.11
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "service": 0.5,
+            "taste": 0.3,
+            "price": 0.2
+          },
+          "preference_prior": {
+            "키즈프렌들리": 0.7,
+            "단체석": 0.6,
+            "주차가능": 0.5,
+            "실내": 0.3
+          }
+        },
+        "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다."
+      },
+      "tag_affinities": {
+        "키즈프렌들리": 0.9,
+        "단체석": 0.7,
+        "주차가능": 0.6,
+        "예약가능": 0.5,
+        "실내": 0.3,
+        "우천OK": 0.3,
+        "산책하기좋은": 0.5,
+        "체험형": 0.5,
+        "노키즈존": -1.0,
+        "웨이팅": -0.5,
+        "힙한": -0.2,
+        "체인점": 0.0,
+        "착한가격업소": 0.4,
+        "전시공연": 0.5,
+        "야외": 0.4,
+        "디저트맛집": 0.3,
+        "로컬맛집": 0.4,
+        "매운맛": -0.3,
+        "가성비": 0.3,
+        "관광공사 소개": 0.6,
+        "간편식": -0.5
+      },
+      "templates": [
+        {
+          "code": "family-lunch",
+          "name": "가족 점심 나들이",
+          "time_band": "lunch",
+          "min_budget_per_person": 9000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.6,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.15,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ]
+        },
+        {
+          "code": "family-afternoon",
+          "name": "가족 오후 나들이",
+          "time_band": "afternoon",
+          "min_budget_per_person": 7000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.35,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            }
+          ]
+        },
+        {
+          "code": "family-evening",
+          "name": "가족 저녁 모임",
+          "time_band": "evening",
+          "min_budget_per_person": 10000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.7,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.05,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "family-fullday",
+          "name": "하루 종일 가족 나들이",
+          "time_band": "fullday",
+          "min_budget_per_person": 25000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.03,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.1,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.33,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ],
+          "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        }
+      ]
+    },
+    {
+      "code": "friends",
+      "name": "친구모임",
+      "icon": "users",
+      "description": "엔빵해도 부담 없는 친구들과의 코스",
+      "budget_min": 20000,
+      "budget_max": 150000,
+      "sort_order": 4,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.24,
+          "distance": 0.1,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.16,
+          "purpose_fit": 0.24,
+          "curated": 0.09
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "taste": 0.5,
+            "mood": 0.3,
+            "price": 0.2
+          },
+          "preference_prior": {
+            "활기찬": 0.6,
+            "가성비": 0.6,
+            "단체석": 0.4,
+            "힙한": 0.4
+          }
+        },
+        "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다."
+      },
+      "tag_affinities": {
+        "활기찬": 0.8,
+        "가성비": 0.7,
+        "단체석": 0.6,
+        "힙한": 0.6,
+        "체험형": 0.6,
+        "레트로": 0.4,
+        "포토존": 0.4,
+        "조용한": -0.2,
+        "노키즈존": 0.0,
+        "로맨틱": -0.3,
+        "체인점": -0.15,
+        "착한가격업소": 0.5,
+        "매운맛": 0.2,
+        "디저트맛집": 0.2,
+        "야경명소": 0.3,
+        "관광공사 소개": 0.5,
+        "간편식": 0.0
+      },
+      "templates": [
+        {
+          "code": "friends-lunch",
+          "name": "친구랑 점심",
+          "time_band": "lunch",
+          "min_budget_per_person": 8000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.55,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.25,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            }
+          ]
+        },
+        {
+          "code": "friends-afternoon",
+          "name": "친구랑 오후",
+          "time_band": "afternoon",
+          "min_budget_per_person": 8000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.45,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.25,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.25,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ]
+        },
+        {
+          "code": "friends-evening",
+          "name": "친구랑 저녁",
+          "time_band": "evening",
+          "min_budget_per_person": 10000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.42,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.1,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.46,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "슬롯 구성·순서는 그대로(식사→카페→산책→술집), 비중만 실제 가격에 맞췄다. 술집 1인 중앙값이 약 22,500원이라 BAR 0.2 로는 보통 예산에서 슬롯이 늘 비었다. BAR 는 선택 슬롯이므로 예산이 적으면 빠지고, 대표 시나리오(2인 4만원 → 식사·카페·산책)는 그대로 유지된다."
+        },
+        {
+          "code": "friends-fullday",
+          "name": "하루 종일 놀기",
+          "time_band": "fullday",
+          "min_budget_per_person": 25000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.22,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.18,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.08,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.28,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.22,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        }
+      ]
+    },
+    {
+      "code": "solo",
+      "name": "혼밥·혼놀",
+      "icon": "user",
+      "description": "혼자서도 든든하고 알뜰하게",
+      "budget_min": 8000,
+      "budget_max": 60000,
+      "sort_order": 5,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.28,
+          "distance": 0.12,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.06,
+          "time_fit": 0.08,
+          "preference": 0.12,
+          "purpose_fit": 0.2,
+          "curated": 0.09
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "price": 0.4,
+            "wait": 0.3,
+            "taste": 0.3
+          },
+          "preference_prior": {
+            "혼밥OK": 0.8,
+            "가성비": 0.7,
+            "조용한": 0.5
+          }
+        },
+        "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다."
+      },
+      "tag_affinities": {
+        "혼밥OK": 0.9,
+        "가성비": 0.8,
+        "조용한": 0.6,
+        "아늑한": 0.4,
+        "전시공연": 0.4,
+        "산책하기좋은": 0.4,
+        "단체석": -0.5,
+        "웨이팅": -0.6,
+        "활기찬": -0.2,
+        "예약가능": -0.1,
+        "체인점": 0.15,
+        "착한가격업소": 0.6,
+        "시그니처메뉴": 0.3,
+        "관광공사 소개": 0.5,
+        "간편식": 0.0
+      },
+      "templates": [
+        {
+          "code": "solo-lunch",
+          "name": "혼밥 점심",
+          "time_band": "lunch",
+          "min_budget_per_person": 6000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.65,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "solo-afternoon",
+          "name": "혼자 오후 산책",
+          "time_band": "afternoon",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.35,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.6,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            }
+          ]
+        },
+        {
+          "code": "solo-evening",
+          "name": "혼밥 저녁",
+          "time_band": "evening",
+          "min_budget_per_person": 7000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.5,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.15,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.33,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "슬롯 구성·순서는 그대로(식사→카페→산책→술집), 비중만 실제 가격에 맞췄다. 술집 1인 중앙값이 약 22,500원이라 BAR 0.2 로는 보통 예산에서 슬롯이 늘 비었다. BAR 는 선택 슬롯이므로 예산이 적으면 빠지고, 대표 시나리오(2인 4만원 → 식사·카페·산책)는 그대로 유지된다."
+        },
+        {
+          "code": "solo-fullday",
+          "name": "혼자 보내는 하루",
+          "time_band": "fullday",
+          "min_budget_per_person": 18000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.15,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.15,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.03,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.37,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ],
+          "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        }
+      ]
+    }
+  ]
+}

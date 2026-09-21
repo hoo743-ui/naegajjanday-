@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (git-ignored) and adjust.
+aws_region        = "ap-northeast-2"
+project           = "naegajjanday"
+github_repository = "CHANGE_ME_ORG/naegajjanday" # TODO: real owner/name
+deploy_branch     = "main"
+
+# false if the AWS account already has an OIDC provider for token.actions.githubusercontent.com
+create_github_oidc_provider = true

@@ -1,0 +1,47 @@
+{
+  "_note": "공공데이터포털(data.go.kr) 파일데이터·표준데이터 중 로그인/키 없이 받을 수 있고 이용허락범위 제한이 없는 것만 등록한다. kind=file 은 포털의 '다운로드' 버튼 흐름, kind=standard 는 표준데이터 페이지의 'CSV 다운로드' 버튼 흐름을 그대로 따른다.",
+  "sources": {
+    "semas": {
+      "kind": "file",
+      "public_data_pk": "15083033",
+      "title": "소상공인시장진흥공단_상가(상권)정보",
+      "filename": "semas_store.zip"
+    },
+    "goodprice": {
+      "kind": "file",
+      "public_data_pk": "3045247",
+      "title": "행정안전부_착한가격업소 현황",
+      "filename": "goodprice.csv"
+    },
+    "parks": {
+      "kind": "standard",
+      "public_data_pk": "15012890",
+      "title": "전국도시공원정보표준데이터",
+      "filename": "std_parks.csv"
+    },
+    "museums": {
+      "kind": "standard",
+      "public_data_pk": "15017323",
+      "title": "전국박물관미술관정보표준데이터",
+      "filename": "std_museums.csv"
+    },
+    "tourist": {
+      "kind": "standard",
+      "public_data_pk": "15021141",
+      "title": "전국관광지정보표준데이터",
+      "filename": "std_tourist.csv"
+    },
+    "festivals": {
+      "kind": "standard",
+      "public_data_pk": "15013104",
+      "title": "전국문화축제표준데이터",
+      "filename": "std_festivals.csv"
+    },
+    "markets": {
+      "kind": "standard",
+      "public_data_pk": "15012894",
+      "title": "전국전통시장표준데이터",
+      "filename": "std_markets.csv"
+    }
+  }
+}

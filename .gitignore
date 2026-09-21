@@ -1,0 +1,93 @@
+# ── environment / secrets ─────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+
+# ── node / next.js ────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+playwright-report/
+test-results/
+.lighthouseci/
+storybook-static/
+
+# ── python ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+junit.xml
+htmlcov/
+dist/
+build/
+*.db
+*.sqlite3
+celerybeat-schedule*
+
+# ── terraform ─────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# Lock files are generated per platform on first init; commit them once they
+# have been created with `terraform providers lock` for linux_amd64 + your OS.
+# .terraform.lock.hcl
+
+# ── docker ────────────────────────────────────────
+docker-compose.override.yml
+
+# ── scanners ──────────────────────────────────────
+*.sarif
+
+# ── editors / OS ──────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+~$*
+
+# sqlite sidecar files · 로컬 평가 기준선(재생성 가능) · 화면 점검 캡처
+*.db-wal
+*.db-shm
+apps/api/data/eval/baselines/
+apps/web/visual-audit/

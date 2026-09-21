@@ -1,0 +1,154 @@
+name: CI / Web
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/ci-web.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/ci-web.yml"
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/web
+
+env:
+  NODE_VERSION: "22"
+  NEXT_TELEMETRY_DISABLED: "1"
+  # Build-time public configuration. CI builds against the MSW mocks so that no
+  # backend is needed (see apps/web/.env.example).
+  NEXT_PUBLIC_API_URL: http://localhost:8000/v1
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  verify:
+    name: lint + typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/src/**') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}-
+
+      - name: Build
+        run: npm run build
+
+  e2e:
+    # PLACEHOLDER: Playwright is not set up in apps/web yet. The job runs as soon
+    # as a Playwright config exists, and is a green no-op until then.
+    name: e2e (Playwright placeholder)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [verify]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect Playwright
+        id: pw
+        run: |
+          if ls playwright.config.* >/dev/null 2>&1; then echo "present=true" >> "$GITHUB_OUTPUT"; else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::no playwright.config.* in apps/web - e2e skipped"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.pw.outputs.present == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install + browsers
+        if: steps.pw.outputs.present == 'true'
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run e2e against MSW mocks
+        if: steps.pw.outputs.present == 'true'
+        env:
+          NEXT_PUBLIC_API_MOCKING: enabled
+        run: npx playwright test
+
+      - name: Upload report
+        if: always() && steps.pw.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lighthouse:
+    # Optional performance budget. Opt in with the repository variable
+    # ENABLE_LIGHTHOUSE=true; budgets live in apps/web/lighthouserc.json when present.
+    name: Lighthouse CI (optional)
+    if: vars.ENABLE_LIGHTHOUSE == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [verify]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Build with mocks
+        env:
+          NEXT_PUBLIC_API_MOCKING: enabled
+        run: |
+          npm ci
+          npm run build
+
+      - name: Start server
+        run: |
+          # next.config.ts uses output: "standalone" -> run the standalone server
+          # exactly like the production image does.
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js &
+          npx --yes wait-on@8 --timeout 60000 http://127.0.0.1:3000
+
+      - name: Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:3000/
+          runs: 3
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+          configPath: ${{ hashFiles('apps/web/lighthouserc.json') != '' && 'apps/web/lighthouserc.json' || '' }}

@@ -1,0 +1,4504 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "region": "seoul-hongdae",
+  "provider": "file",
+  "places": [
+    {
+      "external_id": "hongdae-001",
+      "name": "짠이네 국수",
+      "category": "food.noodle",
+      "lat": 37.559086,
+      "lng": 126.92586,
+      "address": "서울 마포구 샘플로37길 8 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "멸치육수가 진한 동네 국수집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "잔치국수",
+          "price": 7000,
+          "is_signature": true
+        },
+        {
+          "name": "비빔국수",
+          "price": 8000,
+          "is_signature": false
+        },
+        {
+          "name": "수육 한 접시",
+          "price": 15000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "11:00",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        },
+        {
+          "dow": [
+            5
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "is_closed": true
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.08,
+          0.17,
+          0.53,
+          0.89,
+          0.83,
+          0.47,
+          0.24,
+          0.23,
+          0.39,
+          0.73,
+          0.83,
+          0.7,
+          0.43,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.18,
+          0.29,
+          0.56,
+          0.94,
+          0.88,
+          0.58,
+          0.29,
+          0.34,
+          0.54,
+          0.87,
+          0.96,
+          0.7,
+          0.41,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 312
+      },
+      "sentiment": {
+        "score": 0.62,
+        "count": 140,
+        "aspects": {
+          "taste": 0.78,
+          "price": 0.93,
+          "mood": 0.96,
+          "service": 0.78,
+          "wait": 0.76
+        }
+      },
+      "tags": {
+        "가성비": 0.9,
+        "혼밥OK": 0.8,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-002",
+      "name": "알뜰살뜰 식당",
+      "category": "food.korean",
+      "lat": 37.558008,
+      "lng": 126.921554,
+      "address": "서울 마포구 샘플로35길 15 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "반찬이 푸짐한 백반집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "제육정식",
+          "price": 9000,
+          "is_signature": true
+        },
+        {
+          "name": "된장찌개정식",
+          "price": 8500,
+          "is_signature": false
+        },
+        {
+          "name": "고등어구이정식",
+          "price": 11000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.05,
+          0.24,
+          0.5,
+          0.94,
+          0.86,
+          0.47,
+          0.19,
+          0.21,
+          0.4,
+          0.85,
+          0.92,
+          0.69,
+          0.37,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.15,
+          0.25,
+          0.65,
+          0.95,
+          0.95,
+          0.6,
+          0.32,
+          0.32,
+          0.6,
+          0.85,
+          0.99,
+          0.76,
+          0.5,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 540
+      },
+      "sentiment": {
+        "score": 0.55,
+        "count": 230,
+        "aspects": {
+          "taste": 0.85,
+          "price": 0.88,
+          "mood": 0.73,
+          "service": 0.67,
+          "wait": 0.81
+        }
+      },
+      "tags": {
+        "가성비": 0.8,
+        "로컬맛집": 0.7,
+        "단체석": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-003",
+      "name": "만원의 행복 분식",
+      "category": "food.snack",
+      "lat": 37.556122,
+      "lng": 126.92518,
+      "address": "서울 마포구 샘플로36길 22 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "만원이면 둘이 배부른 즉석 분식",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "떡볶이 세트",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "라볶이",
+          "price": 7000,
+          "is_signature": false
+        },
+        {
+          "name": "꼬마김밥",
+          "price": 4500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.15,
+          0.22,
+          0.55,
+          1.0,
+          0.94,
+          0.46,
+          0.26,
+          0.18,
+          0.48,
+          0.81,
+          0.98,
+          0.74,
+          0.47,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.12,
+          0.24,
+          0.63,
+          1.0,
+          0.98,
+          0.65,
+          0.38,
+          0.4,
+          0.64,
+          0.87,
+          1.0,
+          0.82,
+          0.5,
+          0.23,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 1280
+      },
+      "sentiment": {
+        "score": 0.41,
+        "count": 420,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.77,
+          "mood": 0.72,
+          "service": 0.64,
+          "wait": 0.62
+        }
+      },
+      "tags": {
+        "가성비": 1.0,
+        "활기찬": 0.7,
+        "매운맛": 0.6,
+        "혼밥OK": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-004",
+      "name": "영수증 파스타",
+      "category": "food.western",
+      "lat": 37.554864,
+      "lng": 126.920647,
+      "address": "서울 마포구 샘플로17길 29 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "조명이 은은한 골목 파스타집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "토마토 파스타",
+          "price": 13000,
+          "is_signature": true
+        },
+        {
+          "name": "크림 파스타",
+          "price": 14500,
+          "is_signature": false
+        },
+        {
+          "name": "버섯 리조또",
+          "price": 15000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.1,
+          0.19,
+          0.48,
+          0.85,
+          0.82,
+          0.49,
+          0.22,
+          0.19,
+          0.4,
+          0.79,
+          0.86,
+          0.73,
+          0.41,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.16,
+          0.27,
+          0.61,
+          0.97,
+          0.99,
+          0.56,
+          0.3,
+          0.33,
+          0.53,
+          0.79,
+          0.9,
+          0.77,
+          0.45,
+          0.15,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 428
+      },
+      "sentiment": {
+        "score": 0.74,
+        "count": 190,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.8,
+          "mood": 0.99,
+          "service": 0.77,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "로맨틱": 0.8,
+        "조용한": 0.7,
+        "예약가능": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-005",
+      "name": "가계부 돈카츠",
+      "category": "food.japanese",
+      "lat": 37.557739,
+      "lng": 126.928013,
+      "address": "서울 마포구 샘플로3길 36 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "두툼한 숙성 돈카츠로 줄 서는 집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "로스카츠",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "히레카츠",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "카츠동",
+          "price": 10500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.12,
+          0.19,
+          0.52,
+          0.92,
+          0.87,
+          0.51,
+          0.25,
+          0.22,
+          0.44,
+          0.85,
+          0.9,
+          0.69,
+          0.4,
+          0.2,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.17,
+          0.24,
+          0.64,
+          0.98,
+          0.96,
+          0.63,
+          0.37,
+          0.38,
+          0.58,
+          0.92,
+          1.0,
+          0.74,
+          0.48,
+          0.22,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 812
+      },
+      "sentiment": {
+        "score": 0.7,
+        "count": 360,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.72,
+          "mood": 0.85,
+          "service": 0.69,
+          "wait": 0.48
+        }
+      },
+      "tags": {
+        "웨이팅": 0.8,
+        "시그니처메뉴": 0.8,
+        "혼밥OK": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-006",
+      "name": "저금통 마라탕",
+      "category": "food.chinese",
+      "lat": 37.554236,
+      "lng": 126.926766,
+      "address": "서울 마포구 샘플로18길 43 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "재료를 골라 담는 마라탕",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "마라탕",
+          "price": 11000,
+          "is_signature": true
+        },
+        {
+          "name": "꿔바로우(소)",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "계란볶음밥",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.13,
+          0.24,
+          0.49,
+          0.92,
+          0.89,
+          0.46,
+          0.18,
+          0.24,
+          0.5,
+          0.83,
+          0.89,
+          0.74,
+          0.39,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.17,
+          0.26,
+          0.56,
+          1.0,
+          0.97,
+          0.63,
+          0.36,
+          0.32,
+          0.54,
+          0.85,
+          0.99,
+          0.77,
+          0.42,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 655
+      },
+      "sentiment": {
+        "score": 0.3,
+        "count": 210,
+        "aspects": {
+          "taste": 0.65,
+          "price": 0.65,
+          "mood": 0.56,
+          "service": 0.57,
+          "wait": 0.63
+        }
+      },
+      "tags": {
+        "매운맛": 0.9,
+        "활기찬": 0.6,
+        "단체석": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-007",
+      "name": "월급날 갈비",
+      "category": "food.bbq",
+      "lat": 37.560614,
+      "lng": 126.919061,
+      "address": "서울 마포구 샘플로13길 50 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "숯불에 굽는 양념갈비 전문점",
+      "thumbnail_url": null,
+      "price_per_person": 24000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "돼지갈비(1인분)",
+          "price": 17000,
+          "is_signature": true
+        },
+        {
+          "name": "삼겹살(1인분)",
+          "price": 16000,
+          "is_signature": false
+        },
+        {
+          "name": "물냉면",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.08,
+          0.19,
+          0.49,
+          0.95,
+          0.85,
+          0.49,
+          0.22,
+          0.17,
+          0.47,
+          0.83,
+          0.91,
+          0.7,
+          0.42,
+          0.2,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.14,
+          0.31,
+          0.58,
+          1.0,
+          0.98,
+          0.59,
+          0.37,
+          0.32,
+          0.6,
+          0.88,
+          1.0,
+          0.83,
+          0.49,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 930
+      },
+      "sentiment": {
+        "score": 0.58,
+        "count": 300,
+        "aspects": {
+          "taste": 0.76,
+          "price": 0.8,
+          "mood": 0.64,
+          "service": 0.68,
+          "wait": 0.74
+        }
+      },
+      "tags": {
+        "단체석": 0.9,
+        "활기찬": 0.7,
+        "주차가능": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-008",
+      "name": "한푼두푼 쌀국수",
+      "category": "food.asian",
+      "lat": 37.561422,
+      "lng": 126.92348,
+      "address": "서울 마포구 샘플로4길 57 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "연남동 방면 골목의 작은 쌀국수집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "양지 쌀국수",
+          "price": 10000,
+          "is_signature": true
+        },
+        {
+          "name": "분짜",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "팟타이",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.1,
+          0.15,
+          0.44,
+          0.93,
+          0.87,
+          0.44,
+          0.21,
+          0.22,
+          0.41,
+          0.8,
+          0.84,
+          0.64,
+          0.43,
+          0.15,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.2,
+          0.22,
+          0.54,
+          0.97,
+          0.93,
+          0.63,
+          0.32,
+          0.35,
+          0.59,
+          0.8,
+          0.92,
+          0.74,
+          0.43,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 376
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 120,
+        "aspects": {
+          "taste": 0.64,
+          "price": 0.78,
+          "mood": 0.83,
+          "service": 0.77,
+          "wait": 0.65
+        }
+      },
+      "tags": {
+        "혼밥OK": 0.6,
+        "채식가능": 0.5,
+        "아늑한": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-009",
+      "name": "통장잔고 브런치",
+      "category": "food.brunch",
+      "lat": 37.561871,
+      "lng": 126.918154,
+      "address": "서울 마포구 샘플로2길 4 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "햇살 드는 테라스 브런치",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "에그 베네딕트",
+          "price": 15000,
+          "is_signature": true
+        },
+        {
+          "name": "리코타 샐러드",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "프렌치 토스트",
+          "price": 17000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "09:00",
+          "close": "16:30"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.12,
+          0.2,
+          0.46,
+          0.86,
+          0.77,
+          0.47,
+          0.17,
+          0.15,
+          0.4,
+          0.78,
+          0.85,
+          0.68,
+          0.36,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.19,
+          0.23,
+          0.55,
+          0.92,
+          0.89,
+          0.54,
+          0.36,
+          0.29,
+          0.52,
+          0.82,
+          0.92,
+          0.72,
+          0.47,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 288
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 95,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.69,
+          "mood": 0.95,
+          "service": 0.75,
+          "wait": 0.67
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "포토존": 0.6,
+        "반려동물동반": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-010",
+      "name": "보너스 스시",
+      "category": "food.japanese",
+      "lat": 37.555853,
+      "lng": 126.929259,
+      "address": "서울 마포구 샘플로14길 11 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "카운터 8석의 조용한 스시야",
+      "thumbnail_url": null,
+      "price_per_person": 26000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "런치 스시 세트",
+          "price": 22000,
+          "is_signature": true
+        },
+        {
+          "name": "디너 스시 세트",
+          "price": 32000,
+          "is_signature": false
+        },
+        {
+          "name": "사시미 추가",
+          "price": 15000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:00",
+          "break_start": "15:00",
+          "break_end": "17:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.08,
+          0.19,
+          0.45,
+          0.82,
+          0.82,
+          0.42,
+          0.14,
+          0.16,
+          0.4,
+          0.72,
+          0.79,
+          0.63,
+          0.38,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.12,
+          0.19,
+          0.56,
+          0.89,
+          0.85,
+          0.54,
+          0.34,
+          0.28,
+          0.54,
+          0.74,
+          0.85,
+          0.73,
+          0.4,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 164
+      },
+      "sentiment": {
+        "score": 0.82,
+        "count": 70,
+        "aspects": {
+          "taste": 0.87,
+          "price": 0.84,
+          "mood": 0.89,
+          "service": 0.8,
+          "wait": 0.92
+        }
+      },
+      "tags": {
+        "로맨틱": 0.7,
+        "조용한": 0.8,
+        "예약가능": 0.9
+      }
+    },
+    {
+      "external_id": "hongdae-011",
+      "name": "첫월급 비스트로",
+      "category": "food.western",
+      "lat": 37.55172,
+      "lng": 126.92246,
+      "address": "서울 마포구 샘플로27길 18 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "최근 문을 연 작은 비스트로",
+      "thumbnail_url": null,
+      "price_per_person": 19000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "스테이크 플레이트",
+          "price": 24000,
+          "is_signature": true
+        },
+        {
+          "name": "오늘의 파스타",
+          "price": 16000,
+          "is_signature": false
+        },
+        {
+          "name": "하우스 와인(잔)",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.08,
+          0.1,
+          0.33,
+          0.67,
+          0.61,
+          0.29,
+          0.13,
+          0.17,
+          0.33,
+          0.54,
+          0.66,
+          0.45,
+          0.25,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.08,
+          0.21,
+          0.38,
+          0.66,
+          0.61,
+          0.39,
+          0.2,
+          0.21,
+          0.37,
+          0.54,
+          0.7,
+          0.56,
+          0.27,
+          0.12,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 5.0,
+        "count": 6
+      },
+      "sentiment": {
+        "score": null,
+        "count": 0,
+        "aspects": {}
+      },
+      "tags": {
+        "로맨틱": 0.6,
+        "아늑한": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-012",
+      "name": "코인 로스터리",
+      "category": "cafe.roastery",
+      "lat": 37.560164,
+      "lng": 126.9262,
+      "address": "서울 마포구 샘플로35길 25 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "직접 볶은 원두를 내리는 로스터리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "아메리카노",
+          "price": 4500,
+          "is_signature": true
+        },
+        {
+          "name": "카페라떼",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "핸드드립",
+          "price": 6500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.34,
+          0.33,
+          0.46,
+          0.47,
+          0.64,
+          0.73,
+          0.81,
+          0.69,
+          0.57,
+          0.49,
+          0.49,
+          0.47,
+          0.26,
+          0.12,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.22,
+          0.36,
+          0.57,
+          0.67,
+          0.85,
+          0.89,
+          0.99,
+          0.92,
+          0.82,
+          0.65,
+          0.62,
+          0.55,
+          0.38,
+          0.12,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 800
+      },
+      "sentiment": {
+        "score": 0.72,
+        "count": 310,
+        "aspects": {
+          "taste": 0.87,
+          "price": 0.72,
+          "mood": 0.85,
+          "service": 0.71,
+          "wait": 0.76
+        }
+      },
+      "tags": {
+        "힙한": 0.7,
+        "시그니처메뉴": 0.6,
+        "실내": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-013",
+      "name": "동전 한 닢 커피",
+      "category": "cafe.coffee",
+      "lat": 37.556661,
+      "lng": 126.924047,
+      "address": "서울 마포구 샘플로12길 32 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "역 앞 테이크아웃 위주 가성비 카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "아메리카노",
+          "price": 3500,
+          "is_signature": true
+        },
+        {
+          "name": "바닐라라떼",
+          "price": 4500,
+          "is_signature": false
+        },
+        {
+          "name": "아이스티",
+          "price": 4000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.24,
+          0.31,
+          0.36,
+          0.42,
+          0.5,
+          0.72,
+          0.76,
+          0.84,
+          0.78,
+          0.61,
+          0.58,
+          0.5,
+          0.48,
+          0.34,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.17,
+          0.36,
+          0.56,
+          0.75,
+          0.91,
+          1.0,
+          1.0,
+          1.0,
+          0.78,
+          0.71,
+          0.65,
+          0.63,
+          0.38,
+          0.11,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 1520
+      },
+      "sentiment": {
+        "score": 0.35,
+        "count": 380,
+        "aspects": {
+          "taste": 0.73,
+          "price": 0.9,
+          "mood": 0.54,
+          "service": 0.68,
+          "wait": 0.57
+        }
+      },
+      "tags": {
+        "가성비": 0.9,
+        "활기찬": 0.5,
+        "혼밥OK": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-014",
+      "name": "구름정산 루프탑 카페",
+      "category": "cafe.view",
+      "lat": 37.559805,
+      "lng": 126.928806,
+      "address": "서울 마포구 샘플로2길 39 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "노을이 보이는 5층 루프탑",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "구름 라떼",
+          "price": 7000,
+          "is_signature": true
+        },
+        {
+          "name": "에이드",
+          "price": 6500,
+          "is_signature": false
+        },
+        {
+          "name": "조각 케이크 세트",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.29,
+          0.34,
+          0.42,
+          0.49,
+          0.64,
+          0.77,
+          0.84,
+          0.68,
+          0.59,
+          0.49,
+          0.52,
+          0.48,
+          0.28,
+          0.08,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.2,
+          0.38,
+          0.55,
+          0.66,
+          0.86,
+          0.91,
+          0.96,
+          0.94,
+          0.78,
+          0.71,
+          0.61,
+          0.53,
+          0.42,
+          0.12,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 690
+      },
+      "sentiment": {
+        "score": 0.66,
+        "count": 250,
+        "aspects": {
+          "taste": 0.85,
+          "price": 0.76,
+          "mood": 0.85,
+          "service": 0.73,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "뷰맛집": 0.9,
+        "로맨틱": 0.7,
+        "포토존": 0.8,
+        "야외": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-015",
+      "name": "책갈피 가계부 북카페",
+      "category": "cafe.book",
+      "lat": 37.556481,
+      "lng": 126.919967,
+      "address": "서울 마포구 샘플로13길 46 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "책 읽기 좋은 조용한 북카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "드립커피",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "밀크티",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "허브티",
+          "price": 5000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.24,
+          0.34,
+          0.36,
+          0.44,
+          0.61,
+          0.69,
+          0.72,
+          0.66,
+          0.55,
+          0.43,
+          0.47,
+          0.39,
+          0.3,
+          0.12,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.11,
+          0.15,
+          0.28,
+          0.46,
+          0.56,
+          0.78,
+          0.86,
+          0.94,
+          0.82,
+          0.65,
+          0.6,
+          0.55,
+          0.53,
+          0.42,
+          0.09,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 214
+      },
+      "sentiment": {
+        "score": 0.78,
+        "count": 88,
+        "aspects": {
+          "taste": 0.86,
+          "price": 0.8,
+          "mood": 1.0,
+          "service": 0.74,
+          "wait": 0.85
+        }
+      },
+      "tags": {
+        "조용한": 1.0,
+        "아늑한": 0.8,
+        "우천OK": 0.6,
+        "혼밥OK": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-016",
+      "name": "찻값은 내가 티룸",
+      "category": "cafe.tea",
+      "lat": 37.562231,
+      "lng": 126.927446,
+      "address": "서울 마포구 샘플로38길 53 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "다기 세트로 내어주는 작은 티룸",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "말차 세트",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "호지차",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "계절 블렌딩티",
+          "price": 7000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.25,
+          0.35,
+          0.37,
+          0.4,
+          0.61,
+          0.69,
+          0.68,
+          0.65,
+          0.45,
+          0.4,
+          0.44,
+          0.37,
+          0.26,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.22,
+          0.3,
+          0.45,
+          0.6,
+          0.67,
+          0.86,
+          0.83,
+          0.81,
+          0.68,
+          0.54,
+          0.51,
+          0.46,
+          0.34,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 132
+      },
+      "sentiment": {
+        "score": 0.7,
+        "count": 40,
+        "aspects": {
+          "taste": 0.82,
+          "price": 0.86,
+          "mood": 0.97,
+          "service": 0.71,
+          "wait": 0.85
+        }
+      },
+      "tags": {
+        "조용한": 0.8,
+        "감성적인": 0.7,
+        "디저트맛집": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-017",
+      "name": "잔돈 에스프레소바",
+      "category": "cafe.coffee",
+      "lat": 37.559446,
+      "lng": 126.922007,
+      "address": "서울 마포구 샘플로26길 60 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서서 마시는 이탈리아식 에스프레소바",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "에스프레소",
+          "price": 3000,
+          "is_signature": true
+        },
+        {
+          "name": "콘파냐",
+          "price": 3500,
+          "is_signature": false
+        },
+        {
+          "name": "플랫화이트",
+          "price": 4500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.3,
+          0.35,
+          0.41,
+          0.54,
+          0.68,
+          0.74,
+          0.77,
+          0.7,
+          0.52,
+          0.46,
+          0.52,
+          0.49,
+          0.32,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.16,
+          0.31,
+          0.53,
+          0.6,
+          0.79,
+          0.85,
+          0.91,
+          0.92,
+          0.76,
+          0.63,
+          0.64,
+          0.57,
+          0.37,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 455
+      },
+      "sentiment": {
+        "score": 0.57,
+        "count": 150,
+        "aspects": {
+          "taste": 0.65,
+          "price": 0.85,
+          "mood": 0.67,
+          "service": 0.79,
+          "wait": 0.71
+        }
+      },
+      "tags": {
+        "힙한": 0.8,
+        "가성비": 0.6,
+        "레트로": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-018",
+      "name": "거스름돈 베이커리",
+      "category": "dessert.bakery",
+      "lat": 37.557739,
+      "lng": 126.92552,
+      "address": "서울 마포구 샘플로25길 7 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "오후면 품절되는 소금빵",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "소금빵",
+          "price": 3500,
+          "is_signature": true
+        },
+        {
+          "name": "크루아상",
+          "price": 4500,
+          "is_signature": false
+        },
+        {
+          "name": "딸기 케이크",
+          "price": 6500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.21,
+          0.32,
+          0.51,
+          0.64,
+          0.74,
+          0.69,
+          0.61,
+          0.49,
+          0.67,
+          0.58,
+          0.43,
+          0.18,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.11,
+          0.27,
+          0.43,
+          0.64,
+          0.79,
+          0.97,
+          0.98,
+          0.74,
+          0.72,
+          0.68,
+          0.72,
+          0.53,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 920
+      },
+      "sentiment": {
+        "score": 0.64,
+        "count": 330,
+        "aspects": {
+          "taste": 0.95,
+          "price": 0.85,
+          "mood": 0.76,
+          "service": 0.74,
+          "wait": 0.44
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.9,
+        "웨이팅": 0.4,
+        "시그니처메뉴": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-019",
+      "name": "백원 젤라또",
+      "category": "dessert.icecream",
+      "lat": 37.554236,
+      "lng": 126.923027,
+      "address": "서울 마포구 샘플로31길 14 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "매일 만드는 수제 젤라또",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "더블 컵",
+          "price": 6000,
+          "is_signature": true
+        },
+        {
+          "name": "싱글 컵",
+          "price": 4500,
+          "is_signature": false
+        },
+        {
+          "name": "와플 젤라또",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.17,
+          0.27,
+          0.42,
+          0.61,
+          0.7,
+          0.7,
+          0.52,
+          0.44,
+          0.6,
+          0.58,
+          0.35,
+          0.18,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.32,
+          0.41,
+          0.63,
+          0.78,
+          0.92,
+          0.92,
+          0.73,
+          0.67,
+          0.65,
+          0.64,
+          0.53,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 377
+      },
+      "sentiment": {
+        "score": 0.71,
+        "count": 120,
+        "aspects": {
+          "taste": 0.93,
+          "price": 0.98,
+          "mood": 0.71,
+          "service": 0.74,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.8,
+        "포토존": 0.5,
+        "가성비": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-020",
+      "name": "눈꽃적금 빙수",
+      "category": "dessert.bingsu",
+      "lat": 37.553427,
+      "lng": 126.928239,
+      "address": "서울 마포구 샘플로37길 21 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "둘이 하나 나눠 먹는 눈꽃 빙수",
+      "thumbnail_url": null,
+      "price_per_person": 7000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "인절미 빙수",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "망고 빙수",
+          "price": 15000,
+          "is_signature": false
+        },
+        {
+          "name": "팥빙수",
+          "price": 11000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.24,
+          0.32,
+          0.43,
+          0.58,
+          0.73,
+          0.67,
+          0.6,
+          0.5,
+          0.61,
+          0.62,
+          0.45,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.26,
+          0.42,
+          0.67,
+          0.8,
+          0.87,
+          0.89,
+          0.76,
+          0.62,
+          0.65,
+          0.72,
+          0.53,
+          0.25,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 510
+      },
+      "sentiment": {
+        "score": 0.48,
+        "count": 160,
+        "aspects": {
+          "taste": 0.86,
+          "price": 0.61,
+          "mood": 0.75,
+          "service": 0.64,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.7,
+        "단체석": 0.5,
+        "실내": 0.5,
+        "우천OK": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-021",
+      "name": "경의선숲길",
+      "category": "attraction.park",
+      "lat": 37.560254,
+      "lng": 126.92382,
+      "address": "서울 마포구 샘플로34길 28 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "옛 철길을 따라 걷는 도심 산책로",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.14,
+          0.21,
+          0.19,
+          0.23,
+          0.33,
+          0.37,
+          0.47,
+          0.51,
+          0.51,
+          0.58,
+          0.52,
+          0.47,
+          0.43,
+          0.31,
+          0.25,
+          0.1,
+          0.08
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.08,
+          0.21,
+          0.3,
+          0.47,
+          0.65,
+          0.73,
+          0.81,
+          0.92,
+          0.94,
+          0.88,
+          0.8,
+          0.68,
+          0.54,
+          0.49,
+          0.32,
+          0.15,
+          0.05
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 2400
+      },
+      "sentiment": {
+        "score": 0.8,
+        "count": 600,
+        "aspects": {
+          "taste": 0.91,
+          "price": 0.86,
+          "mood": 0.93,
+          "service": 0.81,
+          "wait": 0.85
+        }
+      },
+      "tags": {
+        "산책하기좋은": 1.0,
+        "야외": 0.9,
+        "반려동물동반": 0.7,
+        "감성적인": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-022",
+      "name": "홍대 걷고싶은거리",
+      "category": "attraction.street",
+      "lat": 37.555763,
+      "lng": 126.923593,
+      "address": "서울 마포구 샘플로23길 35 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "버스킹과 거리공연이 이어지는 보행자 거리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.12,
+          0.14,
+          0.12,
+          0.19,
+          0.34,
+          0.37,
+          0.39,
+          0.47,
+          0.56,
+          0.53,
+          0.52,
+          0.43,
+          0.36,
+          0.35,
+          0.21,
+          0.08,
+          0.02
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.07,
+          0.2,
+          0.26,
+          0.42,
+          0.58,
+          0.71,
+          0.87,
+          0.92,
+          0.96,
+          0.87,
+          0.78,
+          0.69,
+          0.55,
+          0.41,
+          0.37,
+          0.15,
+          0.08
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 1900
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 450,
+        "aspects": {
+          "taste": 0.68,
+          "price": 0.74,
+          "mood": 0.79,
+          "service": 0.74,
+          "wait": 0.74
+        }
+      },
+      "tags": {
+        "활기찬": 0.9,
+        "야외": 0.8,
+        "전시공연": 0.6,
+        "포토존": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-023",
+      "name": "홍익문화공원(홍대 놀이터)",
+      "category": "attraction.park",
+      "lat": 37.552349,
+      "lng": 126.9228,
+      "address": "서울 마포구 샘플로4길 42 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "주말이면 플리마켓이 열리는 작은 공원",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.12,
+          0.19,
+          0.2,
+          0.2,
+          0.26,
+          0.4,
+          0.43,
+          0.44,
+          0.56,
+          0.47,
+          0.5,
+          0.43,
+          0.39,
+          0.35,
+          0.24,
+          0.11,
+          0.08
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.15,
+          0.14,
+          0.24,
+          0.37,
+          0.59,
+          0.62,
+          0.8,
+          0.84,
+          0.88,
+          0.82,
+          0.69,
+          0.61,
+          0.56,
+          0.41,
+          0.31,
+          0.13,
+          0.07
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 760
+      },
+      "sentiment": {
+        "score": 0.38,
+        "count": 180,
+        "aspects": {
+          "taste": 0.71,
+          "price": 0.63,
+          "mood": 0.61,
+          "service": 0.72,
+          "wait": 0.62
+        }
+      },
+      "tags": {
+        "야외": 0.8,
+        "활기찬": 0.6,
+        "힙한": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-024",
+      "name": "홍대 벽화거리",
+      "category": "attraction.street",
+      "lat": 37.552888,
+      "lng": 126.92654,
+      "address": "서울 마포구 샘플로24길 49 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "골목 담장을 따라 이어지는 벽화",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.06,
+          0.18,
+          0.14,
+          0.18,
+          0.28,
+          0.31,
+          0.4,
+          0.41,
+          0.49,
+          0.55,
+          0.49,
+          0.38,
+          0.33,
+          0.35,
+          0.24,
+          0.1,
+          0.02
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.11,
+          0.17,
+          0.21,
+          0.36,
+          0.52,
+          0.66,
+          0.74,
+          0.83,
+          0.86,
+          0.84,
+          0.76,
+          0.63,
+          0.48,
+          0.43,
+          0.26,
+          0.11,
+          0.08
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 640
+      },
+      "sentiment": {
+        "score": 0.45,
+        "count": 140,
+        "aspects": {
+          "taste": 0.68,
+          "price": 0.63,
+          "mood": 0.81,
+          "service": 0.74,
+          "wait": 0.63
+        }
+      },
+      "tags": {
+        "포토존": 0.9,
+        "산책하기좋은": 0.6,
+        "야외": 0.8,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "hongdae-025",
+      "name": "홍대 예술시장 프리마켓",
+      "category": "attraction.market",
+      "lat": 37.552169,
+      "lng": 126.922574,
+      "address": "서울 마포구 샘플로15길 56 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "작가들이 직접 만든 소품을 파는 주말 장터",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "13:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.11,
+          0.11,
+          0.19,
+          0.21,
+          0.26,
+          0.37,
+          0.36,
+          0.47,
+          0.53,
+          0.51,
+          0.49,
+          0.39,
+          0.39,
+          0.34,
+          0.21,
+          0.13,
+          0.04
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.09,
+          0.17,
+          0.25,
+          0.4,
+          0.53,
+          0.67,
+          0.71,
+          0.88,
+          0.84,
+          0.77,
+          0.72,
+          0.6,
+          0.54,
+          0.35,
+          0.31,
+          0.19,
+          0.04
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 410
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 110,
+        "aspects": {
+          "taste": 0.72,
+          "price": 0.83,
+          "mood": 0.74,
+          "service": 0.69,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "체험형": 0.6,
+        "야외": 0.8,
+        "힙한": 0.6,
+        "활기찬": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-026",
+      "name": "본전뽑기 오락실",
+      "category": "activity.arcade",
+      "lat": 37.555044,
+      "lng": 126.924727,
+      "address": "서울 마포구 샘플로1길 3 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "추억의 게임기가 가득한 24시 오락실",
+      "thumbnail_url": null,
+      "price_per_person": 6000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "코인 10개",
+          "price": 5000,
+          "is_signature": true
+        },
+        {
+          "name": "인형뽑기 3회",
+          "price": 3000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "00:00",
+          "close": "00:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.04,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.18,
+          0.36,
+          0.4,
+          0.44,
+          0.47,
+          0.53,
+          0.65,
+          0.73,
+          0.76,
+          0.57,
+          0.35,
+          0.16
+        ],
+        "weekend": [
+          0.1,
+          0.04,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.32,
+          0.59,
+          0.73,
+          0.83,
+          0.9,
+          0.81,
+          0.87,
+          0.87,
+          0.79,
+          0.64,
+          0.49,
+          0.25
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 830
+      },
+      "sentiment": {
+        "score": 0.4,
+        "count": 200,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.9,
+          "mood": 0.7,
+          "service": 0.64,
+          "wait": 0.68
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "레트로": 0.7,
+        "실내": 0.8,
+        "우천OK": 0.8,
+        "가성비": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-027",
+      "name": "더치페이 보드게임카페",
+      "category": "activity.boardgame",
+      "lat": 37.558368,
+      "lng": 126.92722,
+      "address": "서울 마포구 샘플로7길 10 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "300종 보드게임과 음료 1잔 포함",
+      "thumbnail_url": null,
+      "price_per_person": 8000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "2시간 이용권",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "종일권",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.08,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.25,
+          0.33,
+          0.38,
+          0.44,
+          0.42,
+          0.51,
+          0.63,
+          0.7,
+          0.7,
+          0.53,
+          0.35,
+          0.19
+        ],
+        "weekend": [
+          0.15,
+          0.02,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.31,
+          0.53,
+          0.7,
+          0.85,
+          0.89,
+          0.82,
+          0.84,
+          0.86,
+          0.8,
+          0.61,
+          0.48,
+          0.19
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 520
+      },
+      "sentiment": {
+        "score": 0.63,
+        "count": 170,
+        "aspects": {
+          "taste": 0.68,
+          "price": 0.76,
+          "mood": 0.73,
+          "service": 0.79,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "체험형": 0.8,
+        "실내": 0.9,
+        "우천OK": 0.9,
+        "단체석": 0.7
+      }
+    },
+    {
+      "external_id": "hongdae-028",
+      "name": "할부없는 공방",
+      "category": "activity.craft",
+      "lat": 37.56268,
+      "lng": 126.920307,
+      "address": "서울 마포구 샘플로5길 17 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "커플 은반지를 직접 만드는 공방",
+      "thumbnail_url": null,
+      "price_per_person": 25000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "은반지 원데이클래스",
+          "price": 25000,
+          "is_signature": true
+        },
+        {
+          "name": "가죽 카드지갑",
+          "price": 28000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.08,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.14,
+          0.31,
+          0.33,
+          0.39,
+          0.4,
+          0.48,
+          0.55,
+          0.59,
+          0.6,
+          0.46,
+          0.33,
+          0.1
+        ],
+        "weekend": [
+          0.05,
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.31,
+          0.48,
+          0.65,
+          0.75,
+          0.74,
+          0.68,
+          0.66,
+          0.75,
+          0.67,
+          0.57,
+          0.37,
+          0.2
+        ]
+      },
+      "rating": {
+        "avg": 4.8,
+        "count": 96
+      },
+      "sentiment": {
+        "score": 0.85,
+        "count": 45,
+        "aspects": {
+          "taste": 0.79,
+          "price": 0.77,
+          "mood": 0.93,
+          "service": 0.88,
+          "wait": 0.92
+        }
+      },
+      "tags": {
+        "체험형": 1.0,
+        "로맨틱": 0.6,
+        "예약가능": 0.8,
+        "조용한": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-029",
+      "name": "마포 골목 미술관 (샘플)",
+      "category": "culture.gallery",
+      "lat": 37.560973,
+      "lng": 126.929599,
+      "address": "서울 마포구 샘플로15길 24 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "무료로 관람하는 동네 미술관",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.23,
+          0.3,
+          0.41,
+          0.4,
+          0.41,
+          0.35,
+          0.23,
+          0.21,
+          0.16,
+          0.11,
+          0.11,
+          0.04,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.29,
+          0.44,
+          0.56,
+          0.62,
+          0.79,
+          0.82,
+          0.67,
+          0.54,
+          0.39,
+          0.3,
+          0.18,
+          0.16,
+          0.02,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 188
+      },
+      "sentiment": {
+        "score": 0.58,
+        "count": 60,
+        "aspects": {
+          "taste": 0.78,
+          "price": 0.81,
+          "mood": 0.88,
+          "service": 0.68,
+          "wait": 0.64
+        }
+      },
+      "tags": {
+        "전시공연": 0.9,
+        "조용한": 0.8,
+        "실내": 0.7,
+        "우천OK": 0.7
+      }
+    },
+    {
+      "external_id": "hongdae-030",
+      "name": "인디필름 소극장 (샘플)",
+      "category": "culture.cinema",
+      "lat": 37.553427,
+      "lng": 126.921101,
+      "address": "서울 마포구 샘플로22길 31 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "독립영화를 상영하는 40석 소극장",
+      "thumbnail_url": null,
+      "price_per_person": 12000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 관람권",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "심야 관람권",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "00:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.32,
+          0.25,
+          0.35,
+          0.45,
+          0.43,
+          0.36,
+          0.32,
+          0.29,
+          0.22,
+          0.11,
+          0.08,
+          0.05,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3,
+          0.44,
+          0.49,
+          0.67,
+          0.73,
+          0.77,
+          0.72,
+          0.49,
+          0.43,
+          0.33,
+          0.21,
+          0.16,
+          0.04,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 243
+      },
+      "sentiment": {
+        "score": 0.69,
+        "count": 85,
+        "aspects": {
+          "taste": 0.78,
+          "price": 0.79,
+          "mood": 0.96,
+          "service": 0.83,
+          "wait": 0.78
+        }
+      },
+      "tags": {
+        "전시공연": 0.9,
+        "감성적인": 0.7,
+        "실내": 0.8,
+        "우천OK": 0.8
+      }
+    },
+    {
+      "external_id": "hongdae-031",
+      "name": "동네책방 페이지적금",
+      "category": "culture.bookstore",
+      "lat": 37.558997,
+      "lng": 126.917474,
+      "address": "서울 마포구 샘플로26길 38 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "큐레이션이 좋은 독립서점",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            2
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            1,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "13:00",
+          "close": "21:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.25,
+          0.27,
+          0.38,
+          0.41,
+          0.35,
+          0.31,
+          0.29,
+          0.22,
+          0.17,
+          0.13,
+          0.11,
+          0.02,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.48,
+          0.44,
+          0.65,
+          0.67,
+          0.75,
+          0.69,
+          0.45,
+          0.31,
+          0.25,
+          0.13,
+          0.17,
+          0.02,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 74
+      },
+      "sentiment": {
+        "score": 0.8,
+        "count": 30,
+        "aspects": {
+          "taste": 0.91,
+          "price": 0.89,
+          "mood": 0.88,
+          "service": 0.87,
+          "wait": 0.76
+        }
+      },
+      "tags": {
+        "조용한": 0.9,
+        "감성적인": 0.7,
+        "아늑한": 0.7
+      }
+    },
+    {
+      "external_id": "hongdae-032",
+      "name": "동전지갑 포차",
+      "category": "bar.pocha",
+      "lat": 37.553607,
+      "lng": 126.925407,
+      "address": "서울 마포구 샘플로2길 45 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "시끌벅적한 실내 포장마차",
+      "thumbnail_url": null,
+      "price_per_person": 15000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "닭발",
+          "price": 17000,
+          "is_signature": true
+        },
+        {
+          "name": "계란말이",
+          "price": 11000,
+          "is_signature": false
+        },
+        {
+          "name": "소주",
+          "price": 5000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.35,
+          0.14,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.39,
+          0.58,
+          0.8,
+          0.92,
+          0.87,
+          0.61
+        ],
+        "weekend": [
+          0.51,
+          0.32,
+          0.06,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.43,
+          0.71,
+          0.96,
+          0.99,
+          0.99,
+          0.8
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 980
+      },
+      "sentiment": {
+        "score": 0.42,
+        "count": 310,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.88,
+          "mood": 0.63,
+          "service": 0.7,
+          "wait": 0.74
+        }
+      },
+      "tags": {
+        "활기찬": 0.9,
+        "레트로": 0.6,
+        "단체석": 0.6,
+        "가성비": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-033",
+      "name": "영수증 와인바",
+      "category": "bar.wine",
+      "lat": 37.559895,
+      "lng": 126.920534,
+      "address": "서울 마포구 샘플로27길 52 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "내추럴 와인을 잔으로 파는 작은 바",
+      "thumbnail_url": null,
+      "price_per_person": 28000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "글라스 와인",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "치즈 플래터",
+          "price": 19000,
+          "is_signature": false
+        },
+        {
+          "name": "보틀(하우스)",
+          "price": 45000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "18:00",
+          "close": "01:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.24,
+          0.1,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.33,
+          0.47,
+          0.72,
+          0.75,
+          0.78,
+          0.47
+        ],
+        "weekend": [
+          0.47,
+          0.24,
+          0.08,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.38,
+          0.67,
+          0.81,
+          0.91,
+          0.84,
+          0.67
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 205
+      },
+      "sentiment": {
+        "score": 0.77,
+        "count": 90,
+        "aspects": {
+          "taste": 0.83,
+          "price": 0.86,
+          "mood": 0.94,
+          "service": 0.85,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "로맨틱": 0.9,
+        "조용한": 0.7,
+        "예약가능": 0.6,
+        "아늑한": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-034",
+      "name": "엔빵 펍",
+      "category": "bar.pub",
+      "lat": 37.556661,
+      "lng": 126.927899,
+      "address": "서울 마포구 샘플로37길 59 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "수제맥주 12탭이 있는 펍",
+      "thumbnail_url": null,
+      "price_per_person": 14000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "수제맥주 파인트",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "피시앤칩스",
+          "price": 16000,
+          "is_signature": false
+        },
+        {
+          "name": "나초",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.32,
+          0.18,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.14,
+          0.37,
+          0.52,
+          0.76,
+          0.82,
+          0.83,
+          0.6
+        ],
+        "weekend": [
+          0.5,
+          0.29,
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.44,
+          0.74,
+          0.95,
+          0.98,
+          0.96,
+          0.79
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 730
+      },
+      "sentiment": {
+        "score": 0.52,
+        "count": 240,
+        "aspects": {
+          "taste": 0.68,
+          "price": 0.62,
+          "mood": 0.69,
+          "service": 0.72,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "단체석": 0.7,
+        "힙한": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-035",
+      "name": "이자 이자카야",
+      "category": "bar.izakaya",
+      "lat": 37.555403,
+      "lng": 126.918608,
+      "address": "서울 마포구 샘플로20길 6 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "다찌 자리가 있는 골목 이자카야",
+      "thumbnail_url": null,
+      "price_per_person": 22000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "모둠 꼬치",
+          "price": 18000,
+          "is_signature": true
+        },
+        {
+          "name": "하이볼",
+          "price": 8000,
+          "is_signature": false
+        },
+        {
+          "name": "사시미 모리아와세",
+          "price": 32000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "open": "18:00",
+          "close": "02:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "18:00",
+          "close": "03:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.25,
+          0.15,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.31,
+          0.53,
+          0.7,
+          0.86,
+          0.81,
+          0.52
+        ],
+        "weekend": [
+          0.54,
+          0.3,
+          0.09,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.46,
+          0.72,
+          0.9,
+          0.89,
+          0.9,
+          0.75
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 390
+      },
+      "sentiment": {
+        "score": 0.65,
+        "count": 130,
+        "aspects": {
+          "taste": 0.82,
+          "price": 0.67,
+          "mood": 0.91,
+          "service": 0.84,
+          "wait": 0.45
+        }
+      },
+      "tags": {
+        "아늑한": 0.7,
+        "예약가능": 0.5,
+        "웨이팅": 0.5
+      }
+    },
+    {
+      "external_id": "hongdae-036",
+      "name": "무이자 칵테일바",
+      "category": "bar.cocktail",
+      "lat": 37.558817,
+      "lng": 126.930392,
+      "address": "서울 마포구 샘플로39길 13 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "바텐더가 취향대로 만들어주는 칵테일",
+      "thumbnail_url": null,
+      "price_per_person": 20000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "시그니처 칵테일",
+          "price": 16000,
+          "is_signature": true
+        },
+        {
+          "name": "클래식 칵테일",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "올리브",
+          "price": 6000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "open": "18:00",
+          "close": "02:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "18:00",
+          "close": "03:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.32,
+          0.11,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.28,
+          0.55,
+          0.73,
+          0.81,
+          0.71,
+          0.55
+        ],
+        "weekend": [
+          0.43,
+          0.24,
+          0.04,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.18,
+          0.38,
+          0.68,
+          0.87,
+          0.88,
+          0.92,
+          0.66
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 176
+      },
+      "sentiment": {
+        "score": 0.73,
+        "count": 66,
+        "aspects": {
+          "taste": 0.91,
+          "price": 0.79,
+          "mood": 1.0,
+          "service": 0.75,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "로맨틱": 0.8,
+        "힙한": 0.7,
+        "조용한": 0.5,
+        "시그니처메뉴": 0.6
+      }
+    },
+    {
+      "external_id": "hongdae-037",
+      "name": "홍대 옥상 노을 전망쉼터 (샘플)",
+      "category": "nightview.rooftop",
+      "lat": 37.554505,
+      "lng": 126.929033,
+      "address": "서울 마포구 샘플로23길 20 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공공 옥상정원에서 보는 홍대 야경",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.03,
+          0.12,
+          0.13,
+          0.09,
+          0.11,
+          0.11,
+          0.2,
+          0.35,
+          0.59,
+          0.76,
+          0.59,
+          0.31,
+          0.04
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.07,
+          0.18,
+          0.14,
+          0.14,
+          0.14,
+          0.2,
+          0.34,
+          0.42,
+          0.71,
+          0.83,
+          0.74,
+          0.45,
+          0.18
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 142
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 35,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.79,
+          "mood": 0.95,
+          "service": 0.71,
+          "wait": 0.68
+        }
+      },
+      "tags": {
+        "야경명소": 0.9,
+        "뷰맛집": 0.7,
+        "로맨틱": 0.7,
+        "야외": 0.8
+      }
+    },
+    {
+      "external_id": "hongdae-038",
+      "name": "와우산 전망 쉼터",
+      "category": "nightview.observatory",
+      "lat": 37.551451,
+      "lng": 126.926993,
+      "address": "서울 마포구 샘플로12길 27 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "와우산 산책로 끝의 전망 데크",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.04,
+          0.09,
+          0.14,
+          0.06,
+          0.09,
+          0.14,
+          0.18,
+          0.31,
+          0.55,
+          0.81,
+          0.67,
+          0.39,
+          0.06
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.12,
+          0.19,
+          0.13,
+          0.17,
+          0.22,
+          0.23,
+          0.32,
+          0.49,
+          0.79,
+          0.87,
+          0.83,
+          0.54,
+          0.21
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 310
+      },
+      "sentiment": {
+        "score": 0.55,
+        "count": 70,
+        "aspects": {
+          "taste": 0.67,
+          "price": 0.77,
+          "mood": 0.9,
+          "service": 0.68,
+          "wait": 0.68
+        }
+      },
+      "tags": {
+        "야경명소": 0.8,
+        "산책하기좋은": 0.7,
+        "조용한": 0.7,
+        "야외": 0.9
+      }
+    }
+  ],
+  "events": [
+    {
+      "external_id": "hongdae-ev-001",
+      "title": "홍대 거리공연 페스티벌 (샘플)",
+      "category": "culture.festival",
+      "lat": 37.555583,
+      "lng": 126.923707,
+      "address": "서울 마포구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": true,
+      "price": null,
+      "description": "주말마다 열리는 버스킹 릴레이 축제",
+      "booking_url": null
+    },
+    {
+      "external_id": "hongdae-ev-002",
+      "title": "골목 일러스트 기획전 (샘플)",
+      "category": "culture.exhibition",
+      "lat": 37.560793,
+      "lng": 126.929373,
+      "address": "서울 마포구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": false,
+      "price": 5000,
+      "description": "신진 일러스트레이터 40인의 기획전",
+      "booking_url": null
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+"""Course style: the same budget spent "efficiently" (close, little walking) or "for fun".
+
+A style is a twist of the purpose's own profile, never a separate engine:
+  weight_mult / weight_add → scoring weights        params  → ScoringParams overrides
+  affinity_add             → purpose tag affinities swap_roles → template slots
+
+Defaults live here; `scoring_profile.params.styles` (DB) overrides them per purpose, the same way
+`params.variants` overrides the alternative courses.
+
+`buzz` is the popularity signal public data can honestly give: how many shops stand within a short walk.
+A place in a packed street scores high, a lone shop on a back road scores low. No reviews or ratings are
+involved (we have none) — once our own save/visit counts exist they belong in this same feature.
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import replace
+from typing import Any
+
+from app.domain.models import PlaceCandidate, ScoringProfile, Slot, Template
+from app.domain.recommendation.diversify import variant_profile
+
+DEFAULT_STYLE = "efficient"
+
+DEFAULT_STYLES: dict[str, dict[str, Any]] = {
+    "efficient": {},
+    "fun": {
+        # walking a little further is fine when the place is worth it
+        "weight_mult": {"distance": 0.45, "budget": 0.8, "congestion": 0.4, "purpose_fit": 1.25},
+        "weight_add": {"buzz": 0.22},
+        "params": {"lambda_travel": 0.006},
+        # a nationwide chain is nobody's idea of a fun day out; hands-on and lively places are
+        "affinity_add": {"체인점": -0.5, "체험형": 0.6, "힙한": 0.4, "활기찬": 0.4, "포토존": 0.3},
+        # the free park stroll that closes every course becomes something to DO
+        # The play money comes out of the meal, not out of every slot: spread evenly it pushed the
+        # BAR slot under real pub prices and the evening lost its last stop.
+        "swap_roles": {"ATTRACTION": {"role": "ACTIVITY", "share": 0.14, "take_from": "MEAL"}},
+        # Hard-avoided like a user's own "피할래요" tag, but only where a chain is the dull choice.
+        # Pubs stay: non-chain bars are priced ~25,000/person by category average, so banning chain
+        # pubs removed the BAR stop from every ordinary budget — and chain pubs ARE where people gather.
+        "avoid_tags": {"체인점": ["MEAL", "CAFE", "DESSERT"]},
+    },
+}
+
+MIN_DONOR_KEEP = 0.6  # the meal never gives up more than 40 % of its share
+BUZZ_RADIUS_M = 120.0
+BUZZ_SATURATION_PCTL = 0.9  # the 90th percentile of the pool counts as "fully buzzing"
+_M_PER_DEG_LAT = 111_320.0
+
+
+def resolve_style(profile: ScoringProfile, name: str | None) -> tuple[str, dict[str, Any]]:
+    overrides = profile.params.styles or {}
+    known = {*DEFAULT_STYLES, *overrides}
+    key = name if name in known else DEFAULT_STYLE
+    return key, {**DEFAULT_STYLES.get(key, {}), **overrides.get(key, {})}
+
+
+def styled_profile(profile: ScoringProfile, style: Mapping[str, Any]) -> ScoringProfile:
+    if not style:
+        return profile
+    out = variant_profile(profile, dict(style))
+    added = {k: out.weights.get(k, 0.0) + float(v) for k, v in (style.get("weight_add") or {}).items()}
+    return replace(out, weights={**out.weights, **added})
+
+
+def styled_affinity(affinity: Mapping[str, float], style: Mapping[str, Any]) -> dict[str, float]:
+    out = dict(affinity)
+    for tag, delta in (style.get("affinity_add") or {}).items():
+        out[tag] = max(-1.0, min(1.0, out.get(tag, 0.0) + float(delta)))
+    return out
+
+
+def styled_avoidance(style: Mapping[str, Any]) -> dict[str, frozenset[str]]:
+    return {tag: frozenset(roles) for tag, roles in (style.get("avoid_tags") or {}).items()}
+
+
+def styled_templates(templates: Sequence[Template], style: Mapping[str, Any]) -> list[Template]:
+    swaps: Mapping[str, Mapping[str, Any]] = style.get("swap_roles") or {}
+    if not swaps:
+        return list(templates)
+    return [_swap_roles(t, swaps) for t in templates]
+
+
+def _swap_roles(template: Template, swaps: Mapping[str, Mapping[str, Any]]) -> Template:
+    present = {s.course_role for s in template.slots}
+    slots: list[Slot] = []
+    for slot in template.slots:
+        swap = swaps.get(slot.course_role)
+        # never create a second slot of a role the template already has
+        if swap is None or str(swap["role"]) in present:
+            slots.append(slot)
+            continue
+        present.add(str(swap["role"]))
+        slots.append(replace(slot, course_role=str(swap["role"]), budget_share=float(swap["share"])))
+        extra = float(swap["share"]) - slot.budget_share
+        donor = next((i for i, s in enumerate(slots) if s.course_role == swap.get("take_from")), None)
+        if donor is not None and extra > 0:
+            keep = max(slots[donor].budget_share - extra, slots[donor].budget_share * MIN_DONOR_KEEP)
+            slots[donor] = replace(slots[donor], budget_share=keep)
+    return replace(template, slots=tuple(slots))
+
+
+def assign_buzz(candidates: Iterable[PlaceCandidate], radius_m: float = BUZZ_RADIUS_M) -> None:
+    """Sets `buzz` ∈ [0, 1] on every candidate from how many other candidates stand within `radius_m`."""
+    unique = {(c.is_event, c.id): c for c in candidates}
+    places = list(unique.values())
+    if len(places) < 2:
+        return
+    lat0 = sum(p.point.lat for p in places) / len(places)
+    m_per_deg_lng = _M_PER_DEG_LAT * math.cos(math.radians(lat0))
+
+    def xy(p: PlaceCandidate) -> tuple[float, float]:
+        return p.point.lng * m_per_deg_lng, p.point.lat * _M_PER_DEG_LAT
+
+    grid: dict[tuple[int, int], list[tuple[float, float]]] = {}
+    coords = [xy(p) for p in places]
+    for x, y in coords:
+        grid.setdefault((int(x // radius_m), int(y // radius_m)), []).append((x, y))
+    r2 = radius_m * radius_m
+    counts = []
+    for x, y in coords:
+        cx, cy = int(x // radius_m), int(y // radius_m)
+        near = sum(
+            1
+            for dx in (-1, 0, 1)
+            for dy in (-1, 0, 1)
+            for ox, oy in grid.get((cx + dx, cy + dy), ())
+            if (ox - x) ** 2 + (oy - y) ** 2 <= r2
+        )
+        counts.append(near - 1)  # not itself
+    top = sorted(counts)[min(len(counts) - 1, int(len(counts) * BUZZ_SATURATION_PCTL))]
+    for place, count in zip(places, counts, strict=True):
+        place.buzz = min(1.0, count / top) if top > 0 else 0.0

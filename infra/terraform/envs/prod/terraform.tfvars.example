@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars (git-ignored) and adjust.
+aws_region        = "ap-northeast-2"
+project           = "naegajjanday"
+domain_name       = "naegajjanday.com"
+extra_aliases     = ["www.naegajjanday.com"]
+route53_zone_id   = "Z0000000000CHANGEME"        # TODO: hosted zone of naegajjanday.com
+github_repository = "CHANGE_ME_ORG/naegajjanday" # TODO: real owner/name
+
+# Office / VPN egress addresses that may open /admin and /v1/admin.
+# Empty list = admin is blocked for everyone.
+admin_allowed_ipv4_cidrs = ["203.0.113.10/32"]
+admin_allowed_ipv6_cidrs = []
+
+alarm_emails = ["oncall@example.com"]
+
+extra_api_environment = {
+  LLM_PROVIDER         = "anthropic"
+  TRAVEL_TIME_PROVIDER = "haversine"
+}
+
+# false when staging (same AWS account) already created the service-linked role.
+opensearch_create_service_linked_role = false

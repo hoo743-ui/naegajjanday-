@@ -1,0 +1,116 @@
+# PR previews for the WEB app only, on Vercel.
+#
+# Why Vercel and not an ephemeral ECS service:
+#   - a preview must be up in ~2 minutes and cost nothing while idle; an ECS
+#     preview needs a task definition, target group, listener rule, DNS record and
+#     a teardown job per PR (and shares the staging ALB rule quota);
+#   - the web app is a plain Next.js 15 project, so Vercel builds it unmodified;
+#   - previews talk to the STAGING API (or to the MSW mocks), so no backend has to
+#     be cloned per PR. Production keeps running on ECS - Vercel is preview only.
+#
+# Setup (once):
+#   Vercel project with Root Directory = apps/web, Git integration DISABLED
+#   (this workflow deploys), preview env vars NEXT_PUBLIC_API_URL -> staging API.
+#   Secrets  : VERCEL_TOKEN
+#   Variables: VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# The staging API must allow the preview origin in CORS_ORIGINS, or the preview
+# runs with NEXT_PUBLIC_API_MOCKING=enabled.
+
+name: Preview / Web
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/preview.yml"
+
+concurrency:
+  group: preview-web-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vercel-preview:
+    name: Vercel preview
+    # Secrets are not available to PRs from forks.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # sticky comment with the preview URL
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Is Vercel configured?
+        id: cfg
+        run: |
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID not configured - preview skipped"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        if: steps.cfg.outputs.ready == 'true'
+        run: npm install --global vercel@latest
+
+      # The project's Root Directory (apps/web) is stored in the Vercel project
+      # settings, so the CLI runs from the repository root.
+      - name: Pull preview settings
+        if: steps.cfg.outputs.ready == 'true'
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build
+        if: steps.cfg.outputs.ready == 'true'
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy
+        if: steps.cfg.outputs.ready == 'true'
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview URL on the PR
+        if: steps.cfg.outputs.ready == 'true'
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- web-preview -->';
+            const body = [
+              marker,
+              '### 짠이 미리보기 (web preview)',
+              '',
+              `**URL:** ${process.env.PREVIEW_URL}`,
+              `**Commit:** \`${context.payload.pull_request.head.sha.slice(0, 7)}\``,
+              '',
+              '_Vercel preview of `apps/web`, backed by the staging API. Updated on every push._',
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

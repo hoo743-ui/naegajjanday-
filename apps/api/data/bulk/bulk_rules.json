@@ -1,0 +1,316 @@
+{
+  "_note": "전국 벌크 적재 규칙(DATA). 업종→카테고리 매핑은 data/seed/categories.json 의 provider_mapping.semas / .goodprice 에 있고, 여기에는 제외 규칙과 표준데이터별 적재 규칙만 둔다.",
+  "semas": {
+    "_excluded_codes_note": "매핑되지 않은 소분류는 자동 제외된다. 의도적으로 뺀 것: I20701 구내식당, I21003 피자·I21006 치킨(배달·포장 전문 비중이 높아 매장 식사 여부를 구분할 수 없음), I21099 기타 간이, I21101 일반 유흥주점, I21102 무도 유흥주점, R10406 PC방, R10410 복권, R10402 비디오방, 헬스·골프·수영 등 회원제 체육시설, 숙박, 소매 전체.",
+    "exclude_name_keywords": [
+      "구내식당",
+      "직원식당",
+      "사내식당",
+      "기사식당",
+      "함바",
+      "출장",
+      "급식",
+      "케이터링",
+      "도시락",
+      "배달",
+      "반찬",
+      "밀키트",
+      "단란주점",
+      "유흥주점",
+      "노래주점",
+      "노래클럽",
+      "노래빠",
+      "가요주점",
+      "룸싸롱",
+      "룸살롱",
+      "홀덤",
+      "포커펍",
+      "성인게임",
+      "성인오락",
+      "성인PC",
+      "PC방",
+      "피씨방",
+      "피시방",
+      "PC카페",
+      "운전연습",
+      "복권",
+      "화상경마",
+      "마사지",
+      "업소명없음",
+      "상호없음",
+      "무상호"
+    ],
+    "_keyword_pitfalls_note": "키워드는 부분 문자열로 검사한다. '경마'는 '중경마라탕', '로또'는 '로또김밥'·'로또노래연습장', '성인'은 '성인봉식당', '포커'는 '포커스'를 잡는다 — 짧은 단어를 넣기 전에 DB 에서 `name like '%단어%'` 로 오탐을 먼저 확인할 것.",
+    "_exclude_name_keywords_note": "2026-09-21 전국 적재 후 실측으로 보강: '전자 게임장' 분류에 홀덤펍 136 · 성인게임장 107 · PC방 123 · 실내운전연습장 31 곳이 섞여 데이트/친구 코스에 노출됐다. 규칙을 바꾼 뒤에는 `ingest-bulk semas --skip-regions --close-unseen` 으로 반영한다(삭제가 아니라 closed 처리)."
+  },
+  "goodprice": {
+    "food_kinds": [
+      "한식",
+      "중식",
+      "일식",
+      "양식",
+      "기타요식업"
+    ],
+    "other_kind": "기타요식업",
+    "other_default_category": "food",
+    "other_menu_keywords": {
+      "cafe": [
+        "커피",
+        "아메리카노",
+        "라떼",
+        "에스프레소",
+        "국산차",
+        "녹차",
+        "쌍화차",
+        "생강차",
+        "유자차",
+        "주스",
+        "에이드"
+      ],
+      "dessert.bakery": [
+        "빵",
+        "도넛",
+        "도너츠",
+        "케이크",
+        "케익",
+        "쿠키"
+      ],
+      "food.snack": [
+        "김밥",
+        "떡볶이",
+        "라면",
+        "순대",
+        "튀김",
+        "만두",
+        "토스트",
+        "어묵",
+        "핫도그"
+      ],
+      "food.chinese": [
+        "짜장",
+        "자장",
+        "짬뽕",
+        "탕수육"
+      ],
+      "food.noodle": [
+        "칼국수",
+        "국수",
+        "냉면",
+        "우동",
+        "수제비"
+      ],
+      "food.western": [
+        "돈까스",
+        "돈가스",
+        "파스타",
+        "스파게티",
+        "햄버거",
+        "버거",
+        "피자"
+      ]
+    },
+    "name_match_min": 0.75,
+    "match_radius_m": 60
+  },
+  "std": {
+    "parks": {
+      "provider": "std_parks",
+      "category": "attraction.park",
+      "is_free": true,
+      "columns": {
+        "external_id": "관리번호",
+        "name": "공원명",
+        "kind": "공원구분",
+        "road_address": "소재지도로명주소",
+        "address": "소재지지번주소",
+        "lat": "위도",
+        "lng": "경도",
+        "phone": "전화번호",
+        "area": "공원면적"
+      },
+      "include_kinds": {
+        "근린공원": 10000,
+        "문화공원": 3000,
+        "수변공원": 3000,
+        "역사공원": 3000,
+        "체육공원": 10000,
+        "기타": 20000
+      },
+      "_include_kinds_note": "공원구분 → 최소 면적(㎡). 목록에 없는 구분(어린이공원·소공원·묘지공원 등)은 코스 추천에 맞지 않아 제외."
+    },
+    "museums": {
+      "provider": "std_museums",
+      "category": "culture.museum",
+      "category_by_name": {
+        "미술관": "culture.gallery",
+        "갤러리": "culture.gallery",
+        "아트": "culture.gallery"
+      },
+      "columns": {
+        "name": "시설명",
+        "road_address": "소재지도로명주소",
+        "address": "소재지지번주소",
+        "lat": "위도",
+        "lng": "경도",
+        "phone": "운영기관전화번호",
+        "description": "박물관미술관소개",
+        "price": "어른관람료",
+        "weekday_open": "평일관람시작시각",
+        "weekday_close": "평일관람종료시각",
+        "holiday_open": "공휴일관람시작시각",
+        "holiday_close": "공휴일관람종료시각",
+        "closed_info": "휴관정보"
+      }
+    },
+    "tourist": {
+      "provider": "std_tourist",
+      "category": "attraction",
+      "columns": {
+        "name": "관광지명",
+        "road_address": "소재지도로명주소",
+        "address": "소재지지번주소",
+        "lat": "위도",
+        "lng": "경도",
+        "phone": "관리기관전화번호",
+        "description": "관광지소개"
+      }
+    },
+    "markets": {
+      "provider": "std_markets",
+      "category": "attraction.market",
+      "is_free": true,
+      "columns": {
+        "name": "시장명",
+        "kind": "시장유형",
+        "road_address": "소재지도로명주소",
+        "address": "소재지지번주소",
+        "lat": "위도",
+        "lng": "경도",
+        "phone": "전화번호"
+      },
+      "kind_must_contain": "상설장"
+    },
+    "festivals": {
+      "provider": "std_festivals",
+      "category": "culture.festival",
+      "event": true,
+      "columns": {
+        "name": "축제명",
+        "venue": "개최장소",
+        "starts_on": "축제시작일자",
+        "ends_on": "축제종료일자",
+        "description": "축제내용",
+        "road_address": "소재지도로명주소",
+        "address": "소재지지번주소",
+        "lat": "위도",
+        "lng": "경도",
+        "url": "홈페이지주소"
+      }
+    }
+  },
+  "tourapi": {
+    "_note": "한국관광공사 TourAPI(KorService2) 전국 적재. 분류는 신 분류체계 lclsSystm3 기준(구 cat3 은 1/3 이 비어 있다). 키는 8자(소분류) → 4자(중분류) → 2자(대분류) 순으로 찾고, null 은 '당일 코스로 가는 곳이 아님'. 이미 있는 장소와 이름·거리로 맞으면 새로 만들지 않고 사진·전화만 보강한다.",
+    "content_types": {
+      "12": "관광지",
+      "14": "문화시설",
+      "28": "레포츠",
+      "39": "음식점",
+      "38": "쇼핑"
+    },
+    "festivals_from": "2026-01-01",
+    "festival_category": "culture.festival",
+    "festival_by_lcls": {
+      "EV0301": "culture.exhibition"
+    },
+    "free_categories": [
+      "attraction",
+      "attraction.park",
+      "attraction.street",
+      "attraction.market",
+      "attraction.landmark",
+      "nightview",
+      "nightview.observatory",
+      "nightview.riverside"
+    ],
+    "exclude_name_contains": [
+      "성형외과",
+      "의원",
+      "한의원",
+      "병원",
+      "면세점"
+    ],
+    "by_lcls": {
+      "VE03": "attraction.park",
+      "VE04": "attraction.street",
+      "VE01": "attraction.landmark",
+      "VE0102": "nightview.observatory",
+      "VE02": "activity",
+      "VE05": "attraction.landmark",
+      "VE0502": null,
+      "VE06": "culture.cinema",
+      "VE07": "culture.museum",
+      "VE0703": "culture.exhibition",
+      "VE0704": null,
+      "VE0706": "culture.gallery",
+      "VE09": null,
+      "VE10": null,
+      "VE11": null,
+      "VE12": null,
+      "VE1201": "culture.bookstore",
+      "NA": "attraction",
+      "NA0405": "attraction.park",
+      "NA0407": "attraction.park",
+      "NA0304": "attraction.park",
+      "NA05": "attraction.street",
+      "HS": "attraction.landmark",
+      "EX": "activity",
+      "EX01": "activity.craft",
+      "EX02": "activity.craft",
+      "EX04": "activity.craft",
+      "EX0702": "attraction.landmark",
+      "EX0701": null,
+      "EX0508": null,
+      "AC": null,
+      "LS": null,
+      "LS0119": "attraction.street",
+      "LS0101": "activity.sports",
+      "LS0109": "activity.sports",
+      "LS0103": "activity",
+      "LS0107": "activity",
+      "LS0108": "activity",
+      "LS0110": "activity",
+      "LS0115": "activity",
+      "LS0201": "activity",
+      "LS0203": "activity",
+      "LS0204": "activity",
+      "LS0207": "activity",
+      "LS0208": "activity",
+      "LS0214": "activity",
+      "LS03": "activity",
+      "LS04": "activity",
+      "FD": "food",
+      "FD0101": "food.korean",
+      "FD0102": "food.korean",
+      "FD0201": "food.chinese",
+      "FD0202": "food.japanese",
+      "FD0203": "food.western",
+      "FD0204": "food.asian",
+      "FD0301": "dessert.bakery",
+      "FD0302": "food.western",
+      "FD0304": "food.snack",
+      "FD0305": "food.snack",
+      "FD0306": "food.snack",
+      "FD04": "bar",
+      "FD0404": "bar.makgeolli",
+      "FD0501": "cafe.coffee",
+      "FD0502": "cafe.tea",
+      "FD0503": "cafe",
+      "SH": null,
+      "SH06": "attraction.market",
+      "SH01": null,
+      "SH02": null,
+      "SH0701": "attraction.street"
+    },
+    "_note_malls": "백화점·쇼핑몰·아울렛(SH01·SH02)은 넣지 않는다: 데이트 코스의 '명소'로 백화점이 나오는 것은 어색하다(2026-09-21 사용자 지적 후 제외)."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "_note": "영업시간 데이터가 없는 장소(전체의 99%)에 쓰는 업종별 상식선. 실제 영업시간이 DB 에 있으면 그것이 우선이고 이 표는 쓰이지 않는다. 목적은 '밤 9시에 박물관·시장·백화점으로 데려가는' 추천을 막는 것 — 화면에 영업시간으로 표시하지는 않는다(추정이므로). 가장 구체적인 코드가 이긴다(culture.museum → culture). 'always' 는 시간 제한 없음. closed_dow: 0=월 … 6=일.",
+  "by_category": {
+    "food": {"open": "11:00", "close": "21:30"},
+    "food.brunch": {"open": "09:00", "close": "16:00"},
+    "food.snack": {"open": "10:30", "close": "21:00"},
+    "cafe": {"open": "09:00", "close": "22:00"},
+    "dessert": {"open": "10:00", "close": "22:00"},
+    "bar": {"open": "17:00", "close": "02:00"},
+    "activity": {"open": "11:00", "close": "23:00"},
+    "activity.karaoke": {"open": "12:00", "close": "02:00"},
+    "activity.craft": {"open": "10:30", "close": "20:00"},
+    "culture": {"open": "10:00", "close": "18:00", "closed_dow": [0]},
+    "culture.cinema": {"open": "10:00", "close": "23:30"},
+    "culture.bookstore": {"open": "11:00", "close": "21:00"},
+    "culture.festival": "always",
+    "attraction": {"open": "06:00", "close": "19:00"},
+    "attraction.park": "always",
+    "attraction.street": "always",
+    "attraction.market": {"open": "09:00", "close": "19:00"},
+    "attraction.landmark": {"open": "09:00", "close": "21:00"},
+    "nightview": "always"
+  }
+}

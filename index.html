@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내가짠데이</title>
+<meta name="description" content="지역, 인원, 예산만 입력하면 식당, 카페, 데이트 코스를 자동 추천해주는 예산 기반 지도, 내가짠데이.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=Jua&display=swap">
+<style>
+:root{
+  --blue:#4F8CFF; --blue-deep:#2F6BEA; --pink:#FF8FB8; --pink-deep:#E0457F;
+  --gold:#F5B93A; --gold-deep:#E29A14; --gold-soft:#FFF3D6; --gold-ink:#6B4700;
+  --ink:#14213D; --ink-2:#34425F; --muted:#5F6C87; --line:#E6ECF6;
+  --bg:#FFFFFF; --soft:#F5F8FE; --navy:#0B1224;
+  --grad:linear-gradient(120deg,#2F6BEA 0%,#8FA8FF 48%,#FF8FB8 100%);
+  --grad-soft:linear-gradient(120deg,#EAF2FF 0%,#F4EEFF 50%,#FFEAF3 100%);
+  --shadow-sm:0 1px 2px rgba(20,33,61,.04),0 4px 16px rgba(20,33,61,.05);
+  --shadow:0 2px 4px rgba(20,33,61,.03),0 18px 48px rgba(47,80,160,.11);
+  --shadow-lg:0 30px 80px rgba(47,80,160,.2);
+  --r:24px;
+  --sans:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  --round:"Jua","Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);font-weight:500;color:var(--ink);background:var(--bg);line-height:1.65;word-break:keep-all;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:24px}
+section{padding-block:112px;position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--blue-deep);background:#EAF1FF;padding:8px 14px;border-radius:999px}
+.eyebrow.pink{color:var(--pink-deep);background:#FFEDF4}
+.eyebrow.gold{color:var(--gold-ink);background:var(--gold-soft)}
+h1,h2,h3,h4{letter-spacing:-.035em;line-height:1.25;text-wrap:balance}
+h2{font-size:clamp(29px,4.2vw,50px);font-weight:800;margin:18px 0 16px}
+.lead{font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:640px}
+.center{text-align:center}.center .lead{margin-inline:auto}
+.gt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hl{background:linear-gradient(180deg,transparent 62%,#FFE3EE 62%)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:56px;padding:0 28px;border-radius:16px;font-weight:800;font-size:17px;letter-spacing:-.02em;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background-position .4s}
+.btn-primary{color:#fff;background:linear-gradient(120deg,#2F6BEA,#6C8FFF 55%,#FF7FB0);background-size:170% 100%;box-shadow:0 10px 28px rgba(47,107,234,.32)}
+.btn-primary:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 16px 36px rgba(255,111,165,.32)}
+.btn-ghost{background:#F0F4FA;color:var(--ink-2)}.btn-ghost:hover{background:#E6ECF6}
+.btn-sm{height:42px;padding:0 18px;font-size:15px;border-radius:12px}
+.btn .arr{transition:transform .25s}.btn:hover .arr{transform:translateX(3px)}
+
+/* nav */
+.nav{position:fixed;inset:0 0 auto 0;z-index:50;padding-top:env(safe-area-inset-top,0px);transition:background .3s,box-shadow .3s}
+.nav.scrolled{background:rgba(255,255,255,.78);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);box-shadow:0 1px 0 rgba(20,33,61,.07)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--round);font-size:24px;font-weight:400;letter-spacing:-.01em}
+.logo svg{width:36px;height:40px}
+.nav-links{display:flex;gap:30px;font-size:15px;font-weight:700;color:var(--ink-2)}
+.nav-links a{opacity:.78;transition:opacity .2s}.nav-links a:hover{opacity:1}
+
+/* hero */
+.hero{padding-block:150px 96px;background:radial-gradient(640px 520px at 0% 0%,#DCE8FF 0,rgba(220,232,255,0) 70%),radial-gradient(600px 520px at 100% 8%,#FFE0EC 0,rgba(255,224,236,0) 70%),radial-gradient(520px 420px at 50% 100%,#EEE8FF 0,rgba(238,232,255,0) 70%)}
+.hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(35px,5.2vw,64px);font-weight:800;margin:22px 0}
+.hero .lead{font-size:clamp(17px,1.7vw,20px)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:36px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;font-size:14px;color:var(--muted);font-weight:700}
+.hero-meta span::before{content:"✓";color:var(--blue-deep);font-weight:800;margin-right:6px}
+.hero-copy>*{animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+.hero-copy>*:nth-child(2){animation-delay:.06s}.hero-copy>*:nth-child(3){animation-delay:.12s}.hero-copy>*:nth-child(4){animation-delay:.18s}.hero-copy>*:nth-child(5){animation-delay:.24s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* phone */
+.stage{position:relative;display:flex;justify-content:center;min-height:640px}
+.phone{position:relative;width:310px;height:636px;border-radius:50px;background:#0B1224;padding:11px;box-shadow:var(--shadow-lg),inset 0 0 0 2px #2A3350;animation:float 7s ease-in-out infinite}
+.phone::before{content:"";position:absolute;top:22px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:20px;background:#0B1224;z-index:5}
+.screen{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:#EAF1FF}
+.sbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:16px 26px 0;font-size:12px;font-weight:800;z-index:4}
+.search{position:absolute;top:50px;left:12px;right:12px;z-index:4;display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:16px;background:rgba(255,255,255,.86);box-shadow:0 6px 20px rgba(47,80,160,.14);font-size:12px;font-weight:800}
+.search i{font-style:normal;padding:4px 10px;border-radius:999px;border:1.5px solid var(--blue-deep);background:#fff;white-space:nowrap}
+.map{position:absolute;inset:0 0 50% 0}
+.map svg{width:100%;height:100%;display:block}
+.route{stroke-dasharray:6 7;animation:dash 1.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-26}}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:56%;background:#F6F8FD;border-radius:28px 28px 0 0;padding:10px 14px 14px;box-shadow:0 -10px 40px rgba(47,80,160,.14);display:flex;flex-direction:column;gap:9px}
+.sheet::before{content:"";display:block;width:38px;height:4px;border-radius:4px;background:#D5DDEB;margin:0 auto}
+.say{display:flex;align-items:center;gap:8px}
+.say svg{width:50px;height:55px;flex:none}
+.say div{flex:1;background:var(--gold-soft);border-radius:16px;padding:8px 12px;font-size:12px;color:var(--gold-ink);line-height:1.4}
+.say b{display:block;font-size:13.5px;color:var(--ink);font-weight:800}
+.rows{background:#fff;border-radius:18px;padding:12px 14px;display:grid;gap:9px;font-size:13.5px}
+.rows .r{display:flex;align-items:center;gap:9px}
+.rows .n{width:22px;height:22px;border-radius:50%;background:var(--blue-deep);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;flex:none}
+.rows .r span{flex:1}.rows .r b{font-weight:800;font-variant-numeric:tabular-nums}
+.rows .sum{border-top:1.5px solid #D9E1F0;padding-top:9px;display:flex;justify-content:space-between;align-items:baseline;color:var(--muted);font-size:12.5px}
+.rows .sum b{font-size:21px;color:var(--ink);font-weight:800;letter-spacing:-.03em}
+.save{margin-top:auto;height:44px;border-radius:13px;background:var(--blue-deep);color:#fff;font-weight:800;font-size:14.5px;display:grid;place-items:center}
+
+.glass{background:rgba(255,255,255,.7);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 40px rgba(47,80,160,.16);border-radius:20px}
+.fl{position:absolute;padding:13px 16px;font-size:13px;font-weight:700;animation:float 6s ease-in-out infinite;z-index:6;line-height:1.35}
+.fl b{display:block;font-size:18px;font-weight:800;letter-spacing:-.03em}
+.fl small{color:var(--muted);font-weight:700;font-size:12.5px}
+.fl.f1{top:120px;left:-8px;animation-delay:-2s}
+.fl.f2{bottom:150px;right:-12px;animation-delay:-4s}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:30px;box-shadow:var(--shadow-sm);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+.card .emo{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--grad-soft);margin-bottom:20px;color:var(--blue-deep)}
+.card .emo svg{width:26px;height:26px}
+.card h3{font-size:20px;font-weight:800;margin-bottom:10px}
+.card p{color:var(--muted);font-size:15.5px}
+.soft{background:linear-gradient(180deg,#fff 0%,var(--soft) 14%,var(--soft) 86%,#fff 100%)}
+
+/* problem */
+.prob{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:48px;align-items:stretch}
+.moment{background:var(--grad-soft);border-radius:32px;padding:40px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.moment small{font-size:13px;font-weight:800;color:var(--blue-deep)}
+.moment blockquote{font-size:clamp(24px,3.2vw,38px);font-weight:800;letter-spacing:-.04em;line-height:1.4}
+.moment blockquote em{font-style:normal;color:var(--blue-deep)}
+.who-box{background:#fff;border:1px solid var(--line);border-radius:32px;padding:32px;box-shadow:var(--shadow-sm);display:flex;gap:20px;align-items:center}
+.who-box svg{width:120px;height:132px;flex:none}
+.who-box .tag{display:inline-block;padding:5px 12px;border-radius:8px;background:#EAF1FF;color:var(--blue-deep);font-size:13px;font-weight:800;margin-bottom:10px}
+.who-box p{color:var(--ink-2);font-size:15.5px}
+.core{margin-top:24px;padding:26px 30px;border-radius:24px;background:var(--ink);color:#fff;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.core small{font-size:13px;font-weight:800;color:#9DB9FF;white-space:nowrap}
+.core p{font-size:clamp(16px,1.7vw,19px);font-weight:700;flex:1;min-width:240px}
+
+/* goals */
+.goals{display:grid;grid-template-columns:1.12fr .88fr;gap:20px;margin-top:48px}
+.goal{background:#fff;border:1px solid var(--line);border-radius:32px;padding:34px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:16px}
+.goal .tag{align-self:flex-start;font-size:13px;font-weight:800;color:var(--blue-deep);background:#EAF1FF;padding:6px 12px;border-radius:8px}
+.goal h3{font-size:clamp(21px,2.3vw,27px);font-weight:800}
+.goal>p,.goal .txt{color:var(--muted);font-size:15.5px}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
+.lane{border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.lane h4{font-size:15px;font-weight:800}
+.lane.b{background:#EEF1F7;border:1.5px dashed #CBD3E1}
+.lane.a{background:var(--grad-soft)}
+.st{list-style:none;display:grid;gap:8px;font-size:14.5px;font-weight:700;color:var(--ink-2)}
+.st li{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:9px 12px}
+.st .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:#9AA4B8;flex:none}
+.lane.a .st .n{background:var(--blue-deep)}
+.lane .warn{margin-top:auto;font-size:13.5px;font-weight:800;color:var(--pink-deep)}
+.lane .tip{margin-top:auto;font-size:13.5px;color:var(--ink-2)}
+.shift{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;font-weight:800}
+.shift .from{padding:6px 13px;border-radius:999px;background:#EEF1F7;color:#8893A8;text-decoration:line-through}
+.shift .to{padding:6px 13px;border-radius:999px;background:var(--ink);color:#fff}
+.shift svg{width:18px;height:18px;color:#9AA4B8}
+.receipt{margin-top:auto;background:var(--soft);border-radius:22px;padding:22px;display:grid;gap:9px;font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.receipt .rt{font-size:13px;font-weight:800;color:var(--blue-deep)}
+.receipt .row{display:flex;justify-content:space-between}
+.receipt .row.t{border-top:1.5px solid #D9E1F0;padding-top:10px;font-weight:800;color:var(--ink);font-size:17px}
+.receipt .lft{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--muted)}
+.receipt .lft span:last-child{color:var(--blue-deep)}
+.kpi-head{margin:56px 0 18px;font-size:19px;font-weight:800;text-align:center}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px 18px;position:relative}
+.kpi .s{font-size:12.5px;font-weight:800;color:var(--pink-deep)}
+.kpi .m{font-size:16.5px;font-weight:800;letter-spacing:-.03em;margin:6px 0 4px;line-height:1.35}
+.kpi .q{font-size:13.5px;color:var(--muted)}
+.kpi:not(:last-child)::after{content:"›";position:absolute;right:-11px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:800;color:#A2ACBF;z-index:1}
+
+/* flow (before → 내가짠데이 → after) */
+.flow{display:grid;grid-template-columns:1fr auto 1.1fr auto 1fr;gap:14px;margin-top:48px;align-items:stretch}
+.flow-card{border-radius:28px;padding:28px;display:flex;flex-direction:column;gap:14px}
+.flow-label{font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.flow-card h3{font-size:20px;font-weight:800}
+.before{background:#EEF1F7;border:1.5px dashed #CBD3E1}.before .flow-label{color:#8893A8}
+.steps-b{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13.5px;color:var(--muted);font-weight:700}
+.steps-b span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;white-space:nowrap}
+.steps-b i{font-style:normal;color:#A2ACBF}
+.flag{margin-top:auto;display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:800;color:var(--ink-2)}
+.flag svg{width:20px;height:20px;color:var(--pink-deep)}
+.center-card{background:#fff;border:1px solid #DCE6FA;box-shadow:var(--shadow)}
+.center-card .flow-label{color:var(--blue-deep)}
+.inputs{display:flex;flex-wrap:wrap;gap:6px}
+.inputs span{background:#EAF1FF;color:var(--blue-deep);border-radius:999px;padding:5px 13px;font-size:13.5px;font-weight:800}
+.down{color:#A2ACBF;display:flex;justify-content:center}.down svg{width:20px;height:20px}
+.out{display:grid;gap:8px;font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.out div{display:flex;justify-content:space-between}
+.out .tot{background:var(--gold-soft);color:var(--gold-ink);border-radius:12px;padding:10px 14px;font-weight:800}
+.after{background:linear-gradient(140deg,#EAF2FF,#FFEAF3)}.after .flow-label{color:var(--pink-deep)}
+.after-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}
+.after-grid div{display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:10px 12px;font-size:14px;font-weight:800}
+.after-grid svg{width:30px;height:30px;padding:7px;border-radius:10px;background:var(--blue-deep);color:#fff;flex:none}
+.conn{display:flex;align-items:center;color:#A2ACBF}.conn svg{width:24px;height:24px}
+.thesis{margin-top:36px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:12px;font-size:clamp(16px,1.9vw,21px);font-weight:800;text-align:center}
+.thesis .old{color:#9AA4B8;text-decoration:line-through}
+.thesis svg{width:22px;height:22px;color:#9AA4B8}
+.effects{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:56px}
+.effects .card{padding:26px}
+.effects h3{font-size:18.5px}
+.effects ul{list-style:none;display:grid;gap:10px;color:var(--muted);font-size:14.5px}
+.effects li{padding-left:14px;position:relative}
+.effects li::before{content:"";position:absolute;left:0;top:.72em;width:5px;height:5px;border-radius:50%;background:var(--pink)}
+
+/* demo */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:800;background:#F0F4FA;color:var(--ink-2);transition:background .2s,color .2s}
+button.chip:hover{background:#E3EAF5}
+.chip.on{background:var(--ink);color:#fff}
+.demo{display:grid;grid-template-columns:.9fr 1.1fr;gap:24px;margin-top:48px;align-items:stretch}
+.panel{background:#fff;border:1px solid var(--line);border-radius:28px;padding:32px;box-shadow:var(--shadow)}
+.field{margin-bottom:28px}
+.field label,.field .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:800;color:var(--muted);margin-bottom:12px}
+.field label b{font-size:22px;color:var(--ink);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stepper{display:flex;align-items:center;gap:16px}
+.stepper button{width:44px;height:44px;border-radius:14px;background:#F0F4FA;font-size:20px;font-weight:800;transition:background .2s}
+.stepper button:hover{background:#E3EAF5}
+.stepper output{font-size:22px;font-weight:800;min-width:52px;text-align:center}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:10px;background:linear-gradient(90deg,#2F6BEA,#FF8FB8);outline-offset:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--blue-deep);box-shadow:0 4px 12px rgba(47,107,234,.35);cursor:grab}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--blue-deep);cursor:grab}
+.result{background:var(--grad-soft);border:0}
+.result-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.result-head svg{width:76px;height:84px;flex:none}
+.bubble{flex:1;background:#fff;border-radius:20px;padding:14px 18px;box-shadow:var(--shadow-sm)}
+.bubble b{display:block;font-size:18px;font-weight:800;letter-spacing:-.03em}
+.bubble span{font-size:14px;color:var(--muted);font-weight:700}
+.tl{display:grid;gap:10px}
+.tl-item{display:flex;gap:14px;align-items:center;padding:14px 18px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:20px}
+.tl-item .n{width:30px;height:30px;border-radius:50%;background:var(--blue-deep);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800;flex:none}
+.tl-item .t{flex:1;min-width:0}
+.tl-item .t small{display:block;font-size:12px;font-weight:800;color:var(--blue-deep)}
+.tl-item .t b{font-size:16.5px;letter-spacing:-.03em;font-weight:800}
+.tl-item .t span{display:block;font-size:13px;color:var(--muted)}
+.tl-item .pr{text-align:right;font-weight:800;font-size:16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tl-item .pr small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+.total{margin-top:16px;padding:20px;border-radius:20px;background:#fff;box-shadow:var(--shadow-sm)}
+.total .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;font-weight:800;color:var(--muted);font-size:14px}
+.total .row b{font-size:26px;color:var(--ink);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.track{height:9px;border-radius:9px;background:#EEF2F8;overflow:hidden}
+.fill{height:100%;border-radius:9px;background:var(--grad);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.note{margin-top:14px;font-size:12.5px;color:var(--muted);text-align:center}
+
+/* 짠이 */
+.jj{display:grid;grid-template-columns:.8fr 1.2fr;gap:24px;margin-top:48px}
+.jj-hero{background:var(--gold-soft);border-radius:36px;padding:36px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+.jj-hero::before{content:"";position:absolute;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.7);top:28px}
+.jj-hero svg{width:min(260px,70%);height:auto;position:relative;animation:float 5s ease-in-out infinite}
+.jj-hero h3{font-family:var(--round);font-weight:400;font-size:64px;line-height:1.1;position:relative;letter-spacing:0}
+.jj-hero p{position:relative;font-weight:700;color:var(--gold-ink)}
+.means{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.means div{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.means b{display:block;font-size:16px;font-weight:800}.means span{font-size:14px;color:var(--muted)}
+.faces{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.face{background:#fff;border:1px solid var(--line);border-radius:24px;padding:18px 12px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;transition:transform .3s}
+.face:hover{transform:translateY(-4px) rotate(-1deg)}
+.face svg{width:96px;height:106px}
+.face small{font-size:13px;color:var(--muted);font-weight:700}
+.face q{quotes:"“" "”";background:var(--gold-soft);border-radius:14px;padding:6px 12px;font-size:14px;font-weight:800}
+
+/* premium */
+.premium-box{background:radial-gradient(520px 420px at 0% 0%,rgba(47,107,234,.55) 0,rgba(47,107,234,0) 70%),radial-gradient(520px 420px at 100% 100%,rgba(255,111,165,.42) 0,rgba(255,111,165,0) 70%),var(--navy);border-radius:40px;padding:80px 56px;color:#fff}
+.premium-box .eyebrow{background:rgba(255,255,255,.12);color:#fff}
+.premium-box .lead{color:rgba(255,255,255,.68)}
+.pgrid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;margin-top:48px}
+.dglass{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:26px}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.feats .dglass{transition:transform .3s,background .3s}.feats .dglass:hover{transform:translateY(-4px);background:rgba(255,255,255,.11)}
+.feats svg{width:28px;height:28px;color:#FFB9D3;margin-bottom:14px}
+.feats h3{font-size:18px;font-weight:800;margin-bottom:6px}
+.feats p{font-size:14.5px;color:rgba(255,255,255,.64)}
+.chat{display:grid;gap:10px;font-size:14.5px}
+.msg{padding:12px 16px;border-radius:18px;max-width:88%}
+.msg.me{justify-self:end;background:linear-gradient(120deg,#2F6BEA,#6C8FFF);border-bottom-right-radius:6px}
+.msg.ai{background:rgba(255,255,255,.1);border-bottom-left-radius:6px;display:flex;gap:10px;align-items:center}
+.msg.ai svg{width:38px;height:42px;flex:none}
+.price h3{font-size:15px;font-weight:700;color:rgba(255,255,255,.7)}
+.price .amt{font-size:52px;font-weight:800;letter-spacing:-.05em;margin:8px 0 2px}
+.price .amt small{font-size:16px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:0}
+.price ul{list-style:none;margin:22px 0 28px;display:grid;gap:12px;font-size:15px;color:rgba(255,255,255,.86)}
+.price li::before{content:"✓";margin-right:10px;color:#FF9CC2;font-weight:800}
+.price .btn{width:100%}
+.price .fine{margin-top:14px;text-align:center;font-size:13px;color:rgba(255,255,255,.5)}
+
+/* reviews */
+.review .stars{color:var(--gold-deep);letter-spacing:2px;font-size:15px;margin-bottom:14px}
+.review p{color:var(--ink-2);font-size:16px}
+.who{display:flex;align-items:center;gap:12px;margin-top:22px}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--grad)}
+.who b{display:block;font-size:15px}.who small{color:var(--muted);font-size:13px}
+
+/* faq */
+.faq{max-width:800px;margin:48px auto 0;display:grid;gap:12px}
+details{background:#fff;border:1px solid var(--line);border-radius:20px;padding:0 26px;transition:box-shadow .3s}
+details[open]{box-shadow:var(--shadow)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;font-size:18px;font-weight:800;letter-spacing:-.03em}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:26px;font-weight:400;color:var(--muted);transition:transform .3s;flex:none;line-height:1}
+details[open] summary::after{transform:rotate(45deg);color:var(--blue-deep)}
+details p{padding:0 0 24px;color:var(--muted);font-size:16px}
+
+/* final */
+.final-box{border-radius:40px;padding:80px 32px;text-align:center;background:linear-gradient(120deg,#2F6BEA 0%,#8A9BFF 50%,#FF86B4 100%);color:#fff;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.final-box::before,.final-box::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.14)}
+.final-box::before{width:340px;height:340px;top:-140px;left:-90px}
+.final-box::after{width:260px;height:260px;bottom:-120px;right:-60px}
+.final-box>*{position:relative;z-index:1}
+.final-box svg{width:130px;height:143px;animation:float 5s ease-in-out infinite;filter:drop-shadow(0 14px 24px rgba(20,33,61,.25))}
+.final-box h2{font-size:clamp(29px,4.4vw,54px);margin:14px 0}
+.final-box p{font-size:18px;opacity:.92;margin-bottom:34px}
+.btn-white{background:#fff;color:var(--blue-deep);box-shadow:0 14px 34px rgba(20,33,61,.2);height:62px;padding:0 36px;font-size:18px}
+.btn-white:hover{transform:translateY(-3px)}
+
+footer{padding:48px 0 64px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
+footer nav{display:flex;flex-wrap:wrap;gap:20px;font-weight:700}
+
+@media (max-width:960px){
+  section{padding-block:80px}
+  .nav-links{display:none}
+  .hero{padding-block:118px 64px}
+  .hero-grid{grid-template-columns:1fr;text-align:center}
+  .hero .lead{margin-inline:auto}.hero-cta,.hero-meta{justify-content:center}
+  .cards,.prob,.demo,.pgrid,.jj,.goals{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}.kpi::after{display:none}
+  .flow{grid-template-columns:1fr}.conn{justify-content:center;transform:rotate(90deg)}
+  .effects{grid-template-columns:1fr 1fr}
+  .premium-box{padding:56px 22px;border-radius:32px}
+  .fl.f1{left:0}.fl.f2{right:0}
+}
+@media (max-width:560px){
+  .wrap{padding-inline:18px}
+  .effects,.feats,.means,.lanes,.kpis{grid-template-columns:1fr}
+  .goal{padding:26px 22px}
+  .faces{grid-template-columns:1fr 1fr}
+  .panel{padding:24px 20px}.moment{padding:30px 24px}
+  .who-box{flex-direction:column;text-align:center}
+  .fl{display:none}
+  .hero-cta .btn{width:100%}
+  .tl-item{padding:12px 14px;gap:10px}
+  .final-box{padding:60px 22px;border-radius:32px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<!-- 공식 캐릭터 짠이: 표정별 심볼 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F6BEA"/><stop offset="1" stop-color="#FF8FB8"/></linearGradient>
+  <g id="jj-back"><ellipse cx="100" cy="207" rx="52" ry="8" fill="#14213D" opacity=".12"/><ellipse cx="76" cy="197" rx="17" ry="10" fill="#E29A14"/><ellipse cx="124" cy="197" rx="17" ry="10" fill="#E29A14"/></g>
+  <g id="jj-coin"><circle cx="100" cy="112" r="80" fill="#F5B93A" stroke="#E29A14" stroke-width="6"/><circle cx="100" cy="112" r="66" fill="none" stroke="#E29A14" stroke-width="3" stroke-dasharray="1 8" stroke-linecap="round"/><path d="M50 84A64 64 0 0 1 82 52" fill="none" stroke="#FFE7A3" stroke-width="8" stroke-linecap="round"/><g transform="rotate(-8 100 59)"><path d="M100 4c-13 0-22 9-22 21 0 16 22 34 22 34s22-18 22-34c0-12-9-21-22-21z" fill="#2F6BEA"/><circle cx="100" cy="25" r="7.5" fill="#fff"/></g></g>
+  <g id="jj-cheek"><ellipse cx="60" cy="132" rx="10" ry="6.5" fill="#FF9E8F" opacity=".75"/><ellipse cx="140" cy="132" rx="10" ry="6.5" fill="#FF9E8F" opacity=".75"/></g>
+  <ellipse id="al-d" cx="22" cy="128" rx="11" ry="16" transform="rotate(18 22 128)" fill="#F5B93A" stroke="#E29A14" stroke-width="4"/>
+  <ellipse id="ar-d" cx="178" cy="128" rx="11" ry="16" transform="rotate(-18 178 128)" fill="#F5B93A" stroke="#E29A14" stroke-width="4"/>
+  <ellipse id="al-u" cx="20" cy="94" rx="11" ry="16" transform="rotate(-28 20 94)" fill="#F5B93A" stroke="#E29A14" stroke-width="4"/>
+  <ellipse id="ar-u" cx="180" cy="94" rx="11" ry="16" transform="rotate(28 180 94)" fill="#F5B93A" stroke="#E29A14" stroke-width="4"/>
+  <ellipse id="ar-m" cx="178" cy="97" rx="11" ry="16" transform="rotate(20 178 97)" fill="#F5B93A" stroke="#E29A14" stroke-width="4"/>
+  <g id="eyes"><circle cx="76" cy="114" r="7" fill="#14213D"/><circle cx="124" cy="114" r="7" fill="#14213D"/><circle cx="78.5" cy="111.5" r="2.3" fill="#fff"/><circle cx="126.5" cy="111.5" r="2.3" fill="#fff"/></g>
+  <g id="eyes-arc" fill="none" stroke="#14213D" stroke-width="4.5" stroke-linecap="round"><path d="M66 118Q76 104 86 118"/><path d="M114 118Q124 104 134 118"/></g>
+  <path id="smile" d="M88 130Q100 143 112 130" fill="none" stroke="#14213D" stroke-width="4" stroke-linecap="round"/>
+
+  <symbol id="jj-hi" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-d"/><use href="#ar-u"/><use href="#jj-coin"/><use href="#eyes"/><use href="#jj-cheek"/><use href="#smile"/></symbol>
+  <symbol id="jj-think" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-d"/><use href="#ar-d"/><use href="#jj-coin"/>
+    <g fill="none" stroke="#14213D" stroke-width="3.5" stroke-linecap="round"><path d="M66 99Q76 92 86 97"/><path d="M114 97Q124 92 134 99"/></g>
+    <use href="#eyes" transform="translate(2 -2)"/><use href="#jj-cheek" transform="translate(0 2)"/>
+    <path d="M89 136q5.5-6 11 0t11 0" fill="none" stroke="#14213D" stroke-width="4" stroke-linecap="round"/>
+    <path d="M156 74c-5 8-8 12-8 16a8 8 0 0 0 16 0c0-4-3-8-8-16z" fill="#8FB8FF" stroke="#2F6BEA" stroke-width="2.5" stroke-linejoin="round"/></symbol>
+  <symbol id="jj-done" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-u"/><use href="#ar-u"/><use href="#jj-coin"/><use href="#eyes-arc"/><use href="#jj-cheek"/>
+    <path d="M86 128Q100 154 114 128Z" fill="#14213D"/><ellipse cx="100" cy="136" rx="7" ry="4" fill="#FF8A80"/>
+    <path d="M30 34Q30 44 40 44Q30 44 30 54Q30 44 20 44Q30 44 30 34Z" fill="#F5B93A"/><path d="M172 28Q172 40 184 40Q172 40 172 52Q172 40 160 40Q172 40 172 28Z" fill="#2F6BEA"/><path d="M148 12Q148 18 154 18Q148 18 148 24Q148 18 142 18Q148 18 148 12Z" fill="#F5B93A"/></symbol>
+  <symbol id="jj-wink" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-d"/><use href="#ar-m"/><use href="#jj-coin"/>
+    <circle cx="76" cy="114" r="7" fill="#14213D"/><circle cx="78.5" cy="111.5" r="2.3" fill="#fff"/><path d="M116 118Q124 108 132 118" fill="none" stroke="#14213D" stroke-width="4.5" stroke-linecap="round"/>
+    <use href="#jj-cheek"/><use href="#smile"/>
+    <circle cx="178" cy="66" r="12" fill="#FFE7A3" stroke="#E29A14" stroke-width="3"/><circle cx="178" cy="66" r="6" fill="none" stroke="#E29A14" stroke-width="2.5"/><path d="M150 34Q150 40 156 40Q150 40 150 46Q150 40 144 40Q150 40 150 34Z" fill="#2F6BEA"/></symbol>
+  <symbol id="jj-sorry" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-d"/><use href="#ar-d"/><use href="#jj-coin"/>
+    <g fill="none" stroke="#14213D" stroke-width="3.5" stroke-linecap="round"><path d="M65 101L87 93"/><path d="M113 93L135 101"/></g>
+    <use href="#eyes" transform="translate(0 2)"/><use href="#jj-cheek" transform="translate(0 2)"/>
+    <path d="M90 133Q100 140 110 133" fill="none" stroke="#14213D" stroke-width="4" stroke-linecap="round"/>
+    <path d="M166 66c-12-8-18-14-18-21a9 9 0 0 1 18-4 9 9 0 0 1 18 4c0 7-6 13-18 21z" fill="#FF8FA3"/></symbol>
+  <symbol id="jj-cheers" viewBox="0 0 200 220"><use href="#jj-back"/><use href="#al-d"/><use href="#ar-m"/><use href="#jj-coin"/><use href="#eyes-arc"/><use href="#jj-cheek"/><use href="#smile"/>
+    <path d="M164 62h26v20a13 13 0 0 1-26 0z" fill="#EAF3FF" stroke="#2F6BEA" stroke-width="3" stroke-linejoin="round"/><path d="M164 71h26" fill="none" stroke="#2F6BEA" stroke-width="3"/>
+    <path d="M172 44l-3-10M181 42l2-11M190 47l8-6" fill="none" stroke="#F5B93A" stroke-width="3.5" stroke-linecap="round"/></symbol>
+
+  <!-- 라인 아이콘 -->
+  <g id="i-clock" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.8"/></g>
+  <g id="i-won" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l3.5 11L12 7l4.5 11L20 7"/><path d="M3 12h18"/></g>
+  <g id="i-star" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5 13.9 9l5.6.4-4.3 3.6 1.4 5.5L12 15.7l-4.6 2.8 1.4-5.5L4.5 9.4 10.1 9Z"/></g>
+  <g id="i-loop" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 1 0 17.6 16.7"/><path d="M20 5v6h-6"/></g>
+  <g id="i-arrow" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></g>
+  <g id="i-search" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></g>
+  <g id="i-calc" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></g>
+  <g id="i-cal" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></g>
+  <g id="i-ticket" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 3"/></g>
+  <g id="i-chart" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></g>
+</defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo"><svg aria-hidden="true"><use href="#jj-hi"/></svg>내가짠데이</a>
+    <nav class="nav-links" aria-label="주요 메뉴">
+      <a href="#problem">문제</a><a href="#goals">목표</a><a href="#solution">해결</a><a href="#demo">추천 예시</a><a href="#jjan">짠이</a><a href="#premium">프리미엄</a><a href="#faq">FAQ</a>
+    </nav>
+    <a href="#demo" class="btn btn-primary btn-sm">무료로 추천받기</a>
+  </div>
+</header>
+
+<main id="top">
+<!-- 1. HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">“내 예산에 맞게, 내가 짠 데이.”</span>
+      <h1>내 <span class="gt">예산 안에서</span> 오늘 먹고 놀 곳을 한 번에 짜주는 지도</h1>
+      <p class="lead">지역, 인원, 예산만 입력하면 식당, 카페, 데이트 코스를 자동 추천</p>
+      <div class="hero-cta">
+        <a href="#demo" class="btn btn-primary">무료로 추천받기 <span class="arr">→</span></a>
+        <a href="#solution" class="btn btn-ghost">어떻게 달라지나요?</a>
+      </div>
+      <div class="hero-meta"><span>가입 없이 바로 체험</span><span>식사+카페+놀거리 총액 계산</span><span>예산 초과 걱정 끝</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" role="img" aria-label="내가짠데이 앱 화면. 홍대입구, 2명, 총 40,000원 조건으로 식당 24,000원, 카페 12,000원, 무료 산책 코스를 추천해 총 36,000원">
+        <div class="screen">
+          <div class="sbar"><span>9:41</span><span>5G ▮▮▮</span></div>
+          <div class="search"><i>홍대입구</i><i>2명</i><i>총 40,000원</i></div>
+          <div class="map">
+            <svg viewBox="0 0 290 320" preserveAspectRatio="xMidYMid slice">
+              <rect width="290" height="320" fill="#EAF1FF"/>
+              <ellipse cx="232" cy="150" rx="56" ry="40" fill="#D9F3E4"/>
+              <path d="M-10 292C70 262 130 312 300 270v60H-10z" fill="#CFE3FF"/>
+              <g stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"><path d="M-10 200h310"/><path d="M92-10v340"/><path d="M188-10l26 340"/><path d="M-10 118l310 36"/></g>
+              <g stroke="#fff" stroke-width="5" fill="none"><path d="M-10 250h310"/><path d="M42-10v340"/><path d="M140-10v340"/><path d="M250-10v340"/></g>
+              <path class="route" d="M60 240C80 190 118 210 144 172S208 168 228 128" fill="none" stroke="url(#mg)" stroke-width="4.5" stroke-linecap="round"/>
+              <g font-family="Gothic A1,sans-serif" font-weight="800" font-size="12" text-anchor="middle" fill="#fff">
+                <circle cx="60" cy="240" r="14" fill="#2F6BEA" stroke="#fff" stroke-width="3"/><text x="60" y="244">1</text>
+                <circle cx="144" cy="172" r="14" fill="#8E8BFF" stroke="#fff" stroke-width="3"/><text x="144" y="176">2</text>
+                <circle cx="228" cy="128" r="14" fill="#FF6FA5" stroke="#fff" stroke-width="3"/><text x="228" y="132">3</text>
+              </g>
+            </svg>
+          </div>
+          <div class="sheet">
+            <div class="say"><svg><use href="#jj-wink"/></svg><div><b>짠! 코스 나왔어요</b>예산 4,000원이 남았어요</div></div>
+            <div class="rows">
+              <div class="r"><i class="n">1</i><span>식당</span><b>24,000원</b></div>
+              <div class="r"><i class="n">2</i><span>카페</span><b>12,000원</b></div>
+              <div class="r"><i class="n">3</i><span>무료 산책 코스</span><b>0원</b></div>
+              <div class="sum"><span>총 예상 지출</span><b>36,000원</b></div>
+            </div>
+            <div class="save">코스 저장하기</div>
+          </div>
+        </div>
+      </div>
+      <div class="glass fl f1"><small>남은 예산</small><b class="gt">+4,000원</b></div>
+      <div class="glass fl f2"><small>총 예상 지출</small><b>36,000원</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow pink">PROBLEM</span>
+      <h2>약속은 자주, 예산은 한정.<br>총비용 계산은 늘 내 몫이었어요</h2>
+      <p class="lead">누가, 어떤 상황에서, 무엇이 불편한가 — 내가짠데이는 이 질문에서 출발했습니다.</p>
+    </div>
+    <div class="prob">
+      <div class="moment">
+        <small>이용자가 마주하는 순간</small>
+        <blockquote>“오늘 둘이 <em>4만 원</em>밖에 없는데<br>어디를 가야 하지?”</blockquote>
+      </div>
+      <div class="who-box">
+        <svg role="img" aria-label="고민하는 표정의 짠이"><use href="#jj-think"/></svg>
+        <div><span class="tag">20대 사회초년생</span>
+        <p>친구와의 약속이나 데이트는 잦지만 월급과 생활비가 한정되어 있어, <b>매번 원하는 곳을 가격 걱정 없이 선택하기 어렵습니다.</b></p></div>
+      </div>
+    </div>
+    <div class="cards" style="margin-top:24px">
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg></div><h3>가격은 들어가 봐야 안다</h3><p>기존 지도 서비스에서는 맛집이나 카페를 찾은 뒤 메뉴 가격을 하나씩 직접 확인해야 해요.</p></article>
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-calc"/></svg></div><h3>총비용은 직접 계산</h3><p>식사 이후 카페와 놀거리까지 고려하면, 하루 총액을 머릿속으로 더해 보는 번거로움이 생겨요.</p></article>
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-loop"/></svg></div><h3>예산 넘으면 다시 검색</h3><p>정해진 예산 안에서 갈 수 있는 장소와 코스를 한 번에 찾을 방법이 없어 검색을 반복해요.</p></article>
+    </div>
+    <div class="core"><small>핵심 문제</small><p>한정된 예산으로 약속을 계획하는 20대 사회초년생은 장소 탐색부터 코스별 총비용 계산까지 직접 해야 합니다.</p></div>
+  </div>
+</section>
+
+<!-- 목표 -->
+<section id="goals" class="soft">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">GOAL</span>
+      <h2>찾고 계산하는 시간은 줄이고,<br><span class="gt">예산 안에서 바로 고르게</span></h2>
+      <p class="lead">한정된 예산 때문에 매번 장소를 찾고 가격을 계산하던 과정을 없애, 자기 예산 안에서 빠르게 만족스러운 선택을 하도록 돕습니다.</p>
+    </div>
+    <div class="goals">
+      <article class="goal">
+        <span class="tag">목표 1 · 선택의 과정을 줄인다</span>
+        <h3>네 단계의 약속 준비를 한 번의 입력으로</h3>
+        <div class="lanes">
+          <div class="lane b">
+            <h4>지금: 지도 앱으로 약속 잡기</h4>
+            <ol class="st"><li><i class="n">1</i>지도에서 맛집·카페 검색</li><li><i class="n">2</i>메뉴 가격 하나씩 확인</li><li><i class="n">3</i>카페·놀거리 따로 고민</li><li><i class="n">4</i>총비용 직접 계산</li></ol>
+            <div class="warn">여러 앱 이동, 예산 초과 위험</div>
+          </div>
+          <div class="lane a">
+            <h4>내가짠데이</h4>
+            <ol class="st"><li><i class="n">1</i>지역·인원·예산 입력</li><li><i class="n">2</i>예산 안의 코스 확인</li></ol>
+            <p class="tip">예산 → 지역 → 가능한 장소 → 코스 순서로, 가격을 먼저 걸러낸 결과만 보여줍니다.</p>
+          </div>
+        </div>
+      </article>
+      <article class="goal">
+        <span class="tag">목표 2 · 추천의 단위를 넓힌다</span>
+        <h3>장소 하나가 아니라 하루 소비 코스를</h3>
+        <p>맛집이나 카페 하나로 끝나지 않고, 식사부터 카페·데이트까지 이어지는 하루 전체를 예산 기준으로 조합해 추천합니다.</p>
+        <div class="shift"><span class="from">장소 추천</span><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg><span class="to">하루 소비 코스 추천</span></div>
+        <div class="receipt" role="img" aria-label="홍대입구 2명 예산 4만원 코스 예시, 총 3만6천원">
+          <div class="rt">홍대입구 · 2명 · 예산 40,000원</div>
+          <div class="row"><span>식당</span><span>24,000원</span></div>
+          <div class="row"><span>카페</span><span>12,000원</span></div>
+          <div class="row"><span>산책 코스</span><span>0원</span></div>
+          <div class="row t"><span>총 예상 지출</span><span>36,000원</span></div>
+          <div class="track"><div class="fill" style="width:90%"></div></div>
+          <div class="lft"><span>예산의 90%</span><span>4,000원 남음</span></div>
+        </div>
+      </article>
+    </div>
+    <h3 class="kpi-head">주요 지표: 사용자 여정을 따라 확인합니다</h3>
+    <div class="kpis">
+      <div class="kpi"><div class="s">1 유입</div><div class="m">월간 활성 사용자 수</div><div class="q">약속 전에 얼마나 찾아오는가</div></div>
+      <div class="kpi"><div class="s">2 사용</div><div class="m">장소·코스 추천 이용률</div><div class="q">예산을 넣고 추천까지 받는가</div></div>
+      <div class="kpi"><div class="s">3 만족</div><div class="m">장소 저장률</div><div class="q">실제로 가고 싶은 곳인가</div></div>
+      <div class="kpi"><div class="s">4 습관</div><div class="m">반복 이용률</div><div class="q">다음 약속에도 다시 여는가</div></div>
+      <div class="kpi"><div class="s">5 수익</div><div class="m">무료 → 유료 전환율</div><div class="q">AI 예산 설계가 돈을 낼 가치가 있는가</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. SOLUTION + 기대효과 -->
+<section id="solution">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">SOLUTION</span>
+      <h2>아끼는 것이 아니라,<br><span class="hl">예산 안에서 더 잘 즐기게</span> 합니다</h2>
+      <p class="lead">가격을 검색하는 서비스가 아니라, 예산으로 결정하는 서비스입니다.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-card before">
+        <span class="flow-label">Before</span>
+        <h3>예산 걱정하며 고민하는 지금</h3>
+        <div class="steps-b"><span>지도앱 검색</span><i>→</i><span>가격 확인</span><i>→</i><span>직접 계산</span><i>→</i><span>다시 검색</span></div>
+        <div class="flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.6 17.1a1.8 1.8 0 0 0 1.6 2.7h15.6a1.8 1.8 0 0 0 1.6-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>예산 초과 걱정</div>
+      </div>
+      <div class="conn"><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></div>
+      <div class="flow-card center-card">
+        <span class="flow-label">내가짠데이가 정리합니다</span>
+        <h3>지역 · 인원 · 예산 입력</h3>
+        <div class="inputs"><span>홍대입구</span><span>2명</span><span>40,000원</span></div>
+        <div class="down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></div>
+        <div class="out"><div><span>식당</span><span>24,000원</span></div><div><span>카페</span><span>12,000원</span></div><div class="tot"><span>총 예상 지출</span><span>36,000원</span></div></div>
+      </div>
+      <div class="conn"><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></div>
+      <div class="flow-card after">
+        <span class="flow-label">After</span>
+        <h3>달라지는 경험</h3>
+        <div class="after-grid">
+          <div><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>시간 절약</div>
+          <div><svg viewBox="0 0 24 24"><use href="#i-won"/></svg>예산 관리</div>
+          <div><svg viewBox="0 0 24 24"><use href="#i-star"/></svg>선택 만족도</div>
+          <div><svg viewBox="0 0 24 24"><use href="#i-loop"/></svg>반복 이용</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="thesis"><span class="old">가격 검색 서비스</span><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg><span class="gt">예산 기반 의사결정 서비스</span></div>
+
+    <div class="effects">
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg></div><h3>시간 절약</h3><ul><li>여러 지도 앱·SNS·블로그를 오가며 비교하는 시간을 줄일 수 있어요</li><li>예산만 입력하면 가능한 장소와 코스를 한 번에 확인할 수 있어요</li></ul></article>
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-won"/></svg></div><h3>예산 초과 방지</h3><ul><li>식당 하나가 아니라 식사+카페+놀거리를 더한 전체 예상 비용을 보여줘요</li><li>약속이 끝난 뒤 지출이 예상보다 커지는 상황을 줄여줘요</li></ul></article>
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-star"/></svg></div><h3>소비 선택의 질 향상</h3><ul><li>가장 싼 곳이 아니라 음식·분위기·이동거리·목적을 고려한 조합을 제안해요</li><li>“아끼기 위한 포기”가 아니라 “예산 안에서 더 잘 고르는 경험”이에요</li></ul></article>
+      <article class="card"><div class="emo"><svg viewBox="0 0 24 24"><use href="#i-loop"/></svg></div><h3>지속 가능한 이용</h3><ul><li>나의 예산과 소비 패턴을 기준으로 반복적으로 장소를 탐색할 수 있어요</li><li>장소 저장·코스 추천으로 약속이 있을 때마다 다시 찾게 돼요</li></ul></article>
+    </div>
+  </div>
+</section>
+
+<!-- 4. RECOMMENDATION EXAMPLE -->
+<section id="demo" class="soft">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">추천 예시</span>
+      <h2>직접 움직여 보세요.<br>예산이 바뀌면 코스도 바뀝니다</h2>
+      <p class="lead">지역, 인원, 예산을 바꾸면 짠이가 예산에 맞는 코스를 바로 다시 짜요.</p>
+    </div>
+    <div class="demo">
+      <div class="panel">
+        <div class="field"><div class="lab">어디서 놀까요?</div><div class="chips" id="areas"></div></div>
+        <div class="field"><div class="lab">몇 명이서?</div>
+          <div class="stepper"><button id="minus" aria-label="인원 줄이기">−</button><output id="people">2명</output><button id="plus" aria-label="인원 늘리기">+</button></div></div>
+        <div class="field"><label for="budget">총 예산 <b id="budgetLabel">40,000원</b></label>
+          <input type="range" id="budget" min="10000" max="200000" step="5000" value="40000"></div>
+        <a href="#final" class="btn btn-primary" style="width:100%">이 코스 저장하기 <span class="arr">→</span></a>
+      </div>
+      <div class="panel result" aria-live="polite">
+        <div class="result-head"><svg aria-hidden="true"><use id="resJjan" href="#jj-wink"/></svg><div class="bubble"><b id="resSay">짠! 코스 나왔어요</b><span id="resSub"></span></div></div>
+        <div class="tl" id="tl"></div>
+        <div class="total">
+          <div class="row"><span id="resTitle">총 예상 지출</span><b id="totalLabel">0원</b></div>
+          <div class="track"><div class="fill" id="fill" style="width:0"></div></div>
+        </div>
+        <p class="note">※ 데모용 예시 장소와 가격입니다</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 짠이 -->
+<section id="jjan">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow gold">공식 캐릭터</span>
+      <h2>예산을 넘겨도 혼내지 않는<br>동전 친구, 짠이</h2>
+      <p class="lead">동그란 동전 몸은 한정된 예산을, 머리 위 파란 핀은 지도와 장소 추천을 뜻해요.</p>
+    </div>
+    <div class="jj">
+      <div class="jj-hero">
+        <svg viewBox="0 0 200 220" role="img" aria-label="손을 흔드는 짠이"><use href="#jj-hi"/></svg>
+        <h3>짠이</h3><p>내 예산에 맞는 코스를 짜주는 동전 친구</p>
+      </div>
+      <div>
+        <div class="means">
+          <div><b>짜다 (계획)</b><span>예산에 맞춰 코스를 짜요</span></div>
+          <div><b>짜다 (절약)</b><span>한정된 예산을 알뜰하게 써요</span></div>
+          <div><b>짠! (건배)</b><span>약속의 순간에는 짠!</span></div>
+        </div>
+        <div class="faces">
+          <div class="face"><svg><use href="#jj-hi"/></svg><small>예산을 물어볼 때</small><q>얼마 쓸 거예요?</q></div>
+          <div class="face"><svg><use href="#jj-think"/></svg><small>장소를 찾는 중</small><q>예산 안에서 찾는 중…</q></div>
+          <div class="face"><svg><use href="#jj-done"/></svg><small>코스를 보여줄 때</small><q>짠! 코스 나왔어요</q></div>
+          <div class="face"><svg><use href="#jj-wink"/></svg><small>예산이 남았을 때</small><q>4,000원 남았어요!</q></div>
+          <div class="face"><svg><use href="#jj-sorry"/></svg><small>예산을 넘겼을 때</small><q>괜찮아요, 다음엔 딱 맞게</q></div>
+          <div class="face"><svg><use href="#jj-cheers"/></svg><small>약속을 저장했을 때</small><q>잘 다녀오세요, 짠!</q></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. PREMIUM -->
+<section id="premium">
+  <div class="wrap">
+    <div class="premium-box">
+      <span class="eyebrow">PREMIUM</span>
+      <h2>AI 예산 플래너로<br>한 달 노는 돈까지 <span class="gt">똑똑하게</span></h2>
+      <p class="lead">오늘 하루를 넘어, 월 단위 데이트·모임 예산을 설계하고 관리해 드려요.</p>
+      <div class="pgrid">
+        <div>
+          <div class="feats">
+            <div class="dglass"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><h3>월간 예산 플래닝</h3><p>이번 달 놀 돈을 정하면 주차별 코스를 자동으로 배분해요.</p></div>
+            <div class="dglass"><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><h3>취향 학습 추천</h3><p>다녀온 곳의 평가를 학습해 갈수록 나다운 코스가 돼요.</p></div>
+            <div class="dglass"><svg viewBox="0 0 24 24"><use href="#i-ticket"/></svg><h3>제휴 할인 자동 적용</h3><p>쿠폰과 제휴 혜택을 반영해 같은 예산으로 더 멀리.</p></div>
+            <div class="dglass"><svg viewBox="0 0 24 24"><use href="#i-chart"/></svg><h3>지출 리포트</h3><p>어디에 얼마 썼는지, 다음 달엔 얼마면 되는지 한눈에.</p></div>
+          </div>
+          <div class="dglass chat" style="margin-top:16px">
+            <div class="msg me">이번 달 데이트 예산 30만원인데 4번 만나고 싶어</div>
+            <div class="msg ai"><svg aria-hidden="true"><use href="#jj-done"/></svg><span>짠! 회당 7만원 코스 3번, 기념일 9만원 코스 1번으로 짰어요. 첫 주는 홍대 덮밥 코스 어때요?</span></div>
+          </div>
+        </div>
+        <div class="dglass price">
+          <h3>프리미엄 플래너 (예정)</h3>
+          <div class="amt">990<small>원 / 월</small></div>
+          <p style="color:rgba(255,255,255,.62);font-size:14.5px">한 달 990원으로 약속 예산을 통째로 관리해요</p>
+          <ul><li>무제한 AI 코스 생성</li><li>월간 예산 플래너 &amp; 리포트</li><li>제휴 매장 할인 자동 적용</li><li>커플·모임 공동 예산 관리</li><li>광고 없는 깔끔한 지도</li></ul>
+          <a href="#final" class="btn btn-primary">첫 달 무료로 시작하기</a>
+          <div class="fine">언제든 해지 가능 · 기본 추천은 계속 무료</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. REVIEWS -->
+<section id="reviews" class="soft">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow pink">REVIEWS</span>
+      <h2>예산 걱정이 사라지니<br>만남이 가벼워졌어요</h2>
+      <p class="lead">※ 서비스 기획 단계의 예시 후기입니다.</p>
+    </div>
+    <div class="cards">
+      <article class="card review"><div class="stars">★★★★★</div><p>“둘이 4만원으로 하루 코스가 뚝딱 나와서 놀랐어요. 이제 계산할 때 눈치 안 봐도 돼요.”</p><div class="who"><div class="av">지</div><div><b>지○ 님</b><small>사회초년생 · 연애 2년차</small></div></div></article>
+      <article class="card review"><div class="stars">★★★★★</div><p>“1인 3만원으로 맞춰 달라고 했더니 2차 카페까지 동선 맞춰서 추천해 주더라고요. 총무 필수 앱.”</p><div class="who"><div class="av">민</div><div><b>민○ 님</b><small>직장인 · 팀 총무</small></div></div></article>
+      <article class="card review"><div class="stars">★★★★★</div><p>“예산을 넘겨도 짠이가 혼내지 않고 다음 코스를 짜줘서 좋아요. 아끼는 게 아니라 잘 고르는 느낌.”</p><div class="who"><div class="av">서</div><div><b>서○ 님</b><small>프리랜서 · 친구 모임</small></div></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- 7. FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="center"><span class="eyebrow">FAQ</span><h2>자주 묻는 질문</h2></div>
+    <div class="faq">
+      <details open><summary>정말 무료인가요?</summary><p>네. 기본 코스 추천은 횟수 제한 없이 무료예요. 월간 예산 플래너, 지출 리포트 같은 고급 기능만 프리미엄으로 제공할 예정입니다.</p></details>
+      <details><summary>기존 지도 앱과 무엇이 다른가요?</summary><p>지도 앱은 장소를 찾은 뒤 가격을 하나씩 확인하고 직접 더해야 해요. 내가짠데이는 예산을 먼저 입력받아, 식사+카페+놀거리의 총 예상 지출이 예산 안에 들어오는 코스만 보여줍니다.</p></details>
+      <details><summary>무조건 싼 곳만 추천하나요?</summary><p>아니요. 가장 싼 곳이 아니라 음식, 분위기, 이동거리, 약속 목적을 고려해 예산 안에서 가장 만족스러운 조합을 제안해요.</p></details>
+      <details><summary>데이트 말고 다른 모임에도 쓸 수 있나요?</summary><p>물론이죠. 혼밥, 친구 모임, 가족 나들이, 팀 회식까지 인원과 예산만 바꾸면 상황에 맞는 코스를 짜 드려요.</p></details>
+      <details><summary>추천 코스가 마음에 안 들면요?</summary><p>코스 전체를 다시 짜거나, 마음에 안 드는 한 곳만 교체할 수 있어요. 교체해도 총액은 예산 안에서 유지됩니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- 8. FINAL CTA -->
+<section id="final">
+  <div class="wrap">
+    <div class="final-box">
+      <svg viewBox="0 0 200 220" role="img" aria-label="건배하는 짠이"><use href="#jj-cheers"/></svg>
+      <h2>얼마 쓸 거예요?<br>코스는 짠이가 짤게요</h2>
+      <p>지역 · 인원 · 예산, 세 가지면 충분합니다.</p>
+      <a href="#demo" class="btn btn-white">무료로 추천받기 <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b style="color:var(--ink)">내가짠데이</b> · 정해진 예산으로 짜는, 알찬 하루<br>© 2026 내가짠데이. 서비스 기획 단계의 소개 페이지입니다.</div>
+    <nav aria-label="바로가기"><a href="#problem">문제 정의</a><a href="#goals">목표</a><a href="#solution">기대효과</a><a href="#demo">추천 예시</a><a href="#jjan">짠이</a><a href="#faq">FAQ</a></nav>
+  </div>
+</footer>
+
+<script>
+const nav=document.getElementById('nav');
+const onScroll=()=>nav.classList.toggle('scrolled',scrollY>12);
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+// 페이지 내 이동: 프레임 안에서도 동작하도록 직접 스크롤
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;e.preventDefault();
+  const t=document.getElementById(a.getAttribute('href').slice(1));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
+
+// 예산 코스 데모 (가격은 1인 기준, 예시 데이터)
+const DATA={
+  '홍대입구':{food:[{n:'홍대 즉석떡볶이',c:'분식',p:8000},{n:'연남 덮밥집',c:'일식 · 덮밥',p:12000},{n:'비스트로 연',c:'양식 · 코스',p:36000}],
+          cafe:[{n:'경의선 커피',c:'테이크아웃 커피',p:3000},{n:'카페 책과밤',c:'북카페 · 디저트',p:6000},{n:'디저트 아틀리에',c:'디저트 플레이트',p:13000}],
+          play:[{n:'경의선숲길 산책',c:'무료 산책 코스',p:0},{n:'인생네컷 & 오락실',c:'포토 · 게임',p:7000},{n:'도자기 원데이 클래스',c:'원데이 클래스',p:32000}]},
+  '성수':{food:[{n:'성수 손칼국수',c:'한식 · 칼국수',p:9000},{n:'온기파스타',c:'양식 · 파스타',p:16000},{n:'스시 담',c:'일식 · 런치 오마카세',p:38000}],
+          cafe:[{n:'골목커피',c:'테이크아웃 커피',p:3500},{n:'카페 느린오후',c:'디저트 카페',p:7000},{n:'루프탑 무드',c:'루프탑 · 시그니처 음료',p:13000}],
+          play:[{n:'서울숲 산책',c:'무료 산책 코스',p:0},{n:'팝업 & 소품샵 투어',c:'쇼핑 · 구경',p:8000},{n:'향수 만들기 클래스',c:'원데이 클래스',p:35000}]},
+  '강남':{food:[{n:'강남 김치찌개',c:'한식 · 찌개',p:10000},{n:'쌀국수 포레',c:'아시안',p:15000},{n:'한우 다이닝 결',c:'한식 · 코스',p:45000}],
+          cafe:[{n:'역삼 에스프레소바',c:'에스프레소',p:3500},{n:'카페 화이트룸',c:'브런치 카페',p:8000},{n:'호텔 라운지 티',c:'애프터눈 티',p:18000}],
+          play:[{n:'별마당 도서관 구경',c:'무료 실내 코스',p:0},{n:'영화 한 편',c:'영화관',p:14000},{n:'와인 테이스팅 클래스',c:'원데이 클래스',p:40000}]},
+  '부산 전포':{food:[{n:'전포 돼지국밥',c:'한식 · 국밥',p:9000},{n:'전포 수제버거',c:'양식 · 버거',p:13000},{n:'해산물 비스트로 파도',c:'씨푸드 다이닝',p:34000}],
+          cafe:[{n:'전리단길 커피',c:'테이크아웃 커피',p:3500},{n:'카페 모래',c:'디저트 카페',p:7000},{n:'오션뷰 라운지',c:'뷰 카페',p:11000}],
+          play:[{n:'전포 카페거리 산책',c:'무료 산책 코스',p:0},{n:'보드게임 카페',c:'실내 · 게임',p:6000},{n:'요트 선셋 투어',c:'액티비티',p:30000}]}
+};
+const KIND=['식당','카페','놀거리'];
+const state={area:'홍대입구',people:2,budget:40000};
+const $=id=>document.getElementById(id);
+const won=n=>n.toLocaleString('ko-KR')+'원';
+
+function plan(){
+  const d=DATA[state.area],per=state.budget/state.people;let best=null;
+  for(const f of d.food)for(const c of d.cafe)for(const a of d.play){
+    const t=f.p+c.p+a.p;if(t<=per&&(!best||t>=best.t))best={t,items:[f,c,a]};
+  }
+  if(best)return{...best,over:false};
+  const items=[d.food[0],d.cafe[0],d.play[0]];
+  return{t:items.reduce((s,i)=>s+i.p,0),items,over:true};
+}
+function render(){
+  const r=plan(),total=r.t*state.people,left=state.budget-total;
+  $('people').textContent=state.people+'명';
+  $('budgetLabel').textContent=won(state.budget);
+  $('resTitle').textContent=`${state.area} · ${state.people}명 총 예상 지출`;
+  $('resJjan').setAttribute('href',r.over?'#jj-sorry':left>0?'#jj-wink':'#jj-done');
+  $('resSay').textContent=r.over?'괜찮아요, 조금만 더 맞춰 볼까요?':left>0?'짠! 코스 나왔어요':'짠! 예산에 딱 맞췄어요';
+  $('resSub').textContent=r.over?`가장 알뜰한 코스도 ${won(-left)} 넘어요. 예산을 조금 올려 보세요`:left>0?`예산 ${won(left)}이 남았어요`:'남김없이 알차게 쓰는 코스예요';
+  $('tl').innerHTML=r.items.map((it,i)=>`<div class="tl-item"><i class="n" style="font-style:normal">${i+1}</i><div class="t"><small>${KIND[i]}</small><b>${it.n}</b><span>${it.c}</span></div><div class="pr">${it.p?won(it.p*state.people):'0원'}<small>${it.p?'1인 '+won(it.p):'무료'}</small></div></div>`).join('');
+  $('totalLabel').textContent=won(total);
+  $('fill').style.width=Math.min(total/state.budget*100,100)+'%';
+}
+$('areas').innerHTML=Object.keys(DATA).map(a=>`<button class="chip${a===state.area?' on':''}" data-a="${a}" id="area-${a.replace(/\s/g,'')}">${a}</button>`).join('');
+$('areas').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;state.area=b.dataset.a;
+  document.querySelectorAll('#areas .chip').forEach(c=>c.classList.toggle('on',c===b));render()});
+$('minus').onclick=()=>{state.people=Math.max(1,state.people-1);render()};
+$('plus').onclick=()=>{state.people=Math.min(8,state.people+1);render()};
+$('budget').oninput=e=>{state.budget=+e.target.value;render()};
+render();
+</script>
+</body>
+</html>

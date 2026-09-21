@@ -1,0 +1,120 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "regions": [
+    {
+      "slug": "seoul",
+      "name": "서울특별시",
+      "level": 1,
+      "parent": null,
+      "center_lat": 37.5665,
+      "center_lng": 126.978,
+      "radius_m": 15000,
+      "area_code": "1",
+      "status": "active",
+      "search_keywords": []
+    },
+    {
+      "slug": "seoul-mapo",
+      "name": "마포구",
+      "level": 2,
+      "parent": "seoul",
+      "center_lat": 37.5638,
+      "center_lng": 126.9084,
+      "radius_m": 4000,
+      "area_code": "1:13",
+      "status": "active",
+      "search_keywords": []
+    },
+    {
+      "slug": "seoul-hongdae",
+      "name": "홍대입구",
+      "level": 3,
+      "parent": "seoul-mapo",
+      "center_lat": 37.5572,
+      "center_lng": 126.9245,
+      "radius_m": 1200,
+      "area_code": "1:13",
+      "status": "active",
+      "search_keywords": [
+        "홍대 맛집",
+        "홍대 카페",
+        "홍대 술집",
+        "홍대 가볼만한곳",
+        "홍대 데이트"
+      ]
+    },
+    {
+      "slug": "seoul-seongdong",
+      "name": "성동구",
+      "level": 2,
+      "parent": "seoul",
+      "center_lat": 37.5634,
+      "center_lng": 127.0369,
+      "radius_m": 4000,
+      "area_code": "1:16",
+      "status": "active",
+      "search_keywords": []
+    },
+    {
+      "slug": "seoul-seongsu",
+      "name": "성수",
+      "level": 3,
+      "parent": "seoul-seongdong",
+      "center_lat": 37.5446,
+      "center_lng": 127.0559,
+      "radius_m": 1200,
+      "area_code": "1:16",
+      "status": "active",
+      "search_keywords": [
+        "성수 맛집",
+        "성수 카페",
+        "성수 술집",
+        "성수 가볼만한곳",
+        "성수 데이트"
+      ]
+    },
+    {
+      "slug": "busan",
+      "name": "부산광역시",
+      "level": 1,
+      "parent": null,
+      "center_lat": 35.1796,
+      "center_lng": 129.0756,
+      "radius_m": 18000,
+      "area_code": "6",
+      "status": "active",
+      "search_keywords": []
+    },
+    {
+      "slug": "busan-busanjin",
+      "name": "부산진구",
+      "level": 2,
+      "parent": "busan",
+      "center_lat": 35.1631,
+      "center_lng": 129.0532,
+      "radius_m": 4000,
+      "area_code": "6:7",
+      "status": "active",
+      "search_keywords": []
+    },
+    {
+      "slug": "busan-seomyeon",
+      "name": "서면",
+      "level": 3,
+      "parent": "busan-busanjin",
+      "center_lat": 35.1578,
+      "center_lng": 129.06,
+      "radius_m": 1200,
+      "area_code": "6:7",
+      "status": "active",
+      "search_keywords": [
+        "서면 맛집",
+        "서면 카페",
+        "서면 술집",
+        "서면 가볼만한곳",
+        "서면 데이트"
+      ]
+    }
+  ]
+}

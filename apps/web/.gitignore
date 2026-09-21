@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+src/lib/api/schema.gen.ts
+
+# playwright
+/playwright-report/
+/test-results/

@@ -1,0 +1,48 @@
+import { z } from "zod";
+import { isPast } from "./meet-time";
+
+export const planSchema = z
+  .object({
+    region: z.string().min(1, "어디서 놀지 골라 주세요"),
+    purpose: z.string().min(1, "어떤 약속인지 골라 주세요"),
+    party_size: z.number().int().min(1, "최소 1명이에요").max(20, "20명까지 짤 수 있어요"),
+    budget_total: z.number().int().min(5000, "예산은 5,000원부터예요").max(5_000_000, "예산이 너무 커요"),
+    liked_tags: z.array(z.string()),
+    disliked_tags: z.array(z.string()),
+    transport: z.enum(["walk", "transit", "car"]),
+    /** efficient = 가깝고 알뜰하게 · fun = 재미 우선 */
+    style: z.enum(["efficient", "fun"]),
+    /** "" = 오늘, 아니면 "YYYY-MM-DD" */
+    meet_day: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/, "날짜 형식을 확인해 주세요"),
+    /** "" = 지금 출발(오늘만), 아니면 "HH:mm" */
+    start_time: z.string().regex(/^$|^([01]\d|2[0-3]):[0-5]\d$/, "시간 형식을 확인해 주세요"),
+    /** 함께 보내는 시간(분). null = 짠이에게 맡기기 */
+    duration_min: z.number().int().min(60).max(960).nullable(),
+  })
+  // 지난 시각으로 코스를 짜면 영업시간·혼잡도 계산이 전부 틀어진다
+  .refine((v) => !isPast(v, new Date()), { path: ["start_time"], message: "이미 지난 시간이에요. 시각을 다시 골라 주세요" });
+
+export type PlanValues = z.infer<typeof planSchema>;
+
+export const PLAN_DEFAULTS: PlanValues = {
+  region: "",
+  purpose: "",
+  party_size: 2,
+  budget_total: 40000,
+  liked_tags: [],
+  disliked_tags: [],
+  transport: "walk",
+  style: "efficient",
+  meet_day: "",
+  start_time: "",
+  duration_min: null,
+};
+
+export const STEPS = [
+  { key: "region", title: "지역", question: "어디서 놀까요?", fields: ["region"] },
+  { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose"] },
+  { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "meet_day", "start_time", "duration_min"] },
+  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "liked_tags", "disliked_tags", "transport"] },
+] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
+
+export type StepKey = (typeof STEPS)[number]["key"];

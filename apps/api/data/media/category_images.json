@@ -1,0 +1,254 @@
+{
+  "food": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Korean_food_8.jpg/960px-Korean_food_8.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Korean_food_8.jpg",
+    "title": "Korean food 8",
+    "author": "IGE",
+    "license": "CC BY-SA 3.0"
+  },
+  "food.korean": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Korean.food-Bibimbap-02.jpg/960px-Korean.food-Bibimbap-02.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Korean.food-Bibimbap-02.jpg",
+    "title": "Korean.food-Bibimbap-02",
+    "author": "abex",
+    "license": "CC BY-SA 2.0"
+  },
+  "food.noodle": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Korean.noodle-Kalguksu-01.jpg/960px-Korean.noodle-Kalguksu-01.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Korean.noodle-Kalguksu-01.jpg",
+    "title": "Korean.noodle-Kalguksu-01",
+    "author": "jslander",
+    "license": "CC BY 2.0"
+  },
+  "food.japanese": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Sashimi_of_S%C3%A3o_Paulo.jpg/960px-Sashimi_of_S%C3%A3o_Paulo.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Sashimi_of_S%C3%A3o_Paulo.jpg",
+    "title": "Sashimi of São Paulo",
+    "author": "Wilfredor",
+    "license": "CC BY-SA 4.0"
+  },
+  "food.chinese": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Jajangmyeon_by_KFoodaddict.jpg/960px-Jajangmyeon_by_KFoodaddict.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Jajangmyeon_by_KFoodaddict.jpg",
+    "title": "Jajangmyeon by KFoodaddict",
+    "author": "KFoodaddict",
+    "license": "CC BY 2.0"
+  },
+  "food.western": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/A_plate_of_red_sauce_pasta.jpg/960px-A_plate_of_red_sauce_pasta.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:A_plate_of_red_sauce_pasta.jpg",
+    "title": "A plate of red sauce pasta",
+    "author": "Rocky Masum",
+    "license": "CC BY-SA 4.0"
+  },
+  "food.asian": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Pad_Thai_with_Pork_-_Unithai.jpg/960px-Pad_Thai_with_Pork_-_Unithai.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Pad_Thai_with_Pork_-_Unithai.jpg",
+    "title": "Pad Thai with Pork - Unithai",
+    "author": "Andy Li",
+    "license": "CC0"
+  },
+  "food.bbq": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Korean.cuisine-Samgyeopsal-01.jpg/960px-Korean.cuisine-Samgyeopsal-01.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Korean.cuisine-Samgyeopsal-01.jpg",
+    "title": "Korean.cuisine-Samgyeopsal-01",
+    "author": "hellochris",
+    "license": "CC BY 2.0"
+  },
+  "food.snack": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Tteokbokki_Dukki_Berlin.jpg/960px-Tteokbokki_Dukki_Berlin.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Tteokbokki_Dukki_Berlin.jpg",
+    "title": "Tteokbokki Dukki Berlin",
+    "author": "Benreis",
+    "license": "CC BY-SA 4.0"
+  },
+  "cafe": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Matcha_tea_latte_with_rosetta_latte_art.jpg/960px-Matcha_tea_latte_with_rosetta_latte_art.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Matcha_tea_latte_with_rosetta_latte_art.jpg",
+    "title": "Matcha tea latte with rosetta latte art",
+    "author": "Irvan Ary Maulana",
+    "license": "CC BY-SA 4.0"
+  },
+  "cafe.roastery": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Roasted_coffee_beans_on_the_surface._01.jpg/960px-Roasted_coffee_beans_on_the_surface._01.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans_on_the_surface._01.jpg",
+    "title": "Roasted coffee beans on the surface. 01",
+    "author": "A S M Jobaer",
+    "license": "CC BY-SA 4.0"
+  },
+  "dessert": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Panasonic%2C_IFA_2018%2C_Berlin_%28P1070153%29.jpg/960px-Panasonic%2C_IFA_2018%2C_Berlin_%28P1070153%29.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Panasonic%2C_IFA_2018%2C_Berlin_%28P1070153%29.jpg",
+    "title": "Panasonic, IFA 2018, Berlin (P1070153)",
+    "author": "Matti Blume",
+    "license": "CC BY-SA 4.0"
+  },
+  "dessert.bakery": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Sliced_Wheat_Bread_National_Bakery_Ooty_Aug25_A7CR_07148.jpg/960px-Sliced_Wheat_Bread_National_Bakery_Ooty_Aug25_A7CR_07148.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Sliced_Wheat_Bread_National_Bakery_Ooty_Aug25_A7CR_07148.jpg",
+    "title": "Sliced Wheat Bread National Bakery Ooty Aug25 A7CR 07148",
+    "author": "Timothy A. Gonsalves",
+    "license": "CC BY-SA 4.0"
+  },
+  "dessert.icecream": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Crumble_and_ice_cream_at_Black_Horse_Inn%2C_Nuthurst%2C_West_Sussex%2C_England.jpg/960px-Crumble_and_ice_cream_at_Black_Horse_Inn%2C_Nuthurst%2C_West_Sussex%2C_England.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Crumble_and_ice_cream_at_Black_Horse_Inn%2C_Nuthurst%2C_West_Sussex%2C_England.jpg",
+    "title": "Crumble and ice cream at Black Horse Inn, Nuthurst, West Sus",
+    "author": "Acabashi",
+    "license": "CC BY-SA 4.0"
+  },
+  "dessert.bingsu": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Patbingsu_3.jpg/960px-Patbingsu_3.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Patbingsu_3.jpg",
+    "title": "Patbingsu 3",
+    "author": "tookapic",
+    "license": "CC0"
+  },
+  "bar": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Interior_of_bar_Lupin_Ginza.jpg/960px-Interior_of_bar_Lupin_Ginza.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Interior_of_bar_Lupin_Ginza.jpg",
+    "title": "Interior of bar Lupin Ginza",
+    "author": "Araisyohei",
+    "license": "CC BY 4.0"
+  },
+  "bar.pub": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Beer_bottles_2018_G1.jpg/960px-Beer_bottles_2018_G1.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Beer_bottles_2018_G1.jpg",
+    "title": "Beer bottles 2018 G1",
+    "author": "George Chernilevsky",
+    "license": "Public domain"
+  },
+  "bar.wine": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Wine_glass5275.jpg/960px-Wine_glass5275.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Wine_glass5275.jpg",
+    "title": "Wine glass5275",
+    "author": "Itu",
+    "license": "CC BY-SA 4.0"
+  },
+  "bar.cocktail": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Welcome_cocktails_on_Fiji_Airways_910.jpg/960px-Welcome_cocktails_on_Fiji_Airways_910.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Welcome_cocktails_on_Fiji_Airways_910.jpg",
+    "title": "Welcome cocktails on Fiji Airways 910",
+    "author": "Grendelkhan",
+    "license": "CC BY-SA 3.0"
+  },
+  "bar.izakaya": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Quality_izakaya_in_Ebisu_7.jpg/960px-Quality_izakaya_in_Ebisu_7.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Quality_izakaya_in_Ebisu_7.jpg",
+    "title": "Quality izakaya in Ebisu 7",
+    "author": "Syced",
+    "license": "CC0"
+  },
+  "bar.pocha": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/2015%EB%85%84_12%EC%9B%94_%EA%B2%BD%EA%B8%B0%EB%8F%84_%EA%B3%BC%EC%B2%9C%EC%8B%9C_20151211_DSC05690.JPG/960px-2015%EB%85%84_12%EC%9B%94_%EA%B2%BD%EA%B8%B0%EB%8F%84_%EA%B3%BC%EC%B2%9C%EC%8B%9C_20151211_DSC05690.JPG",
+    "page_url": "https://commons.wikimedia.org/wiki/File:2015%EB%85%84_12%EC%9B%94_%EA%B2%BD%EA%B8%B0%EB%8F%84_%EA%B3%BC%EC%B2%9C%EC%8B%9C_20151211_DSC05690.JPG",
+    "title": "2015년 12월 경기도 과천시 20151211 DSC05690",
+    "author": "최광모",
+    "license": "CC0"
+  },
+  "bar.makgeolli": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Makgeolli_4.jpg/960px-Makgeolli_4.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Makgeolli_4.jpg",
+    "title": "Makgeolli 4",
+    "author": "jinho kim",
+    "license": "CC0"
+  },
+  "activity": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/A_Claw_Crane_Shop_on_Shuitian_St._in_Hsinchu_City.jpg/960px-A_Claw_Crane_Shop_on_Shuitian_St._in_Hsinchu_City.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:A_Claw_Crane_Shop_on_Shuitian_St._in_Hsinchu_City.jpg",
+    "title": "A Claw Crane Shop on Shuitian St. in Hsinchu City",
+    "author": "T Gordon Cheng",
+    "license": "CC BY-SA 4.0"
+  },
+  "activity.arcade": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Clacton_Pier%2C_claw_crane.jpg/960px-Clacton_Pier%2C_claw_crane.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Clacton_Pier%2C_claw_crane.jpg",
+    "title": "Clacton Pier, claw crane",
+    "author": "Rwendland",
+    "license": "CC BY-SA 4.0"
+  },
+  "activity.boardgame": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Spielfiguren_%28surreal%29_--_2021_--_8820.jpg/960px-Spielfiguren_%28surreal%29_--_2021_--_8820.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Spielfiguren_%28surreal%29_--_2021_--_8820.jpg",
+    "title": "Spielfiguren (surreal) -- 2021 -- 8820",
+    "author": "Dietmar Rabich",
+    "license": "CC BY-SA 4.0"
+  },
+  "activity.sports": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Ch%C3%A2teau_de_Malmaison_-_Salle_de_billard_001.jpg/960px-Ch%C3%A2teau_de_Malmaison_-_Salle_de_billard_001.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Ch%C3%A2teau_de_Malmaison_-_Salle_de_billard_001.jpg",
+    "title": "Château de Malmaison - Salle de billard 001",
+    "author": "Moonik",
+    "license": "CC BY-SA 3.0"
+  },
+  "activity.karaoke": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Microphone_on_a_karaoke_night_%28Unsplash%29.jpg/960px-Microphone_on_a_karaoke_night_%28Unsplash%29.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Microphone_on_a_karaoke_night_%28Unsplash%29.jpg",
+    "title": "Microphone on a karaoke night (Unsplash)",
+    "author": "Kane Reinholdtsen",
+    "license": "CC0"
+  },
+  "culture": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg/960px-Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg",
+    "title": "Interior of Christchurch Art Gallery, New Zealand 02",
+    "author": "Michal Klajban",
+    "license": "CC BY-SA 4.0"
+  },
+  "culture.museum": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Gongju_National_Museum_01.jpg/960px-Gongju_National_Museum_01.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Gongju_National_Museum_01.jpg",
+    "title": "Gongju National Museum 01",
+    "author": "Bernard Gagnon",
+    "license": "CC0"
+  },
+  "culture.gallery": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg/960px-Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Interior_of_Christchurch_Art_Gallery%2C_New_Zealand_02.jpg",
+    "title": "Interior of Christchurch Art Gallery, New Zealand 02",
+    "author": "Michal Klajban",
+    "license": "CC BY-SA 4.0"
+  },
+  "culture.festival": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/2023_Lotus_Lantern_Festival_01.jpg/960px-2023_Lotus_Lantern_Festival_01.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:2023_Lotus_Lantern_Festival_01.jpg",
+    "title": "2023 Lotus Lantern Festival 01",
+    "author": "Republic of Korea (korea.net)",
+    "license": "CC BY-SA 2.0"
+  },
+  "attraction": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Bukchon-ro_11-gil_street_with_hanok_houses_at_blue_hour_in_Bukchon_Hanok_Village_Seoul.jpg/960px-Bukchon-ro_11-gil_street_with_hanok_houses_at_blue_hour_in_Bukchon_Hanok_Village_Seoul.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Bukchon-ro_11-gil_street_with_hanok_houses_at_blue_hour_in_Bukchon_Hanok_Village_Seoul.jpg",
+    "title": "Bukchon-ro 11-gil street with hanok houses at blue hour in B",
+    "author": "Basile Morin",
+    "license": "CC BY-SA 4.0"
+  },
+  "attraction.park": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Olympic_Park_Seoul.jpg/960px-Olympic_Park_Seoul.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Olympic_Park_Seoul.jpg",
+    "title": "Olympic Park Seoul",
+    "author": "Silas Low",
+    "license": "CC BY-SA 4.0"
+  },
+  "attraction.market": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Gwangjang_Market%2C_Seoul_02.jpg/960px-Gwangjang_Market%2C_Seoul_02.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Gwangjang_Market%2C_Seoul_02.jpg",
+    "title": "Gwangjang Market, Seoul 02",
+    "author": "Bgag",
+    "license": "CC0"
+  },
+  "attraction.street": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Bukchon-ro_11-gil_street_with_hanok_houses_in_Bukchon_Hanok_Village_Seoul.jpg/960px-Bukchon-ro_11-gil_street_with_hanok_houses_in_Bukchon_Hanok_Village_Seoul.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Bukchon-ro_11-gil_street_with_hanok_houses_in_Bukchon_Hanok_Village_Seoul.jpg",
+    "title": "Bukchon-ro 11-gil street with hanok houses in Bukchon Hanok ",
+    "author": "Basile Morin",
+    "license": "CC BY-SA 4.0"
+  },
+  "nightview": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Yeouido_Night_View_2010.jpg/960px-Yeouido_Night_View_2010.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Yeouido_Night_View_2010.jpg",
+    "title": "Yeouido Night View 2010",
+    "author": "Bryan Dorrough",
+    "license": "CC BY 2.0"
+  }
+}

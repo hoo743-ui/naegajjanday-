@@ -1,0 +1,174 @@
+# Reusable: deploy one git sha to one environment. Called by deploy.yml for
+# staging and production so both run exactly the same steps.
+#
+#   verify images -> remember current task definitions -> register new revisions
+#   -> DB migration (one-off ECS task) -> rolling deploy api, worker, beat, web
+#   -> smoke test -> on any failure: roll every service back -> Slack
+#
+# Migrations are NOT rolled back automatically. Write them expand/contract style
+# so that the previous application version keeps working on the new schema.
+
+name: _deploy-environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment name (staging | production)
+        required: true
+        type: string
+      tag:
+        description: Image tag (git sha) to deploy
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_NAMESPACE: naegajjanday
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # "production" has required reviewers -> the job pauses here for approval.
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.BASE_URL }}
+    permissions:
+      contents: read
+      id-token: write # OIDC -> AWS
+    env:
+      CLUSTER: ${{ vars.ECS_CLUSTER }}
+      NAME_PREFIX: ${{ vars.NAME_PREFIX }}
+      BASE_URL: ${{ vars.BASE_URL }}
+      TAG: ${{ inputs.tag }}
+      WEB_TAG: ${{ inputs.tag }}-${{ inputs.environment }}
+      MIGRATION_COMMAND: ${{ vars.MIGRATION_COMMAND || 'alembic upgrade head' }}
+      SMOKE_REGION: ${{ vars.SMOKE_REGION || 'seoul-hongdae' }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner context is not available in job-level env, so set it here.
+      - name: Prepare
+        run: |
+          echo "STATE_FILE=$RUNNER_TEMP/previous-task-definitions.env" >> "$GITHUB_ENV"
+          # The repository is authored on Windows, where git does not record the exec bit.
+          chmod +x scripts/ci/*.sh
+
+      - name: Configure AWS credentials (OIDC, deploy role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: gha-deploy-${{ inputs.environment }}-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve and verify images
+        id: images
+        env:
+          ECR_REGISTRY_OVERRIDE: ${{ vars.ECR_REGISTRY }}
+        run: |
+          registry="$ECR_REGISTRY_OVERRIDE"
+          if [ -z "$registry" ]; then
+            account=$(aws sts get-caller-identity --query Account --output text)
+            registry="${account}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          fi
+          registry_id=${registry%%.*}
+          aws ecr describe-images --registry-id "$registry_id" --repository-name "$ECR_NAMESPACE/api" --image-ids "imageTag=$TAG" >/dev/null
+          aws ecr describe-images --registry-id "$registry_id" --repository-name "$ECR_NAMESPACE/web" --image-ids "imageTag=$WEB_TAG" >/dev/null
+          echo "api=$registry/$ECR_NAMESPACE/api:$TAG" >> "$GITHUB_OUTPUT"
+          echo "web=$registry/$ECR_NAMESPACE/web:$WEB_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Remember current task definitions (rollback targets)
+        id: previous
+        run: |
+          : > "$STATE_FILE"
+          for svc in api worker beat web; do
+            if scripts/ci/ecs-deploy.sh exists "$CLUSTER" "$NAME_PREFIX-$svc"; then
+              echo "$svc=$(scripts/ci/ecs-deploy.sh current "$CLUSTER" "$NAME_PREFIX-$svc")" >> "$STATE_FILE"
+            else
+              echo "::notice::service $NAME_PREFIX-$svc does not exist in this environment - skipped"
+            fi
+          done
+          cat "$STATE_FILE"
+
+      - name: Register new task definition revisions
+        id: register
+        env:
+          API_IMAGE: ${{ steps.images.outputs.api }}
+          WEB_IMAGE: ${{ steps.images.outputs.web }}
+        run: |
+          # fd 3 keeps the loop input away from commands that read stdin
+          while IFS='=' read -r svc _ <&3; do
+            image="$API_IMAGE"
+            [ "$svc" = "web" ] && image="$WEB_IMAGE"
+            arn=$(scripts/ci/ecs-deploy.sh register "$NAME_PREFIX-$svc" "$svc" "$image")
+            echo "$svc -> $arn"
+            echo "$svc=$arn" >> "$GITHUB_OUTPUT"
+          done 3< "$STATE_FILE"
+
+      - name: Database migration (one-off ECS task, new image)
+        env:
+          API_TASKDEF: ${{ steps.register.outputs.api }}
+        run: |
+          read -ra migration <<< "$MIGRATION_COMMAND"
+          scripts/ci/ecs-deploy.sh run "$CLUSTER" "$NAME_PREFIX-api" "$API_TASKDEF" api "${migration[@]}"
+
+      - name: Rolling deploy - api
+        id: deploy_api
+        run: scripts/ci/ecs-deploy.sh deploy "$CLUSTER" "$NAME_PREFIX-api" "${{ steps.register.outputs.api }}"
+
+      - name: Rolling deploy - worker
+        if: steps.register.outputs.worker != ''
+        run: scripts/ci/ecs-deploy.sh deploy "$CLUSTER" "$NAME_PREFIX-worker" "${{ steps.register.outputs.worker }}"
+
+      - name: Rolling deploy - beat
+        if: steps.register.outputs.beat != ''
+        run: scripts/ci/ecs-deploy.sh deploy "$CLUSTER" "$NAME_PREFIX-beat" "${{ steps.register.outputs.beat }}"
+
+      - name: Rolling deploy - web
+        if: steps.register.outputs.web != ''
+        run: scripts/ci/ecs-deploy.sh deploy "$CLUSTER" "$NAME_PREFIX-web" "${{ steps.register.outputs.web }}"
+
+      - name: Smoke test (/readyz + real POST /v1/courses/generate)
+        run: scripts/ci/smoke.sh "$BASE_URL"
+
+      # The circuit breaker already reverts a service whose new tasks never get
+      # healthy. This step additionally covers "healthy but wrong" (smoke test
+      # failed) and keeps api / worker / web on the same version.
+      - name: Roll back all services
+        if: failure() && steps.previous.outcome == 'success' && steps.deploy_api.outcome != 'skipped'
+        run: |
+          status=0
+          while IFS='=' read -r svc arn <&3; do
+            echo "::warning::rolling back $NAME_PREFIX-$svc to $arn"
+            scripts/ci/ecs-deploy.sh deploy "$CLUSTER" "$NAME_PREFIX-$svc" "$arn" 900 || status=1
+          done 3< "$STATE_FILE"
+          exit $status
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deploy to ${{ inputs.environment }}: ${{ job.status }}"
+            echo "- commit: \`${TAG}\`"
+            echo "- url: ${BASE_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify Slack
+        # Secrets cannot be referenced in `if:` directly, hence the env indirection.
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          JOB_STATUS: ${{ job.status }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          icon=":white_check_mark:"
+          [ "$JOB_STATUS" = "success" ] || icon=":rotating_light:"
+          payload=$(jq -cn --arg text "$icon *내가짠데이* deploy to *$ENVIRONMENT*: *$JOB_STATUS*  (\`${TAG:0:7}\` by $ACTOR)  <$RUN_URL|run>  <$BASE_URL|site>" '{text: $text}')
+          curl -fsS -X POST -H 'Content-Type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL" >/dev/null

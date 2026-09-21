@@ -1,0 +1,65 @@
+from app.infra.db.models.config import (
+    CourseTemplate,
+    Purpose,
+    PurposeTagAffinity,
+    ScoringProfile,
+    TemplateSlot,
+)
+from app.infra.db.models.course import (
+    ChatMessage,
+    ChatSession,
+    Course,
+    CourseFeedback,
+    CourseStop,
+    RecommendationLog,
+)
+from app.infra.db.models.ops import ApiKey, AuditLog, Banner, IngestionJob, PlaceRevision, SearchOutbox
+from app.infra.db.models.place import (
+    Event,
+    MenuItem,
+    OpeningHour,
+    Place,
+    PlaceSource,
+    PlaceStats,
+    PlaceTag,
+    PopularTime,
+    Review,
+)
+from app.infra.db.models.region import Category, Region, Tag
+from app.infra.db.models.user import OAuthAccount, RefreshToken, User, UserPreference
+
+__all__ = [
+    "ApiKey",
+    "AuditLog",
+    "Banner",
+    "Category",
+    "ChatMessage",
+    "ChatSession",
+    "Course",
+    "CourseFeedback",
+    "CourseStop",
+    "CourseTemplate",
+    "Event",
+    "IngestionJob",
+    "MenuItem",
+    "OAuthAccount",
+    "OpeningHour",
+    "Place",
+    "PlaceRevision",
+    "PlaceSource",
+    "PlaceStats",
+    "PlaceTag",
+    "PopularTime",
+    "Purpose",
+    "PurposeTagAffinity",
+    "RecommendationLog",
+    "RefreshToken",
+    "Region",
+    "Review",
+    "ScoringProfile",
+    "SearchOutbox",
+    "Tag",
+    "TemplateSlot",
+    "User",
+    "UserPreference",
+]

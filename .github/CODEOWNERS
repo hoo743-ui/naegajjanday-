@@ -1,0 +1,32 @@
+# CODEOWNERS - the LAST matching pattern wins.
+#
+# ==========================================================================
+# TODO(PLACEHOLDER): every @naegajjanday/* handle below is a PLACEHOLDER.
+# Replace them with real GitHub teams (or @usernames) that have WRITE access
+# to this repository. Unknown owners make this file invalid and GitHub then
+# silently ignores it (check Settings > Branches > "CODEOWNERS errors").
+# ==========================================================================
+
+# Default owners
+*                                   @naegajjanday/TODO-maintainers
+
+# Frontend (Next.js)
+/apps/web/                          @naegajjanday/TODO-frontend
+
+# Backend (FastAPI, Celery, recommendation engine)
+/apps/api/                          @naegajjanday/TODO-backend
+/apps/api/app/domain/               @naegajjanday/TODO-backend @naegajjanday/TODO-recsys
+/apps/api/alembic/                  @naegajjanday/TODO-backend @naegajjanday/TODO-platform
+
+# Infrastructure, CI/CD, supply chain
+/infra/                             @naegajjanday/TODO-platform
+/.github/                           @naegajjanday/TODO-platform
+/scripts/                           @naegajjanday/TODO-platform
+/docker-compose.yml                 @naegajjanday/TODO-platform
+/Makefile                           @naegajjanday/TODO-platform
+
+# Production environment definition: platform AND a maintainer
+/infra/terraform/envs/prod/         @naegajjanday/TODO-platform @naegajjanday/TODO-maintainers
+
+# Product / design documents
+/docs/                              @naegajjanday/TODO-maintainers

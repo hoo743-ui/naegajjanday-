@@ -1,0 +1,50 @@
+id: narrative_fallback
+version: 1
+description: >
+  LLM 없이도 동작하는 템플릿 설명. LLM 키가 없거나 호출이 실패하면 이 문장들을 쓴다 (doc 06 §7).
+  코드에는 문구가 없다 — 문구 수정은 이 파일만 고치면 된다.
+
+party_labels:
+  1: 혼자서
+  2: 둘이서
+  3: 셋이서
+  4: 넷이서
+party_default: "{{ party_size }}명이서"
+
+transport_labels:
+  walk: 걸어서
+  transit: 대중교통으로
+  car: 차로
+
+summary: "{{ party }} {{ price }}원, {{ transport }} {{ travel_min }}분이면 충분해요"
+summary_no_travel: "{{ party }} {{ price }}원으로 알차게 즐겨요"
+
+# score_breakdown 상위 피처 → 이유 문구 (상위 2개를 이어 붙인다)
+feature_phrases:
+  budget: 예산에 딱 맞고
+  budget_free: 무료라 부담이 없고
+  distance: 이동 동선이 짧고
+  rating: 평점이 꾸준히 높고
+  sentiment: 리뷰 반응이 좋고
+  congestion: 이 시간대에 한산한 편이고
+  time_fit: 방문 시간대가 잘 맞고
+  preference: 고른 취향과 잘 어울리고
+  purpose_fit: 오늘 목적에 어울리는 분위기이고
+reason_tail:
+  default: 코스에 넣기 좋아요
+  with_tag: "'{{ tag }}' 태그가 돋보여요"
+
+congestion_levels:
+  - max: 0.35
+    label: 여유
+  - max: 0.65
+    label: 보통
+  - max: 1.01
+    label: 혼잡
+
+tips:
+  budget_left: "짠! {{ left }}원 남으니까 디저트 하나 더 어때요?"
+  budget_tight: "예산을 거의 딱 맞게 썼어요. 알뜰하게 다녀오세요!"
+  budget_over: "예산을 {{ over }}원 넘겼어요. 메뉴를 하나 줄이면 맞출 수 있어요."
+  crowded: "{{ name }}은(는) 붐빌 시간이에요. 조금 서두르면 좋아요."
+budget_left_tip_min: 3000

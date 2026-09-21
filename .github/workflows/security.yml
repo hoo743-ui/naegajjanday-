@@ -1,0 +1,148 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 18 * * 0" # Mondays 03:00 KST
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Third-party scanner pinned as a container image by version. For stricter
+  # supply-chain guarantees pin by digest (aquasec/trivy@sha256:...).
+  TRIVY_IMAGE: aquasec/trivy:0.58.1
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - "**/node_modules/**"
+              - "apps/web/public/mockServiceWorker.js"
+              - "apps/api/tests/**"
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # summary comment on the PR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: AGPL-3.0-only, AGPL-3.0-or-later, GPL-3.0-only, GPL-3.0-or-later
+          comment-summary-in-pr: on-failure
+
+  gitleaks:
+    name: gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # scan the full history / PR range
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # Required only for repositories owned by an organisation.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  trivy-image:
+    name: Trivy image scan (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Dockerfile
+        id: dockerfile
+        run: |
+          if [ -f "apps/${{ matrix.app }}/Dockerfile" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::apps/${{ matrix.app }}/Dockerfile does not exist yet - scan skipped"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.dockerfile.outputs.present == 'true'
+
+      - name: Build image
+        if: steps.dockerfile.outputs.present == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/${{ matrix.app }}
+          load: true
+          push: false
+          tags: scan/${{ matrix.app }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8000/v1
+            NEXT_PUBLIC_SITE_URL=http://localhost:3000
+          cache-from: type=gha,scope=${{ matrix.app }}
+
+      - name: Trivy (SARIF, all severities)
+        if: steps.dockerfile.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/work" -v "$HOME/.cache/trivy:/root/.cache" \
+            "$TRIVY_IMAGE" image --quiet --ignore-unfixed \
+            --format sarif --output "/work/trivy-${{ matrix.app }}.sarif" \
+            "scan/${{ matrix.app }}:${{ github.sha }}"
+
+      - name: Upload SARIF
+        if: always() && steps.dockerfile.outputs.present == 'true' && hashFiles(format('trivy-{0}.sarif', matrix.app)) != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.app }}.sarif
+          category: trivy-${{ matrix.app }}
+
+      - name: Trivy gate (fail on fixable HIGH / CRITICAL)
+        if: steps.dockerfile.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$HOME/.cache/trivy:/root/.cache" \
+            "$TRIVY_IMAGE" image --quiet --ignore-unfixed \
+            --severity HIGH,CRITICAL --exit-code 1 \
+            "scan/${{ matrix.app }}:${{ github.sha }}"

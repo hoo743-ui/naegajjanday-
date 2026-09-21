@@ -1,0 +1,45 @@
+# Normalise line endings: text files are LF in the repository.
+* text=auto eol=lf
+
+# Must be LF everywhere - they run in Linux containers / CI runners.
+*.sh          text eol=lf
+*.bash        text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+Dockerfile    text eol=lf
+Dockerfile.*  text eol=lf
+Makefile      text eol=lf
+*.tf          text eol=lf
+*.tfvars      text eol=lf
+*.hcl         text eol=lf
+*.sql         text eol=lf
+*.py          text eol=lf
+*.toml        text eol=lf
+*.json        text eol=lf
+*.ts          text eol=lf
+*.tsx         text eol=lf
+*.mjs         text eol=lf
+*.css         text eol=lf
+*.md          text eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1         text eol=crlf
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+
+# Lock files: no diffs in PRs, never merged by hand.
+package-lock.json  -diff linguist-generated=true
+uv.lock            -diff linguist-generated=true
+*.gen.ts           linguist-generated=true
+
+# Binary assets
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.pdf   binary
+*.lottie binary

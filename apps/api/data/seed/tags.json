@@ -1,0 +1,176 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "tags": [
+    {
+      "name": "조용한",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "활기찬",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "감성적인",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "로맨틱",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "아늑한",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "힙한",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "레트로",
+      "group": "mood",
+      "is_selectable": true
+    },
+    {
+      "name": "뷰맛집",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "가성비",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "실내",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "야외",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "우천OK",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "단체석",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "혼밥OK",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "주차가능",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "반려동물동반",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "예약가능",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "웨이팅",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "포토존",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "노키즈존",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "키즈프렌들리",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "매운맛",
+      "group": "food",
+      "is_selectable": true
+    },
+    {
+      "name": "채식가능",
+      "group": "food",
+      "is_selectable": true
+    },
+    {
+      "name": "디저트맛집",
+      "group": "food",
+      "is_selectable": true
+    },
+    {
+      "name": "로컬맛집",
+      "group": "food",
+      "is_selectable": true
+    },
+    {
+      "name": "시그니처메뉴",
+      "group": "food",
+      "is_selectable": true
+    },
+    {
+      "name": "체험형",
+      "group": "activity",
+      "is_selectable": true
+    },
+    {
+      "name": "산책하기좋은",
+      "group": "activity",
+      "is_selectable": true
+    },
+    {
+      "name": "야경명소",
+      "group": "activity",
+      "is_selectable": true
+    },
+    {
+      "name": "전시공연",
+      "group": "activity",
+      "is_selectable": true
+    },
+    {
+      "name": "착한가격업소",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
+      "name": "체인점",
+      "group": "feature",
+      "is_selectable": false
+    },
+    {
+      "name": "관광공사 소개",
+      "group": "feature",
+      "is_selectable": false
+    },
+    {
+      "name": "간편식",
+      "group": "feature",
+      "is_selectable": false
+    }
+  ]
+}

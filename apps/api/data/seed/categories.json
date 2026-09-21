@@ -1,0 +1,896 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "categories": [
+    {
+      "code": "food",
+      "name": "음식점",
+      "parent": null,
+      "course_role": "MEAL",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "kakao": [
+          "FD6"
+        ],
+        "google": [
+          "restaurant"
+        ],
+        "tourapi": [
+          "A0502"
+        ],
+        "naver": [
+          "음식점"
+        ],
+        "semas": [
+          "I20702"
+        ]
+      }
+    },
+    {
+      "code": "food.korean",
+      "name": "한식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "google": [
+          "korean_restaurant"
+        ],
+        "tourapi": [
+          "A05020100"
+        ],
+        "naver": [
+          "한식"
+        ],
+        "semas": [
+          "I20101",
+          "I20102",
+          "I20103",
+          "I20104",
+          "I20110",
+          "I20111",
+          "I20112",
+          "I20113",
+          "I20199"
+        ],
+        "goodprice": [
+          "한식"
+        ]
+      }
+    },
+    {
+      "code": "food.noodle",
+      "name": "면요리",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 45,
+      "provider_mapping": {
+        "google": [
+          "ramen_restaurant"
+        ],
+        "naver": [
+          "국수",
+          "칼국수,만두"
+        ],
+        "semas": [
+          "I20105",
+          "I20106",
+          "I20303"
+        ]
+      }
+    },
+    {
+      "code": "food.japanese",
+      "name": "일식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "google": [
+          "japanese_restaurant",
+          "sushi_restaurant"
+        ],
+        "tourapi": [
+          "A05020300"
+        ],
+        "naver": [
+          "일식"
+        ],
+        "semas": [
+          "I20301",
+          "I20302",
+          "I20399"
+        ],
+        "goodprice": [
+          "일식"
+        ]
+      }
+    },
+    {
+      "code": "food.chinese",
+      "name": "중식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "google": [
+          "chinese_restaurant"
+        ],
+        "tourapi": [
+          "A05020400"
+        ],
+        "naver": [
+          "중식"
+        ],
+        "semas": [
+          "I20201",
+          "I20202"
+        ],
+        "goodprice": [
+          "중식"
+        ]
+      }
+    },
+    {
+      "code": "food.western",
+      "name": "양식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "google": [
+          "italian_restaurant",
+          "french_restaurant",
+          "american_restaurant"
+        ],
+        "tourapi": [
+          "A05020200"
+        ],
+        "naver": [
+          "양식",
+          "이탈리아음식"
+        ],
+        "semas": [
+          "I20401",
+          "I20402",
+          "I20403",
+          "I20499",
+          "I21004"
+        ],
+        "goodprice": [
+          "양식"
+        ]
+      }
+    },
+    {
+      "code": "food.asian",
+      "name": "아시아음식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "google": [
+          "vietnamese_restaurant",
+          "thai_restaurant",
+          "indian_restaurant"
+        ],
+        "naver": [
+          "아시아음식",
+          "베트남음식",
+          "태국음식"
+        ],
+        "semas": [
+          "I20501",
+          "I20599",
+          "I20601"
+        ]
+      }
+    },
+    {
+      "code": "food.bbq",
+      "name": "고기·구이",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "google": [
+          "barbecue_restaurant"
+        ],
+        "naver": [
+          "육류,고기요리",
+          "곱창,막창,양"
+        ],
+        "semas": [
+          "I20107",
+          "I20108",
+          "I20109"
+        ]
+      }
+    },
+    {
+      "code": "food.snack",
+      "name": "분식",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 35,
+      "provider_mapping": {
+        "naver": [
+          "분식"
+        ],
+        "semas": [
+          "I21007"
+        ]
+      }
+    },
+    {
+      "code": "food.brunch",
+      "name": "브런치",
+      "parent": "food",
+      "course_role": "MEAL",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "google": [
+          "brunch_restaurant",
+          "breakfast_restaurant"
+        ],
+        "naver": [
+          "브런치"
+        ],
+        "semas": [
+          "I21005"
+        ]
+      }
+    },
+    {
+      "code": "cafe",
+      "name": "카페",
+      "parent": null,
+      "course_role": "CAFE",
+      "default_stay_min": 50,
+      "provider_mapping": {
+        "kakao": [
+          "CE7"
+        ],
+        "google": [
+          "cafe"
+        ],
+        "tourapi": [
+          "A05020900"
+        ],
+        "naver": [
+          "카페,디저트"
+        ],
+        "semas": [
+          "I21201"
+        ]
+      }
+    },
+    {
+      "code": "cafe.coffee",
+      "name": "커피전문점",
+      "parent": "cafe",
+      "course_role": "CAFE",
+      "default_stay_min": 45,
+      "provider_mapping": {
+        "google": [
+          "coffee_shop"
+        ],
+        "naver": [
+          "카페"
+        ]
+      }
+    },
+    {
+      "code": "cafe.roastery",
+      "name": "로스터리",
+      "parent": "cafe",
+      "course_role": "CAFE",
+      "default_stay_min": 50,
+      "provider_mapping": {
+        "naver": [
+          "커피로스터리"
+        ]
+      }
+    },
+    {
+      "code": "cafe.view",
+      "name": "뷰·루프탑 카페",
+      "parent": "cafe",
+      "course_role": "CAFE",
+      "default_stay_min": 60,
+      "provider_mapping": {}
+    },
+    {
+      "code": "cafe.book",
+      "name": "북카페",
+      "parent": "cafe",
+      "course_role": "CAFE",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "naver": [
+          "북카페"
+        ]
+      }
+    },
+    {
+      "code": "cafe.tea",
+      "name": "찻집·티룸",
+      "parent": "cafe",
+      "course_role": "CAFE",
+      "default_stay_min": 55,
+      "provider_mapping": {
+        "google": [
+          "tea_house"
+        ],
+        "naver": [
+          "전통찻집",
+          "차"
+        ]
+      }
+    },
+    {
+      "code": "dessert",
+      "name": "디저트",
+      "parent": null,
+      "course_role": "DESSERT",
+      "default_stay_min": 40,
+      "provider_mapping": {
+        "google": [
+          "bakery",
+          "dessert_shop"
+        ],
+        "naver": [
+          "디저트"
+        ],
+        "semas": [
+          "I21002"
+        ]
+      }
+    },
+    {
+      "code": "dessert.bakery",
+      "name": "베이커리",
+      "parent": "dessert",
+      "course_role": "DESSERT",
+      "default_stay_min": 35,
+      "provider_mapping": {
+        "google": [
+          "bakery"
+        ],
+        "naver": [
+          "베이커리"
+        ],
+        "semas": [
+          "I21001"
+        ]
+      }
+    },
+    {
+      "code": "dessert.icecream",
+      "name": "아이스크림·젤라또",
+      "parent": "dessert",
+      "course_role": "DESSERT",
+      "default_stay_min": 25,
+      "provider_mapping": {
+        "google": [
+          "ice_cream_shop"
+        ],
+        "naver": [
+          "아이스크림"
+        ],
+        "semas": [
+          "I21008"
+        ]
+      }
+    },
+    {
+      "code": "dessert.bingsu",
+      "name": "빙수",
+      "parent": "dessert",
+      "course_role": "DESSERT",
+      "default_stay_min": 45,
+      "provider_mapping": {
+        "naver": [
+          "빙수"
+        ]
+      }
+    },
+    {
+      "code": "attraction",
+      "name": "관광·산책",
+      "parent": null,
+      "course_role": "ATTRACTION",
+      "default_stay_min": 40,
+      "provider_mapping": {
+        "kakao": [
+          "AT4"
+        ],
+        "google": [
+          "tourist_attraction",
+          "park"
+        ],
+        "tourapi": [
+          "A01",
+          "A02"
+        ],
+        "naver": [
+          "관광,명소"
+        ]
+      }
+    },
+    {
+      "code": "attraction.park",
+      "name": "공원",
+      "parent": "attraction",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 45,
+      "provider_mapping": {
+        "google": [
+          "park"
+        ],
+        "tourapi": [
+          "A01010100",
+          "A01010200",
+          "A02020700"
+        ],
+        "naver": [
+          "공원",
+          "도시,테마공원"
+        ]
+      }
+    },
+    {
+      "code": "attraction.street",
+      "name": "거리·골목",
+      "parent": "attraction",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 35,
+      "provider_mapping": {
+        "tourapi": [
+          "A02030400"
+        ],
+        "naver": [
+          "테마거리"
+        ]
+      }
+    },
+    {
+      "code": "attraction.market",
+      "name": "시장",
+      "parent": "attraction",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 40,
+      "provider_mapping": {
+        "google": [
+          "market"
+        ],
+        "tourapi": [
+          "A04010200"
+        ],
+        "naver": [
+          "전통시장"
+        ]
+      }
+    },
+    {
+      "code": "attraction.landmark",
+      "name": "랜드마크·광장",
+      "parent": "attraction",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 25,
+      "provider_mapping": {
+        "google": [
+          "historical_landmark",
+          "plaza"
+        ],
+        "tourapi": [
+          "A02050600"
+        ]
+      }
+    },
+    {
+      "code": "activity",
+      "name": "체험·액티비티",
+      "parent": null,
+      "course_role": "ACTIVITY",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "google": [
+          "amusement_center"
+        ],
+        "tourapi": [
+          "A03"
+        ],
+        "semas": [
+          "N11003",
+          "R10409"
+        ]
+      }
+    },
+    {
+      "code": "activity.arcade",
+      "name": "오락실",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 45,
+      "provider_mapping": {
+        "google": [
+          "video_arcade"
+        ],
+        "naver": [
+          "오락실"
+        ],
+        "semas": [
+          "R10404",
+          "R10405"
+        ]
+      }
+    },
+    {
+      "code": "activity.boardgame",
+      "name": "보드게임카페",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 90,
+      "provider_mapping": {
+        "naver": [
+          "보드카페"
+        ]
+      }
+    },
+    {
+      "code": "activity.craft",
+      "name": "공방·원데이클래스",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 90,
+      "provider_mapping": {
+        "tourapi": [
+          "A02030200"
+        ],
+        "naver": [
+          "공방"
+        ]
+      }
+    },
+    {
+      "code": "activity.escape",
+      "name": "방탈출",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 75,
+      "provider_mapping": {
+        "naver": [
+          "방탈출카페"
+        ]
+      }
+    },
+    {
+      "code": "activity.sports",
+      "name": "실내스포츠",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "google": [
+          "bowling_alley",
+          "sports_activity_location"
+        ],
+        "naver": [
+          "볼링장",
+          "양궁장"
+        ],
+        "semas": [
+          "R10309",
+          "R10310",
+          "R10313"
+        ]
+      }
+    },
+    {
+      "code": "activity.photo",
+      "name": "셀프사진관",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 20,
+      "provider_mapping": {
+        "naver": [
+          "셀프,대여스튜디오"
+        ]
+      }
+    },
+    {
+      "code": "activity.karaoke",
+      "name": "노래방",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "semas": [
+          "R10407"
+        ]
+      }
+    },
+    {
+      "code": "culture",
+      "name": "문화·전시",
+      "parent": null,
+      "course_role": "CULTURE",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "kakao": [
+          "CT1"
+        ],
+        "google": [
+          "museum",
+          "art_gallery"
+        ],
+        "tourapi": [
+          "A0206",
+          "A0207",
+          "A0208"
+        ],
+        "naver": [
+          "문화,예술"
+        ]
+      }
+    },
+    {
+      "code": "culture.museum",
+      "name": "박물관",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "google": [
+          "museum"
+        ],
+        "tourapi": [
+          "A02060100"
+        ],
+        "naver": [
+          "박물관"
+        ]
+      }
+    },
+    {
+      "code": "culture.gallery",
+      "name": "미술관·갤러리",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 60,
+      "provider_mapping": {
+        "google": [
+          "art_gallery"
+        ],
+        "tourapi": [
+          "A02060500"
+        ],
+        "naver": [
+          "미술관",
+          "갤러리,화랑"
+        ]
+      }
+    },
+    {
+      "code": "culture.exhibition",
+      "name": "전시",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 70,
+      "provider_mapping": {
+        "tourapi": [
+          "A02060300",
+          "A02080500"
+        ],
+        "naver": [
+          "전시관"
+        ]
+      }
+    },
+    {
+      "code": "culture.festival",
+      "name": "축제",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 90,
+      "provider_mapping": {
+        "tourapi": [
+          "A0207",
+          "A02070100",
+          "A02070200"
+        ]
+      }
+    },
+    {
+      "code": "culture.cinema",
+      "name": "영화·공연",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 130,
+      "provider_mapping": {
+        "google": [
+          "movie_theater",
+          "performing_arts_theater"
+        ],
+        "tourapi": [
+          "A02060800",
+          "A02080100"
+        ],
+        "naver": [
+          "영화관",
+          "공연장"
+        ]
+      }
+    },
+    {
+      "code": "culture.bookstore",
+      "name": "독립서점",
+      "parent": "culture",
+      "course_role": "CULTURE",
+      "default_stay_min": 40,
+      "provider_mapping": {
+        "google": [
+          "book_store"
+        ],
+        "naver": [
+          "독립서점",
+          "서점"
+        ]
+      }
+    },
+    {
+      "code": "bar",
+      "name": "술집",
+      "parent": null,
+      "course_role": "BAR",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "google": [
+          "bar"
+        ],
+        "naver": [
+          "술집"
+        ],
+        "semas": [
+          "I21104"
+        ]
+      }
+    },
+    {
+      "code": "bar.pub",
+      "name": "펍·맥주",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "google": [
+          "pub"
+        ],
+        "naver": [
+          "맥주,호프"
+        ],
+        "semas": [
+          "I21103"
+        ]
+      }
+    },
+    {
+      "code": "bar.wine",
+      "name": "와인바",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 90,
+      "provider_mapping": {
+        "google": [
+          "wine_bar"
+        ],
+        "naver": [
+          "와인"
+        ]
+      }
+    },
+    {
+      "code": "bar.cocktail",
+      "name": "칵테일바",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "google": [
+          "cocktail_bar"
+        ],
+        "naver": [
+          "바(BAR)"
+        ]
+      }
+    },
+    {
+      "code": "bar.izakaya",
+      "name": "이자카야",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 90,
+      "provider_mapping": {
+        "naver": [
+          "이자카야"
+        ]
+      }
+    },
+    {
+      "code": "bar.pocha",
+      "name": "포차",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "naver": [
+          "포장마차",
+          "요리주점"
+        ]
+      }
+    },
+    {
+      "code": "bar.makgeolli",
+      "name": "막걸리·전통주",
+      "parent": "bar",
+      "course_role": "BAR",
+      "default_stay_min": 80,
+      "provider_mapping": {
+        "naver": [
+          "전통,민속주점"
+        ]
+      }
+    },
+    {
+      "code": "nightview",
+      "name": "야경",
+      "parent": null,
+      "course_role": "NIGHTVIEW",
+      "default_stay_min": 30,
+      "provider_mapping": {
+        "tourapi": [
+          "A02050200"
+        ]
+      }
+    },
+    {
+      "code": "nightview.observatory",
+      "name": "전망대",
+      "parent": "nightview",
+      "course_role": "NIGHTVIEW",
+      "default_stay_min": 35,
+      "provider_mapping": {
+        "google": [
+          "observation_deck"
+        ],
+        "tourapi": [
+          "A02050200"
+        ],
+        "naver": [
+          "전망대"
+        ]
+      }
+    },
+    {
+      "code": "nightview.riverside",
+      "name": "강변·수변",
+      "parent": "nightview",
+      "course_role": "NIGHTVIEW",
+      "default_stay_min": 30,
+      "provider_mapping": {
+        "tourapi": [
+          "A01011800"
+        ]
+      }
+    },
+    {
+      "code": "nightview.rooftop",
+      "name": "루프탑·옥상",
+      "parent": "nightview",
+      "course_role": "NIGHTVIEW",
+      "default_stay_min": 30,
+      "provider_mapping": {}
+    }
+  ]
+}

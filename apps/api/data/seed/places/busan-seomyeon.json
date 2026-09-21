@@ -1,0 +1,4482 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "region": "busan-seomyeon",
+  "provider": "file",
+  "places": [
+    {
+      "external_id": "seomyeon-001",
+      "name": "짠내 밀면",
+      "category": "food.noodle",
+      "lat": 35.158878,
+      "lng": 129.061538,
+      "address": "부산 부산진구 샘플로28길 8 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "살얼음 육수의 부산식 밀면",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "물밀면",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "비빔밀면",
+          "price": 9000,
+          "is_signature": false
+        },
+        {
+          "name": "만두",
+          "price": 7000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.11,
+          0.21,
+          0.51,
+          0.99,
+          0.85,
+          0.51,
+          0.21,
+          0.22,
+          0.43,
+          0.83,
+          0.99,
+          0.77,
+          0.47,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.16,
+          0.24,
+          0.64,
+          0.96,
+          1.0,
+          0.63,
+          0.33,
+          0.38,
+          0.59,
+          0.94,
+          1.0,
+          0.81,
+          0.44,
+          0.21,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 1150
+      },
+      "sentiment": {
+        "score": 0.64,
+        "count": 380,
+        "aspects": {
+          "taste": 0.8,
+          "price": 1.0,
+          "mood": 0.73,
+          "service": 0.77,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.9,
+        "가성비": 0.8,
+        "혼밥OK": 0.7
+      }
+    },
+    {
+      "external_id": "seomyeon-002",
+      "name": "서면 돼지국밥 곳간",
+      "category": "food.korean",
+      "lat": 35.157081,
+      "lng": 129.057802,
+      "address": "부산 부산진구 샘플로11길 15 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "뽀얀 국물의 돼지국밥",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "돼지국밥",
+          "price": 10000,
+          "is_signature": true
+        },
+        {
+          "name": "수육백반",
+          "price": 12000,
+          "is_signature": false
+        },
+        {
+          "name": "순대국밥",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.1,
+          0.25,
+          0.54,
+          1.0,
+          0.91,
+          0.49,
+          0.23,
+          0.26,
+          0.45,
+          0.92,
+          0.99,
+          0.79,
+          0.43,
+          0.15,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.12,
+          0.3,
+          0.66,
+          1.0,
+          1.0,
+          0.62,
+          0.39,
+          0.37,
+          0.56,
+          0.94,
+          1.0,
+          0.79,
+          0.45,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 2100
+      },
+      "sentiment": {
+        "score": 0.7,
+        "count": 560,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.78,
+          "mood": 0.73,
+          "service": 0.79,
+          "wait": 0.73
+        }
+      },
+      "tags": {
+        "로컬맛집": 1.0,
+        "혼밥OK": 0.8,
+        "단체석": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-003",
+      "name": "용돈 분식",
+      "category": "food.snack",
+      "lat": 35.156003,
+      "lng": 129.06033,
+      "address": "부산 부산진구 샘플로40길 22 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "부산식 물떡과 비빔당면",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "물떡 세트",
+          "price": 7000,
+          "is_signature": true
+        },
+        {
+          "name": "비빔당면",
+          "price": 8000,
+          "is_signature": false
+        },
+        {
+          "name": "유부주머니",
+          "price": 5000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.15,
+          0.16,
+          0.54,
+          0.94,
+          0.84,
+          0.5,
+          0.23,
+          0.25,
+          0.48,
+          0.84,
+          0.88,
+          0.74,
+          0.4,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.17,
+          0.24,
+          0.65,
+          0.98,
+          0.96,
+          0.58,
+          0.4,
+          0.38,
+          0.56,
+          0.84,
+          1.0,
+          0.77,
+          0.42,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 760
+      },
+      "sentiment": {
+        "score": 0.43,
+        "count": 230,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.78,
+          "mood": 0.72,
+          "service": 0.67,
+          "wait": 0.69
+        }
+      },
+      "tags": {
+        "가성비": 1.0,
+        "레트로": 0.6,
+        "활기찬": 0.6,
+        "혼밥OK": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-004",
+      "name": "환급 파스타",
+      "category": "food.western",
+      "lat": 35.155105,
+      "lng": 129.064615,
+      "address": "부산 부산진구 샘플로8길 29 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "전포동 골목의 파스타 바",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "명란 오일 파스타",
+          "price": 15000,
+          "is_signature": true
+        },
+        {
+          "name": "아라비아따",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "한우 라구",
+          "price": 17000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.09,
+          0.22,
+          0.5,
+          0.92,
+          0.81,
+          0.49,
+          0.23,
+          0.17,
+          0.39,
+          0.74,
+          0.93,
+          0.65,
+          0.4,
+          0.16,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.12,
+          0.21,
+          0.64,
+          0.94,
+          0.94,
+          0.58,
+          0.3,
+          0.31,
+          0.51,
+          0.8,
+          0.98,
+          0.76,
+          0.44,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 365
+      },
+      "sentiment": {
+        "score": 0.72,
+        "count": 140,
+        "aspects": {
+          "taste": 0.76,
+          "price": 0.73,
+          "mood": 0.92,
+          "service": 0.76,
+          "wait": 0.79
+        }
+      },
+      "tags": {
+        "로맨틱": 0.8,
+        "조용한": 0.6,
+        "예약가능": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-005",
+      "name": "할인쿠폰 초밥",
+      "category": "food.japanese",
+      "lat": 35.159507,
+      "lng": 129.056374,
+      "address": "부산 부산진구 샘플로32길 36 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "두툼한 네타로 유명한 초밥집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "모둠 초밥 12p",
+          "price": 14000,
+          "is_signature": true
+        },
+        {
+          "name": "런치 초밥 10p",
+          "price": 12000,
+          "is_signature": false
+        },
+        {
+          "name": "특 초밥",
+          "price": 18000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.15,
+          0.24,
+          0.5,
+          0.91,
+          0.88,
+          0.5,
+          0.23,
+          0.25,
+          0.49,
+          0.87,
+          0.92,
+          0.75,
+          0.44,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.13,
+          0.21,
+          0.62,
+          1.0,
+          0.93,
+          0.61,
+          0.38,
+          0.35,
+          0.59,
+          0.85,
+          0.95,
+          0.77,
+          0.48,
+          0.24,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 800
+      },
+      "sentiment": {
+        "score": 0.68,
+        "count": 300,
+        "aspects": {
+          "taste": 0.99,
+          "price": 0.88,
+          "mood": 0.72,
+          "service": 0.76,
+          "wait": 0.33
+        }
+      },
+      "tags": {
+        "웨이팅": 0.8,
+        "시그니처메뉴": 0.7,
+        "가성비": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-006",
+      "name": "영끌 짬뽕",
+      "category": "food.chinese",
+      "lat": 35.160495,
+      "lng": 129.062747,
+      "address": "부산 부산진구 샘플로20길 43 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "불맛 나는 해물 짬뽕",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "해물 짬뽕",
+          "price": 10000,
+          "is_signature": true
+        },
+        {
+          "name": "짜장면",
+          "price": 9000,
+          "is_signature": false
+        },
+        {
+          "name": "탕수육(소)",
+          "price": 18000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.09,
+          0.22,
+          0.52,
+          0.89,
+          0.82,
+          0.41,
+          0.19,
+          0.17,
+          0.44,
+          0.8,
+          0.89,
+          0.7,
+          0.4,
+          0.18,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.19,
+          0.28,
+          0.59,
+          0.95,
+          0.92,
+          0.58,
+          0.38,
+          0.36,
+          0.55,
+          0.84,
+          0.98,
+          0.71,
+          0.49,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 540
+      },
+      "sentiment": {
+        "score": 0.49,
+        "count": 170,
+        "aspects": {
+          "taste": 0.75,
+          "price": 0.65,
+          "mood": 0.68,
+          "service": 0.79,
+          "wait": 0.65
+        }
+      },
+      "tags": {
+        "매운맛": 0.8,
+        "단체석": 0.6,
+        "주차가능": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-007",
+      "name": "상여금 양곱창",
+      "category": "food.bbq",
+      "lat": 35.155464,
+      "lng": 129.055056,
+      "address": "부산 부산진구 샘플로3길 50 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "연탄불에 굽는 양곱창 골목집",
+      "thumbnail_url": null,
+      "price_per_person": 27000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "양곱창 모둠(1인분)",
+          "price": 25000,
+          "is_signature": true
+        },
+        {
+          "name": "대창(1인분)",
+          "price": 23000,
+          "is_signature": false
+        },
+        {
+          "name": "볶음밥",
+          "price": 4000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.12,
+          0.16,
+          0.52,
+          0.98,
+          0.89,
+          0.48,
+          0.24,
+          0.2,
+          0.48,
+          0.82,
+          0.98,
+          0.69,
+          0.41,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.11,
+          0.23,
+          0.59,
+          0.98,
+          0.97,
+          0.65,
+          0.39,
+          0.36,
+          0.62,
+          0.92,
+          0.97,
+          0.75,
+          0.46,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 940
+      },
+      "sentiment": {
+        "score": 0.73,
+        "count": 330,
+        "aspects": {
+          "taste": 0.83,
+          "price": 0.81,
+          "mood": 0.72,
+          "service": 0.88,
+          "wait": 0.44
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.8,
+        "활기찬": 0.8,
+        "단체석": 0.7,
+        "웨이팅": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-008",
+      "name": "에누리 쌀국수",
+      "category": "food.asian",
+      "lat": 35.156722,
+      "lng": 129.063626,
+      "address": "부산 부산진구 샘플로12길 57 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "전포카페거리 초입의 베트남 식당",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "소고기 쌀국수",
+          "price": 11000,
+          "is_signature": true
+        },
+        {
+          "name": "반미",
+          "price": 9500,
+          "is_signature": false
+        },
+        {
+          "name": "분보남보",
+          "price": 12500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.07,
+          0.18,
+          0.51,
+          0.87,
+          0.81,
+          0.41,
+          0.17,
+          0.23,
+          0.4,
+          0.76,
+          0.86,
+          0.69,
+          0.34,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.19,
+          0.26,
+          0.57,
+          0.89,
+          0.9,
+          0.56,
+          0.3,
+          0.37,
+          0.51,
+          0.81,
+          0.88,
+          0.68,
+          0.46,
+          0.22,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 270
+      },
+      "sentiment": {
+        "score": 0.58,
+        "count": 85,
+        "aspects": {
+          "taste": 0.66,
+          "price": 0.68,
+          "mood": 0.84,
+          "service": 0.81,
+          "wait": 0.81
+        }
+      },
+      "tags": {
+        "혼밥OK": 0.7,
+        "채식가능": 0.4,
+        "아늑한": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-009",
+      "name": "바다건너 브런치",
+      "category": "food.brunch",
+      "lat": 35.156003,
+      "lng": 129.065714,
+      "address": "부산 부산진구 샘플로3길 4 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "통창으로 햇살이 드는 브런치 집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "쉬림프 에그 샌드",
+          "price": 15000,
+          "is_signature": true
+        },
+        {
+          "name": "수프 세트",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "브런치 플래터",
+          "price": 16000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "09:00",
+          "close": "16:30"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.08,
+          0.19,
+          0.47,
+          0.84,
+          0.78,
+          0.44,
+          0.19,
+          0.15,
+          0.42,
+          0.77,
+          0.92,
+          0.63,
+          0.35,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.17,
+          0.21,
+          0.59,
+          0.87,
+          0.89,
+          0.53,
+          0.32,
+          0.37,
+          0.52,
+          0.85,
+          0.91,
+          0.7,
+          0.39,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 330
+      },
+      "sentiment": {
+        "score": 0.61,
+        "count": 110,
+        "aspects": {
+          "taste": 0.75,
+          "price": 0.82,
+          "mood": 0.96,
+          "service": 0.79,
+          "wait": 0.84
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "포토존": 0.6,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "seomyeon-010",
+      "name": "덤 주는 낙곱새",
+      "category": "food.korean",
+      "lat": 35.161034,
+      "lng": 129.058681,
+      "address": "부산 부산진구 샘플로9길 11 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "밥에 비벼 먹는 부산 낙곱새",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "낙곱새(1인)",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "낙새(1인)",
+          "price": 11000,
+          "is_signature": false
+        },
+        {
+          "name": "낙지볶음(1인)",
+          "price": 13000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.13,
+          0.21,
+          0.53,
+          0.96,
+          0.87,
+          0.47,
+          0.21,
+          0.22,
+          0.48,
+          0.9,
+          0.92,
+          0.75,
+          0.42,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.11,
+          0.28,
+          0.6,
+          0.97,
+          1.0,
+          0.62,
+          0.38,
+          0.39,
+          0.64,
+          0.95,
+          1.0,
+          0.76,
+          0.51,
+          0.25,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 1320
+      },
+      "sentiment": {
+        "score": 0.63,
+        "count": 420,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.72,
+          "mood": 0.67,
+          "service": 0.68,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "매운맛": 0.9,
+        "로컬맛집": 0.8,
+        "단체석": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-011",
+      "name": "첫손님 비스트로",
+      "category": "food.western",
+      "lat": 35.158519,
+      "lng": 129.066593,
+      "address": "부산 부산진구 샘플로6길 18 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "막 문을 연 전포동 비스트로",
+      "thumbnail_url": null,
+      "price_per_person": 20000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "오리 콩피",
+          "price": 26000,
+          "is_signature": true
+        },
+        {
+          "name": "오늘의 파스타",
+          "price": 17000,
+          "is_signature": false
+        },
+        {
+          "name": "글라스 와인",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.06,
+          0.1,
+          0.36,
+          0.61,
+          0.62,
+          0.33,
+          0.18,
+          0.1,
+          0.26,
+          0.58,
+          0.64,
+          0.47,
+          0.26,
+          0.15,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.08,
+          0.15,
+          0.4,
+          0.7,
+          0.69,
+          0.41,
+          0.28,
+          0.21,
+          0.41,
+          0.54,
+          0.68,
+          0.52,
+          0.35,
+          0.09,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 5.0,
+        "count": 6
+      },
+      "sentiment": {
+        "score": null,
+        "count": 0,
+        "aspects": {}
+      },
+      "tags": {
+        "로맨틱": 0.7,
+        "아늑한": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-012",
+      "name": "전포 코인 로스터스",
+      "category": "cafe.roastery",
+      "lat": 35.155644,
+      "lng": 129.064175,
+      "address": "부산 부산진구 샘플로1길 25 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공구상가를 개조한 로스터리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "싱글오리진 드립",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "아메리카노",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "시그니처 라떼",
+          "price": 6500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.18,
+          0.28,
+          0.41,
+          0.45,
+          0.55,
+          0.71,
+          0.75,
+          0.8,
+          0.78,
+          0.58,
+          0.51,
+          0.53,
+          0.51,
+          0.34,
+          0.13,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.25,
+          0.38,
+          0.51,
+          0.67,
+          0.79,
+          0.96,
+          1.0,
+          0.9,
+          0.79,
+          0.71,
+          0.66,
+          0.59,
+          0.45,
+          0.14,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 980
+      },
+      "sentiment": {
+        "score": 0.75,
+        "count": 350,
+        "aspects": {
+          "taste": 0.87,
+          "price": 0.8,
+          "mood": 1.0,
+          "service": 0.74,
+          "wait": 0.78
+        }
+      },
+      "tags": {
+        "힙한": 0.8,
+        "시그니처메뉴": 0.7,
+        "감성적인": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-013",
+      "name": "백원만 커피",
+      "category": "cafe.coffee",
+      "lat": 35.157441,
+      "lng": 129.05967,
+      "address": "부산 부산진구 샘플로20길 32 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서면역 지하상가 근처 저가 커피",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "아메리카노",
+          "price": 3000,
+          "is_signature": true
+        },
+        {
+          "name": "카페라떼",
+          "price": 3500,
+          "is_signature": false
+        },
+        {
+          "name": "자몽에이드",
+          "price": 4000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.37,
+          0.37,
+          0.47,
+          0.57,
+          0.74,
+          0.77,
+          0.91,
+          0.76,
+          0.6,
+          0.5,
+          0.56,
+          0.53,
+          0.31,
+          0.12,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.18,
+          0.34,
+          0.58,
+          0.73,
+          0.9,
+          0.94,
+          0.97,
+          0.96,
+          0.84,
+          0.65,
+          0.6,
+          0.61,
+          0.38,
+          0.21,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 3.8,
+        "count": 1400
+      },
+      "sentiment": {
+        "score": 0.25,
+        "count": 360,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.78,
+          "mood": 0.52,
+          "service": 0.52,
+          "wait": 0.6
+        }
+      },
+      "tags": {
+        "가성비": 1.0,
+        "활기찬": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-014",
+      "name": "옥상 정산소 카페",
+      "category": "cafe.view",
+      "lat": 35.154386,
+      "lng": 129.062198,
+      "address": "부산 부산진구 샘플로10길 39 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서면 네온이 내려다보이는 루프탑",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "크림 모카",
+          "price": 7000,
+          "is_signature": true
+        },
+        {
+          "name": "아메리카노",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "바스크 치즈케이크 세트",
+          "price": 7500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.24,
+          0.32,
+          0.38,
+          0.36,
+          0.55,
+          0.63,
+          0.72,
+          0.85,
+          0.67,
+          0.53,
+          0.48,
+          0.46,
+          0.43,
+          0.3,
+          0.08,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.23,
+          0.35,
+          0.54,
+          0.7,
+          0.79,
+          0.95,
+          1.0,
+          0.87,
+          0.78,
+          0.69,
+          0.64,
+          0.58,
+          0.36,
+          0.11,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 620
+      },
+      "sentiment": {
+        "score": 0.66,
+        "count": 210,
+        "aspects": {
+          "taste": 0.82,
+          "price": 0.68,
+          "mood": 0.91,
+          "service": 0.8,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "뷰맛집": 0.9,
+        "포토존": 0.8,
+        "로맨틱": 0.6,
+        "야외": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-015",
+      "name": "가계부 책방카페",
+      "category": "cafe.book",
+      "lat": 35.154027,
+      "lng": 129.065274,
+      "address": "부산 부산진구 샘플로8길 46 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "독립출판물과 커피가 있는 책방카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "핸드드립",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "유자차",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "밀크티",
+          "price": 6000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.28,
+          0.36,
+          0.4,
+          0.46,
+          0.57,
+          0.67,
+          0.75,
+          0.68,
+          0.49,
+          0.44,
+          0.41,
+          0.38,
+          0.26,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.16,
+          0.33,
+          0.45,
+          0.59,
+          0.75,
+          0.79,
+          0.87,
+          0.81,
+          0.65,
+          0.64,
+          0.57,
+          0.46,
+          0.34,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 140
+      },
+      "sentiment": {
+        "score": 0.8,
+        "count": 50,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.78,
+          "mood": 1.0,
+          "service": 0.83,
+          "wait": 0.89
+        }
+      },
+      "tags": {
+        "조용한": 1.0,
+        "아늑한": 0.8,
+        "우천OK": 0.6,
+        "혼밥OK": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-016",
+      "name": "다도 저축 찻집",
+      "category": "cafe.tea",
+      "lat": 35.161573,
+      "lng": 129.055825,
+      "address": "부산 부산진구 샘플로40길 53 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "방석에 앉아 마시는 전통 찻집",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "녹차 다기 세트",
+          "price": 7000,
+          "is_signature": true
+        },
+        {
+          "name": "쌍화차",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "대추차와 다식",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.24,
+          0.29,
+          0.35,
+          0.46,
+          0.53,
+          0.67,
+          0.65,
+          0.56,
+          0.47,
+          0.4,
+          0.45,
+          0.42,
+          0.23,
+          0.09,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.13,
+          0.33,
+          0.45,
+          0.58,
+          0.66,
+          0.76,
+          0.83,
+          0.74,
+          0.63,
+          0.54,
+          0.52,
+          0.5,
+          0.37,
+          0.14,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 88
+      },
+      "sentiment": {
+        "score": 0.7,
+        "count": 25,
+        "aspects": {
+          "taste": 0.86,
+          "price": 0.69,
+          "mood": 0.93,
+          "service": 0.78,
+          "wait": 0.68
+        }
+      },
+      "tags": {
+        "조용한": 0.9,
+        "레트로": 0.6,
+        "아늑한": 0.7
+      }
+    },
+    {
+      "external_id": "seomyeon-017",
+      "name": "거스름 에스프레소",
+      "category": "cafe.coffee",
+      "lat": 35.157261,
+      "lng": 129.063186,
+      "address": "부산 부산진구 샘플로16길 60 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "바에 서서 마시는 에스프레소",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "카페 쇼콜라또",
+          "price": 4000,
+          "is_signature": true
+        },
+        {
+          "name": "에스프레소",
+          "price": 3500,
+          "is_signature": false
+        },
+        {
+          "name": "플랫화이트",
+          "price": 4800,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.33,
+          0.32,
+          0.36,
+          0.47,
+          0.63,
+          0.71,
+          0.79,
+          0.69,
+          0.51,
+          0.52,
+          0.47,
+          0.46,
+          0.26,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.15,
+          0.32,
+          0.54,
+          0.63,
+          0.81,
+          0.9,
+          0.97,
+          0.93,
+          0.78,
+          0.61,
+          0.58,
+          0.56,
+          0.41,
+          0.15,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 410
+      },
+      "sentiment": {
+        "score": 0.59,
+        "count": 140,
+        "aspects": {
+          "taste": 0.74,
+          "price": 1.0,
+          "mood": 0.72,
+          "service": 0.78,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "힙한": 0.8,
+        "가성비": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-018",
+      "name": "잔돈 소금빵집",
+      "category": "dessert.bakery",
+      "lat": 35.156632,
+      "lng": 129.061099,
+      "address": "부산 부산진구 샘플로28길 7 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "갓 구운 소금빵이 하루 다섯 번",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "소금빵",
+          "price": 3200,
+          "is_signature": true
+        },
+        {
+          "name": "명란 바게트",
+          "price": 3800,
+          "is_signature": false
+        },
+        {
+          "name": "앙버터",
+          "price": 5500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.14,
+          0.17,
+          0.28,
+          0.49,
+          0.66,
+          0.74,
+          0.72,
+          0.6,
+          0.49,
+          0.65,
+          0.61,
+          0.45,
+          0.19,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.33,
+          0.47,
+          0.66,
+          0.87,
+          0.95,
+          0.96,
+          0.79,
+          0.73,
+          0.77,
+          0.7,
+          0.56,
+          0.24,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 1050
+      },
+      "sentiment": {
+        "score": 0.69,
+        "count": 360,
+        "aspects": {
+          "taste": 0.87,
+          "price": 0.96,
+          "mood": 0.68,
+          "service": 0.79,
+          "wait": 0.39
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.9,
+        "웨이팅": 0.5,
+        "가성비": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-019",
+      "name": "동전 아이스크림",
+      "category": "dessert.icecream",
+      "lat": 35.158339,
+      "lng": 129.058242,
+      "address": "부산 부산진구 샘플로23길 14 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "우유 맛이 진한 소프트 아이스크림",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "소프트콘 더블",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "소프트콘",
+          "price": 4500,
+          "is_signature": false
+        },
+        {
+          "name": "파르페",
+          "price": 7000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.17,
+          0.29,
+          0.39,
+          0.54,
+          0.64,
+          0.66,
+          0.57,
+          0.44,
+          0.58,
+          0.53,
+          0.35,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.29,
+          0.43,
+          0.65,
+          0.75,
+          0.88,
+          0.87,
+          0.72,
+          0.67,
+          0.66,
+          0.64,
+          0.48,
+          0.21,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 300
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 90,
+        "aspects": {
+          "taste": 0.75,
+          "price": 0.61,
+          "mood": 0.71,
+          "service": 0.66,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.7,
+        "포토존": 0.6,
+        "키즈프렌들리": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-020",
+      "name": "눈사람 적금 빙수",
+      "category": "dessert.bingsu",
+      "lat": 35.154836,
+      "lng": 129.057143,
+      "address": "부산 부산진구 샘플로40길 21 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "국산 팥을 직접 쑤는 빙수집",
+      "thumbnail_url": null,
+      "price_per_person": 7000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "팥인절미 빙수",
+          "price": 11000,
+          "is_signature": true
+        },
+        {
+          "name": "딸기 빙수",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "녹차 빙수",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.24,
+          0.31,
+          0.4,
+          0.58,
+          0.68,
+          0.73,
+          0.58,
+          0.5,
+          0.56,
+          0.57,
+          0.38,
+          0.19,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.32,
+          0.48,
+          0.61,
+          0.81,
+          0.93,
+          0.85,
+          0.76,
+          0.65,
+          0.74,
+          0.73,
+          0.54,
+          0.23,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 470
+      },
+      "sentiment": {
+        "score": 0.54,
+        "count": 150,
+        "aspects": {
+          "taste": 0.76,
+          "price": 0.74,
+          "mood": 0.64,
+          "service": 0.63,
+          "wait": 0.79
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.8,
+        "단체석": 0.5,
+        "실내": 0.6,
+        "우천OK": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-021",
+      "name": "전포카페거리",
+      "category": "attraction.street",
+      "lat": 35.155554,
+      "lng": 129.063956,
+      "address": "부산 부산진구 샘플로35길 28 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공구상가 골목이 카페거리로 바뀐 곳",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.09,
+          0.13,
+          0.16,
+          0.26,
+          0.37,
+          0.38,
+          0.47,
+          0.5,
+          0.52,
+          0.52,
+          0.52,
+          0.4,
+          0.35,
+          0.31,
+          0.19,
+          0.15,
+          0.06
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.07,
+          0.16,
+          0.29,
+          0.4,
+          0.63,
+          0.74,
+          0.78,
+          0.98,
+          0.91,
+          0.85,
+          0.76,
+          0.62,
+          0.52,
+          0.41,
+          0.34,
+          0.14,
+          0.07
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 1800
+      },
+      "sentiment": {
+        "score": 0.65,
+        "count": 450,
+        "aspects": {
+          "taste": 0.72,
+          "price": 0.74,
+          "mood": 0.73,
+          "service": 0.78,
+          "wait": 0.74
+        }
+      },
+      "tags": {
+        "힙한": 0.8,
+        "산책하기좋은": 0.7,
+        "포토존": 0.7,
+        "야외": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-022",
+      "name": "부산시민공원 (남문 방면)",
+      "category": "attraction.park",
+      "lat": 35.166783,
+      "lng": 129.057253,
+      "address": "부산 부산진구 샘플로24길 35 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "잔디광장이 넓은 도심 공원",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.11,
+          0.15,
+          0.21,
+          0.2,
+          0.3,
+          0.38,
+          0.48,
+          0.54,
+          0.58,
+          0.6,
+          0.45,
+          0.45,
+          0.41,
+          0.3,
+          0.25,
+          0.15,
+          0.02
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.15,
+          0.16,
+          0.29,
+          0.48,
+          0.6,
+          0.74,
+          0.8,
+          0.89,
+          0.95,
+          0.91,
+          0.74,
+          0.65,
+          0.54,
+          0.41,
+          0.33,
+          0.2,
+          0.05
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 2200
+      },
+      "sentiment": {
+        "score": 0.8,
+        "count": 520,
+        "aspects": {
+          "taste": 0.85,
+          "price": 0.87,
+          "mood": 0.79,
+          "service": 0.84,
+          "wait": 0.88
+        }
+      },
+      "tags": {
+        "산책하기좋은": 1.0,
+        "야외": 0.9,
+        "키즈프렌들리": 0.8,
+        "반려동물동반": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-023",
+      "name": "서면 젊음의거리",
+      "category": "attraction.street",
+      "lat": 35.156542,
+      "lng": 129.058462,
+      "address": "부산 부산진구 샘플로18길 42 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서면 중심의 보행자 거리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.06,
+          0.19,
+          0.17,
+          0.17,
+          0.33,
+          0.37,
+          0.47,
+          0.45,
+          0.51,
+          0.54,
+          0.49,
+          0.42,
+          0.42,
+          0.33,
+          0.19,
+          0.09,
+          0.02
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.1,
+          0.19,
+          0.31,
+          0.41,
+          0.59,
+          0.69,
+          0.77,
+          0.93,
+          0.91,
+          0.88,
+          0.71,
+          0.64,
+          0.54,
+          0.39,
+          0.31,
+          0.19,
+          0.1
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 1300
+      },
+      "sentiment": {
+        "score": 0.4,
+        "count": 320,
+        "aspects": {
+          "taste": 0.65,
+          "price": 0.7,
+          "mood": 0.75,
+          "service": 0.72,
+          "wait": 0.59
+        }
+      },
+      "tags": {
+        "활기찬": 0.9,
+        "야외": 0.7,
+        "전시공연": 0.4
+      }
+    },
+    {
+      "external_id": "seomyeon-024",
+      "name": "부전시장",
+      "category": "attraction.market",
+      "lat": 35.162471,
+      "lng": 129.060549,
+      "address": "부산 부산진구 샘플로20길 49 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "부산에서 손꼽히는 큰 전통시장",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.12,
+          0.2,
+          0.17,
+          0.23,
+          0.27,
+          0.38,
+          0.46,
+          0.43,
+          0.56,
+          0.55,
+          0.48,
+          0.38,
+          0.37,
+          0.26,
+          0.25,
+          0.07,
+          0.05
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.13,
+          0.17,
+          0.23,
+          0.45,
+          0.57,
+          0.63,
+          0.83,
+          0.93,
+          0.91,
+          0.84,
+          0.7,
+          0.64,
+          0.48,
+          0.38,
+          0.29,
+          0.2,
+          0.02
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 890
+      },
+      "sentiment": {
+        "score": 0.57,
+        "count": 210,
+        "aspects": {
+          "taste": 0.94,
+          "price": 0.86,
+          "mood": 0.79,
+          "service": 0.68,
+          "wait": 0.65
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.8,
+        "레트로": 0.8,
+        "활기찬": 0.7,
+        "가성비": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-025",
+      "name": "서면역 문화마당 (샘플)",
+      "category": "attraction.landmark",
+      "lat": 35.158159,
+      "lng": 129.06,
+      "address": "부산 부산진구 샘플로38길 56 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "소규모 공연이 열리는 역 앞 광장",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.09,
+          0.12,
+          0.16,
+          0.18,
+          0.31,
+          0.36,
+          0.39,
+          0.44,
+          0.5,
+          0.5,
+          0.4,
+          0.38,
+          0.28,
+          0.28,
+          0.14,
+          0.04,
+          0.08
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.09,
+          0.18,
+          0.2,
+          0.39,
+          0.54,
+          0.61,
+          0.69,
+          0.79,
+          0.75,
+          0.75,
+          0.63,
+          0.52,
+          0.46,
+          0.41,
+          0.23,
+          0.18,
+          0.04
+        ]
+      },
+      "rating": {
+        "avg": 3.8,
+        "count": 160
+      },
+      "sentiment": {
+        "score": 0.3,
+        "count": 40,
+        "aspects": {
+          "taste": 0.56,
+          "price": 0.57,
+          "mood": 0.58,
+          "service": 0.67,
+          "wait": 0.65
+        }
+      },
+      "tags": {
+        "야외": 0.7,
+        "전시공연": 0.5,
+        "활기찬": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-026",
+      "name": "본전 오락실",
+      "category": "activity.arcade",
+      "lat": 35.155464,
+      "lng": 129.059121,
+      "address": "부산 부산진구 샘플로12길 3 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "리듬게임이 많은 24시 오락실",
+      "thumbnail_url": null,
+      "price_per_person": 5000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "코인 10개",
+          "price": 5000,
+          "is_signature": true
+        },
+        {
+          "name": "펌프 3곡",
+          "price": 1000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "00:00",
+          "close": "00:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.08,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.14,
+          0.22,
+          0.3,
+          0.32,
+          0.4,
+          0.45,
+          0.52,
+          0.6,
+          0.76,
+          0.71,
+          0.55,
+          0.41,
+          0.15
+        ],
+        "weekend": [
+          0.1,
+          0.06,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.38,
+          0.56,
+          0.71,
+          0.85,
+          0.9,
+          0.84,
+          0.86,
+          0.83,
+          0.85,
+          0.63,
+          0.43,
+          0.24
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 690
+      },
+      "sentiment": {
+        "score": 0.41,
+        "count": 170,
+        "aspects": {
+          "taste": 0.64,
+          "price": 0.82,
+          "mood": 0.75,
+          "service": 0.57,
+          "wait": 0.61
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "레트로": 0.8,
+        "실내": 0.8,
+        "우천OK": 0.8,
+        "가성비": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-027",
+      "name": "엔분의일 보드게임",
+      "category": "activity.boardgame",
+      "lat": 35.159597,
+      "lng": 129.061868,
+      "address": "부산 부산진구 샘플로4길 10 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "룸이 있는 보드게임 카페",
+      "thumbnail_url": null,
+      "price_per_person": 8000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "2시간 이용권",
+          "price": 8000,
+          "is_signature": true
+        },
+        {
+          "name": "무제한권",
+          "price": 13000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.09,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.18,
+          0.32,
+          0.39,
+          0.35,
+          0.45,
+          0.46,
+          0.59,
+          0.65,
+          0.7,
+          0.54,
+          0.35,
+          0.16
+        ],
+        "weekend": [
+          0.13,
+          0.04,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.31,
+          0.51,
+          0.69,
+          0.76,
+          0.79,
+          0.83,
+          0.79,
+          0.79,
+          0.78,
+          0.64,
+          0.48,
+          0.23
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 380
+      },
+      "sentiment": {
+        "score": 0.62,
+        "count": 120,
+        "aspects": {
+          "taste": 0.66,
+          "price": 0.77,
+          "mood": 0.82,
+          "service": 0.73,
+          "wait": 0.77
+        }
+      },
+      "tags": {
+        "체험형": 0.8,
+        "실내": 0.9,
+        "우천OK": 0.9,
+        "단체석": 0.8
+      }
+    },
+    {
+      "external_id": "seomyeon-028",
+      "name": "과녁 저축 양궁카페",
+      "category": "activity.sports",
+      "lat": 35.157441,
+      "lng": 129.056704,
+      "address": "부산 부산진구 샘플로5길 17 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "초보도 쉽게 배우는 실내 양궁",
+      "thumbnail_url": null,
+      "price_per_person": 12000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "20발 + 음료",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "커플 대결 세트",
+          "price": 22000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.02,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.19,
+          0.25,
+          0.35,
+          0.35,
+          0.42,
+          0.48,
+          0.56,
+          0.66,
+          0.64,
+          0.56,
+          0.33,
+          0.16
+        ],
+        "weekend": [
+          0.11,
+          0.03,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.3,
+          0.48,
+          0.71,
+          0.8,
+          0.84,
+          0.76,
+          0.81,
+          0.83,
+          0.78,
+          0.63,
+          0.43,
+          0.15
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 260
+      },
+      "sentiment": {
+        "score": 0.7,
+        "count": 90,
+        "aspects": {
+          "taste": 0.77,
+          "price": 0.75,
+          "mood": 0.8,
+          "service": 0.74,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "체험형": 0.9,
+        "활기찬": 0.6,
+        "실내": 0.9,
+        "우천OK": 0.9
+      }
+    },
+    {
+      "external_id": "seomyeon-029",
+      "name": "서면 골목 미술관 (샘플)",
+      "category": "culture.gallery",
+      "lat": 35.160136,
+      "lng": 129.065933,
+      "address": "부산 부산진구 샘플로28길 24 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "지역 작가 전시가 열리는 무료 미술관",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.3,
+          0.3,
+          0.35,
+          0.4,
+          0.35,
+          0.33,
+          0.3,
+          0.22,
+          0.14,
+          0.12,
+          0.06,
+          0.02,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.46,
+          0.47,
+          0.6,
+          0.67,
+          0.77,
+          0.64,
+          0.51,
+          0.39,
+          0.23,
+          0.21,
+          0.09,
+          0.07,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 110
+      },
+      "sentiment": {
+        "score": 0.55,
+        "count": 30,
+        "aspects": {
+          "taste": 0.76,
+          "price": 0.63,
+          "mood": 0.95,
+          "service": 0.8,
+          "wait": 0.78
+        }
+      },
+      "tags": {
+        "전시공연": 0.9,
+        "조용한": 0.8,
+        "실내": 0.7,
+        "우천OK": 0.7
+      }
+    },
+    {
+      "external_id": "seomyeon-030",
+      "name": "부산 인디 시네마 (샘플)",
+      "category": "culture.cinema",
+      "lat": 35.158519,
+      "lng": 129.055385,
+      "address": "부산 부산진구 샘플로20길 31 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "독립·예술영화 전용관",
+      "thumbnail_url": null,
+      "price_per_person": 11000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 관람권",
+          "price": 11000,
+          "is_signature": true
+        },
+        {
+          "name": "조조 관람권",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "00:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.28,
+          0.29,
+          0.39,
+          0.42,
+          0.39,
+          0.34,
+          0.25,
+          0.25,
+          0.19,
+          0.13,
+          0.08,
+          0.09,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.28,
+          0.47,
+          0.55,
+          0.62,
+          0.79,
+          0.77,
+          0.71,
+          0.56,
+          0.36,
+          0.25,
+          0.22,
+          0.1,
+          0.02,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 205
+      },
+      "sentiment": {
+        "score": 0.68,
+        "count": 70,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.82,
+          "mood": 1.0,
+          "service": 0.75,
+          "wait": 0.78
+        }
+      },
+      "tags": {
+        "전시공연": 0.9,
+        "감성적인": 0.7,
+        "실내": 0.8,
+        "우천OK": 0.8
+      }
+    },
+    {
+      "external_id": "seomyeon-031",
+      "name": "전포 공구길 전시관 (샘플)",
+      "category": "culture.exhibition",
+      "lat": 35.156632,
+      "lng": 129.064944,
+      "address": "부산 부산진구 샘플로28길 38 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공구상가의 기억을 담은 기획 전시",
+      "thumbnail_url": null,
+      "price_per_person": 8000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 입장권",
+          "price": 8000,
+          "is_signature": true
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.27,
+          0.27,
+          0.38,
+          0.45,
+          0.42,
+          0.33,
+          0.27,
+          0.22,
+          0.21,
+          0.15,
+          0.07,
+          0.08,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.26,
+          0.44,
+          0.54,
+          0.7,
+          0.79,
+          0.83,
+          0.71,
+          0.55,
+          0.36,
+          0.3,
+          0.16,
+          0.18,
+          0.07,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 240
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 80,
+        "aspects": {
+          "taste": 0.75,
+          "price": 0.8,
+          "mood": 0.79,
+          "service": 0.7,
+          "wait": 0.72
+        }
+      },
+      "tags": {
+        "전시공연": 1.0,
+        "포토존": 0.7,
+        "힙한": 0.6,
+        "실내": 0.8,
+        "우천OK": 0.8
+      }
+    },
+    {
+      "external_id": "seomyeon-032",
+      "name": "짠돌이 포차",
+      "category": "bar.pocha",
+      "lat": 35.155824,
+      "lng": 129.057583,
+      "address": "부산 부산진구 샘플로4길 45 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서면 포차골목 분위기의 실내 포차",
+      "thumbnail_url": null,
+      "price_per_person": 15000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "오뎅탕",
+          "price": 15000,
+          "is_signature": true
+        },
+        {
+          "name": "닭똥집 볶음",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "대선 소주",
+          "price": 5000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.34,
+          0.2,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.32,
+          0.6,
+          0.76,
+          0.86,
+          0.81,
+          0.56
+        ],
+        "weekend": [
+          0.52,
+          0.34,
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.18,
+          0.46,
+          0.77,
+          0.95,
+          0.97,
+          0.95,
+          0.74
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 860
+      },
+      "sentiment": {
+        "score": 0.44,
+        "count": 270,
+        "aspects": {
+          "taste": 0.65,
+          "price": 0.97,
+          "mood": 0.74,
+          "service": 0.72,
+          "wait": 0.59
+        }
+      },
+      "tags": {
+        "활기찬": 0.9,
+        "레트로": 0.7,
+        "단체석": 0.6,
+        "가성비": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-033",
+      "name": "이자율 와인바",
+      "category": "bar.wine",
+      "lat": 35.154836,
+      "lng": 129.066153,
+      "address": "부산 부산진구 샘플로15길 52 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "전포동 2층의 작은 와인바",
+      "thumbnail_url": null,
+      "price_per_person": 28000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "글라스 와인",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "부라타 샐러드",
+          "price": 18000,
+          "is_signature": false
+        },
+        {
+          "name": "보틀(하우스)",
+          "price": 48000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "18:00",
+          "close": "01:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.33,
+          0.17,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.28,
+          0.49,
+          0.67,
+          0.79,
+          0.7,
+          0.53
+        ],
+        "weekend": [
+          0.47,
+          0.31,
+          0.14,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.46,
+          0.61,
+          0.85,
+          0.9,
+          0.84,
+          0.72
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 170
+      },
+      "sentiment": {
+        "score": 0.78,
+        "count": 65,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.84,
+          "mood": 0.96,
+          "service": 0.74,
+          "wait": 0.81
+        }
+      },
+      "tags": {
+        "로맨틱": 0.9,
+        "조용한": 0.7,
+        "예약가능": 0.6,
+        "아늑한": 0.7
+      }
+    },
+    {
+      "external_id": "seomyeon-034",
+      "name": "반띵 펍",
+      "category": "bar.pub",
+      "lat": 35.154836,
+      "lng": 129.061209,
+      "address": "부산 부산진구 샘플로33길 59 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "스포츠 중계를 틀어주는 펍",
+      "thumbnail_url": null,
+      "price_per_person": 13000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "라거 파인트",
+          "price": 7500,
+          "is_signature": true
+        },
+        {
+          "name": "치킨 텐더",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "어니언링",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.33,
+          0.17,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.18,
+          0.4,
+          0.58,
+          0.75,
+          0.89,
+          0.83,
+          0.53
+        ],
+        "weekend": [
+          0.56,
+          0.34,
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.5,
+          0.75,
+          0.92,
+          0.95,
+          0.92,
+          0.74
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 640
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 200,
+        "aspects": {
+          "taste": 0.61,
+          "price": 0.94,
+          "mood": 0.63,
+          "service": 0.71,
+          "wait": 0.66
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "단체석": 0.8,
+        "가성비": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-035",
+      "name": "월말 이자카야",
+      "category": "bar.izakaya",
+      "lat": 35.159956,
+      "lng": 129.054506,
+      "address": "부산 부산진구 샘플로16길 6 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "다찌 10석의 골목 이자카야",
+      "thumbnail_url": null,
+      "price_per_person": 20000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "모둠 사시미(소)",
+          "price": 26000,
+          "is_signature": true
+        },
+        {
+          "name": "하이볼",
+          "price": 7500,
+          "is_signature": false
+        },
+        {
+          "name": "가라아게",
+          "price": 13000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "open": "18:00",
+          "close": "02:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "18:00",
+          "close": "03:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.32,
+          0.17,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.19,
+          0.36,
+          0.53,
+          0.71,
+          0.86,
+          0.77,
+          0.57
+        ],
+        "weekend": [
+          0.53,
+          0.25,
+          0.14,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.42,
+          0.71,
+          0.89,
+          0.94,
+          0.96,
+          0.73
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 330
+      },
+      "sentiment": {
+        "score": 0.64,
+        "count": 110,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.7,
+          "mood": 0.88,
+          "service": 0.78,
+          "wait": 0.82
+        }
+      },
+      "tags": {
+        "아늑한": 0.8,
+        "예약가능": 0.5,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "seomyeon-036",
+      "name": "무이자 칵테일",
+      "category": "bar.cocktail",
+      "lat": 35.153578,
+      "lng": 129.063296,
+      "address": "부산 부산진구 샘플로4길 13 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "스피크이지 콘셉트의 칵테일 바",
+      "thumbnail_url": null,
+      "price_per_person": 19000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "시그니처 칵테일",
+          "price": 15000,
+          "is_signature": true
+        },
+        {
+          "name": "위스키 하이볼",
+          "price": 12000,
+          "is_signature": false
+        },
+        {
+          "name": "치즈 플레이트",
+          "price": 14000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "open": "18:00",
+          "close": "02:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "18:00",
+          "close": "03:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.23,
+          0.1,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.3,
+          0.48,
+          0.67,
+          0.79,
+          0.74,
+          0.47
+        ],
+        "weekend": [
+          0.44,
+          0.25,
+          0.05,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.4,
+          0.6,
+          0.79,
+          0.84,
+          0.92,
+          0.67
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 150
+      },
+      "sentiment": {
+        "score": 0.74,
+        "count": 55,
+        "aspects": {
+          "taste": 1.0,
+          "price": 0.8,
+          "mood": 0.99,
+          "service": 0.83,
+          "wait": 0.88
+        }
+      },
+      "tags": {
+        "로맨틱": 0.8,
+        "힙한": 0.7,
+        "시그니처메뉴": 0.6,
+        "조용한": 0.5
+      }
+    },
+    {
+      "external_id": "seomyeon-037",
+      "name": "서면 스카이라인 옥상 전망 (샘플)",
+      "category": "nightview.rooftop",
+      "lat": 35.154027,
+      "lng": 129.059341,
+      "address": "부산 부산진구 샘플로2길 20 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서면 네온사인이 한눈에 보이는 공공 옥상",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.06,
+          0.08,
+          0.07,
+          0.08,
+          0.1,
+          0.17,
+          0.15,
+          0.36,
+          0.58,
+          0.72,
+          0.68,
+          0.34,
+          0.09
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.13,
+          0.14,
+          0.16,
+          0.17,
+          0.14,
+          0.2,
+          0.35,
+          0.5,
+          0.79,
+          0.84,
+          0.82,
+          0.54,
+          0.23
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 180
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 45,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.65,
+          "mood": 0.94,
+          "service": 0.71,
+          "wait": 0.76
+        }
+      },
+      "tags": {
+        "야경명소": 0.9,
+        "로맨틱": 0.7,
+        "야외": 0.8,
+        "포토존": 0.6
+      }
+    },
+    {
+      "external_id": "seomyeon-038",
+      "name": "동천 수변 야경 산책로",
+      "category": "nightview.riverside",
+      "lat": 35.155105,
+      "lng": 129.066153,
+      "address": "부산 부산진구 샘플로30길 27 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "조명이 켜지는 동천변 산책로",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.07,
+          0.06,
+          0.07,
+          0.09,
+          0.14,
+          0.13,
+          0.22,
+          0.33,
+          0.57,
+          0.76,
+          0.62,
+          0.35,
+          0.1
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.12,
+          0.11,
+          0.14,
+          0.14,
+          0.21,
+          0.21,
+          0.34,
+          0.45,
+          0.79,
+          0.91,
+          0.82,
+          0.51,
+          0.23
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 260
+      },
+      "sentiment": {
+        "score": 0.48,
+        "count": 60,
+        "aspects": {
+          "taste": 0.66,
+          "price": 0.7,
+          "mood": 0.91,
+          "service": 0.79,
+          "wait": 0.73
+        }
+      },
+      "tags": {
+        "야경명소": 0.7,
+        "산책하기좋은": 0.8,
+        "조용한": 0.6,
+        "야외": 0.9
+      }
+    }
+  ],
+  "events": [
+    {
+      "external_id": "seomyeon-ev-001",
+      "title": "서면 빛 축제 (샘플)",
+      "category": "culture.festival",
+      "lat": 35.156722,
+      "lng": 129.058681,
+      "address": "부산 부산진구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": true,
+      "price": null,
+      "description": "거리 전체를 조명으로 꾸미는 빛 축제",
+      "booking_url": null
+    },
+    {
+      "external_id": "seomyeon-ev-002",
+      "title": "전포 커피 페스티벌 (샘플)",
+      "category": "culture.festival",
+      "lat": 35.155464,
+      "lng": 129.064065,
+      "address": "부산 부산진구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": true,
+      "price": null,
+      "description": "전포카페거리 로스터리들이 참여하는 커피 축제",
+      "booking_url": null
+    }
+  ]
+}

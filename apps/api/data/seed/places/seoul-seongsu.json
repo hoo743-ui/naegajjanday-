@@ -1,0 +1,4498 @@
+{
+  "_sample": true,
+  "_note": "허구의 샘플 데이터입니다. 상호·메뉴·가격·평점은 모두 가상이며, 실제 서비스 데이터는 공식 Open API 제공자(Kakao Local, Naver Search, Google Places, TourAPI, data.go.kr)에서 수집합니다. Fictional sample data; real data comes from official Open API providers.",
+  "region": "seoul-seongsu",
+  "provider": "file",
+  "places": [
+    {
+      "external_id": "seongsu-001",
+      "name": "성수 짠물 칼국수",
+      "category": "food.noodle",
+      "lat": 37.546037,
+      "lng": 127.05454,
+      "address": "서울 성동구 샘플로33길 8 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "바지락이 수북한 칼국수",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "바지락 칼국수",
+          "price": 9000,
+          "is_signature": true
+        },
+        {
+          "name": "들깨 칼국수",
+          "price": 10000,
+          "is_signature": false
+        },
+        {
+          "name": "만두",
+          "price": 7000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.13,
+          0.2,
+          0.51,
+          0.91,
+          0.84,
+          0.48,
+          0.2,
+          0.23,
+          0.4,
+          0.76,
+          0.94,
+          0.68,
+          0.44,
+          0.18,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.17,
+          0.26,
+          0.62,
+          0.9,
+          0.92,
+          0.61,
+          0.35,
+          0.34,
+          0.5,
+          0.81,
+          0.9,
+          0.75,
+          0.43,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 468
+      },
+      "sentiment": {
+        "score": 0.57,
+        "count": 160,
+        "aspects": {
+          "taste": 0.82,
+          "price": 0.94,
+          "mood": 0.78,
+          "service": 0.79,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "가성비": 0.8,
+        "혼밥OK": 0.7,
+        "로컬맛집": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-002",
+      "name": "공장뷰 백반집",
+      "category": "food.korean",
+      "lat": 37.543522,
+      "lng": 127.059072,
+      "address": "서울 성동구 샘플로36길 15 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공장 골목 노포 백반",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "오늘의 백반",
+          "price": 9000,
+          "is_signature": true
+        },
+        {
+          "name": "김치찌개",
+          "price": 8000,
+          "is_signature": false
+        },
+        {
+          "name": "제육볶음",
+          "price": 10000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "11:00",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        },
+        {
+          "dow": [
+            5
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "is_closed": true
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.08,
+          0.2,
+          0.51,
+          0.92,
+          0.78,
+          0.4,
+          0.18,
+          0.15,
+          0.41,
+          0.76,
+          0.85,
+          0.64,
+          0.35,
+          0.19,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.12,
+          0.28,
+          0.63,
+          0.94,
+          0.89,
+          0.6,
+          0.34,
+          0.33,
+          0.57,
+          0.87,
+          0.96,
+          0.78,
+          0.39,
+          0.23,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 350
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 120,
+        "aspects": {
+          "taste": 0.89,
+          "price": 0.97,
+          "mood": 0.7,
+          "service": 0.76,
+          "wait": 0.63
+        }
+      },
+      "tags": {
+        "가성비": 0.9,
+        "로컬맛집": 0.8,
+        "혼밥OK": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-003",
+      "name": "천원김밥 분식연구소",
+      "category": "food.snack",
+      "lat": 37.544061,
+      "lng": 127.056353,
+      "address": "서울 성동구 샘플로8길 22 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "빠르고 저렴한 분식",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "분식 세트",
+          "price": 7500,
+          "is_signature": true
+        },
+        {
+          "name": "쫄면",
+          "price": 7000,
+          "is_signature": false
+        },
+        {
+          "name": "김밥",
+          "price": 4500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.14,
+          0.17,
+          0.48,
+          0.91,
+          0.9,
+          0.46,
+          0.21,
+          0.22,
+          0.48,
+          0.84,
+          0.92,
+          0.69,
+          0.42,
+          0.19,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.14,
+          0.3,
+          0.67,
+          1.0,
+          1.0,
+          0.64,
+          0.37,
+          0.37,
+          0.62,
+          0.91,
+          1.0,
+          0.76,
+          0.52,
+          0.22,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 990
+      },
+      "sentiment": {
+        "score": 0.4,
+        "count": 300,
+        "aspects": {
+          "taste": 0.72,
+          "price": 0.81,
+          "mood": 0.69,
+          "service": 0.66,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "가성비": 1.0,
+        "활기찬": 0.6,
+        "혼밥OK": 0.7,
+        "매운맛": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-004",
+      "name": "적금만기 파스타",
+      "category": "food.western",
+      "lat": 37.546756,
+      "lng": 127.052161,
+      "address": "서울 성동구 샘플로22길 29 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "붉은 벽돌 건물 2층 생면 파스타",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "라구 파스타",
+          "price": 16000,
+          "is_signature": true
+        },
+        {
+          "name": "봉골레",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "트러플 크림 뇨끼",
+          "price": 18000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.13,
+          0.22,
+          0.46,
+          0.91,
+          0.89,
+          0.45,
+          0.17,
+          0.22,
+          0.43,
+          0.83,
+          0.87,
+          0.72,
+          0.39,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.16,
+          0.27,
+          0.61,
+          0.98,
+          0.98,
+          0.57,
+          0.34,
+          0.4,
+          0.53,
+          0.89,
+          0.94,
+          0.77,
+          0.49,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 512
+      },
+      "sentiment": {
+        "score": 0.76,
+        "count": 220,
+        "aspects": {
+          "taste": 0.74,
+          "price": 0.74,
+          "mood": 1.0,
+          "service": 0.71,
+          "wait": 0.79
+        }
+      },
+      "tags": {
+        "로맨틱": 0.8,
+        "예약가능": 0.7,
+        "감성적인": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-005",
+      "name": "반값 텐동",
+      "category": "food.japanese",
+      "lat": 37.547385,
+      "lng": 127.058053,
+      "address": "서울 성동구 샘플로40길 36 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "튀김이 산처럼 올라간 텐동",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "스페셜 텐동",
+          "price": 13000,
+          "is_signature": true
+        },
+        {
+          "name": "기본 텐동",
+          "price": 11000,
+          "is_signature": false
+        },
+        {
+          "name": "에비 텐동",
+          "price": 15000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.07,
+          0.22,
+          0.48,
+          0.94,
+          0.86,
+          0.48,
+          0.18,
+          0.21,
+          0.49,
+          0.81,
+          0.98,
+          0.75,
+          0.45,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.11,
+          0.3,
+          0.61,
+          0.97,
+          0.99,
+          0.64,
+          0.37,
+          0.35,
+          0.58,
+          0.85,
+          1.0,
+          0.76,
+          0.51,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 860
+      },
+      "sentiment": {
+        "score": 0.69,
+        "count": 340,
+        "aspects": {
+          "taste": 0.88,
+          "price": 0.72,
+          "mood": 0.85,
+          "service": 0.76,
+          "wait": 0.51
+        }
+      },
+      "tags": {
+        "웨이팅": 0.9,
+        "시그니처메뉴": 0.8,
+        "혼밥OK": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-006",
+      "name": "복리 마라",
+      "category": "food.chinese",
+      "lat": 37.542983,
+      "lng": 127.051142,
+      "address": "서울 성동구 샘플로9길 43 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "얼얼한 맛을 단계별로 고르는 마라",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "마라탕",
+          "price": 12000,
+          "is_signature": true
+        },
+        {
+          "name": "마라샹궈",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "지삼선 덮밥",
+          "price": 10000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "11:00",
+          "close": "00:30"
+        },
+        {
+          "dow": [
+            6
+          ],
+          "open": "11:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.13,
+          0.16,
+          0.52,
+          0.87,
+          0.85,
+          0.46,
+          0.23,
+          0.24,
+          0.45,
+          0.78,
+          0.87,
+          0.66,
+          0.35,
+          0.17,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.11,
+          0.22,
+          0.61,
+          0.91,
+          0.92,
+          0.55,
+          0.32,
+          0.34,
+          0.57,
+          0.88,
+          0.96,
+          0.77,
+          0.47,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 430
+      },
+      "sentiment": {
+        "score": 0.28,
+        "count": 140,
+        "aspects": {
+          "taste": 0.54,
+          "price": 0.53,
+          "mood": 0.7,
+          "service": 0.52,
+          "wait": 0.54
+        }
+      },
+      "tags": {
+        "매운맛": 0.9,
+        "활기찬": 0.6,
+        "단체석": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-007",
+      "name": "연말정산 숯불구이",
+      "category": "food.bbq",
+      "lat": 37.545678,
+      "lng": 127.061791,
+      "address": "서울 성동구 샘플로39길 50 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "직원이 구워주는 숙성 돼지고기",
+      "thumbnail_url": null,
+      "price_per_person": 26000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "목살(1인분)",
+          "price": 18000,
+          "is_signature": true
+        },
+        {
+          "name": "항정살(1인분)",
+          "price": 19000,
+          "is_signature": false
+        },
+        {
+          "name": "된장술밥",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.06,
+          0.19,
+          0.55,
+          0.92,
+          0.93,
+          0.5,
+          0.23,
+          0.22,
+          0.45,
+          0.84,
+          0.97,
+          0.71,
+          0.42,
+          0.18,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.14,
+          0.29,
+          0.68,
+          0.99,
+          1.0,
+          0.59,
+          0.32,
+          0.33,
+          0.55,
+          0.86,
+          1.0,
+          0.75,
+          0.47,
+          0.25,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 1100
+      },
+      "sentiment": {
+        "score": 0.66,
+        "count": 380,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.67,
+          "mood": 0.83,
+          "service": 0.72,
+          "wait": 0.46
+        }
+      },
+      "tags": {
+        "단체석": 0.8,
+        "활기찬": 0.7,
+        "웨이팅": 0.7,
+        "주차가능": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-008",
+      "name": "환전소 카레",
+      "category": "food.asian",
+      "lat": 37.541186,
+      "lng": 127.053181,
+      "address": "서울 성동구 샘플로20길 57 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "향신료를 직접 배합하는 카레",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "반반 카레",
+          "price": 11500,
+          "is_signature": true
+        },
+        {
+          "name": "치킨 카레",
+          "price": 10500,
+          "is_signature": false
+        },
+        {
+          "name": "새우 카레",
+          "price": 13000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.05,
+          0.16,
+          0.45,
+          0.87,
+          0.84,
+          0.41,
+          0.21,
+          0.18,
+          0.38,
+          0.81,
+          0.88,
+          0.65,
+          0.37,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.12,
+          0.23,
+          0.56,
+          0.94,
+          0.89,
+          0.61,
+          0.37,
+          0.34,
+          0.55,
+          0.87,
+          0.91,
+          0.73,
+          0.42,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 295
+      },
+      "sentiment": {
+        "score": 0.62,
+        "count": 100,
+        "aspects": {
+          "taste": 0.67,
+          "price": 0.78,
+          "mood": 0.95,
+          "service": 0.8,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "혼밥OK": 0.8,
+        "채식가능": 0.6,
+        "아늑한": 0.5,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-009",
+      "name": "소소한 지출 브런치",
+      "category": "food.brunch",
+      "lat": 37.545139,
+      "lng": 127.049555,
+      "address": "서울 성동구 샘플로35길 4 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "서울숲 가는 길목의 브런치 카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "아보카도 오픈토스트",
+          "price": 16000,
+          "is_signature": true
+        },
+        {
+          "name": "그래놀라 볼",
+          "price": 14000,
+          "is_signature": false
+        },
+        {
+          "name": "팬케이크 플레이트",
+          "price": 18000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "09:00",
+          "close": "16:30"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.07,
+          0.21,
+          0.52,
+          0.93,
+          0.83,
+          0.49,
+          0.18,
+          0.24,
+          0.49,
+          0.77,
+          0.94,
+          0.76,
+          0.44,
+          0.19,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.16,
+          0.23,
+          0.58,
+          0.93,
+          0.98,
+          0.63,
+          0.36,
+          0.4,
+          0.54,
+          0.9,
+          0.99,
+          0.77,
+          0.46,
+          0.19,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 610
+      },
+      "sentiment": {
+        "score": 0.59,
+        "count": 210,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.83,
+          "mood": 0.83,
+          "service": 0.76,
+          "wait": 0.47
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "포토존": 0.7,
+        "반려동물동반": 0.6,
+        "웨이팅": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-010",
+      "name": "특가 한우국밥",
+      "category": "food.korean",
+      "lat": 37.540827,
+      "lng": 127.059979,
+      "address": "서울 성동구 샘플로30길 11 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "뚝섬역 근처 진한 국밥",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "한우 국밥",
+          "price": 11000,
+          "is_signature": true
+        },
+        {
+          "name": "특 국밥",
+          "price": 13000,
+          "is_signature": false
+        },
+        {
+          "name": "육회 비빔밥",
+          "price": 10000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:30",
+          "close": "21:30",
+          "break_start": "15:00",
+          "break_end": "17:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.07,
+          0.2,
+          0.49,
+          0.93,
+          0.85,
+          0.48,
+          0.19,
+          0.21,
+          0.48,
+          0.82,
+          0.94,
+          0.74,
+          0.43,
+          0.15,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.13,
+          0.26,
+          0.61,
+          1.0,
+          0.96,
+          0.66,
+          0.36,
+          0.36,
+          0.6,
+          0.88,
+          0.98,
+          0.75,
+          0.45,
+          0.17,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 804
+      },
+      "sentiment": {
+        "score": 0.68,
+        "count": 260,
+        "aspects": {
+          "taste": 0.97,
+          "price": 0.84,
+          "mood": 0.68,
+          "service": 0.83,
+          "wait": 0.86
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.8,
+        "혼밥OK": 0.7,
+        "주차가능": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-011",
+      "name": "첫 거래 다이닝",
+      "category": "food.western",
+      "lat": 37.54999,
+      "lng": 127.05692,
+      "address": "서울 성동구 샘플로38길 18 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "갓 오픈한 12석 다이닝",
+      "thumbnail_url": null,
+      "price_per_person": 22000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "디너 코스(1인)",
+          "price": 38000,
+          "is_signature": true
+        },
+        {
+          "name": "오늘의 생선",
+          "price": 24000,
+          "is_signature": false
+        },
+        {
+          "name": "글라스 와인",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:00",
+          "break_start": "15:00",
+          "break_end": "17:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.1,
+          0.17,
+          0.34,
+          0.61,
+          0.64,
+          0.31,
+          0.13,
+          0.18,
+          0.34,
+          0.56,
+          0.66,
+          0.53,
+          0.24,
+          0.11,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.13,
+          0.13,
+          0.44,
+          0.68,
+          0.67,
+          0.43,
+          0.21,
+          0.2,
+          0.42,
+          0.6,
+          0.7,
+          0.52,
+          0.28,
+          0.12,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 5.0,
+        "count": 7
+      },
+      "sentiment": {
+        "score": null,
+        "count": 0,
+        "aspects": {}
+      },
+      "tags": {
+        "로맨틱": 0.7,
+        "조용한": 0.6,
+        "예약가능": 0.8
+      }
+    },
+    {
+      "external_id": "seongsu-012",
+      "name": "영수증 로스터스",
+      "category": "cafe.roastery",
+      "lat": 37.545408,
+      "lng": 127.05522,
+      "address": "서울 성동구 샘플로1길 25 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "창고를 개조한 대형 로스터리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "필터 커피",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "아메리카노",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "게이샤 드립",
+          "price": 7000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.26,
+          0.28,
+          0.41,
+          0.46,
+          0.56,
+          0.7,
+          0.8,
+          0.88,
+          0.7,
+          0.54,
+          0.53,
+          0.52,
+          0.51,
+          0.29,
+          0.09,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.22,
+          0.38,
+          0.49,
+          0.67,
+          0.82,
+          1.0,
+          0.99,
+          0.98,
+          0.82,
+          0.67,
+          0.6,
+          0.63,
+          0.38,
+          0.15,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 1340
+      },
+      "sentiment": {
+        "score": 0.71,
+        "count": 480,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.87,
+          "mood": 0.81,
+          "service": 0.87,
+          "wait": 0.76
+        }
+      },
+      "tags": {
+        "힙한": 0.8,
+        "시그니처메뉴": 0.6,
+        "포토존": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-013",
+      "name": "오백원 커피",
+      "category": "cafe.coffee",
+      "lat": 37.544331,
+      "lng": 127.057599,
+      "address": "서울 성동구 샘플로37길 32 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "성수역 앞 테이크아웃 커피",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "아메리카노",
+          "price": 3500,
+          "is_signature": true
+        },
+        {
+          "name": "카페라떼",
+          "price": 4000,
+          "is_signature": false
+        },
+        {
+          "name": "레몬티",
+          "price": 4500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.25,
+          0.28,
+          0.36,
+          0.37,
+          0.5,
+          0.65,
+          0.79,
+          0.78,
+          0.73,
+          0.55,
+          0.53,
+          0.52,
+          0.47,
+          0.35,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.23,
+          0.37,
+          0.49,
+          0.69,
+          0.85,
+          0.91,
+          0.96,
+          0.89,
+          0.74,
+          0.64,
+          0.65,
+          0.53,
+          0.44,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 3.9,
+        "count": 720
+      },
+      "sentiment": {
+        "score": 0.3,
+        "count": 190,
+        "aspects": {
+          "taste": 0.55,
+          "price": 0.91,
+          "mood": 0.71,
+          "service": 0.64,
+          "wait": 0.55
+        }
+      },
+      "tags": {
+        "가성비": 0.9,
+        "혼밥OK": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-014",
+      "name": "붉은벽돌 정산 카페",
+      "category": "cafe.view",
+      "lat": 37.544959,
+      "lng": 127.052728,
+      "address": "서울 성동구 샘플로7길 39 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "옥상에서 성수 골목이 내려다보이는 카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "시그니처 크림라떼",
+          "price": 7500,
+          "is_signature": true
+        },
+        {
+          "name": "아메리카노",
+          "price": 6500,
+          "is_signature": false
+        },
+        {
+          "name": "티라미수 세트",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.26,
+          0.37,
+          0.38,
+          0.47,
+          0.54,
+          0.74,
+          0.86,
+          0.87,
+          0.79,
+          0.62,
+          0.57,
+          0.58,
+          0.54,
+          0.34,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.19,
+          0.38,
+          0.59,
+          0.71,
+          0.86,
+          1.0,
+          1.0,
+          1.0,
+          0.78,
+          0.71,
+          0.63,
+          0.61,
+          0.41,
+          0.12,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 1750
+      },
+      "sentiment": {
+        "score": 0.63,
+        "count": 520,
+        "aspects": {
+          "taste": 0.67,
+          "price": 0.67,
+          "mood": 0.97,
+          "service": 0.84,
+          "wait": 0.3
+        }
+      },
+      "tags": {
+        "포토존": 0.9,
+        "뷰맛집": 0.7,
+        "힙한": 0.7,
+        "웨이팅": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-015",
+      "name": "가계부 서가",
+      "category": "cafe.book",
+      "lat": 37.547834,
+      "lng": 127.060772,
+      "address": "서울 성동구 샘플로27길 46 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "큰 테이블이 있는 조용한 북카페",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "드립커피",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "얼그레이",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "핫초코",
+          "price": 6500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            1
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            0,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.19,
+          0.3,
+          0.37,
+          0.35,
+          0.44,
+          0.62,
+          0.73,
+          0.71,
+          0.67,
+          0.5,
+          0.47,
+          0.42,
+          0.37,
+          0.3,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.12,
+          0.16,
+          0.27,
+          0.44,
+          0.61,
+          0.72,
+          0.78,
+          0.83,
+          0.81,
+          0.72,
+          0.57,
+          0.55,
+          0.53,
+          0.33,
+          0.09,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 156
+      },
+      "sentiment": {
+        "score": 0.81,
+        "count": 60,
+        "aspects": {
+          "taste": 0.88,
+          "price": 0.78,
+          "mood": 0.97,
+          "service": 0.92,
+          "wait": 0.89
+        }
+      },
+      "tags": {
+        "조용한": 1.0,
+        "아늑한": 0.8,
+        "우천OK": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-016",
+      "name": "티끌모아 티하우스",
+      "category": "cafe.tea",
+      "lat": 37.549092,
+      "lng": 127.054201,
+      "address": "서울 성동구 샘플로9길 53 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "예약제로 운영하는 작은 티하우스",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "우롱차 세트",
+          "price": 6500,
+          "is_signature": true
+        },
+        {
+          "name": "보이차",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "다식 세트",
+          "price": 8000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.19,
+          0.32,
+          0.28,
+          0.38,
+          0.4,
+          0.59,
+          0.66,
+          0.68,
+          0.62,
+          0.5,
+          0.46,
+          0.42,
+          0.38,
+          0.29,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.22,
+          0.34,
+          0.4,
+          0.57,
+          0.7,
+          0.79,
+          0.85,
+          0.76,
+          0.69,
+          0.62,
+          0.54,
+          0.52,
+          0.36,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 118
+      },
+      "sentiment": {
+        "score": 0.75,
+        "count": 38,
+        "aspects": {
+          "taste": 0.8,
+          "price": 0.78,
+          "mood": 1.0,
+          "service": 0.77,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "조용한": 0.9,
+        "감성적인": 0.7,
+        "로맨틱": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-017",
+      "name": "공병환급 커피바",
+      "category": "cafe.coffee",
+      "lat": 37.546217,
+      "lng": 127.058732,
+      "address": "서울 성동구 샘플로17길 60 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "텀블러 할인이 큰 스탠딩 커피바",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "플랫화이트",
+          "price": 4300,
+          "is_signature": true
+        },
+        {
+          "name": "에스프레소",
+          "price": 3800,
+          "is_signature": false
+        },
+        {
+          "name": "아인슈페너",
+          "price": 4800,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "open": "08:00",
+          "close": "21:00"
+        },
+        {
+          "dow": [
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.32,
+          0.33,
+          0.39,
+          0.46,
+          0.63,
+          0.7,
+          0.77,
+          0.73,
+          0.57,
+          0.51,
+          0.47,
+          0.46,
+          0.29,
+          0.15,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.16,
+          0.34,
+          0.45,
+          0.63,
+          0.76,
+          0.88,
+          0.9,
+          0.84,
+          0.7,
+          0.66,
+          0.57,
+          0.5,
+          0.44,
+          0.17,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 388
+      },
+      "sentiment": {
+        "score": 0.56,
+        "count": 130,
+        "aspects": {
+          "taste": 0.82,
+          "price": 0.93,
+          "mood": 0.72,
+          "service": 0.73,
+          "wait": 0.65
+        }
+      },
+      "tags": {
+        "힙한": 0.7,
+        "가성비": 0.6,
+        "레트로": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-018",
+      "name": "잔액부족 도넛",
+      "category": "dessert.bakery",
+      "lat": 37.543792,
+      "lng": 127.053634,
+      "address": "서울 성동구 샘플로31길 7 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "주말엔 줄이 긴 수제 도넛",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "글레이즈드 도넛",
+          "price": 3500,
+          "is_signature": true
+        },
+        {
+          "name": "크림 도넛",
+          "price": 4000,
+          "is_signature": false
+        },
+        {
+          "name": "도넛 박스(소)",
+          "price": 4800,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.24,
+          0.28,
+          0.44,
+          0.62,
+          0.73,
+          0.72,
+          0.56,
+          0.56,
+          0.69,
+          0.62,
+          0.47,
+          0.12,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.15,
+          0.29,
+          0.51,
+          0.73,
+          0.86,
+          0.96,
+          0.94,
+          0.78,
+          0.68,
+          0.77,
+          0.8,
+          0.56,
+          0.26,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 1420
+      },
+      "sentiment": {
+        "score": 0.65,
+        "count": 430,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.73,
+          "mood": 0.67,
+          "service": 0.86,
+          "wait": 0.34
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.9,
+        "웨이팅": 0.6,
+        "포토존": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-019",
+      "name": "이자 젤라또",
+      "category": "dessert.icecream",
+      "lat": 37.546846,
+      "lng": 127.05658,
+      "address": "서울 성동구 샘플로21길 14 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "제철 과일로 만드는 젤라또",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "두 가지 맛",
+          "price": 6500,
+          "is_signature": true
+        },
+        {
+          "name": "한 가지 맛",
+          "price": 5000,
+          "is_signature": false
+        },
+        {
+          "name": "젤라또 샌드",
+          "price": 7500,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.14,
+          0.23,
+          0.3,
+          0.46,
+          0.61,
+          0.64,
+          0.64,
+          0.55,
+          0.45,
+          0.55,
+          0.6,
+          0.37,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.3,
+          0.43,
+          0.65,
+          0.73,
+          0.89,
+          0.9,
+          0.76,
+          0.61,
+          0.65,
+          0.67,
+          0.46,
+          0.18,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 290
+      },
+      "sentiment": {
+        "score": 0.74,
+        "count": 95,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.77,
+          "mood": 0.92,
+          "service": 0.73,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.8,
+        "채식가능": 0.4,
+        "감성적인": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-020",
+      "name": "눈송이 통장 빙수",
+      "category": "dessert.bingsu",
+      "lat": 37.542264,
+      "lng": 127.059752,
+      "address": "서울 성동구 샘플로12길 21 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "나눠 먹기 좋은 우유 빙수",
+      "thumbnail_url": null,
+      "price_per_person": 7500,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "흑임자 빙수",
+          "price": 13000,
+          "is_signature": true
+        },
+        {
+          "name": "애플망고 빙수",
+          "price": 17000,
+          "is_signature": false
+        },
+        {
+          "name": "밀크 빙수",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "12:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.22,
+          0.33,
+          0.43,
+          0.62,
+          0.64,
+          0.67,
+          0.55,
+          0.52,
+          0.61,
+          0.56,
+          0.41,
+          0.14,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.33,
+          0.47,
+          0.68,
+          0.75,
+          0.85,
+          0.91,
+          0.72,
+          0.67,
+          0.68,
+          0.64,
+          0.47,
+          0.16,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 340
+      },
+      "sentiment": {
+        "score": 0.47,
+        "count": 110,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.71,
+          "mood": 0.67,
+          "service": 0.65,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "디저트맛집": 0.7,
+        "실내": 0.6,
+        "우천OK": 0.5,
+        "단체석": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-021",
+      "name": "서울숲 (성수 방면 입구)",
+      "category": "attraction.park",
+      "lat": 37.544061,
+      "lng": 127.045137,
+      "address": "서울 성동구 샘플로14길 28 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "도심 속 대형 숲 공원",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.14,
+          0.13,
+          0.19,
+          0.21,
+          0.38,
+          0.36,
+          0.4,
+          0.49,
+          0.52,
+          0.51,
+          0.45,
+          0.47,
+          0.39,
+          0.3,
+          0.19,
+          0.1,
+          0.04
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.09,
+          0.13,
+          0.32,
+          0.49,
+          0.64,
+          0.76,
+          0.85,
+          0.9,
+          0.95,
+          0.88,
+          0.8,
+          0.63,
+          0.51,
+          0.4,
+          0.38,
+          0.16,
+          0.04
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 2300
+      },
+      "sentiment": {
+        "score": 0.84,
+        "count": 580,
+        "aspects": {
+          "taste": 0.84,
+          "price": 0.77,
+          "mood": 0.88,
+          "service": 0.74,
+          "wait": 0.87
+        }
+      },
+      "tags": {
+        "산책하기좋은": 1.0,
+        "야외": 0.9,
+        "반려동물동반": 0.7,
+        "키즈프렌들리": 0.7,
+        "포토존": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-022",
+      "name": "성수동 카페거리",
+      "category": "attraction.street",
+      "lat": 37.545319,
+      "lng": 127.054201,
+      "address": "서울 성동구 샘플로30길 35 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공장과 카페가 공존하는 골목",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.1,
+          0.18,
+          0.16,
+          0.2,
+          0.32,
+          0.4,
+          0.4,
+          0.53,
+          0.5,
+          0.51,
+          0.45,
+          0.4,
+          0.4,
+          0.28,
+          0.23,
+          0.14,
+          0.02
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.15,
+          0.18,
+          0.23,
+          0.46,
+          0.64,
+          0.69,
+          0.85,
+          0.93,
+          0.92,
+          0.86,
+          0.79,
+          0.67,
+          0.59,
+          0.39,
+          0.29,
+          0.2,
+          0.08
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 1600
+      },
+      "sentiment": {
+        "score": 0.58,
+        "count": 400,
+        "aspects": {
+          "taste": 0.74,
+          "price": 0.74,
+          "mood": 0.68,
+          "service": 0.82,
+          "wait": 0.75
+        }
+      },
+      "tags": {
+        "힙한": 0.9,
+        "포토존": 0.7,
+        "산책하기좋은": 0.6,
+        "야외": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-023",
+      "name": "성수 수제화거리",
+      "category": "attraction.street",
+      "lat": 37.543253,
+      "lng": 127.05726,
+      "address": "서울 성동구 샘플로8길 42 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "수제화 장인들의 공방이 모인 거리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.1,
+          0.12,
+          0.16,
+          0.23,
+          0.26,
+          0.39,
+          0.39,
+          0.49,
+          0.46,
+          0.48,
+          0.49,
+          0.44,
+          0.35,
+          0.35,
+          0.24,
+          0.11,
+          0.08
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.05,
+          0.13,
+          0.18,
+          0.26,
+          0.42,
+          0.54,
+          0.67,
+          0.79,
+          0.82,
+          0.83,
+          0.83,
+          0.71,
+          0.61,
+          0.5,
+          0.38,
+          0.28,
+          0.18,
+          0.04
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 520
+      },
+      "sentiment": {
+        "score": 0.4,
+        "count": 130,
+        "aspects": {
+          "taste": 0.65,
+          "price": 0.67,
+          "mood": 0.63,
+          "service": 0.72,
+          "wait": 0.72
+        }
+      },
+      "tags": {
+        "레트로": 0.7,
+        "산책하기좋은": 0.5,
+        "체험형": 0.3,
+        "야외": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-024",
+      "name": "뚝도시장",
+      "category": "attraction.market",
+      "lat": 37.538581,
+      "lng": 127.052501,
+      "address": "서울 성동구 샘플로17길 49 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "성수동의 오래된 전통시장",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.14,
+          0.12,
+          0.2,
+          0.19,
+          0.3,
+          0.35,
+          0.44,
+          0.49,
+          0.47,
+          0.53,
+          0.48,
+          0.42,
+          0.37,
+          0.27,
+          0.19,
+          0.14,
+          0.06
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.15,
+          0.17,
+          0.27,
+          0.45,
+          0.5,
+          0.66,
+          0.79,
+          0.9,
+          0.84,
+          0.84,
+          0.74,
+          0.64,
+          0.47,
+          0.38,
+          0.31,
+          0.19,
+          0.02
+        ]
+      },
+      "rating": {
+        "avg": 4.1,
+        "count": 480
+      },
+      "sentiment": {
+        "score": 0.46,
+        "count": 120,
+        "aspects": {
+          "taste": 0.73,
+          "price": 0.75,
+          "mood": 0.63,
+          "service": 0.73,
+          "wait": 0.67
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.7,
+        "레트로": 0.8,
+        "활기찬": 0.6,
+        "우천OK": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-025",
+      "name": "성수 구두테마공원",
+      "category": "attraction.landmark",
+      "lat": 37.544241,
+      "lng": 127.05658,
+      "address": "서울 성동구 샘플로22길 56 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "성수역 아래 구두 조형물이 있는 쉼터",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08,
+          0.14,
+          0.11,
+          0.17,
+          0.23,
+          0.32,
+          0.32,
+          0.37,
+          0.39,
+          0.5,
+          0.5,
+          0.39,
+          0.33,
+          0.34,
+          0.28,
+          0.15,
+          0.06,
+          0.05
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04,
+          0.09,
+          0.19,
+          0.28,
+          0.38,
+          0.54,
+          0.64,
+          0.67,
+          0.81,
+          0.75,
+          0.72,
+          0.62,
+          0.56,
+          0.5,
+          0.36,
+          0.24,
+          0.18,
+          0.03
+        ]
+      },
+      "rating": {
+        "avg": 3.9,
+        "count": 210
+      },
+      "sentiment": {
+        "score": 0.32,
+        "count": 50,
+        "aspects": {
+          "taste": 0.64,
+          "price": 0.71,
+          "mood": 0.75,
+          "service": 0.53,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "포토존": 0.6,
+        "야외": 0.8,
+        "조용한": 0.4
+      }
+    },
+    {
+      "external_id": "seongsu-026",
+      "name": "스트라이크 절약 볼링장",
+      "category": "activity.sports",
+      "lat": 37.543792,
+      "lng": 127.061338,
+      "address": "서울 성동구 샘플로21길 3 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "네온 조명의 락볼링장",
+      "thumbnail_url": null,
+      "price_per_person": 9000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "1게임",
+          "price": 5500,
+          "is_signature": true
+        },
+        {
+          "name": "대화 포함 2게임",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.03,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.11,
+          0.18,
+          0.29,
+          0.39,
+          0.38,
+          0.5,
+          0.53,
+          0.61,
+          0.73,
+          0.76,
+          0.54,
+          0.38,
+          0.11
+        ],
+        "weekend": [
+          0.11,
+          0.06,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.38,
+          0.54,
+          0.69,
+          0.8,
+          0.85,
+          0.8,
+          0.8,
+          0.89,
+          0.79,
+          0.62,
+          0.51,
+          0.17
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 640
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 190,
+        "aspects": {
+          "taste": 0.73,
+          "price": 0.73,
+          "mood": 0.78,
+          "service": 0.78,
+          "wait": 0.62
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "단체석": 0.8,
+        "실내": 0.9,
+        "우천OK": 0.9
+      }
+    },
+    {
+      "external_id": "seongsu-027",
+      "name": "방탈출 예산초과",
+      "category": "activity.escape",
+      "lat": 37.547564,
+      "lng": 127.051595,
+      "address": "서울 성동구 샘플로3길 10 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "스토리형 테마 5개를 운영하는 방탈출",
+      "thumbnail_url": null,
+      "price_per_person": 22000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 테마(1인)",
+          "price": 22000,
+          "is_signature": true
+        },
+        {
+          "name": "프리미엄 테마(1인)",
+          "price": 27000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.09,
+          0.18,
+          0.31,
+          0.35,
+          0.38,
+          0.45,
+          0.47,
+          0.56,
+          0.7,
+          0.66,
+          0.52,
+          0.35,
+          0.11
+        ],
+        "weekend": [
+          0.14,
+          0.09,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.22,
+          0.3,
+          0.54,
+          0.74,
+          0.79,
+          0.87,
+          0.74,
+          0.75,
+          0.88,
+          0.75,
+          0.61,
+          0.48,
+          0.22
+        ]
+      },
+      "rating": {
+        "avg": 4.6,
+        "count": 410
+      },
+      "sentiment": {
+        "score": 0.78,
+        "count": 150,
+        "aspects": {
+          "taste": 0.78,
+          "price": 0.83,
+          "mood": 0.78,
+          "service": 0.82,
+          "wait": 0.81
+        }
+      },
+      "tags": {
+        "체험형": 1.0,
+        "실내": 0.9,
+        "우천OK": 0.9,
+        "예약가능": 0.9
+      }
+    },
+    {
+      "external_id": "seongsu-028",
+      "name": "향수 공방 한 방울",
+      "category": "activity.craft",
+      "lat": 37.548822,
+      "lng": 127.058166,
+      "address": "서울 성동구 샘플로31길 17 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "나만의 향수를 만드는 원데이 클래스",
+      "thumbnail_url": null,
+      "price_per_person": 25000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "30ml 조향 클래스",
+          "price": 25000,
+          "is_signature": true
+        },
+        {
+          "name": "50ml 조향 클래스",
+          "price": 35000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.05,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.14,
+          0.3,
+          0.34,
+          0.36,
+          0.44,
+          0.46,
+          0.56,
+          0.6,
+          0.61,
+          0.47,
+          0.36,
+          0.1
+        ],
+        "weekend": [
+          0.06,
+          0.06,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.3,
+          0.54,
+          0.65,
+          0.71,
+          0.81,
+          0.72,
+          0.68,
+          0.76,
+          0.68,
+          0.59,
+          0.39,
+          0.14
+        ]
+      },
+      "rating": {
+        "avg": 4.8,
+        "count": 132
+      },
+      "sentiment": {
+        "score": 0.85,
+        "count": 55,
+        "aspects": {
+          "taste": 0.78,
+          "price": 0.89,
+          "mood": 1.0,
+          "service": 0.9,
+          "wait": 0.9
+        }
+      },
+      "tags": {
+        "체험형": 1.0,
+        "로맨틱": 0.7,
+        "예약가능": 0.8,
+        "조용한": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-029",
+      "name": "성수 창고 전시장 (샘플)",
+      "category": "culture.exhibition",
+      "lat": 37.546217,
+      "lng": 127.053407,
+      "address": "서울 성동구 샘플로29길 24 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "팝업과 기획전이 열리는 창고형 전시장",
+      "thumbnail_url": null,
+      "price_per_person": 15000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 입장권",
+          "price": 15000,
+          "is_signature": true
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.26,
+          0.33,
+          0.36,
+          0.47,
+          0.47,
+          0.39,
+          0.35,
+          0.24,
+          0.2,
+          0.12,
+          0.07,
+          0.03,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.32,
+          0.45,
+          0.51,
+          0.68,
+          0.83,
+          0.82,
+          0.76,
+          0.59,
+          0.37,
+          0.34,
+          0.17,
+          0.12,
+          0.09,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 530
+      },
+      "sentiment": {
+        "score": 0.64,
+        "count": 180,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.82,
+          "mood": 0.69,
+          "service": 0.84,
+          "wait": 0.79
+        }
+      },
+      "tags": {
+        "전시공연": 1.0,
+        "포토존": 0.8,
+        "실내": 0.8,
+        "우천OK": 0.8,
+        "힙한": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-030",
+      "name": "골목 갤러리 무료입장 (샘플)",
+      "category": "culture.gallery",
+      "lat": 37.546846,
+      "lng": 127.059412,
+      "address": "서울 성동구 샘플로16길 31 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "신진 작가 위주의 무료 갤러리",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.26,
+          0.28,
+          0.33,
+          0.36,
+          0.43,
+          0.38,
+          0.23,
+          0.22,
+          0.15,
+          0.17,
+          0.07,
+          0.02,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.4,
+          0.54,
+          0.67,
+          0.69,
+          0.75,
+          0.71,
+          0.46,
+          0.31,
+          0.22,
+          0.18,
+          0.09,
+          0.04,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 98
+      },
+      "sentiment": {
+        "score": 0.55,
+        "count": 28,
+        "aspects": {
+          "taste": 0.71,
+          "price": 0.71,
+          "mood": 0.96,
+          "service": 0.65,
+          "wait": 0.69
+        }
+      },
+      "tags": {
+        "전시공연": 0.9,
+        "조용한": 0.8,
+        "실내": 0.7,
+        "우천OK": 0.7
+      }
+    },
+    {
+      "external_id": "seongsu-031",
+      "name": "수제화 역사 작은박물관 (샘플)",
+      "category": "culture.museum",
+      "lat": 37.542803,
+      "lng": 127.057486,
+      "address": "서울 성동구 샘플로6길 38 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "성수 수제화 산업의 역사를 담은 전시실",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.19,
+          0.25,
+          0.28,
+          0.35,
+          0.35,
+          0.34,
+          0.36,
+          0.22,
+          0.21,
+          0.14,
+          0.15,
+          0.11,
+          0.02,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.27,
+          0.46,
+          0.47,
+          0.59,
+          0.66,
+          0.71,
+          0.67,
+          0.51,
+          0.36,
+          0.21,
+          0.15,
+          0.08,
+          0.04,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 64
+      },
+      "sentiment": {
+        "score": 0.42,
+        "count": 18,
+        "aspects": {
+          "taste": 0.71,
+          "price": 0.6,
+          "mood": 0.88,
+          "service": 0.63,
+          "wait": 0.72
+        }
+      },
+      "tags": {
+        "전시공연": 0.7,
+        "키즈프렌들리": 0.5,
+        "조용한": 0.7,
+        "실내": 0.8
+      }
+    },
+    {
+      "external_id": "seongsu-032",
+      "name": "더치 펍",
+      "category": "bar.pub",
+      "lat": 37.542354,
+      "lng": 127.05488,
+      "address": "서울 성동구 샘플로34길 45 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공장을 개조한 브루펍",
+      "thumbnail_url": null,
+      "price_per_person": 15000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "IPA 파인트",
+          "price": 8500,
+          "is_signature": true
+        },
+        {
+          "name": "버팔로윙",
+          "price": 17000,
+          "is_signature": false
+        },
+        {
+          "name": "감자튀김",
+          "price": 9000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.26,
+          0.15,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.37,
+          0.55,
+          0.77,
+          0.83,
+          0.8,
+          0.52
+        ],
+        "weekend": [
+          0.46,
+          0.35,
+          0.11,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.5,
+          0.67,
+          0.9,
+          0.95,
+          1.0,
+          0.74
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 590
+      },
+      "sentiment": {
+        "score": 0.55,
+        "count": 200,
+        "aspects": {
+          "taste": 0.8,
+          "price": 0.79,
+          "mood": 0.7,
+          "service": 0.8,
+          "wait": 0.8
+        }
+      },
+      "tags": {
+        "활기찬": 0.8,
+        "단체석": 0.7,
+        "힙한": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-033",
+      "name": "코르크 적립 와인바",
+      "category": "bar.wine",
+      "lat": 37.548373,
+      "lng": 127.052048,
+      "address": "서울 성동구 샘플로35길 52 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "내추럴 와인 셀렉션이 좋은 바",
+      "thumbnail_url": null,
+      "price_per_person": 30000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "글라스 와인",
+          "price": 13000,
+          "is_signature": true
+        },
+        {
+          "name": "샤퀴테리 보드",
+          "price": 24000,
+          "is_signature": false
+        },
+        {
+          "name": "보틀(내추럴)",
+          "price": 58000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "18:00",
+          "close": "01:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.29,
+          0.11,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.19,
+          0.29,
+          0.56,
+          0.7,
+          0.79,
+          0.76,
+          0.49
+        ],
+        "weekend": [
+          0.47,
+          0.23,
+          0.11,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.23,
+          0.47,
+          0.67,
+          0.84,
+          0.91,
+          0.9,
+          0.7
+        ]
+      },
+      "rating": {
+        "avg": 4.7,
+        "count": 240
+      },
+      "sentiment": {
+        "score": 0.8,
+        "count": 100,
+        "aspects": {
+          "taste": 0.9,
+          "price": 0.81,
+          "mood": 0.94,
+          "service": 0.85,
+          "wait": 0.73
+        }
+      },
+      "tags": {
+        "로맨틱": 0.9,
+        "조용한": 0.7,
+        "예약가능": 0.7,
+        "감성적인": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-034",
+      "name": "마감세일 이자카야",
+      "category": "bar.izakaya",
+      "lat": 37.544959,
+      "lng": 127.060432,
+      "address": "서울 성동구 샘플로30길 59 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "마감 한 시간 전 안주 할인",
+      "thumbnail_url": null,
+      "price_per_person": 21000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "야키토리 5종",
+          "price": 16000,
+          "is_signature": true
+        },
+        {
+          "name": "하이볼",
+          "price": 8000,
+          "is_signature": false
+        },
+        {
+          "name": "명란 구이",
+          "price": 12000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "open": "18:00",
+          "close": "02:00"
+        },
+        {
+          "dow": [
+            4,
+            5
+          ],
+          "open": "18:00",
+          "close": "03:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.26,
+          0.18,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.31,
+          0.54,
+          0.72,
+          0.88,
+          0.74,
+          0.51
+        ],
+        "weekend": [
+          0.45,
+          0.28,
+          0.12,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.4,
+          0.7,
+          0.91,
+          0.95,
+          0.96,
+          0.73
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 360
+      },
+      "sentiment": {
+        "score": 0.63,
+        "count": 120,
+        "aspects": {
+          "taste": 0.69,
+          "price": 0.75,
+          "mood": 0.98,
+          "service": 0.78,
+          "wait": 0.4
+        }
+      },
+      "tags": {
+        "아늑한": 0.8,
+        "웨이팅": 0.4,
+        "예약가능": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-035",
+      "name": "공장 포차 1987",
+      "category": "bar.pocha",
+      "lat": 37.541636,
+      "lng": 127.058506,
+      "address": "서울 성동구 샘플로9길 6 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "옛 공장 간판을 살린 레트로 포차",
+      "thumbnail_url": null,
+      "price_per_person": 16000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "해물 떡볶이",
+          "price": 19000,
+          "is_signature": true
+        },
+        {
+          "name": "어묵탕",
+          "price": 15000,
+          "is_signature": false
+        },
+        {
+          "name": "소주",
+          "price": 5000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.27,
+          0.15,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.18,
+          0.35,
+          0.52,
+          0.79,
+          0.84,
+          0.86,
+          0.54
+        ],
+        "weekend": [
+          0.55,
+          0.33,
+          0.07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21,
+          0.49,
+          0.7,
+          0.92,
+          1.0,
+          1.0,
+          0.79
+        ]
+      },
+      "rating": {
+        "avg": 4.0,
+        "count": 770
+      },
+      "sentiment": {
+        "score": 0.38,
+        "count": 250,
+        "aspects": {
+          "taste": 0.73,
+          "price": 0.71,
+          "mood": 0.66,
+          "service": 0.68,
+          "wait": 0.73
+        }
+      },
+      "tags": {
+        "레트로": 0.9,
+        "활기찬": 0.8,
+        "단체석": 0.6
+      }
+    },
+    {
+      "external_id": "seongsu-036",
+      "name": "누룩 통장 막걸리집",
+      "category": "bar.makgeolli",
+      "lat": 37.541905,
+      "lng": 127.050462,
+      "address": "서울 성동구 샘플로7길 13 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "전국 막걸리를 골라 마시는 주점",
+      "thumbnail_url": null,
+      "price_per_person": 14000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "모둠전",
+          "price": 18000,
+          "is_signature": true
+        },
+        {
+          "name": "생막걸리",
+          "price": 6000,
+          "is_signature": false
+        },
+        {
+          "name": "두부김치",
+          "price": 13000,
+          "is_signature": false
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0
+          ],
+          "is_closed": true
+        },
+        {
+          "dow": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "18:00",
+          "close": "01:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.26,
+          0.18,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.16,
+          0.35,
+          0.49,
+          0.71,
+          0.87,
+          0.79,
+          0.5
+        ],
+        "weekend": [
+          0.53,
+          0.31,
+          0.11,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.24,
+          0.47,
+          0.71,
+          0.86,
+          0.96,
+          0.88,
+          0.77
+        ]
+      },
+      "rating": {
+        "avg": 4.3,
+        "count": 310
+      },
+      "sentiment": {
+        "score": 0.57,
+        "count": 90,
+        "aspects": {
+          "taste": 0.81,
+          "price": 0.83,
+          "mood": 0.92,
+          "service": 0.75,
+          "wait": 0.78
+        }
+      },
+      "tags": {
+        "로컬맛집": 0.6,
+        "레트로": 0.6,
+        "단체석": 0.5,
+        "아늑한": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-037",
+      "name": "성수 옥상정원 전망쉼터 (샘플)",
+      "category": "nightview.rooftop",
+      "lat": 37.547564,
+      "lng": 127.05556,
+      "address": "서울 성동구 샘플로30길 20 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "공공 옥상정원에서 보는 성수 야경",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.06,
+          0.02,
+          0.09,
+          0.11,
+          0.05,
+          0.09,
+          0.18,
+          0.17,
+          0.3,
+          0.58,
+          0.75,
+          0.62,
+          0.35,
+          0.04
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03,
+          0.1,
+          0.15,
+          0.18,
+          0.17,
+          0.17,
+          0.27,
+          0.34,
+          0.41,
+          0.67,
+          0.82,
+          0.77,
+          0.49,
+          0.18
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 120
+      },
+      "sentiment": {
+        "score": 0.56,
+        "count": 30,
+        "aspects": {
+          "taste": 0.7,
+          "price": 0.63,
+          "mood": 0.93,
+          "service": 0.8,
+          "wait": 0.7
+        }
+      },
+      "tags": {
+        "야경명소": 0.8,
+        "로맨틱": 0.6,
+        "야외": 0.8,
+        "포토존": 0.5
+      }
+    },
+    {
+      "external_id": "seongsu-038",
+      "name": "한강변 노을 산책 데크 (샘플)",
+      "category": "nightview.riverside",
+      "lat": 37.536515,
+      "lng": 127.057033,
+      "address": "서울 성동구 샘플로18길 27 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "강 건너 불빛이 보이는 수변 데크",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.02,
+          0.1,
+          0.07,
+          0.05,
+          0.11,
+          0.13,
+          0.16,
+          0.39,
+          0.64,
+          0.78,
+          0.72,
+          0.43,
+          0.1
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02,
+          0.12,
+          0.2,
+          0.14,
+          0.22,
+          0.16,
+          0.2,
+          0.36,
+          0.55,
+          0.77,
+          0.97,
+          0.88,
+          0.59,
+          0.15
+        ]
+      },
+      "rating": {
+        "avg": 4.5,
+        "count": 540
+      },
+      "sentiment": {
+        "score": 0.72,
+        "count": 140,
+        "aspects": {
+          "taste": 0.75,
+          "price": 0.85,
+          "mood": 0.89,
+          "service": 0.72,
+          "wait": 0.72
+        }
+      },
+      "tags": {
+        "야경명소": 0.9,
+        "산책하기좋은": 0.9,
+        "로맨틱": 0.7,
+        "야외": 0.9
+      }
+    }
+  ],
+  "events": [
+    {
+      "external_id": "seongsu-ev-001",
+      "title": "성수 디자인 위크 (샘플)",
+      "category": "culture.festival",
+      "lat": 37.545498,
+      "lng": 127.054087,
+      "address": "서울 성동구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": true,
+      "price": null,
+      "description": "골목 곳곳의 쇼룸이 참여하는 디자인 축제",
+      "booking_url": null
+    },
+    {
+      "external_id": "seongsu-ev-002",
+      "title": "붉은벽돌 사진전 (샘플)",
+      "category": "culture.exhibition",
+      "lat": 37.546397,
+      "lng": 127.053294,
+      "address": "서울 성동구 일대 (샘플)",
+      "starts_on": "2026-01-01",
+      "ends_on": "2027-12-31",
+      "is_free": false,
+      "price": 8000,
+      "description": "성수동의 어제와 오늘을 담은 사진전",
+      "booking_url": null
+    }
+  ]
+}

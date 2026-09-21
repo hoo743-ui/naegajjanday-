@@ -1,0 +1,118 @@
+name: CI / Infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - "docker-compose.yml"
+      - ".github/workflows/ci-infra.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "docker-compose.yml"
+      - ".github/workflows/ci-infra.yml"
+
+concurrency:
+  group: ci-infra-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "0"
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive -diff infra/terraform
+
+  validate:
+    name: terraform validate (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [bootstrap, envs/shared, envs/staging, envs/prod]
+    defaults:
+      run:
+        working-directory: infra/terraform/${{ matrix.stack }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      # No credentials and no remote state: validation only.
+      - run: terraform init -backend=false
+      - run: terraform validate -no-color
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.55.1
+      - name: Init plugins
+        run: tflint --init --config "$GITHUB_WORKSPACE/infra/terraform/.tflint.hcl"
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # avoids API rate limits while downloading the ruleset
+      - name: Lint
+        working-directory: infra/terraform
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/infra/terraform/.tflint.hcl" --format compact
+
+  checkov:
+    name: checkov (IaC security scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan Terraform, Dockerfiles and workflows
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform,dockerfile,github_actions
+          skip_path: apps/web/node_modules,apps/api/.venv
+          quiet: true
+          # Findings are reported to the Security tab first. Flip to false once
+          # the baseline is triaged to make them block the PR.
+          soft_fail: true
+          output_format: cli,sarif
+          output_file_path: console,checkov.sarif
+
+      - name: Upload SARIF
+        if: always() && hashFiles('checkov.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov.sarif
+          category: checkov
+
+  compose:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose file (both profiles)
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.yml --profile app config --quiet

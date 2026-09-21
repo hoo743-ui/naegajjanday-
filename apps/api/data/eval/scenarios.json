@@ -1,0 +1,103 @@
+{
+  "_note": "추천 품질 평가(eval-courses)의 시나리오와 품질 규칙. 실제 서비스와 똑같은 파이프라인(CourseService.dry_run)을 DB 기록 없이 돌린다. 규칙을 고치거나 추가해도 코드 수정은 필요 없다. 새 아이디어는: ① 가중치·규칙(data/*.json) 수정 → ② `eval-courses --compare baseline` 로 전후 비교 → ③ 좋아졌으면 `--save baseline`.",
+  "regions": {
+    "quick": [
+      "seoul-hongdae",
+      "seoul-gangnam-station",
+      "busan-seomyeon",
+      "jeonju-hanok"
+    ],
+    "full": [
+      "seoul-hongdae",
+      "seoul-gangnam-station",
+      "seoul-seongsu",
+      "seoul-jamsil",
+      "seoul-ikseon-jongno",
+      "seoul-yeouido",
+      "busan-seomyeon",
+      "busan-haeridan",
+      "daegu-dongseongro",
+      "daejeon-eunhaeng",
+      "gwangju-chungjangro",
+      "jeonju-hanok",
+      "gyeongju-hwangnidan",
+      "gangneung-anmok",
+      "jeju-aewol",
+      "gyeonggi-suwon-haenggung",
+      "incheon-songdo",
+      "sokcho-jungang",
+      "yeosu-nangman",
+      "cheongju-seongan"
+    ]
+  },
+  "purposes": {
+    "date": {
+      "party_size": 2,
+      "budget_per_person": 30000
+    },
+    "friends": {
+      "party_size": 4,
+      "budget_per_person": 27000
+    },
+    "family": {
+      "party_size": 3,
+      "budget_per_person": 40000
+    },
+    "solo": {
+      "party_size": 1,
+      "budget_per_person": 22000
+    },
+    "travel": {
+      "party_size": 2,
+      "budget_per_person": 39000
+    }
+  },
+  "starts": [
+    "12:00",
+    "15:00",
+    "18:30"
+  ],
+  "styles": [
+    "efficient",
+    "fun"
+  ],
+  "days_ahead": 5,
+  "rules": {
+    "min_stops": 3,
+    "max_walk_leg_min": 20,
+    "min_budget_use": 0.45,
+    "closed_after": {
+      "_note": "영업시간 데이터가 없는 동안 쓰는 상식선: 이 시각 이후에 도착하면 '문 닫은 곳에 데려갔다'로 센다.",
+      "culture.museum": "17:30",
+      "culture.gallery": "17:30",
+      "culture.exhibition": "17:30",
+      "culture.bookstore": "20:30",
+      "attraction.market": "19:00",
+      "attraction.landmark": "20:30",
+      "attraction": "18:30",
+      "attraction.street": "always",
+      "attraction.park": "always",
+      "culture.cinema": "always",
+      "culture.festival": "always"
+    },
+    "not_before": {
+      "bar": "17:00",
+      "nightview": "18:00"
+    },
+    "family_avoid_roles": [
+      "BAR"
+    ],
+    "chain_hint": "체인점",
+    "repeat_share_warn": 0.5,
+    "_max_walk_note": "위저드가 '걸어서 · 구간 20분 이내'라고 약속한다 → 그 약속을 넘으면 결함.",
+    "proper_meal_purposes": [
+      "date",
+      "family"
+    ],
+    "not_a_meal": [
+      "food.snack",
+      "dessert",
+      "cafe"
+    ]
+  }
+}

@@ -1,0 +1,178 @@
+# 내가짠데이 - local development stack
+#
+#   docker compose up -d                  -> infrastructure only (postgres, redis, elasticsearch)
+#   docker compose --profile app up -d    -> + api, worker, beat, web built from apps/*
+#
+# Configuration comes from .env (copy .env.example). Every value has a default,
+# so `docker compose up` also works without a .env file.
+# Details: infra/docker/README.md
+
+name: naegajjanday
+
+x-api-env: &api-env
+  APP_ENV: ${APP_ENV:-local}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  LOG_JSON: ${LOG_JSON:-false}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-naegajjanday}:${POSTGRES_PASSWORD:-naegajjanday}@postgres:5432/${POSTGRES_DB:-naegajjanday}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  ES_URL: http://elasticsearch:9200
+  PUBLIC_BASE_URL: http://localhost:${API_PORT:-8000}
+  WEB_BASE_URL: http://localhost:${WEB_PORT:-3000}
+  CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
+  COOKIE_SECURE: "false"
+
+x-api-service: &api-service
+  build:
+    context: ./apps/api
+    dockerfile: Dockerfile
+  image: naegajjanday/api:local
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    <<: *api-env
+  restart: unless-stopped
+  profiles: ["app"]
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-naegajjanday}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naegajjanday}
+      POSTGRES_DB: ${POSTGRES_DB:-naegajjanday}
+      TZ: Asia/Seoul
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # Same eviction policy as ElastiCache in AWS: never evict Celery messages.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  elasticsearch:
+    build:
+      context: ./infra/docker/elasticsearch
+      args:
+        ES_VERSION: ${ES_VERSION:-8.15.3}
+    image: naegajjanday/elasticsearch-nori:${ES_VERSION:-8.15.3}
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.ml.enabled: "false"
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms512m -Xmx512m}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "${ES_PORT:-9200}:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+
+  api:
+    <<: *api-service
+    # Migrate first, then serve (apps/api/alembic/versions). API_MIGRATE_CMD overrides the command.
+    command:
+      - sh
+      - -c
+      - "${API_MIGRATE_CMD:-alembic upgrade head} && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    <<: *api-service
+    command: ["celery", "-A", "${CELERY_APP:-app.workers.celery_app}", "worker", "--loglevel=INFO", "--concurrency=${CELERY_CONCURRENCY:-2}"]
+    depends_on:
+      api:
+        condition: service_healthy # guarantees migrations have run
+
+  beat:
+    <<: *api-service
+    command: ["celery", "-A", "${CELERY_APP:-app.workers.celery_app}", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* values are inlined at build time; this is the URL the
+        # browser uses, so it points at the published API port.
+        NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-8000}/v1
+        NEXT_PUBLIC_SITE_URL: http://localhost:${WEB_PORT:-3000}
+        NEXT_PUBLIC_KAKAO_MAP_KEY: ${NEXT_PUBLIC_KAKAO_MAP_KEY:-}
+    image: naegajjanday/web:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    profiles: ["app"]
+
+volumes:
+  postgres-data:
+  redis-data:
+  es-data:

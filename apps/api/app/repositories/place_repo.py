@@ -1,0 +1,287 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from datetime import date, time
+from typing import Any
+
+from sqlalchemy import ColumnElement, func, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.domain.models import GeoPoint, OpeningPeriod, PlaceCandidate
+from app.domain.routing.travel_time import haversine_m
+from app.infra.db.base import as_utc
+from app.infra.db.models import Category, Event, OpeningHour, Place, PlaceStats, PlaceTag, Region
+from app.infra.default_hours import get_default_hours
+from app.infra.tagging import get_tag_rules, merge_tags
+from app.repositories.geo import nearest_first, within
+
+EVENT_ROLES = {"ATTRACTION", "CULTURE"}
+CURATED_TAG = "관광공사 소개"  # derived by tag_rules.json › listed_by_kto
+CANDIDATE_LIMIT = 400  # per role; nearest first, so dense areas keep the walkable core
+OVEREXPOSED_TOP_RATIO = 0.05
+OVEREXPOSED_MIN_POOL = 20
+
+
+def _minutes(t: time | None) -> int | None:
+    return None if t is None else t.hour * 60 + t.minute
+
+
+def to_opening_period(h: OpeningHour) -> OpeningPeriod | None:
+    if h.is_closed:
+        return OpeningPeriod(h.dow, 0, 0, is_closed=True)
+    open_min, close_min = _minutes(h.open_time), _minutes(h.close_time)
+    if open_min is None or close_min is None:
+        return None
+    if close_min <= open_min:  # past midnight ("00:00"-"00:00" = 24h)
+        close_min += 1440
+    return OpeningPeriod(h.dow, open_min, close_min, _minutes(h.break_start), _minutes(h.break_end))
+
+
+def to_candidate(place: Place) -> PlaceCandidate:
+    """Requires category, stats, opening_hours, popular_times and place_tags to be eagerly loaded."""
+    stats, cat = place.stats, place.category
+    derived = get_tag_rules().derive(
+        category_code=cat.code,
+        name=place.name,
+        course_role=cat.course_role,
+        has_measured_price=place.price_per_person is not None
+        and not place.price_is_estimated
+        and not place.is_free,
+        photo_url=place.thumbnail_url,
+    )
+    return PlaceCandidate(
+        id=place.id,
+        public_id=place.public_id,
+        name=get_tag_rules().sign_name(place.name),
+        category_code=cat.code,
+        category_name=cat.name,
+        is_curated=CURATED_TAG in derived,
+        course_role=cat.course_role,
+        lat=place.lat,
+        lng=place.lng,
+        price_per_person=place.price_per_person,
+        price_is_estimated=bool(place.price_is_estimated) and not place.is_free,
+        is_free=place.is_free,
+        address=place.road_address or place.address,
+        thumbnail_url=place.thumbnail_url,
+        default_stay_min=cat.default_stay_min,
+        rating_avg=stats.rating_avg if stats else None,
+        rating_count=stats.rating_count if stats else 0,
+        bayes_rating=stats.bayes_rating if stats else None,
+        sentiment_score=stats.sentiment_score if stats else None,
+        sentiment_count=stats.sentiment_count if stats else 0,
+        aspect_scores=dict(stats.aspect_scores or {}) if stats else {},
+        popularity=stats.popularity if stats else 0.0,
+        tags=merge_tags({pt.tag.name: pt.weight for pt in place.place_tags}, derived),
+        # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
+        # museum at 20:30; real hours always win
+        opening_hours=[p for h in place.opening_hours if (p := to_opening_period(h)) is not None]
+        or list(get_default_hours().for_category(cat.code)),
+        popular_times={(pt.dow, pt.hour): pt.congestion for pt in place.popular_times},
+        approved_at=as_utc(place.approved_at),
+    )
+
+
+def event_to_candidate(event: Event) -> PlaceCandidate:
+    cat = event.category
+    return PlaceCandidate(
+        id=event.id,
+        public_id=event.public_id,
+        name=event.title,
+        category_code=cat.code if cat else "culture.festival",
+        category_name=cat.name if cat else "축제",
+        course_role=cat.course_role if cat else "CULTURE",
+        lat=event.lat,
+        lng=event.lng,
+        price_per_person=event.price,
+        is_free=event.is_free,
+        address=event.address,
+        thumbnail_url=(event.images or [None])[0],
+        default_stay_min=cat.default_stay_min if cat else 60,
+        is_event=True,
+    )
+
+
+FULL_LOAD = (
+    selectinload(Place.category),
+    selectinload(Place.stats),
+    selectinload(Place.opening_hours),
+    selectinload(Place.popular_times),
+    selectinload(Place.place_tags),
+)
+
+
+class SqlPlaceRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+        self._dialect = session.get_bind().dialect.name
+
+    # --- CandidateSource (domain Protocol) ---------------------------------------------------
+
+    async def fetch(
+        self, role: str, origin: GeoPoint, radius_m: float, on_date: date
+    ) -> list[PlaceCandidate]:
+        stmt = (
+            select(Place, PlaceStats.recommend_count)
+            .join(Category, Category.id == Place.category_id)
+            .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
+            .where(Place.status == "approved", Category.course_role == role)
+            .where(within(Place, origin, radius_m, self._dialect))
+            .order_by(nearest_first(Place, origin), Place.id)
+            .options(*FULL_LOAD)
+            .limit(CANDIDATE_LIMIT)
+        )
+        rows = (await self._s.execute(stmt)).all()
+        out: list[PlaceCandidate] = []
+        exposure: list[tuple[int, PlaceCandidate]] = []
+        rules = get_tag_rules()
+        for place, recommend_count in rows:
+            if haversine_m(origin, GeoPoint(place.lat, place.lng)) > radius_m:
+                continue
+            if rules.is_unlisted(place.name):  # a company name, not a sign anyone can find
+                continue
+            cand = to_candidate(place)
+            out.append(cand)
+            exposure.append((recommend_count or 0, cand))
+        if len(exposure) >= OVEREXPOSED_MIN_POOL:  # exploration: damp the most-exposed 5 %
+            exposure.sort(key=lambda t: -t[0])
+            for count, cand in exposure[: max(1, int(len(exposure) * OVEREXPOSED_TOP_RATIO))]:
+                cand.is_overexposed = count > 0
+        if role in EVENT_ROLES:
+            for event, _dist in await self.events_near(origin, radius_m, on_date):
+                cand = event_to_candidate(event)
+                if cand.course_role == role:
+                    out.append(cand)
+        return out
+
+    async def events_near(
+        self, origin: GeoPoint, radius_m: float, on_date: date
+    ) -> list[tuple[Event, float]]:
+        stmt = (
+            select(Event)
+            .where(Event.status == "approved", Event.starts_on <= on_date, Event.ends_on >= on_date)
+            .where(within(Event, origin, radius_m, self._dialect))
+            .options(selectinload(Event.category))
+            .limit(100)
+        )
+        found = []
+        for event in (await self._s.scalars(stmt)).all():
+            dist = haversine_m(origin, GeoPoint(event.lat, event.lng))
+            if dist <= radius_m:
+                found.append((event, dist))
+        return sorted(found, key=lambda t: t[1])
+
+    async def candidates_by_ids(self, place_ids: Sequence[int]) -> dict[int, PlaceCandidate]:
+        if not place_ids:
+            return {}
+        stmt = select(Place).where(Place.id.in_(place_ids)).options(*FULL_LOAD)
+        return {p.id: to_candidate(p) for p in (await self._s.scalars(stmt)).all()}
+
+    async def event_candidates_by_ids(self, event_ids: Sequence[int]) -> dict[int, PlaceCandidate]:
+        if not event_ids:
+            return {}
+        stmt = select(Event).where(Event.id.in_(event_ids)).options(selectinload(Event.category))
+        return {e.id: event_to_candidate(e) for e in (await self._s.scalars(stmt)).all()}
+
+    async def category_rating_avg(self, region_id: int | None) -> dict[str, float]:
+        stmt = (
+            select(
+                Category.code,
+                func.sum(PlaceStats.rating_avg * PlaceStats.rating_count),
+                func.sum(PlaceStats.rating_count),
+            )
+            .join(Place, Place.category_id == Category.id)
+            .join(PlaceStats, PlaceStats.place_id == Place.id)
+            .where(PlaceStats.rating_count > 0, PlaceStats.rating_avg.is_not(None))
+            .group_by(Category.code)
+        )
+        if region_id is not None:
+            stmt = stmt.where(Place.region_id == region_id)
+        return {code: total / n for code, total, n in (await self._s.execute(stmt)).all() if n}
+
+    async def bump_recommend_count(self, place_ids: Sequence[int]) -> None:
+        if place_ids:
+            await self._s.execute(
+                update(PlaceStats)
+                .where(PlaceStats.place_id.in_(place_ids))
+                .values(recommend_count=PlaceStats.recommend_count + 1)
+            )
+
+    # --- read side ---------------------------------------------------------------------------
+
+    async def get_by_public_id(self, public_id: str) -> Place | None:
+        stmt = (
+            select(Place)
+            .where(Place.public_id == public_id)
+            .options(*FULL_LOAD, selectinload(Place.menu_items), selectinload(Place.region))
+        )
+        return await self._s.scalar(stmt)
+
+    async def ids_by_public_ids(self, public_ids: Sequence[str]) -> set[int]:
+        if not public_ids:
+            return set()
+        return set((await self._s.scalars(select(Place.id).where(Place.public_id.in_(public_ids)))).all())
+
+    async def search_sql(
+        self,
+        *,
+        q: str | None,
+        region_slug: str | None,
+        roles: Sequence[str] | None,
+        max_price: int | None,
+        origin: GeoPoint | None,
+        radius_m: float | None,
+        sort: str,
+        limit: int,
+        offset: int = 0,
+        prefix: bool = False,
+    ) -> list[tuple[PlaceCandidate, float | None]]:
+        """Fallback for Elasticsearch: LIKE search on the canonical tables."""
+        stmt = (
+            select(Place)
+            .join(Category, Category.id == Place.category_id)
+            .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
+            .where(Place.status == "approved")
+            .options(*FULL_LOAD)
+        )
+        if q:
+            like = f"{_escape_like(q)}%" if prefix else f"%{_escape_like(q)}%"
+            match: Any = Place.name.ilike(like, escape="\\")
+            if not prefix:
+                match = or_(
+                    match, Place.address.ilike(like, escape="\\"), Category.name.ilike(like, escape="\\")
+                )
+            stmt = stmt.where(match)
+        if region_slug:
+            stmt = stmt.join(Region, Region.id == Place.region_id).where(Region.slug == region_slug)
+        if roles:
+            stmt = stmt.where(Category.course_role.in_(roles))
+        if max_price is not None:
+            stmt = stmt.where(or_(Place.is_free.is_(True), Place.price_per_person <= max_price))
+        if origin is not None and radius_m:
+            stmt = stmt.where(within(Place, origin, radius_m, self._dialect))
+        orders: dict[str, ColumnElement[Any]] = {
+            "rating": PlaceStats.bayes_rating.desc().nulls_last(),
+            "price": Place.price_per_person.asc().nulls_first(),
+            "popularity": PlaceStats.popularity.desc().nulls_last(),
+        }
+        order = orders.get(sort, orders["rating"])
+        fetch_n = limit * 4 if origin is not None else limit
+        rows = (await self._s.scalars(stmt.order_by(order, Place.id).offset(offset).limit(fetch_n))).all()
+        out: list[tuple[PlaceCandidate, float | None]] = []
+        for place in rows:
+            dist = haversine_m(origin, GeoPoint(place.lat, place.lng)) if origin is not None else None
+            if dist is not None and radius_m and dist > radius_m:
+                continue
+            out.append((to_candidate(place), dist))
+        if sort == "distance" and origin is not None:
+            out.sort(key=lambda t: t[1] or 0.0)
+        return out[:limit]
+
+    async def place_tags(self, place_id: int) -> list[PlaceTag]:
+        return list((await self._s.scalars(select(PlaceTag).where(PlaceTag.place_id == place_id))).all())
+
+
+def _escape_like(q: str) -> str:
+    return q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
