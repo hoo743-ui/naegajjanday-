@@ -107,6 +107,9 @@ async function inspect(page, scenario, course, request) {
     return found;
   }
   await offered;
+  // 지도는 SDK 를 받아 온 뒤에 그려진다: 핀을 세기 전에 핀이 생길 때까지 기다린다. 끝내 안 생기면 "핀 0/0"으로 남는다
+  // (핀은 있는데 상자 밖이면 "핀 5/7" — 앞의 것은 지도 로딩, 뒤의 것은 진짜 결함이다)
+  await page.locator(".jj-pin-drop").first().waitFor({ state: "attached", timeout: 20000 }).catch(() => undefined);
   await page.waitForTimeout(1500);
   const seen = await page.evaluate(() => {
     const text = document.body.innerText;

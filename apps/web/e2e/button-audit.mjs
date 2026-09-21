@@ -187,6 +187,9 @@ for (const scene of SCENES) {
         await el.click({ timeout: 8000 });
       });
       await page.waitForTimeout(2600);
+      // 다른 주소로 가는 링크: 개발 서버는 처음 여는 화면을 그때 컴파일한다(여러 탭이 나눠 쓰면 더 느리다) → 주소가 바뀔 때까지 기다린다
+      const goesElsewhere = control.tag === "a" && control.href && new URL(control.href, before.url).href.split("#")[0] !== before.url.split("#")[0];
+      if (goesElsewhere && page.url() === before.url) await page.waitForURL((u) => u.href !== before.url, { timeout: 45000 }).catch(() => undefined);
       const after = await page
         .evaluate((node) => {
           const state = node.isConnected ? ["aria-pressed", "aria-expanded", "aria-selected", "aria-checked", "data-state", "open"].map((a) => node.getAttribute(a)).join("|") + "|" + (node.querySelector?.("input")?.checked ?? node.checked ?? "") : "(사라짐)";

@@ -53,6 +53,24 @@ class TestNightCourse:
         echo = (await client.get(f"/v1/courses/{course['id']}")).json()["request"]
         assert echo["conditions"] == []
 
+    async def test_the_note_survives_changing_the_course(self, client: httpx.AsyncClient) -> None:
+        """Hours are still guessed after a place is moved or swapped: the note is about the hour, not the stops."""
+        resp = await client.post(
+            "/v1/courses/generate",
+            json={**GENERATE_BODY, "start_at": "2026-09-23T02:00:00+09:00", "alternatives": 0},
+        )
+        course = resp.json()["courses"][0]
+        order = [s["position"] for s in course["stops"]]
+        if len(order) > 1:
+            moved = await client.post(f"/v1/courses/{course['id']}/reorder", json={"order": order[::-1]})
+            assert moved.status_code == 200, moved.text
+            assert "NIGHT_HOURS_ESTIMATED" in [w["code"] for w in moved.json()["warnings"]]
+        swapped = await client.post(f"/v1/courses/{course['id']}/swap", json={"position": order[0]})
+        if swapped.status_code == 200:  # 409 when there is nothing else open at that hour
+            assert "NIGHT_HOURS_ESTIMATED" in [w["code"] for w in swapped.json()["warnings"]]
+        saved = (await client.get(f"/v1/courses/{course['id']}")).json()["course"]
+        assert "NIGHT_HOURS_ESTIMATED" in [w["code"] for w in saved["warnings"]]
+
     async def test_daytime_is_untouched(self, client: httpx.AsyncClient) -> None:
         resp = await client.post("/v1/courses/generate", json={**GENERATE_BODY, "alternatives": 0})
         course = resp.json()["courses"][0]

@@ -98,6 +98,7 @@ logger = get_logger(__name__)
 COURSE_CACHE_TTL_S = 300
 IDEMPOTENCY_TTL_S = 86_400
 RANDOM_TOP_N = 5
+RECOMPUTED_WARNINGS = frozenset({"BUDGET_OVER", "STOP_CLOSED"})  # read off the stops: redone on every replan
 PREFERENCE_EMA_ALPHA = 0.2
 
 
@@ -1032,7 +1033,9 @@ class CourseService:
         profile: ScoringProfile,
         extra_warnings: list[dict[str, Any]],
     ) -> dto.CourseOut:
-        keep = [w for w in row.warnings or [] if w.get("code") == "SLOT_EMPTY"]
+        # What was said about the request stays said (the hour is still night, the bar still could not be
+        # added); only what is read off the stops themselves is worked out again below.
+        keep = [w for w in row.warnings or [] if w.get("code") not in RECOMPUTED_WARNINGS]
         result = build_course(
             row.label, partial, row.template_id or 0, ctx, profile, row.optimizer or "manual", keep
         )
