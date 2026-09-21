@@ -26,6 +26,7 @@ import type {
   FeedbackRequest,
   GenerateCourseRequest,
   GenerateCourseResponse,
+  HotPlaces,
   ItemList,
   LocalSignature,
   Me,
@@ -673,6 +674,40 @@ export function useDebounced<T>(value: T, delay = 250): T {
     return () => clearTimeout(timer);
   }, [value, delay]);
   return debounced;
+}
+
+/** 지역 하나. 동 · 읍 · 면은 전체 목록에 없다(1,400곳) → 고른 뒤의 이름은 여기서 읽는다. */
+export function useRegion(slug: string | undefined, enabled = true) {
+  return useQuery<Region, ApiError>({
+    queryKey: ["meta", "region", slug],
+    queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(slug ?? "")}`, { signal }),
+    enabled: enabled && Boolean(slug) && !slug?.startsWith("station:"),
+    staleTime: META_STALE,
+    retry: false,
+  });
+}
+
+/** 고른 지역: 전체 목록에 있으면 거기서, 없으면(동) 한 건을 물어서. 아직 모르면 undefined. */
+export function usePickedRegion(slug: string | undefined): Region | undefined {
+  const regions = useRegions();
+  const listed = regions.data?.items.find((r) => r.slug === slug);
+  const one = useRegion(slug, regions.isSuccess && !listed);
+  return listed ?? one.data;
+}
+
+export function useRegionName(slug: string | undefined): string | undefined {
+  return usePickedRegion(slug)?.name;
+}
+
+/** 이 지역에서 사람들이 실제로 많이 가는 곳 (티맵 내비게이션 실측). 모르는 동네를 고를 때의 길잡이. */
+export function useHotPlaces(regionSlug: string | undefined, limit = 8) {
+  return useQuery<HotPlaces, ApiError>({
+    queryKey: ["meta", "hot", regionSlug, limit],
+    queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(regionSlug ?? "")}/hot`, { query: { limit }, signal }),
+    enabled: Boolean(regionSlug) && !regionSlug?.startsWith("station:"),
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
 }
 
 /** 이 동네가 무엇으로 알려져 있는지 (명물 · 보러 오는 곳). 위저드가 지역을 고른 직후에 보여 준다. */

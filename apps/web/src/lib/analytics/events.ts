@@ -38,6 +38,7 @@ export interface AnalyticsEvents {
   budget_whatif_opened: { course_id: string; budget_total: number };
   settlement_copied: { party_size: number; total: number };
   /** "이런 건 어때요?"에서 권한 곳을 코스에 넣었다 */
+  hot_place_opened: { region: string; place_id: string; rank: number };
   suggestion_added: { course_id: string; role: string; price: number };
   stay_clicked: { day: number };
   performance_clicked: { performance_id: string };

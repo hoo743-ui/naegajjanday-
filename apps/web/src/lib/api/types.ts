@@ -67,6 +67,30 @@ export interface Region {
   place_count: number;
 }
 
+/** 그 지역에서 사람들이 실제로 많이 가는 곳 한 곳 (내비게이션 목적지 실측 순위) */
+export interface HotPlace {
+  id: string;
+  name: string;
+  category: string;
+  category_name: string | null;
+  /** 그 시군구에서 몇 번째로 많이 찾아갔는지 (1이 가장 많이) */
+  rank: number;
+  lat: number;
+  lng: number;
+  address: string | null;
+  thumbnail_url: string | null;
+  is_free: boolean;
+}
+
+/** GET /meta/regions/{slug}/hot */
+export interface HotPlaces {
+  region: string;
+  /** 순위를 읽은 범위: 동네에 자료가 적으면 그 동네가 속한 시군구 */
+  scope: string;
+  source: string;
+  items: HotPlace[];
+}
+
 /** GET /meta/features — 이 환경에서 실제로 되는 기능. 안 되는 기능의 입구는 미리 접는다. */
 export interface Features {
   /** LLM 제공자가 설정돼 있을 때만 true */

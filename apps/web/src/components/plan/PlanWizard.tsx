@@ -12,7 +12,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { decodeStation, useGenerateCourse, usePurposes, useRegions } from "@/lib/api/hooks";
+import { decodeStation, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { num, toKstIso, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
@@ -55,9 +55,8 @@ export function PlanWizard() {
   const values = form.watch();
   const generate = useGenerateCourse();
 
-  const regions = useRegions();
   const purposes = usePurposes();
-  const region = regions.data?.items.find((r) => r.slug === values.region);
+  const region = usePickedRegion(values.region || undefined);
   const pickedStation = decodeStation(values.region);
   const placeLabel = region?.name ?? (pickedStation ? `${pickedStation.name} 주변` : undefined);
   const purpose = purposes.data?.items.find((p) => p.code === values.purpose);

@@ -15,6 +15,15 @@ export const metaHandlers = [
     );
     return HttpResponse.json({ items });
   }),
+  // 목에는 동 단위도 실측 순위도 없다: 실제 API 가 자료 없는 지역에 주는 답과 같은 모양
+  http.get(u("/meta/regions/:slug/hot"), ({ params }) => {
+    const region = regions.find((r) => r.slug === params.slug);
+    return region ? HttpResponse.json({ region: region.name, scope: region.name, source: "", items: [] }) : HttpResponse.json({ code: "REGION_NOT_FOUND" }, { status: 404 });
+  }),
+  http.get(u("/meta/regions/:slug"), ({ params }) => {
+    const region = regions.find((r) => r.slug === params.slug);
+    return region ? HttpResponse.json(region) : HttpResponse.json({ code: "REGION_NOT_FOUND" }, { status: 404 });
+  }),
   http.get(u("/meta/purposes"), async () => {
     await latency(150);
     return HttpResponse.json({ items: purposes });

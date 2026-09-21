@@ -74,6 +74,10 @@ const collect = (page) =>
         disabled: el.disabled === true || el.getAttribute("aria-disabled") === "true",
         external: href ? /^(https?:)?\/\//.test(href) && !href.startsWith(location.origin) : false,
         newTab: el.getAttribute("target") === "_blank",
+        chosen:
+          ["aria-checked", "aria-pressed", "aria-selected"].some((a) => el.getAttribute(a) === "true") ||
+          ![null, "false"].includes(el.getAttribute("aria-current")) ||
+          el.querySelector?.("input:checked") != null,
       });
     }
     return out;
@@ -99,6 +103,7 @@ const locate = (page, control) =>
     { selector: SELECTOR, control },
   );
 
+const PARALLEL = Number(process.env.AUDIT_PARALLEL ?? 3); // 한 번에 여는 탭 수 (조작 하나마다 화면을 새로 연다)
 const browser = await chromium.launch({ channel: "chrome" });
 const adminToken = tokenFile ? readFileSync(tokenFile, "utf8").trim().split(/\r?\n/).pop().trim() : null;
 const results = [];
@@ -131,22 +136,23 @@ for (const scene of SCENES) {
   await first.close();
   console.log(`\n[${scene.key}] 누를 수 있는 것 ${controls.length}개`);
 
-  for (const control of controls) {
-    const row = { scene: scene.key, ...control, verdict: "OK", effect: "" };
-    results.push(row);
+  const rows = controls.map((control) => ({ scene: scene.key, ...control, verdict: "OK", effect: "" }));
+  results.push(...rows);
+  const press = async (row) => {
+    const control = row;
     if (control.disabled) {
       row.verdict = "DISABLED";
-      continue;
+      return;
     }
     if (control.tag === "a") {
       if (!control.href || control.href === "#" || control.href.startsWith("javascript")) {
         row.verdict = "BAD_LINK";
         row.effect = `href="${control.href}"`;
-        continue;
+        return;
       }
       if (control.external || control.newTab) {
         row.effect = `바깥 링크 → ${control.href.slice(0, 80)}`;
-        continue; // 남의 사이트는 누르지 않는다
+        return; // 남의 사이트는 누르지 않는다
       }
     }
     const page = await open(context, scene);
@@ -156,13 +162,12 @@ for (const scene of SCENES) {
     page.on("request", (r) => /\/v1\//.test(r.url()) && requests.push(`${r.method()} ${r.url().split("/v1")[1].slice(0, 60)}`));
     page.on("response", (r) => r.status() >= 400 && /\/v1\//.test(r.url()) && !/auth\/refresh|\/me\b/.test(r.url()) && problems.push(`${r.status()} ${r.url().split("/v1")[1].slice(0, 60)}`));
     try {
-      const handle = await locate(page, control);
-      const el = handle.asElement();
+      let el = (await locate(page, control)).asElement();
       if (!el) {
         row.verdict = "GONE";
         row.effect = "다시 열었더니 없다 (데이터에 따라 달라지는 것)";
         await page.close();
-        continue;
+        return;
       }
       await el.scrollIntoViewIfNeeded().catch(() => undefined);
       const before = await page.evaluate((node) => {
@@ -175,7 +180,12 @@ for (const scene of SCENES) {
       }, el);
       await page.waitForTimeout(500);
       const noise = await page.evaluate(() => window.__fx.mutations); // 누르기 전에 혼자 바뀌는 양(스트리밍 문장 등)
-      await el.click({ timeout: 8000 });
+      await el.click({ timeout: 8000 }).catch(async (e) => {
+        if (!/not attached|detached/.test(String(e))) throw e;
+        el = (await locate(page, control)).asElement(); // 화면이 다시 그려져 떨어졌다 → 같은 것을 다시 찾아 누른다
+        if (!el) throw e;
+        await el.click({ timeout: 8000 });
+      });
       await page.waitForTimeout(2600);
       const after = await page
         .evaluate((node) => {
@@ -198,20 +208,29 @@ for (const scene of SCENES) {
       if (problems.length) {
         row.verdict = "ERROR";
         row.effect = `${problems.join(" / ")} ← ${row.effect}`;
-      } else if (effects.length === 0) row.verdict = "DEAD";
+      } else if (effects.length === 0) {
+        // 이미 골라져 있는 것을 다시 누르면 아무 일도 없는 게 맞다. 단, 그렇다고 화면이 말해 줄 때만(aria-checked · pressed · selected · current)
+        row.verdict = control.chosen ? "CHOSEN" : "DEAD";
+      }
     } catch (e) {
       row.verdict = "ERROR";
       row.effect = `누를 수 없다: ${String(e).split("\n")[0].slice(0, 140)}`;
     }
     await page.close();
-    if (row.verdict !== "OK") console.log(`  ${row.verdict.padEnd(8)} ${control.tag} "${control.name}" ${row.effect}`);
-  }
+    if (!["OK", "CHOSEN"].includes(row.verdict)) console.log(`  ${row.verdict.padEnd(8)} ${control.tag} "${control.name}" ${row.effect}`);
+  };
+  const queue = [...rows];
+  await Promise.all(
+    Array.from({ length: PARALLEL }, async () => {
+      for (let row = queue.shift(); row; row = queue.shift()) await press(row).catch((e) => Object.assign(row, { verdict: "ERROR", effect: `검사 실패: ${String(e).slice(0, 120)}` }));
+    }),
+  );
   await context.close();
 }
 await browser.close();
 
 const count = (v) => results.filter((r) => r.verdict === v).length;
-const lines = [`조작 ${results.length}개 · 정상 ${count("OK")} · 아무 일도 없음 ${count("DEAD")} · 오류 ${count("ERROR")} · 잘못된 링크 ${count("BAD_LINK")} · 비활성 ${count("DISABLED")} · 다시 못 찾음 ${count("GONE")}`];
+const lines = [`조작 ${results.length}개 · 정상 ${count("OK")} · 아무 일도 없음 ${count("DEAD")} · 오류 ${count("ERROR")} · 잘못된 링크 ${count("BAD_LINK")} · 이미 골라진 것 ${count("CHOSEN")} · 비활성 ${count("DISABLED")} · 다시 못 찾음 ${count("GONE")}`];
 for (const verdict of ["ERROR", "DEAD", "BAD_LINK", "DISABLED", "GONE"]) {
   const rows = results.filter((r) => r.verdict === verdict);
   if (rows.length) lines.push(`\n${verdict}`, ...rows.map((r) => `  [${r.scene}] ${r.tag} "${r.name}" ${r.effect}`));

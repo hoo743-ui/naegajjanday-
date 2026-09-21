@@ -9,11 +9,12 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { decodeStation, useLocalSignature, usePurposes, useRegions, useTags } from "@/lib/api/hooks";
+import { decodeStation, useLocalSignature, usePurposes, useRegionName, useTags } from "@/lib/api/hooks";
 import { FOCUS_OFF, type CourseStyle, type Purpose, type Tag, type Transport } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
 import { cn } from "@/lib/utils";
+import { HotPlaces } from "./HotPlaces";
 import { MeetTimeCard } from "./MeetTimeCard";
 import { RegionPicker } from "./RegionPicker";
 import type { PlanValues } from "./schema";
@@ -35,12 +36,17 @@ function FieldError({ name }: { name: keyof PlanValues }) {
 /** 시도 → 시·군 → 구 → 동네로 들어가며 고르고, 검색하면 지역과 지하철역이 함께 나온다 (RegionPicker). */
 const MAX_REGIONS = 3;
 
+/** 지역 이름. 동은 전체 목록에 없어서 한 건씩 읽는다 → 읽는 동안은 비워 둔다(slug 를 보여 주지 않는다). */
+function RegionName({ slug }: { slug: string }) {
+  return <>{useRegionName(slug) ?? ""}</>;
+}
+
 export function RegionStep() {
   const { setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "region">({ name: "region" });
   const before = useWatch<PlanValues, "regions_before">({ name: "regions_before" });
-  const regions = useRegions();
-  const nameOf = (slug: string) => regions.data?.items.find((r) => r.slug === slug)?.name ?? slug;
+  const partySize = useWatch<PlanValues, "party_size">({ name: "party_size" });
+  const selectedName = useRegionName(selected || undefined) ?? "";
   // 역 주변 코스는 한 지점이 기준이라 다른 동네와 잇지 않는다
   const canAdd = Boolean(selected) && !decodeStation(selected) && before.length < MAX_REGIONS - 1 && !before.includes(selected);
   const addAnother = () => {
@@ -55,10 +61,10 @@ export function RegionStep() {
           <ol className="mt-2.5 flex flex-wrap items-center gap-2">
             {before.map((slug, i) => (
               <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-blue-deep bg-blue-soft py-1.5 pr-1.5 pl-3 text-[14px] font-bold text-blue-deep">
-                <span className="tabular">{i + 1}.</span> {nameOf(slug)}
+                <span className="tabular">{i + 1}.</span> <RegionName slug={slug} />
                 <button
                   type="button"
-                  aria-label={`${nameOf(slug)} 빼기`}
+                  aria-label={`${i + 1}번째 동네 빼기`}
                   onClick={() => setValue("regions_before", before.filter((s) => s !== slug), { shouldDirty: true })}
                   className="grid size-6 place-items-center rounded-full hover:bg-white"
                 >
@@ -67,7 +73,7 @@ export function RegionStep() {
               </li>
             ))}
             <li className="text-[14px] font-bold text-ink-2">
-              <span className="tabular">{before.length + 1}.</span> {selected ? nameOf(selected) : "아래에서 다음 동네를 골라 주세요"}
+              <span className="tabular">{before.length + 1}.</span> {selected ? selectedName : "아래에서 다음 동네를 골라 주세요"}
             </li>
           </ol>
           <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted-foreground">예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네 사이는 대중교통(또는 고른 이동수단)으로 이어요.</p>
@@ -77,10 +83,11 @@ export function RegionStep() {
       {canAdd ? (
         <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-[15px] font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
           <Plus aria-hidden className="size-4" />
-          {nameOf(selected)}에 이어 다른 동네도 들르기
+          {selectedName}에 이어 다른 동네도 들르기
         </button>
       ) : null}
       <FieldError name="region" />
+      {selected && !decodeStation(selected) ? <HotPlaces key={selected} regionSlug={selected} partySize={partySize} /> : null}
     </div>
   );
 }
