@@ -346,7 +346,7 @@ class TestOps:
         resp = await client.post("/v1/chat/sessions")
         assert (resp.status_code, resp.json()["code"]) == (503, "LLM_UNAVAILABLE")
         # 웹은 이 플래그를 보고 챗봇 입구를 미리 접는다 — 503 과 같은 스위치여야 한다
-        assert (await client.get("/v1/meta/features")).json() == {"chat": False}
+        assert (await client.get("/v1/meta/features")).json()["chat"] is False
 
     async def test_openapi_is_served(self, client: httpx.AsyncClient) -> None:
         spec = (await client.get("/v1/openapi.json")).json()

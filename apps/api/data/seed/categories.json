@@ -612,6 +612,14 @@
       }
     },
     {
+      "code": "activity.stadium",
+      "name": "야구장",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 180,
+      "provider_mapping": {}
+    },
+    {
       "code": "culture",
       "name": "문화·전시",
       "parent": null,
@@ -890,6 +898,62 @@
       "parent": "nightview",
       "course_role": "NIGHTVIEW",
       "default_stay_min": 30,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay",
+      "name": "숙소",
+      "parent": null,
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.hotel",
+      "name": "호텔",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.resort",
+      "name": "리조트·콘도",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.pension",
+      "name": "펜션·민박",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.hanok",
+      "name": "한옥스테이",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.guesthouse",
+      "name": "게스트하우스·호스텔",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
+      "provider_mapping": {}
+    },
+    {
+      "code": "stay.motel",
+      "name": "모텔",
+      "parent": "stay",
+      "course_role": "STAY",
+      "default_stay_min": 720,
       "provider_mapping": {}
     }
   ]

@@ -1,0 +1,36 @@
+{
+  "_note": "공연예술통합전산망(KOPIS) Open API 설정(DATA). 키는 여기에 두지 않는다 — apps/api/.env 의 KOPIS_API_KEY. 키가 비어 있으면 어떤 요청도 나가지 않는다. 이용 조건: 화면에 attribution 문구를 반드시 표시한다.",
+  "base_url": "https://www.kopis.or.kr/openApi/restful",
+  "detail_url_template": "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id={id}",
+  "attribution": "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)",
+  "timeout_s": 10,
+  "rows": 100,
+  "max_list_pages": 3,
+  "_budget_note": "목록에는 공연장 좌표가 없어 공연마다 상세(→공연장 ID)·공연장(→좌표)을 더 불러야 한다. 한 번의 화면 조회가 수백 건의 호출이 되지 않도록 요청 1회당 캐시에 없는 호출 수를 max_upstream_calls_per_request 로 막는다. 넘으면 응답에 partial=true 가 붙고, 캐시가 채워진 다음 조회부터 완전해진다.",
+  "max_upstream_calls_per_request": 40,
+  "concurrency": 5,
+  "ttl_s": {
+    "list": 1800,
+    "detail": 21600,
+    "venue": 86400
+  },
+  "_area_note": "우리 시도 slug(regions_kr.json) → KOPIS signgucode(시도 코드). 한 시도가 여러 코드에 걸치면 코드마다 목록을 부른다.",
+  "area_codes_by_sido_slug": {
+    "seoul": ["11"],
+    "busan": ["26"],
+    "daegu": ["27"],
+    "incheon": ["28"],
+    "daejeon": ["30"],
+    "ulsan": ["31"],
+    "sejong": ["36"],
+    "gyeonggi": ["41"],
+    "gangwon": ["51"],
+    "chungbuk": ["43"],
+    "chungnam": ["44"],
+    "gyeongbuk": ["47"],
+    "gyeongnam": ["48"],
+    "jeonbuk": ["45"],
+    "jeonnam-gwangju": ["29", "46"],
+    "jeju": ["50"]
+  }
+}

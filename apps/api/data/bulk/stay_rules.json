@@ -1,0 +1,40 @@
+{
+  "_note": "한국관광공사 TourAPI(KorService2) 숙박(contentTypeId=32) 전국 적재 규칙. 분류는 신 분류체계 lclsSystm3 기준: 8자(소분류) → 6자 → 4자(중분류) → 2자(대분류) 순으로 찾고, 없으면 구 cat3, 그래도 없으면 이름에 든 단어, 마지막이 default_category. null 은 '방을 잡는 숙소가 아님'(야영장·수련원). 요금은 목록 API 에 없고 detailInfo2 는 장소마다 1회 호출이라 받지 않는다 — 숙소는 가격 없이 저장한다.",
+  "content_type": "32",
+  "default_category": "stay",
+  "by_lcls": {
+    "AC01": "stay.hotel",
+    "AC0201": "stay.resort",
+    "AC0202": "stay.hotel",
+    "AC0301": "stay.pension",
+    "AC0302": "stay.hanok",
+    "AC0303": "stay.pension",
+    "AC0304": "stay.guesthouse",
+    "AC04": "stay.motel",
+    "AC05": null,
+    "AC06": "stay.guesthouse",
+    "VE0502": "stay.resort",
+    "VE10": null
+  },
+  "by_cat3": {
+    "B02010100": "stay.hotel",
+    "B02010500": "stay.resort",
+    "B02010600": "stay.guesthouse",
+    "B02010700": "stay.pension",
+    "B02010900": "stay.motel",
+    "B02011000": "stay.pension",
+    "B02011100": "stay.guesthouse",
+    "B02011200": "stay.guesthouse",
+    "B02011300": "stay.hotel",
+    "B02011600": "stay.hanok"
+  },
+  "by_name_contains": [
+    { "words": ["한옥"], "category": "stay.hanok" },
+    { "words": ["게스트하우스", "guesthouse", "호스텔", "hostel"], "category": "stay.guesthouse" },
+    { "words": ["리조트", "콘도", "resort"], "category": "stay.resort" },
+    { "words": ["펜션", "풀빌라", "민박"], "category": "stay.pension" },
+    { "words": ["모텔", "motel"], "category": "stay.motel" },
+    { "words": ["호텔", "hotel"], "category": "stay.hotel" }
+  ],
+  "exclude_name_contains": ["야영장", "캠핑장", "오토캠핑", "수련원", "수련관"]
+}

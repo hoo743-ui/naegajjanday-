@@ -1,0 +1,130 @@
+{
+  "_note": "KBO 1군 10개 구단의 홈구장(구장당 1행, 2026 시즌 기준). 경기 일정은 공식 Open API 가 없다 — 공개된 'KBO API' 는 전부 koreabaseball.com 스크레이핑이라 쓰지 않는다. 그래서 구장만 장소로 등록하고, '오늘 경기가 있는지'는 schedule_url(공식 일정 페이지)로 링크만 건다. 그 페이지를 가져오거나 파싱하지 않는다. 적재: `uv run python -m app.infra.ingestion.bulk.venues` (apps/api 에서, 멱등).",
+  "_attribution": "© OpenStreetMap contributors",
+  "_coord_note": "coord_source=osm 은 Nominatim 검색 결과(ODbL, 구장당 1회 조회, 2026-09-21)의 좌표. manual 은 조회가 빈 결과였던 구장으로, 구장 그라운드 중심 부근을 사람이 고른 값이다(오차 수십 m). 관리자 화면이나 이 파일에서 고치고 다시 적재하면 반영된다.",
+  "provider": "kbo_stadium",
+  "category": "activity.stadium",
+  "schedule_url": "https://www.koreabaseball.com/schedule/schedule.aspx",
+  "merge": {
+    "_note": "전국 데이터에 같은 구장이 이미 있으면 새로 만들지 않고 그 장소를 구장으로 승격한다. radius_m 안에서 이름(또는 aliases) 유사도가 min_similarity 이상일 때만 같은 곳으로 본다 — '○○탁구장 △△돔점' 같은 주변 가게를 잡지 않기 위해 지점명 제거 없이 전체 이름을 비교한다.",
+    "radius_m": 200,
+    "min_similarity": 0.8,
+    "roles": ["ACTIVITY", "ATTRACTION", "CULTURE"]
+  },
+  "description_template": "{clubs} 홈구장. 경기가 있는 날만 의미가 있어요 · 오늘 경기 확인: {schedule_url}",
+  "game_day_notice": "경기가 있는 날만 의미가 있어요 · 오늘 경기 확인",
+  "stadiums": [
+    {
+      "id": "jamsil",
+      "name": "잠실야구장",
+      "aliases": ["서울종합운동장 야구장", "잠실종합운동장 야구장", "잠실 야구장"],
+      "clubs": ["LG 트윈스", "두산 베어스"],
+      "sido": "서울특별시",
+      "sigungu": "송파구",
+      "road_address": "서울특별시 송파구 올림픽로 25",
+      "lat": 37.5121831,
+      "lng": 127.0726803,
+      "coord_source": "osm",
+      "osm": "relation/6114542"
+    },
+    {
+      "id": "gocheok",
+      "name": "고척스카이돔",
+      "aliases": ["고척 스카이돔", "고척돔"],
+      "clubs": ["키움 히어로즈"],
+      "sido": "서울특별시",
+      "sigungu": "구로구",
+      "road_address": "서울특별시 구로구 경인로 430",
+      "lat": 37.4981936,
+      "lng": 126.8670731,
+      "coord_source": "osm",
+      "osm": "way/258637347"
+    },
+    {
+      "id": "incheon-landers",
+      "name": "인천SSG랜더스필드",
+      "aliases": ["인천 SSG 랜더스필드", "SSG랜더스필드", "문학야구장", "인천문학야구장"],
+      "clubs": ["SSG 랜더스"],
+      "sido": "인천광역시",
+      "sigungu": "미추홀구",
+      "road_address": "인천광역시 미추홀구 매소홀로 618",
+      "lat": 37.4368743,
+      "lng": 126.6934004,
+      "coord_source": "osm",
+      "osm": "way/71498188"
+    },
+    {
+      "id": "suwon-wiz",
+      "name": "수원 케이티 위즈 파크",
+      "aliases": ["수원KT위즈파크", "수원kt위즈파크", "케이티위즈파크", "KT위즈파크", "수원야구장"],
+      "clubs": ["KT 위즈"],
+      "sido": "경기도",
+      "sigungu": "수원시 장안구",
+      "road_address": "경기도 수원시 장안구 경수대로 893",
+      "lat": 37.2997,
+      "lng": 127.0097,
+      "coord_source": "manual"
+    },
+    {
+      "id": "daejeon-ballpark",
+      "name": "대전 한화생명 볼파크",
+      "aliases": ["대전한화생명볼파크", "한화생명 볼파크", "대전 베이스볼 드림파크"],
+      "clubs": ["한화 이글스"],
+      "sido": "대전광역시",
+      "sigungu": "중구",
+      "road_address": "대전광역시 중구 대종로 373",
+      "lat": 36.3161037,
+      "lng": 127.4307911,
+      "coord_source": "osm",
+      "osm": "way/1467519889"
+    },
+    {
+      "id": "daegu-lions",
+      "name": "대구 삼성 라이온즈 파크",
+      "aliases": ["대구삼성라이온즈파크", "삼성라이온즈파크", "라이온즈파크"],
+      "clubs": ["삼성 라이온즈"],
+      "sido": "대구광역시",
+      "sigungu": "수성구",
+      "road_address": "대구광역시 수성구 야구전설로 1",
+      "lat": 35.8411,
+      "lng": 128.6817,
+      "coord_source": "manual"
+    },
+    {
+      "id": "gwangju-champions",
+      "name": "광주-기아 챔피언스 필드",
+      "aliases": ["광주기아챔피언스필드", "기아챔피언스필드", "광주 기아 챔피언스 필드", "챔피언스필드"],
+      "clubs": ["KIA 타이거즈"],
+      "sido": "광주광역시",
+      "sigungu": "북구",
+      "road_address": "광주광역시 북구 서림로 10",
+      "lat": 35.1682,
+      "lng": 126.8891,
+      "coord_source": "manual"
+    },
+    {
+      "id": "busan-sajik",
+      "name": "사직야구장",
+      "aliases": ["부산 사직야구장", "사직 야구장", "부산사직종합운동장 야구장"],
+      "clubs": ["롯데 자이언츠"],
+      "sido": "부산광역시",
+      "sigungu": "동래구",
+      "road_address": "부산광역시 동래구 사직로 45",
+      "lat": 35.194,
+      "lng": 129.0615,
+      "coord_source": "manual"
+    },
+    {
+      "id": "changwon-ncpark",
+      "name": "창원NC파크",
+      "aliases": ["창원 NC 파크", "창원엔씨파크", "NC파크", "엔씨파크"],
+      "clubs": ["NC 다이노스"],
+      "sido": "경상남도",
+      "sigungu": "창원시 마산회원구",
+      "road_address": "경상남도 창원시 마산회원구 삼호로 63",
+      "lat": 35.2225,
+      "lng": 128.5823,
+      "coord_source": "manual"
+    }
+  ]
+}

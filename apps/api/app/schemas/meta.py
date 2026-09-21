@@ -88,6 +88,7 @@ class Features(BaseModel):
     """What this deployment can actually do — the web hides entry points it cannot honour."""
 
     chat: bool = Field(description="챗봇 사용 가능 여부 (LLM 제공자가 설정돼 있을 때만 true)")
+    performances: bool = Field(default=False, description="공연 조회 가능 여부 (KOPIS 키가 있을 때만 true)")
 
 
 class LocalSpecialty(BaseModel):

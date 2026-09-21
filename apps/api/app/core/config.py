@@ -91,6 +91,8 @@ class Settings(BaseSettings):
     data_go_kr_service_key: str | None = None
     data_go_kr_category_hint: str = "attraction.park"  # canonical category.code for the dataset
     trusted_providers: CsvList = Field(default_factory=lambda: ["file", "admin", "tourapi"])
+    # 공연예술통합전산망(KOPIS) Open API. Empty = the performances feature is off (no request is made).
+    kopis_api_key: str = ""
 
     # --- routing providers ---
     travel_time_provider: Literal["haversine", "kakao", "tmap", "google"] = "haversine"

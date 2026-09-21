@@ -48,4 +48,6 @@ async def banners(
 @router.get("/features", response_model=dto.Features, summary="이 환경에서 쓸 수 있는 기능")
 async def features(container: ContainerDep) -> dto.Features:
     # the same switch `ChatService.ensure_available` uses, so the flag and the 503 can never disagree
-    return dto.Features(chat=container.llm.available)
+    return dto.Features(
+        chat=container.llm.available, performances=bool(container.settings.kopis_api_key.strip())
+    )
