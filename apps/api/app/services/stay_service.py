@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.domain.models import GeoPoint
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.models import Category, Place
+from app.infra.tagging import get_tag_rules
 from app.repositories.geo import nearest_first, within
 from app.schemas import stay as dto
 
@@ -59,7 +60,7 @@ class StayService:
 def _item(p: Place, distance: float) -> dto.StayItem:
     return dto.StayItem(
         id=p.public_id,
-        name=p.name,
+        name=get_tag_rules().sign_name(p.name),  # the sign, not the registered company name
         category=p.category.code,
         category_label=p.category.name,
         address=p.road_address or p.address,

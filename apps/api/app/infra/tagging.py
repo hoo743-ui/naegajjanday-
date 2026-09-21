@@ -35,6 +35,7 @@ class TagRules:
     unlisted_ends: tuple[str, ...] = ()
     unlisted_except: tuple[str, ...] = ()
     strip_prefix: tuple[str, ...] = ()
+    legal_forms: tuple[str, ...] = ()
     listed_photo_host: str = ""
     listed_tags: Mapping[str, float] = field(default_factory=dict)
     quality_tags: frozenset[str] = frozenset()  # an official body vouches for the place
@@ -60,6 +61,7 @@ class TagRules:
             listed_tags=dict(data.get("listed_by_kto", {}).get("tags", {})),
             quality_tags=frozenset(data.get("quality_tags", {}).get("names", [])),
             strip_prefix=tuple(w.upper() for w in data.get("unlisted_names", {}).get("strip_prefix", [])),
+            legal_forms=tuple(data.get("unlisted_names", {}).get("legal_forms", [])),
         )
 
     def derive(
@@ -114,6 +116,13 @@ class TagRules:
     def sign_name(self, name: str) -> str:
         """The name on the sign: "강남에프앤비화덕고깃간 역삼본점" → "화덕고깃간 역삼본점". Left alone when
         what follows the company word is only a branch ("커피컴퍼니 홍대점") or too short to be a name."""
+        # a legal form stuck on either end is never part of the sign: "(주)<hotel>" → "<hotel>"
+        for form in self.legal_forms:
+            bare = name.strip()
+            if bare.startswith(form) and len(_compact(bare[len(form) :])) >= MIN_SIGN_LEN:
+                name = bare[len(form) :].strip()
+            elif bare.endswith(form) and len(_compact(bare[: -len(form)])) >= MIN_SIGN_LEN:
+                name = bare[: -len(form)].strip()
         upper = name.upper()
         for word in self.strip_prefix:
             at = upper.find(word)
