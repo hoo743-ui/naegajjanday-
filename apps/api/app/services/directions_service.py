@@ -176,6 +176,16 @@ def get_transit_index() -> TransitIndex:
     return TransitIndex(get_settings().transit_dir)
 
 
+def _leg_coordinates(leg: dict[str, Any]) -> list[list[float]]:
+    """One leg's path as [lat, lng] pairs, stitched from its steps (consecutive steps share a vertex)."""
+    out: list[list[float]] = []
+    for step in leg.get("steps", ()):
+        for lng, lat in step["geometry"]["coordinates"]:
+            if not out or out[-1] != [lat, lng]:
+                out.append([lat, lng])
+    return out
+
+
 class DirectionsService:
     """Walking geometry through an OSRM-compatible foot router, with a bounded in-process cache."""
 
@@ -190,7 +200,13 @@ class DirectionsService:
         legs = []
         for a, b in pairwise(points):
             d = haversine_m(a, b)
-            legs.append({"distance_m": round(d * DETOUR_FACTOR["walk"]), "duration_min": walk_minutes(d)})
+            legs.append(
+                {
+                    "distance_m": round(d * DETOUR_FACTOR["walk"]),
+                    "duration_min": walk_minutes(d),
+                    "coordinates": [[a.lat, a.lng], [b.lat, b.lng]],
+                }
+            )
         return {
             "source": "straight",
             "coordinates": [[p.lat, p.lng] for p in points],
@@ -208,7 +224,9 @@ class DirectionsService:
             self._cache.move_to_end(key)
             return self._cache[key]
         url = f"{base}/route/v1/foot/{key}"
-        params = {"overview": "full", "geometries": "geojson", "steps": "false"}
+        # steps=true only for the per-leg geometry: the map colours each leg by its destination, and
+        # guessing the leg boundary from the overview breaks when a course doubles back on one street.
+        params = {"overview": "full", "geometries": "geojson", "steps": "true"}
         try:
             if self._client is not None:
                 res = await self._client.get(url, params=params)
@@ -226,6 +244,7 @@ class DirectionsService:
                     {
                         "distance_m": round(leg["distance"]),
                         "duration_min": max(1, round(leg["duration"] / 60)),
+                        "coordinates": _leg_coordinates(leg),
                     }
                     for leg in route["legs"]
                 ],

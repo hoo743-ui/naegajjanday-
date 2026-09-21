@@ -19,6 +19,7 @@ MAX_POINTS = 12
 class RouteLeg(BaseModel):
     distance_m: int
     duration_min: int
+    coordinates: list[tuple[float, float]] = []  # this leg only, [lat, lng] — the map draws leg by leg
 
 
 class WalkRoute(BaseModel):

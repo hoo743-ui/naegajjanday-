@@ -511,7 +511,8 @@ export interface WalkRoute {
   /** osrm = 실제 보행 경로, straight = 라우터가 응답하지 않아 직선으로 이은 폴백 */
   source: "osrm" | "straight";
   coordinates: [number, number][];
-  legs: { distance_m: number; duration_min: number }[];
+  /** coordinates: 이 구간만의 경로. 지도가 구간별로 색을 나눠 그릴 때 쓴다 */
+  legs: { distance_m: number; duration_min: number; coordinates?: [number, number][] }[];
   distance_m: number;
   duration_min: number;
 }

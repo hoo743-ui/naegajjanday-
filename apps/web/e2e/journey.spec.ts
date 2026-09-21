@@ -86,9 +86,8 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.getByText(/예산 80,000원/).first()).toBeVisible(); // 요청 조건 에코 (request.*)
     await expect(page.getByRole("tab").first()).toBeVisible(); // 대안 코스 탭 (siblings)
 
-    // 지도: 실제 지도(Leaflet)든 약도(SVG)든 핀 수 = 스톱 수
-    const leaflet = page.locator(".leaflet-container");
-    if (await leaflet.count()) {
+    // 지도: 카카오든 Leaflet 이든 같은 번호 핀을 쓴다 → 핀 수 = 스톱 수 (약도(SVG)로 떨어졌을 때만 건너뛴다)
+    if (await page.locator(".jj-map").count()) {
       await expect(page.locator(".jj-pin")).toHaveCount(count);
     }
     // 구간마다 외부 길찾기 링크가 있고, 카카오맵 공식 링크 규격을 따른다

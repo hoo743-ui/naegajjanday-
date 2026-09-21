@@ -66,7 +66,18 @@ async def test_walk_uses_router_geometry() -> None:
                         "geometry": {
                             "coordinates": [[126.9236, 37.5563], [126.9240, 37.5570], [126.9255, 37.5580]]
                         },
-                        "legs": [{"distance": 420.4, "duration": 318.0}],
+                        "legs": [
+                            {
+                                "distance": 420.4,
+                                "duration": 318.0,
+                                # consecutive steps repeat the shared vertex; the last step is the arrival point
+                                "steps": [
+                                    {"geometry": {"coordinates": [[126.9236, 37.5563], [126.9240, 37.5570]]}},
+                                    {"geometry": {"coordinates": [[126.9240, 37.5570], [126.9255, 37.5580]]}},
+                                    {"geometry": {"coordinates": [[126.9255, 37.5580], [126.9255, 37.5580]]}},
+                                ],
+                            }
+                        ],
                     }
                 ]
             },
@@ -78,7 +89,10 @@ async def test_walk_uses_router_geometry() -> None:
 
     assert route["source"] == "osrm"
     assert route["coordinates"][0] == [37.5563, 126.9236]  # flipped to [lat, lng]
-    assert route["legs"] == [{"distance_m": 420, "duration_min": 5}]
+    leg = route["legs"][0]
+    assert (leg["distance_m"], leg["duration_min"]) == (420, 5)
+    # the leg carries its own path, stitched from the steps without repeating shared vertices
+    assert leg["coordinates"] == [[37.5563, 126.9236], [37.5570, 126.9240], [37.5580, 126.9255]]
 
 
 @pytest.mark.asyncio
@@ -93,6 +107,7 @@ async def test_walk_falls_back_to_straight_line_when_router_is_down() -> None:
     assert route["source"] == "straight"
     assert len(route["coordinates"]) == 2
     assert route["legs"][0]["duration_min"] >= 1
+    assert len(route["legs"][0]["coordinates"]) == 2
 
 
 @pytest.mark.asyncio
