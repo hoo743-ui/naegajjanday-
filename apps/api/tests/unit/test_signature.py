@@ -117,11 +117,22 @@ def test_mark_local_flags_specialty_shops_and_landmark_sights() -> None:
 
 def test_focus_gives_the_first_slot_that_can_serve_it_to_the_specialty_alone() -> None:
     pools = {1: [_cand(1, f"q{DISH}", "MEAL"), _cand(2, "plain", "MEAL")], 2: [_cand(3, f"r{DISH}", "MEAL")]}
-    ctx = _ctx(focus=DISH)
+    ctx = _ctx(focus_request=DISH)
     out = focus_pools(pools, ctx, RULES)
     assert [c.id for c in out[1]] == [1]
     assert [c.id for c in out[2]] == [3]  # later slots are left alone
+    assert ctx.focus == DISH
     assert focus_pools(pools, _ctx(), RULES) == pools  # nothing stands out: nothing changes
+
+
+def test_a_pick_that_does_not_fit_is_never_swapped_silently() -> None:
+    other = DISH[::-1]
+    pools = {1: [_cand(1, f"q{other}", "MEAL"), _cand(2, f"r{other}", "MEAL")]}  # the pick was priced out
+    pricey = place("MEAL", price=22_500, id=7, name=f"s{DISH}")
+    ctx = _ctx(focus_request=DISH, auto_focus_words=(DISH, other))
+    out = focus_pools(pools, ctx, RULES, unfiltered=[pricey])
+    assert [c.id for c in out[1]] == [1, 2]  # the next specialty still gets its stop
+    assert (ctx.focus, ctx.focus_from_price) == (other, 22_500)  # and the engine can say what the pick costs
 
 
 def test_a_strong_specialty_claims_a_stop_unasked_only_when_enough_shops_can_serve_it() -> None:

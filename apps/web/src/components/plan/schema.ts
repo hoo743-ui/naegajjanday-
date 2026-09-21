@@ -12,6 +12,8 @@ export const planSchema = z
     transport: z.enum(["walk", "transit", "car"]),
     /** efficient = 가깝고 알뜰하게 · fun = 재미 우선 */
     style: z.enum(["efficient", "fun"]),
+    /** 꼭 넣을 동네 명물. "" = 짠이가 알아서(가장 뚜렷한 명물), "-" = 넣지 않기 */
+    focus: z.string().max(12),
     /** "" = 오늘, 아니면 "YYYY-MM-DD" */
     meet_day: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/, "날짜 형식을 확인해 주세요"),
     /** "" = 지금 출발(오늘만), 아니면 "HH:mm" */
@@ -33,6 +35,7 @@ export const PLAN_DEFAULTS: PlanValues = {
   disliked_tags: [],
   transport: "walk",
   style: "efficient",
+  focus: "",
   meet_day: "",
   start_time: "",
   duration_min: null,
@@ -42,7 +45,7 @@ export const STEPS = [
   { key: "region", title: "지역", question: "어디서 놀까요?", fields: ["region"] },
   { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "meet_day", "start_time", "duration_min"] },
-  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "liked_tags", "disliked_tags", "transport"] },
+  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "focus", "liked_tags", "disliked_tags", "transport"] },
 ] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
 
 export type StepKey = (typeof STEPS)[number]["key"];

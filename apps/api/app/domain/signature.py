@@ -291,28 +291,46 @@ def mark_local(candidates: Iterable[PlaceCandidate], ctx: RequestContext, rules:
 
 
 def focus_pools(
-    pools: Mapping[int, list[PlaceCandidate]], ctx: RequestContext, rules: SignatureRules
+    pools: Mapping[int, list[PlaceCandidate]],
+    ctx: RequestContext,
+    rules: SignatureRules,
+    unfiltered: Iterable[PlaceCandidate] = (),
 ) -> dict[int, list[PlaceCandidate]]:
     """One stop of the course is given to what the neighbourhood is known for.
 
-    The user's pick (`ctx.focus`) wins. Otherwise the strongest specialty that at least
-    `auto_focus_min_pool` affordable shops can serve is chosen, so a course in a crab town has crab in
-    it without being asked. The first slot that can serve it serves nothing else; every other slot is
-    untouched, and with no clear specialty the pools come back as they were. `ctx.focus` records the
-    word that was applied.
+    The user's pick (`ctx.focus_request`) comes first. Otherwise, or when the pick does not fit the
+    budget of any slot, the strongest specialty that at least `auto_focus_min_pool` affordable shops
+    can serve is chosen, so a course in a crab town has crab in it without being asked. The first slot
+    that can serve it serves nothing else; every other slot is untouched, and with no clear specialty
+    the pools come back as they were. `ctx.focus` records the word that was applied; when the pick
+    itself could not be served, `ctx.focus_from_price` says what it costs so the page can explain.
     """
     out = dict(pools)
-    wanted = [ctx.focus] if ctx.focus else list(ctx.auto_focus_words)
-    need = 1 if ctx.focus else rules.auto_focus_min_pool
-    for word in wanted:
+    ctx.focus = None
+    wanted = [(ctx.focus_request, 1)] if ctx.focus_request else []
+    wanted += [(w, rules.auto_focus_min_pool) for w in ctx.auto_focus_words if w != ctx.focus_request]
+    for word, need in wanted:
         for position in sorted(out):
             matching = [c for c in out[position] if not c.is_event and word in compact(c.name)]
-            # a sit-down place when there is one: "<specialty> instant noodles" is not the dish
-            proper = [c for c in matching if not c.category_code.startswith(rules.focus_avoid_categories)]
-            matching = proper if rules.focus_avoid_categories else matching
+            # a sit-down place: "<specialty> instant noodles" is not the dish
+            if rules.focus_avoid_categories:
+                matching = [
+                    c for c in matching if not c.category_code.startswith(rules.focus_avoid_categories)
+                ]
             if len(matching) >= need:
                 out[position] = matching
                 ctx.focus = word
                 return out
-    ctx.focus = None
+        if word == ctx.focus_request:
+            prices = [
+                c.price_per_person
+                for c in unfiltered
+                if c.price_per_person
+                and not c.is_event
+                and word in compact(c.name)
+                and not (
+                    rules.focus_avoid_categories and c.category_code.startswith(rules.focus_avoid_categories)
+                )
+            ]
+            ctx.focus_from_price = min(prices, default=None)
     return out

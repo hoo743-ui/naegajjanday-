@@ -127,6 +127,8 @@ class RecommendationEngine:
             if hole not in optional:
                 warnings.append(_slot_empty(hole, role_of[hole]))
             slot_budgets = B.drop_slot(slot_budgets, hole, b)
+        if ctx.focus_request and ctx.focus != ctx.focus_request:
+            warnings.append(_focus_unavailable(ctx))
         if trimmed and ctx.duration_min:
             warnings.insert(0, _duration_fit(ctx.duration_min, len(slot_budgets), trimmed))
         candidates_count = len({(p.is_event, p.id) for pool in pools.values() for p in pool})
@@ -218,7 +220,8 @@ class RecommendationEngine:
             pools[sb.slot.position] = pool
         assign_buzz(p for pool in pools.values() for p in pool)
         mark_local((p for pool in pools.values() for p in pool), ctx, get_signature_rules())
-        return focus_pools(pools, ctx, get_signature_rules())
+        unfiltered = [p for found in cache.values() for p in found]
+        return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
 
     # --- search ------------------------------------------------------------------------------
 
@@ -396,6 +399,20 @@ def _slot_empty(position: int, role: str) -> dict[str, Any]:
         "detail": "조건에 맞는 장소를 찾지 못해 이 단계는 건너뛰었어요.",
         "meta": {"position": position, "role": role},
     }
+
+
+def _focus_unavailable(ctx: RequestContext) -> dict[str, Any]:
+    """The user picked a local specialty and the course could not carry it: say why, never swap silently."""
+    word, price = ctx.focus_request, ctx.focus_from_price
+    if price:
+        total = price * ctx.party_size
+        detail = (
+            f"'{word}' 집은 {ctx.party_size}명이면 {total:,}원쯤부터라 이번 예산 배분에는 넣지 못했어요. "
+            "예산을 올리거나 들르는 곳을 줄이면 넣을 수 있어요."
+        )
+    else:
+        detail = f"이 시간에 문을 연 '{word}' 집을 찾지 못했어요. 시간을 바꾸면 넣을 수 있어요."
+    return {"code": "FOCUS_UNAVAILABLE", "detail": detail, "meta": {"focus": word, "from_price": price}}
 
 
 def _duration_fit(duration_min: int, kept: int, trimmed: Sequence[Any]) -> dict[str, Any]:

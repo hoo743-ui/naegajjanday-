@@ -9,8 +9,8 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePurposes, useTags } from "@/lib/api/hooks";
-import type { CourseStyle, Purpose, Tag, Transport } from "@/lib/api/types";
+import { useLocalSignature, usePurposes, useTags } from "@/lib/api/hooks";
+import { FOCUS_OFF, type CourseStyle, type Purpose, type Tag, type Transport } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
 import { cn } from "@/lib/utils";
@@ -257,7 +257,12 @@ export function TasteStep() {
   const disliked = useWatch<PlanValues, "disliked_tags">({ name: "disliked_tags" });
   const transport = useWatch<PlanValues, "transport">({ name: "transport" });
   const style = useWatch<PlanValues, "style">({ name: "style" });
+  const focus = useWatch<PlanValues, "focus">({ name: "focus" });
+  const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
+  // 이 동네가 무엇으로 알려져 있는지 먼저 알려 준다 — 뚜렷한 명물이 없는 동네면 이 칸은 아예 안 나온다
+  const local = useLocalSignature(region || undefined);
+  const specialties = local.data?.specialties ?? [];
 
   const groups = useMemo(() => {
     const map = new Map<string, Tag[]>();
@@ -295,6 +300,31 @@ export function TasteStep() {
           ))}
         </div>
       </fieldset>
+
+      {specialties.length > 0 ? (
+        <fieldset className="rounded-card bg-white p-6 shadow-soft">
+          <legend className="float-left mb-1 w-full text-sm font-extrabold text-muted-foreground">{local.data?.region}에 왔다면</legend>
+          <p className="clear-both mb-3 text-[13px] leading-relaxed text-ink-2">이 동네 간판에 유독 많이 걸린 말이에요. 하나 고르면 예산 안에서 그 집을 꼭 넣어 드려요.</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="꼭 넣을 동네 명물">
+            {[{ value: "", label: "짠이가 알아서", hint: "" }, ...specialties.map((s) => ({ value: s.word, label: s.word, hint: `${s.count}곳 · 전국의 ${Math.round(s.lift)}배` })), { value: FOCUS_OFF, label: "상관없어요", hint: "" }].map((o) => {
+              const on = focus === o.value;
+              return (
+                <button
+                  key={o.value || "auto"}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setValue("focus", o.value, { shouldDirty: true })}
+                  className={cn("inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[14px] font-bold", on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep")}
+                >
+                  {o.label}
+                  {o.hint ? <span className={cn("tabular text-[12px] font-semibold", on ? "text-white/85" : "text-muted-foreground")}>{o.hint}</span> : null}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      ) : null}
 
       <section className="rounded-card bg-white p-6 shadow-soft">
         <h3 className="text-sm font-extrabold text-muted-foreground">끌리는 분위기 (선택)</h3>

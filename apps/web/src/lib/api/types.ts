@@ -123,6 +123,18 @@ export type CourseRole =
 export type Transport = "walk" | "transit" | "car";
 export type SwapStrategy = "cheaper" | "closer" | "higher_rated" | "random_top";
 
+/** 이 동네가 무엇으로 알려져 있는지. 사람이 쓴 글이 아니라 간판 통계에서 계산한 값이다 (API: domain/signature) */
+export interface LocalSignature {
+  region: string;
+  shops: number;
+  /** count = 이 동네에서 간판에 그 말이 들어간 가게 수, lift = 전국 평균 대비 몇 배 */
+  specialties: { word: string; count: number; lift: number }[];
+  sights: { name: string; mentions: number }[];
+}
+
+/** focus 값: 동네 명물을 코스에 넣지 않는다 */
+export const FOCUS_OFF = "-";
+
 export interface GenerateCourseRequest {
   region?: string;
   origin?: LatLng;
@@ -135,6 +147,8 @@ export interface GenerateCourseRequest {
   duration_min?: number;
   /** efficient = 가깝고 알뜰하게(기본) · fun = 붐비는 거리·놀거리 위주 */
   style?: CourseStyle;
+  /** 꼭 넣을 동네 명물. 생략 = 가장 뚜렷한 명물을 자동으로, FOCUS_OFF = 넣지 않음 */
+  focus?: string;
   transport?: Transport;
   include_roles?: CourseRole[];
   preferences?: {
@@ -276,10 +290,13 @@ export interface CourseDetail extends Course {
     /** 사용자가 정한 만남 시간(분). 맡겼으면 null */
     duration_min?: number | null;
     style?: CourseStyle;
+    /** 이 코스가 실제로 중심에 둔 동네 명물 (자동으로 골랐든 사용자가 골랐든) */
+    focus?: string | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];
   nearby_events: NearbyEvent[];
+  local?: LocalSignature | null;
   meta?: GenerateMeta;
   og: { title: string; description: string; image_url: string | null };
   /** 보는 사람 기준: 내가 저장한 코스일 때만 true (친구가 저장한 코스를 열면 false) */

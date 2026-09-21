@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
+import { LocalCard } from "./LocalCard";
 import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
@@ -165,9 +166,10 @@ export function CourseView({ id }: { id: string }) {
   };
 
   /** fork: 친구 코스를 같은 조건 그대로 내 코스로 새로 만든다 (지금 장소를 빼지 않는다). 아니면 다른 장소들로 다시 짠다. */
-  const onReroll = (fork = false) => {
+  /** focus: 이 동네 명물을 골라(또는 FOCUS_OFF 로 빼고) 다시 짠다. 안 주면 처음 조건 그대로 */
+  const onReroll = (fork = false, focus?: string) => {
     setForking(fork);
-    track("reroll_clicked", fork ? { course_id: id, from_shared: true } : { course_id: id });
+    track("reroll_clicked", { course_id: id, ...(fork ? { from_shared: true } : {}), ...(focus ? { focus } : {}) });
     reroll.mutate(
       {
         region: request.region?.slug,
@@ -181,6 +183,7 @@ export function CourseView({ id }: { id: string }) {
         // 다시 짜도 처음에 정한 만남 시간은 그대로
         ...(request.duration_min ? { duration_min: request.duration_min } : {}),
         ...(request.style ? { style: request.style } : {}),
+        ...(focus ? { focus } : {}),
         // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
@@ -252,6 +255,8 @@ export function CourseView({ id }: { id: string }) {
                 친구가 짠 코스예요. 아래 버튼으로 같은 조건의 내 코스를 만들면 바꾸고 저장할 수 있어요.
               </p>
             ) : null}
+
+            {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
 
             <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} />
 

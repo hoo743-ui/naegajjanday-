@@ -26,6 +26,7 @@ import type {
   GenerateCourseRequest,
   GenerateCourseResponse,
   ItemList,
+  LocalSignature,
   Me,
   MePayload,
   OAuthProvider,
@@ -158,6 +159,7 @@ type CourseDetailWire = Pick<CourseDetail, "request" | "siblings"> & {
   course: Course;
   og: { title: string; description: string; image?: string | null };
   nearby_events?: CourseDetail["nearby_events"];
+  local?: CourseDetail["local"];
   /** 보는 사람 기준 (API 가 Authorization 헤더로 판단한다) */
   is_owner?: boolean;
   can_edit?: boolean;
@@ -172,6 +174,7 @@ function toCourseDetail(res: CourseDetail | CourseDetailWire): CourseDetail {
     request: res.request,
     siblings: res.siblings ?? [],
     nearby_events: res.nearby_events ?? [],
+    local: res.local ?? null,
     // status 만 보면 친구가 저장한 코스도 "저장됨"으로 보인다 → 보는 사람 기준 값을 쓴다 (새로고침해도 유지)
     is_saved: res.is_saved ?? (res.can_edit === undefined && savedStatus),
     is_owner: res.is_owner ?? false,
@@ -645,4 +648,15 @@ export function useDebounced<T>(value: T, delay = 250): T {
     return () => clearTimeout(timer);
   }, [value, delay]);
   return debounced;
+}
+
+/** 이 동네가 무엇으로 알려져 있는지 (명물 · 보러 오는 곳). 위저드가 지역을 고른 직후에 보여 준다. */
+export function useLocalSignature(regionSlug: string | undefined) {
+  return useQuery<LocalSignature, ApiError>({
+    queryKey: ["meta", "signature", regionSlug],
+    queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(regionSlug ?? "")}/signature`, { signal }),
+    enabled: Boolean(regionSlug) && !regionSlug?.startsWith("station:"),
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
 }
