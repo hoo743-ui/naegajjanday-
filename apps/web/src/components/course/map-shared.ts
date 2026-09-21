@@ -13,16 +13,36 @@ export interface Spread {
   crowded: boolean;
 }
 
-export function pinHtml(position: number, name: string, color: string, active: boolean, spread: Spread) {
+/** 핀이 내려앉는 연출이 끝나는 시점(ms). 이보다 늦게 다시 그린 핀은 그냥 제자리에 있다 */
+export const PIN_LANDING_MS = 1600;
+
+/**
+ * 코스가 처음 그려질 때만 핀이 순번대로 내려앉는다. 핀은 줌 · 선택이 바뀔 때마다 다시 만들어지므로,
+ * "이 코스를 처음 그린 지 몇 ms 지났는지"를 받아 애니메이션을 이어 붙인다(다시 시작하지 않는다).
+ */
+export function landingClock() {
+  let key = "";
+  let startedAt = 0;
+  return (courseKey: string): number | undefined => {
+    if (courseKey !== key) {
+      key = courseKey;
+      startedAt = performance.now();
+    }
+    const elapsed = performance.now() - startedAt;
+    return elapsed < PIN_LANDING_MS ? elapsed : undefined;
+  };
+}
+
+export function pinHtml(position: number, name: string, color: string, active: boolean, spread: Spread, landing?: number) {
   const { dx, dy, crowded } = spread;
-  const classes = ["jj-pin", active ? "is-active" : "", crowded && !active ? "is-crowded" : ""].filter(Boolean).join(" ");
+  const classes = ["jj-pin", active ? "is-active" : "", crowded && !active ? "is-crowded" : "", landing !== undefined ? "is-landing" : ""].filter(Boolean).join(" ");
   const moved = dx !== 0 || dy !== 0;
   // 펼친 핀은 제자리에 점을 남기고 선으로 잇는다 → 번호는 떨어져 있어도 "정확히 어디인지"는 잃지 않는다
   const leader = moved
     ? `<span class="jj-pin-stem" style="width:${Math.hypot(dx, dy).toFixed(1)}px;transform:rotate(${Math.atan2(dy, dx).toFixed(4)}rad)"></span><span class="jj-pin-anchor"></span>`
     : "";
   return `
-    <div class="${classes}" style="--pin:${color};--dx:${dx}px;--dy:${dy}px">
+    <div class="${classes}" style="--pin:${color};--dx:${dx}px;--dy:${dy}px;--n:${position - 1};--t:${Math.round(landing ?? 0)}ms">
       ${leader}
       <span class="jj-pin-drop"><b>${position}</b></span>
       <span class="jj-pin-label">${escapeHtml(name)}</span>

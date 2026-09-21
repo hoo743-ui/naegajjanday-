@@ -20,7 +20,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         // 브랜드 CTA — index.html 의 .btn-primary / .btn-ghost / .btn-white
         brand:
-          "bg-[image:var(--grad-btn)] bg-[length:170%_100%] font-bold tracking-tight text-white shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_10px_24px_-6px_rgba(42,91,215,.38)] duration-300 hover:-translate-y-px hover:bg-[position:100%_0] hover:shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_16px_32px_-8px_rgba(42,91,215,.42)]",
+          "relative overflow-hidden bg-blue-deep font-bold tracking-tight text-white shadow-[0_1px_0_rgba(255,255,255,.22)_inset,0_10px_24px_-6px_rgba(42,91,215,.4)] duration-300 after:pointer-events-none after:absolute after:inset-0 after:bg-[linear-gradient(105deg,transparent_42%,rgba(255,255,255,.32)_50%,transparent_58%)] after:bg-[length:250%_100%] after:bg-[position:180%_0] after:bg-no-repeat after:transition-[background-position] after:duration-[900ms] after:ease-out hover:-translate-y-px hover:bg-[#2451c4] hover:shadow-[0_1px_0_rgba(255,255,255,.22)_inset,0_16px_32px_-8px_rgba(42,91,215,.45)] hover:after:bg-[position:-80%_0]",
         soft: "bg-soft font-bold tracking-tight text-ink-2 hover:bg-line",
         white:
           "bg-white font-bold tracking-tight text-blue-deep shadow-[0_10px_28px_rgba(20,33,61,.18)] duration-300 hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(20,33,61,.22)]",

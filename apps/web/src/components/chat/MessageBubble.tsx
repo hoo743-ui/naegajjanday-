@@ -28,7 +28,7 @@ function TypingDots() {
   return (
     <span className="inline-flex items-center gap-1 py-1.5" role="status" aria-label="짠이가 답을 쓰는 중">
       {[0, 1, 2].map((i) => (
-        <span key={i} className="size-1.5 animate-bounce rounded-full bg-gold-deep" style={{ animationDelay: `${i * 140}ms` }} />
+        <span key={i} className="size-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: `${i * 140}ms` }} />
       ))}
     </span>
   );
@@ -45,7 +45,7 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
         <span className="sr-only">짠이: </span>
 
         {message.content || waiting ? (
-          <div className="max-w-full rounded-[20px] rounded-tl-md bg-gold-soft px-4 py-2.5 text-[15px] leading-relaxed font-medium whitespace-pre-wrap text-ink sm:max-w-[88%]">
+          <div className="max-w-full rounded-[20px] rounded-tl-md bg-white px-4 py-2.5 shadow-soft text-[15px] leading-relaxed font-medium whitespace-pre-wrap text-ink sm:max-w-[88%]">
             {message.content || <TypingDots />}
           </div>
         ) : null}

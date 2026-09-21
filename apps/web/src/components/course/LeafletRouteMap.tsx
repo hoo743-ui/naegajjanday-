@@ -8,7 +8,7 @@ import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { stopColor } from "./colors";
-import { escapeHtml, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
 
 interface LeafletRouteMapProps {
   stops: Stop[];
@@ -41,6 +41,7 @@ const MAX_FIT_ZOOM = 18;
 export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, onError }: LeafletRouteMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
+  const landingRef = useRef(landingClock());
   const layerRef = useRef<LayerGroup | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const [ready, setReady] = useState(false);
@@ -145,13 +146,14 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
     }
 
     const spread = spreadOverlaps(pinsPx);
+    const landing = landingRef.current(stops.map((s) => s.place.id).join(","));
     stops.forEach((stop, i) => {
       const active = stop.position === activeStop;
       const fan = spread[i]!;
       const marker = L.marker([stop.place.lat, stop.place.lng], {
         icon: L.divIcon({
           className: "",
-          html: pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, fan),
+          html: pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, fan, landing),
           iconSize: [0, 0],
         }),
         // Leaflet 은 위도(y)로 z 를 정한다 → 순번이 그보다 세게 먹도록 큰 간격을 준다

@@ -90,7 +90,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
 
       <div aria-live="polite">
         {whatIf.isPending ? <p className="skeleton-shimmer h-16 rounded-2xl" aria-label="그 예산으로 짜 보는 중" /> : null}
-        {whatIf.isError ? <p className="rounded-2xl bg-gold-soft px-4 py-3 text-[13.5px] font-bold text-gold-ink">{whatIf.error.detail ?? "그 예산으로는 코스를 짜지 못했어요."}</p> : null}
+        {whatIf.isError ? <p className="rounded-2xl bg-paper-2 text-ink-2 px-4 py-3 text-[13.5px] font-bold">{whatIf.error.detail ?? "그 예산으로는 코스를 짜지 못했어요."}</p> : null}
         {tried ? (
           <div className="grid gap-2 rounded-2xl bg-soft p-4">
             <p className="tabular text-[14px] font-extrabold text-ink">

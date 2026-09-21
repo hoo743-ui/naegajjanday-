@@ -66,7 +66,7 @@ export default function AdminRegionsPage() {
         return r.last_job && (r.last_job.status === "running" || r.last_job.status === "queued") ? (
           <span className="block w-32">
             <span role="progressbar" aria-label={`${r.name} 수집 진행률`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.last_job.progress * 100)} className="block h-2 overflow-hidden rounded-full bg-[#E3E9F4]">
-              <span className="bg-grad block h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.round(r.last_job.progress * 100)}%` }} />
+              <span className="block h-full rounded-full bg-blue-deep transition-[width] duration-700" style={{ width: `${Math.round(r.last_job.progress * 100)}%` }} />
             </span>
             <span className="tabular text-xs font-bold text-ink-2">{Math.round(r.last_job.progress * 100)}%</span>
           </span>

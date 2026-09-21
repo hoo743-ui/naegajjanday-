@@ -72,7 +72,7 @@ export function JjaniLoader({ stages = DEFAULT_STAGES, interval = 1500, fullscre
               key={s}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-500",
-                i === index ? "bg-grad w-7" : "w-1.5 bg-line",
+                i === index ? "w-7 bg-blue-deep" : "w-1.5 bg-line",
               )}
             />
           ))}

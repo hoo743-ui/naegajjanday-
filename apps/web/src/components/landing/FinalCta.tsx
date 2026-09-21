@@ -13,15 +13,7 @@ export function FinalCta() {
   return (
     <section id="start" className="pt-6 pb-10 lg:pb-16">
       <div className="wrap">
-        <Reveal className="relative overflow-hidden rounded-[40px] bg-[linear-gradient(120deg,#2F6BEA_0%,#6F7FE8_50%,#D9578F_100%)] px-6 py-16 text-center text-white shadow-float sm:px-8 sm:py-20">
-          <span
-            aria-hidden
-            className="absolute -top-36 -left-24 size-[340px] rounded-full bg-white/15"
-          />
-          <span
-            aria-hidden
-            className="absolute -right-16 -bottom-32 size-[260px] rounded-full bg-white/15"
-          />
+        <Reveal className="relative overflow-hidden rounded-[40px] bg-navy bg-[radial-gradient(90%_120%_at_50%_0%,rgba(233,180,76,.16),transparent_60%)] px-6 py-16 text-center text-white shadow-float sm:px-8 sm:py-20">
           <div className="relative">
             <Jjani
               mood="cheers"
@@ -34,7 +26,7 @@ export function FinalCta() {
               <br />
               코스는 짠이가 짤게요
             </h2>
-            <p className="mb-8 text-lg">
+            <p className="mb-8 text-lg text-white/80">
               지역 · 인원 · 예산, 세 가지면 충분합니다.
             </p>
             <div className="flex flex-wrap justify-center gap-3">

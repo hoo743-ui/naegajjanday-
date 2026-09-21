@@ -176,7 +176,7 @@ export function EventsStrip({ region }: { region?: string }) {
           </ul>
           {scroller.canScroll ? (
             <div aria-hidden className="mt-3 h-1 overflow-hidden rounded-full bg-white/70">
-              <div className="bg-grad h-full w-1/4 rounded-full" style={{ transform: `translateX(${scroller.progress * 300}%)` }} />
+              <div className="h-full w-1/4 rounded-full bg-blue-deep" style={{ transform: `translateX(${scroller.progress * 300}%)` }} />
             </div>
           ) : null}
         </>

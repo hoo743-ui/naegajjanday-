@@ -82,8 +82,8 @@ export function Jjani({
       aria-label={decorative ? undefined : (label ?? MOOD_LABEL[mood])}
       aria-hidden={decorative || undefined}
       focusable="false"
-      animate={live && floating ? { y: [0, -8, 0] } : { y: 0 }}
-      transition={live && floating ? { duration: 5, repeat: Infinity, ease: "easeInOut" } : undefined}
+      animate={live && floating ? { y: [0, -8, 0] } : live && mood !== "done" ? { y: [0, -3, 0] } : { y: 0 }}
+      transition={live ? { duration: floating ? 5 : 4, repeat: Infinity, ease: "easeInOut" } : undefined}
     >
       <Back live={live} />
       <Arm pose={LEFT_ARM[spec.left]} live={live} wave={false} side="left" bounce={mood === "done"} />

@@ -57,7 +57,7 @@ export function AttractionCard({ item }: { item: Attraction }) {
 
   return (
     <article className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-white shadow-soft transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-card">
-      <div className={cn("relative aspect-[16/10] bg-gradient-to-br", meta.gradient)}>
+      <div className={cn("photo-edge relative aspect-[16/10] bg-gradient-to-br", meta.gradient)}>
         {photo ? (
           <>
             <Image

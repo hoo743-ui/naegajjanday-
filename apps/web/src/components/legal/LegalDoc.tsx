@@ -14,7 +14,7 @@ export function LegalDoc({ title, lead, sections, other }: { title: string; lead
     <PageShell className="wrap-narrow section-y">
       <article className="mx-auto max-w-[760px]">
         {LEGAL_READY ? null : (
-          <p role="note" className="mb-8 rounded-2xl bg-gold-soft px-5 py-4 text-sm font-bold text-gold-ink">
+          <p role="note" className="mb-8 rounded-2xl bg-paper-2 text-ink-2 px-5 py-4 text-sm font-bold">
             이 문서는 <b className="font-extrabold">초안</b>이에요. 사업자 정보가 아직 채워지지 않았고 법률 검토 전이라, 정식 공개 전에 내용이 바뀔 수 있어요.
           </p>
         )}

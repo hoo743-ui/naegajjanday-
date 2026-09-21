@@ -291,7 +291,7 @@
     width: 100%;
     height: 10px;
     border-radius: 10px;
-    background: linear-gradient(90deg, #2a5bd7, #f5a58c);
+    background: linear-gradient(90deg, var(--blue-deep), #7f95ec);
     outline-offset: 6px;
   }
   input[type="range"].jj-range::-webkit-slider-thumb {
@@ -361,8 +361,9 @@
   background: var(--grad);
 }
 
+/* 예전에는 파랑 · 보라 · 분홍 파스텔이었다. 그라데이션은 한 화면에 한 번이므로, 부드러운 면은 종이의 눌린 면으로 */
 @utility bg-grad-soft {
-  background: var(--grad-soft);
+  background: var(--paper-2);
 }
 
 @utility bg-hero {
@@ -445,13 +446,23 @@
     var(--navy);
 }
 
+/* 이름은 남았지만 유리 효과는 쓰지 않는다 (docs/21): 종이 위에 얹은 흰 종이 */
 @utility glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 12px 40px rgba(47, 80, 160, 0.16);
-  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  border-radius: var(--r);
+}
+
+/* 사진 위에 아주 옅은 안쪽 테두리(잉크 6%): 종이 위에 붙인 사진처럼 보인다. 감싸는 요소는 relative 여야 한다 */
+@utility photo-edge {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(16, 25, 46, 0.06);
+    pointer-events: none;
+  }
 }
 
 @utility skeleton-shimmer {
@@ -573,6 +584,18 @@
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 2px rgba(20, 33, 61, 0.35);
+}
+/* 코스가 처음 그려질 때: 핀이 순번대로 12px 위에서 내려앉는다. --t 는 이미 지난 시간(다시 그려도 이어서 재생) */
+@keyframes pin-land {
+  from {
+    opacity: 0;
+    translate: var(--dx, 0px) calc(var(--dy, 0px) - 12px);
+  }
+}
+.jj-pin.is-landing .jj-pin-drop,
+.jj-pin.is-landing .jj-pin-label {
+  animation: pin-land 0.42s var(--motion-spring) both;
+  animation-delay: calc(var(--n, 0) * 90ms + 240ms - var(--t, 0ms));
 }
 /* 이름표는 보조 정보: 핀 아래에 작게. 선택된 스톱만 진하게 강조한다. */
 .jj-pin-label {

@@ -48,9 +48,9 @@ export function ScoreBreakdown({ scores, total, hidden = [], className }: ScoreB
                   <span className="sr-only">점. {info.hint}</span>
                 </dd>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#E3E9F4]" aria-hidden>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-paper-2" aria-hidden>
                 <motion.div
-                  className={cn("h-full origin-left rounded-full", strong ? "bg-grad" : "bg-[#9DB4E8]")}
+                  className={cn("h-full origin-left rounded-full", strong ? "bg-blue-deep" : "bg-blue/45")}
                   style={{ width: `${value * 100}%` }}
                   initial={reduced ? false : { scaleX: 0 }}
                   animate={{ scaleX: 1 }}

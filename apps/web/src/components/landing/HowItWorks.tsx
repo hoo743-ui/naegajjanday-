@@ -17,7 +17,7 @@ export function HowItWorks() {
           <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold font-serif">
             네 단계의 약속 준비를
             <br />
-            <span className="gt">한 번의 입력으로</span>
+            <span className="text-blue-deep">한 번의 입력으로</span>
           </h2>
           <p className="mx-auto max-w-[640px] text-[clamp(16px,1.6vw,19px)] text-muted-foreground">
             지도 앱에서 검색하고, 가격 확인하고, 직접 더해 보고, 넘으면 다시 검색하던 일. 이제 순서를 뒤집습니다.
@@ -28,12 +28,12 @@ export function HowItWorks() {
           {STEPS.map((step, i) => (
             <Reveal as="li" key={step.n} delay={i * 0.08} className="group relative rounded-card border border-line bg-white p-7 shadow-soft transition-[transform,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-card">
               <div className="flex items-start justify-between">
-                <span className="bg-grad grid size-10 place-items-center rounded-full text-base font-extrabold text-white">{step.n}</span>
+                <span className="tabular grid size-10 place-items-center rounded-full bg-ink text-base font-extrabold text-white">{step.n}</span>
                 <Jjani mood={step.mood} size={84} animated={false} decorative className="-mt-2 transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-105" />
               </div>
               <h3 className="mt-3 mb-2.5 text-xl font-extrabold">{step.title}</h3>
               <p className="text-[15.5px] text-muted-foreground">{step.body}</p>
-              <p className="mt-5 inline-block rounded-[14px] bg-gold-soft px-3 py-1.5 text-sm font-extrabold text-gold-ink">“{step.quote}”</p>
+              <p className="mt-5 inline-block rounded-[14px] bg-paper-2 text-ink-2 px-3 py-1.5 text-sm font-extrabold">“{step.quote}”</p>
             </Reveal>
           ))}
         </ol>

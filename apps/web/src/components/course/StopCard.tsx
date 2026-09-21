@@ -39,7 +39,7 @@ interface StopCardProps {
 /** 혼잡도 value(0~1, 높을수록 붐빔) → 배지 색. 문구(level)는 API 가 준 그대로 쓴다. */
 function congestionTone(value: number) {
   if (value < 0.35) return "bg-success-soft text-success";
-  if (value < 0.6) return "bg-gold-soft text-gold-ink";
+  if (value < 0.6) return "bg-paper-2 text-ink-2";
   return "bg-pink-soft text-pink-deep";
 }
 
@@ -82,7 +82,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
     >
       {/* 사진은 그 순번의 카드 안에 둔다 — 1번 사진은 1번 카드에. 가게 실사진이 없으면 검수한 업종 대표 사진을 쓴다. */}
       {photo ? (
-        <div className="relative -mx-4 -mt-4 mb-4 aspect-[16/7] overflow-hidden sm:-mx-5 sm:-mt-5">
+        <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/7] overflow-hidden sm:-mx-5 sm:-mt-5">
           <Image src={photo} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(photo)} />
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
           <span
@@ -191,7 +191,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         </p>
       </div>
 
-      {stop.reason ? <p className="mt-3.5 rounded-2xl bg-gold-soft px-3.5 py-2.5 text-[13.5px] font-bold text-gold-ink">{stop.reason}</p> : null}
+      {stop.reason ? <p className="mt-3.5 rounded-2xl bg-paper-2 text-ink-2 px-3.5 py-2.5 text-[13.5px] font-bold">{stop.reason}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <button
@@ -226,7 +226,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             href={KBO_SCHEDULE}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-gold-soft px-2.5 py-1.5 text-[13px] font-extrabold text-gold-ink hover:brightness-95"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1.5 text-[13px] font-extrabold text-blue-deep hover:brightness-95"
           >
             오늘 경기 있는지 확인
             <ExternalLink aria-hidden className="size-3.5" />

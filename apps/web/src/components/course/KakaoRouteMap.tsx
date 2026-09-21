@@ -6,7 +6,7 @@ import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { stopColor } from "./colors";
-import { escapeHtml, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
 
 // ── Kakao Maps JS SDK (쓰는 만큼만 타입 선언) ─────────────────
 interface KLatLng {
@@ -95,6 +95,7 @@ interface KakaoRouteMapProps {
 export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, onError }: KakaoRouteMapProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KMap | null>(null);
+  const landingRef = useRef(landingClock());
   const [maps, setMaps] = useState<KakaoMaps | null>(null);
   const [zoomTick, setZoomTick] = useState(0); // 줌이 바뀌면 핀 펼침을 다시 계산한다
   const handlers = useRef({ onSelect, onError });
@@ -201,9 +202,10 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
     });
 
     const spread = spreadOverlaps(pinsPx);
+    const landing = landingRef.current(stops.map((s) => s.place.id).join(","));
     stops.forEach((stop, i) => {
       const active = stop.position === activeStop;
-      const el = anchor(pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, spread[i]!));
+      const el = anchor(pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, spread[i]!, landing));
       el.setAttribute("role", "button");
       el.setAttribute("aria-label", `${stop.position}. ${stop.place.name}`);
       el.style.cursor = "pointer";

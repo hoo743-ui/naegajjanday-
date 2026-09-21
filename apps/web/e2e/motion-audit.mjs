@@ -46,6 +46,39 @@ for (const reduced of [false, true]) {
   check(errors.length === 0, `${tag}: 페이지 에러 0건`);
   await context.close();
 }
+// 지도 핀: 코스가 처음 그려질 때 순번대로 내려앉고, 끝난 뒤에는 모두 제자리에 온전히 보인다. 핀을 고르거나 줌을 바꿔도 다시 재생하지 않는다.
+{
+  const API = process.env.E2E_API_URL ?? "http://localhost:8000/v1";
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  const made = await (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ region: "seoul-hongdae", purpose: "date", party_size: 2, budget_total: 70000, start_at: `${d.toISOString().slice(0, 10)}T18:00:00+09:00`, alternatives: 0 }) })).json();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__pins = [];
+    const timer = setInterval(() => {
+      const drops = [...document.querySelectorAll(".jj-pin .jj-pin-drop")];
+      if (drops.length === 0) return;
+      window.__pins.push(drops.map((el) => Number(getComputedStyle(el).opacity).toFixed(1)).join(","));
+      if (window.__pins.length > 40) clearInterval(timer);
+    }, 60);
+  });
+  await page.goto(`${WEB}/course/${made.courses[0].id}`, { timeout: 120000 });
+  await page.locator(".jj-pin-drop").first().waitFor({ timeout: 60000 }); // .jj-pin 은 0×0 기준점이라 "보인다"로 잡히지 않는다
+  await page.waitForTimeout(3200);
+  const seen = await page.evaluate(() => window.__pins);
+  const staggered = seen.some((row) => { const v = row.split(",").map(Number); return v[0] > v[v.length - 1]; });
+  console.log("핀:", [...new Set(seen)].slice(0, 8).join(" → "));
+  check(staggered, "핀이 순번대로 내려앉는다 (앞 번호가 먼저 보인다)");
+  check(seen[seen.length - 1].split(",").every((v) => Number(v) === 1), "끝난 뒤 모든 핀이 온전히 보인다");
+  await page.locator(".jj-pin-drop").first().click();
+  await page.waitForTimeout(400);
+  const replay = await page.evaluate(() => [...document.querySelectorAll(".jj-pin")].filter((el) => el.classList.contains("is-landing")).length);
+  check(replay === 0, "핀을 골라도 내려앉는 연출이 다시 재생되지 않는다");
+  await page.screenshot({ path: path.join(outDir, "pins-settled.png") });
+  await context.close();
+}
+
 await browser.close();
 console.log(failures.length ? `\n실패 ${failures.length}건` : "\n모두 통과");
 process.exit(failures.length ? 1 : 0);

@@ -19,7 +19,7 @@ export function PurposeCards() {
     <section id="purposes" className="scroll-mt-20 py-20 lg:py-28">
       <div className="wrap">
         <div className="text-center">
-          <span className="inline-flex rounded-full bg-gold-soft px-3.5 py-2 text-sm font-extrabold text-gold-ink">어떤 약속이든</span>
+          <span className="inline-flex rounded-full bg-blue-soft px-3.5 py-2 text-sm font-extrabold text-blue-deep">어떤 약속이든</span>
           <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold font-serif">오늘은 어떤 약속인가요?</h2>
           <p className="mx-auto max-w-[640px] text-[clamp(16px,1.6vw,19px)] text-muted-foreground">
             같은 예산이어도 목적이 다르면 코스가 달라져요. 데이트는 분위기를, 혼밥은 웨이팅 없는 곳을 먼저 봅니다.

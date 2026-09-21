@@ -322,7 +322,7 @@ export function CourseView({ id }: { id: string }) {
                 <p
                   key={`${w.code}-${w.role ?? ""}-${i}`}
                   role="status"
-                  className={cn("flex gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold", w.code === "DURATION_FIT" ? "bg-blue-soft text-blue-deep" : "bg-gold-soft text-gold-ink")}
+                  className={cn("flex gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold", w.code === "DURATION_FIT" ? "bg-blue-soft text-blue-deep" : w.code === "BUDGET_OVER" ? "bg-pink-soft text-pink-deep" : "bg-paper-2 text-ink-2")}
                 >
                   {/* DURATION_FIT 은 경고가 아니라 "시간에 맞췄다"는 안내다 */}
                   {w.code === "DURATION_FIT" ? <Clock aria-hidden className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />}

@@ -134,13 +134,13 @@ export function LoginCard() {
       </ul>
 
       {providers.data && PROVIDERS.every((p) => !isEnabled(p.id)) ? (
-        <p role="note" className="mt-4 rounded-xl bg-gold-soft px-3 py-2 text-xs font-bold text-gold-ink">
+        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-xs font-bold">
           소셜 로그인을 준비하고 있어요. 그동안은 가입 없이 코스를 짤 수 있어요.
         </p>
       ) : null}
 
       {IS_MOCKING ? (
-        <p role="note" className="mt-4 rounded-xl bg-gold-soft px-3 py-2 text-xs font-bold text-gold-ink">
+        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-xs font-bold">
           목(MOCK) 모드예요. 어떤 버튼을 눌러도 개발용 관리자 계정으로 들어가요.
         </p>
       ) : null}
