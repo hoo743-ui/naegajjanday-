@@ -3,6 +3,8 @@
 import { useId, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, type LucideIcon } from "lucide-react";
+import { Receipt } from "@/components/brand/Receipt";
+import { sampleCourse } from "@/components/brand/sample-course";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
@@ -204,6 +206,21 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
         </p>
         <FieldError name="budget_total" />
       </section>
+
+      {/* 돈을 움직이면 하루가 어떻게 달라지는지 그 자리에서 보여 준다 (docs/19 — 영수증은 서비스의 시그니처) */}
+      <details className="group rounded-card bg-white p-5 shadow-soft">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold text-ink-2 [&::-webkit-details-marker]:hidden">
+          이 예산이면 이런 하루예요
+          <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-xs text-gold-ink">예시 · 열어 보기</span>
+        </summary>
+        <Receipt
+          className="mx-auto mt-4 max-w-[380px]"
+          heading={`${party}명 · 예시`}
+          items={sampleCourse(Math.floor(budget / Math.max(1, party)), party)}
+          budget={budget}
+          footer="업종 평균가로 만든 예시예요. 실제 코스는 고른 동네의 진짜 가게로 짜 드려요."
+        />
+      </details>
 
       <MeetTimeCard />
 

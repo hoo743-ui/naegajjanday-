@@ -1,4 +1,6 @@
-import { Footprints, Route, Ticket, Wallet, type LucideIcon } from "lucide-react";
+import { Footprints, Route, Ticket, Wallet, X, type LucideIcon } from "lucide-react";
+import { Receipt } from "@/components/brand/Receipt";
+import { sampleCourse } from "@/components/brand/sample-course";
 import { Reveal } from "./Reveal";
 
 const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from: string; to: string }[] = [
@@ -36,6 +38,49 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
   },
 ];
 
+/** 설명 대신 장면으로: 늘 하던 방식(검색 → 더하기 → 초과 → 다시 검색)과 영수증 한 장. 품목은 히어로와 같은 예시 계산이다. */
+const OLD_WAY = ["맛집 검색", "가격 확인", "카페 검색", "놀거리 검색", "계산기로 더하기"];
+const DEMO = { budget: 40000, party: 2 };
+
+function Compare() {
+  return (
+    <Reveal className="mt-12 grid items-stretch gap-5 lg:grid-cols-[1fr_auto_1fr]">
+      <div className="flex flex-col rounded-[32px] border border-line bg-white p-7 sm:p-8">
+        <p className="text-sm font-extrabold text-muted-foreground">늘 하던 방식</p>
+        <ol className="mt-5 grid gap-2.5">
+          {OLD_WAY.map((step, i) => (
+            <li key={step} className="flex items-center gap-3 rounded-2xl bg-[#F3F5FA] px-4 py-3 text-[15px] font-bold text-ink-2">
+              <span className="tabular text-xs font-extrabold text-muted-foreground">{i + 1}</span>
+              {step}
+            </li>
+          ))}
+        </ol>
+        <p className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-pink-soft px-4 py-3.5 text-pink-deep">
+          <span className="flex items-center gap-2 text-[15px] font-extrabold">
+            <X aria-hidden className="size-4" /> 더해 보니 예산 초과
+          </span>
+          <b className="tabular text-lg font-extrabold">+12,000원</b>
+        </p>
+        <p className="mt-3 text-center text-sm font-bold text-muted-foreground">…그래서 처음부터 다시 검색</p>
+      </div>
+
+      <p aria-hidden className="grid place-items-center font-round text-2xl text-muted-foreground max-lg:py-1">
+        <span className="max-lg:rotate-90">→</span>
+      </p>
+
+      <div className="flex flex-col justify-center rounded-[32px] bg-grad-soft p-6 sm:p-8">
+        <p className="mb-4 text-center text-sm font-extrabold text-blue-deep">내가짠데이: 예산부터 말하면</p>
+        <Receipt
+          className="mx-auto w-full max-w-[360px]"
+          heading={`${DEMO.party}명 · 40,000원 · 예시`}
+          items={sampleCourse(DEMO.budget / DEMO.party, DEMO.party)}
+          budget={DEMO.budget}
+        />
+      </div>
+    </Reveal>
+  );
+}
+
 export function Differentiators() {
   return (
     <section id="different" className="bg-soft-band scroll-mt-20 py-20 lg:py-28">
@@ -49,7 +94,9 @@ export function Differentiators() {
           </h2>
         </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+        <Compare />
+
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
           {ITEMS.map((item, i) => (
             <Reveal as="article" key={item.tag} delay={(i % 2) * 0.08} className="flex flex-col gap-4 rounded-[32px] border border-line bg-white p-8 shadow-soft transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-card">
               <div className="flex items-center gap-3">
