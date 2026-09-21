@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.db.models import Course, CourseFeedback, RecommendationLog
 
 OWNED_STATUSES = ("saved", "shared", "completed")
+REPLACED = "replaced"  # a day of a trip that was planned again: the new course took its place
 
 
 class SqlCourseRepository:
@@ -32,8 +33,12 @@ class SqlCourseRepository:
         """Courses produced by the same generate call, in the order they were offered."""
         if course.recommendation_log_id is None:
             return [course]
-        stmt = select(Course).where(Course.recommendation_log_id == course.recommendation_log_id)
-        return list((await self._s.scalars(stmt.order_by(Course.id))).all())
+        stmt = select(Course).where(
+            Course.recommendation_log_id == course.recommendation_log_id, Course.status != REPLACED
+        )
+        rows = list((await self._s.scalars(stmt.order_by(Course.id))).all())
+        # a day planned again has a newer id than the days after it: the day number decides
+        return sorted(rows, key=lambda c: ((c.request or {}).get("day") or 0, c.id))
 
     async def list_for_user(self, user_id: int, cursor: int | None, limit: int) -> list[Course]:
         stmt = select(Course).where(Course.user_id == user_id, Course.status.in_(OWNED_STATUSES))

@@ -22,7 +22,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from app.domain.models import PlaceCandidate, ScoringProfile, Slot, Template
+from app.domain.models import CourseResult, PlaceCandidate, ScoringProfile, Slot, Template
 from app.domain.recommendation.diversify import variant_profile
 
 DEFAULT_STYLE = "efficient"
@@ -126,6 +126,23 @@ def extra_roles(path: Path = EXTRA_ROLES_PATH) -> dict[str, dict[str, Any]]:
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+def carries(course: CourseResult, extra: Mapping[str, Any]) -> bool:
+    """Whether the course holds what was asked for by name: that kind of place, or else that role."""
+    if extra.get("category"):
+        return any(s.place.category_code == extra["category"] for s in course.stops)
+    return any(s.role == extra["role"] for s in course.stops)
+
+
+def extra_unavailable(name: str, extra: Mapping[str, Any], *, vetoed: bool) -> dict[str, Any]:
+    """The user ticked "a drink" / "a ball game" and the course has none: say so, never drop it silently."""
+    detail = extra.get("vetoed" if vetoed else "missing") or extra.get("missing") or ""
+    return {
+        "code": "EXTRA_UNAVAILABLE",
+        "detail": str(detail),
+        "meta": {"extra": name, "label": extra.get("label"), "vetoed": vetoed},
+    }
 
 
 def opt_in_categories() -> frozenset[str]:

@@ -68,6 +68,11 @@ class CourseGenerateRequest(BaseModel):
     )
     preferences: Preferences = Field(default_factory=Preferences)
     alternatives: int = Field(default=2, ge=0, le=3)
+    replaces: str | None = Field(
+        default=None,
+        max_length=40,
+        description="여행의 하루를 다시 짤 때 바꿀 그 날의 코스 id. 새 코스가 같은 여행의 같은 날이 된다",
+    )
 
     @model_validator(mode="after")
     def _region_or_origin(self) -> CourseGenerateRequest:
@@ -291,6 +296,8 @@ class CourseDetailResponse(BaseModel):
 
 class CourseListItem(BaseModel):
     id: str
+    day: int | None = Field(default=None, description="여행 일정이면 몇 일차")
+    days: int | None = None
     label: str
     summary: str | None
     status: str

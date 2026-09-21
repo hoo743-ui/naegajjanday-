@@ -58,8 +58,10 @@ from app.domain.recommendation.itinerary import (
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
+    carries,
     day_conditions,
     extra_roles,
+    extra_unavailable,
     opt_in_categories,
     resolve_style,
     styled_affinity,
@@ -75,7 +77,7 @@ from app.infra.db.base import as_utc
 from app.infra.db.models import Course, CourseFeedback, CourseStop, Purpose, RecommendationLog, Region, User
 from app.infra.tagging import get_tag_rules
 from app.repositories.config_repo import SqlConfigRepository
-from app.repositories.course_repo import OWNED_STATUSES, SqlCourseRepository
+from app.repositories.course_repo import OWNED_STATUSES, REPLACED, SqlCourseRepository
 from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.repositories.user_repo import SqlUserRepository
@@ -128,10 +130,36 @@ class CourseService:
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
         if req.nights > 0:
-            return await self._plan_trip(req, user)
+            planned = await self._plan_trip(req, user)
+        else:
+            planned = await self._plan_day(req, user)
+        await self._note_missing_extras(req, planned[3], planned[5])
+        return planned
+
+    async def _plan_day(
+        self, req: dto.CourseGenerateRequest, user: User | None
+    ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         if len(req.regions) >= 2:
             return await self._plan_across(req, user)
         return await self._plan_one(req, user)
+
+    async def _note_missing_extras(
+        self, req: dto.CourseGenerateRequest, ctx: RequestContext, out: EngineOutput
+    ) -> None:
+        """ "A drink, please" and no bar in the course: the page must say so. On a trip one day is enough."""
+        asked = {name: extra_roles()[name] for name in dict.fromkeys(req.extras) if name in extra_roles()}
+        if not asked:
+            return
+        vetoed = vetoed_roles([p.code for p in await self._purposes(req)])
+        for name, extra in asked.items():
+            held = [carries(course, extra) for course in out.courses]
+            if ctx.days and any(held):
+                continue
+            warning = extra_unavailable(name, extra, vetoed=str(extra["role"]) in vetoed)
+            out.warnings.append(warning)
+            for course, has_it in zip(out.courses, held, strict=True):
+                if not has_it:
+                    course.warnings.append(warning)
 
     async def _plan_trip(
         self, req: dto.CourseGenerateRequest, user: User | None
@@ -170,7 +198,7 @@ class CourseService:
                     "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
                 }
             )
-            planned = await self._plan(day_req, user)
+            planned = await self._plan_day(day_req, user)
             region, origin, _purpose, ctx, _profile, out = planned
             first = first or planned
             label = f"{d + 1}일차"
@@ -350,6 +378,47 @@ class CourseService:
             ) from exc
         return region, origin, purpose, ctx, profile, out
 
+    async def _day_to_replace(self, req: dto.CourseGenerateRequest, user: User | None) -> Course | None:
+        """`replaces` names one day of a trip. Anything else (an ordinary course) is an ordinary reroll."""
+        if not req.replaces:
+            return None
+        row = await self._courses.get_by_public_id(req.replaces)
+        if row is None or int((row.request or {}).get("days") or 1) < 2 or row.status == REPLACED:
+            return None
+        self._check_owner(row, user)
+        return row
+
+    async def _as_that_day(self, req: dto.CourseGenerateRequest, day: Course) -> dto.CourseGenerateRequest:
+        """One course, for that day only, and nowhere the other days already go."""
+        others = [c for c in await self._courses.siblings(day) if c.id != day.id]
+        visited = await self._places.candidates_by_ids(
+            [s.place_id for c in others for s in c.stops if s.place_id]
+        )
+        excluded = [*req.preferences.exclude_place_ids, *(p.public_id for p in visited.values())]
+        return req.model_copy(
+            update={
+                "nights": 0,
+                "alternatives": 0,
+                "preferences": req.preferences.model_copy(
+                    update={"exclude_place_ids": list(dict.fromkeys(excluded))[:100]}
+                ),
+            }
+        )
+
+    @staticmethod
+    def _take_the_place_of(row: Course, day: Course) -> None:
+        """The new course becomes that day of the same trip; the old one steps out of the tabs."""
+        before = day.request or {}
+        row.recommendation_log_id = day.recommendation_log_id
+        row.label = day.label
+        row.request = {
+            **(row.request or {}),
+            **{k: before.get(k) for k in ("day", "days", "nights", "trip_budget_total")},
+        }
+        if day.status in OWNED_STATUSES:  # a saved trip stays saved, all of it
+            row.user_id, row.status = day.user_id, day.status
+        day.status = REPLACED
+
     async def _purpose_names(self, codes: Sequence[str]) -> list[dto.CodeName]:
         found = [await self._config.get_purpose(code) for code in codes]
         return [dto.CodeName(code=p.code, name=p.name) for p in found if p is not None]
@@ -392,6 +461,9 @@ class CourseService:
             if (cached := await self._cache.get(key)) is not None:
                 return dto.CourseGenerateResponse.model_validate(cached)
 
+        replaced = await self._day_to_replace(req, user)
+        if replaced is not None:
+            req = await self._as_that_day(req, replaced)
         region, origin, purpose, ctx, profile, out = await self._plan(req, user)
 
         request_id = str(uuid.uuid4())
@@ -460,6 +532,8 @@ class CourseService:
                 warnings=[],
             )
             self._apply(row, result, narrative)
+            if replaced is not None:
+                self._take_the_place_of(row, replaced)
             await self._courses.add(row)
             rows.append((row, result, narrative))
 
@@ -972,6 +1046,11 @@ class CourseService:
         for s in stops:
             if not s.place.is_event:
                 await self._bump_saved(s.place.id)
+        if int((row.request or {}).get("days") or 1) > 1:
+            # a trip is kept whole: a day left unsaved would be swept away by retention a few days later
+            for other in await self._courses.siblings(row):
+                if other.id != row.id and self._can_edit(other, user) and other.status not in OWNED_STATUSES:
+                    other.user_id, other.status = user.id, "saved"
         await self._s.commit()
         await self._tracker.track(
             AnalyticsEvent("course_saved", user.public_id, {"course_id": row.public_id})
@@ -1004,6 +1083,8 @@ class CourseService:
                     party_size=r.party_size,
                     created_at=self._out_time(r.created_at),
                     duration_min=r.duration_min,
+                    day=(r.request or {}).get("day"),
+                    days=(r.request or {}).get("days"),
                     region_name=regions.get(r.region_id or -1),
                     purpose_name=purposes.get(r.purpose_id),
                     stop_names=[
