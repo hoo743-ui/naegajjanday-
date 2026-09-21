@@ -47,7 +47,7 @@ for (const [tag, options] of [["desktop", { viewport: { width: 1440, height: 900
   if (tag === "desktop") {
     await page.goto(`${WEB}/plan?region=seoul-hongdae&purpose=date`);
     await page.waitForTimeout(1500);
-    await page.getByRole("button", { name: /다음에 다른 동네도 들르기/ }).waitFor({ timeout: 20000 });
+    await page.getByRole("button", { name: /이어 다른 동네도 들르기/ }).waitFor({ timeout: 20000 });
     await page.screenshot({ path: path.join(outDir, "desktop-wizard-region.png") });
     await page.getByRole("button", { name: "다음", exact: true }).click();
     await page.waitForTimeout(900);

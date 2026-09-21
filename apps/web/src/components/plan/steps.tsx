@@ -77,7 +77,7 @@ export function RegionStep() {
       {canAdd ? (
         <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-[15px] font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
           <Plus aria-hidden className="size-4" />
-          {nameOf(selected)} 다음에 다른 동네도 들르기
+          {nameOf(selected)}에 이어 다른 동네도 들르기
         </button>
       ) : null}
       <FieldError name="region" />

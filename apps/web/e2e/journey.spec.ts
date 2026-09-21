@@ -135,6 +135,32 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expectHealthyLayout(page);
   });
 
+  test("1박 2일 · 두 동네: 날짜별 탭과 그날 밤 묵을 곳, 동네 사이 이동이 구간으로 나온다", async ({ page }) => {
+    // 여행 일정은 같은 요청의 코스들을 "1일차 · 2일차" 탭으로 보여 준다. 예산은 날마다 나눠 쓴다.
+    const id = await createCourse(page, { nights: 1, budget_total: 240_000, purposes: ["friends"] });
+    await page.goto(`/course/${id}`);
+    await expect(page.getByLabel("코스 일정").getByRole("article").first()).toBeVisible();
+    await expect(page.getByRole("tab", { name: "1일차" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "2일차" })).toBeVisible();
+    await expect(page.getByText(/1일차 \/ 2일/).first()).toBeVisible();
+    await expect(page.getByText(/데이트 \+ 친구/).first()).toBeVisible(); // 고른 목적이 모두 보인다
+    // 숙소: 관광공사 등재분이 근처에 없으면 카드는 아예 나오지 않는다(없는 것을 말하지 않는다) → 있으면 요금 고지를 확인한다
+    const stay = page.getByRole("region", { name: /이 근처에서 묵는다면/ });
+    if (await stay.count()) await expect(stay.getByText(/숙박 요금은 공식 데이터가 없어요/)).toBeVisible();
+    await expectHealthyLayout(page);
+
+    // 하루에 두 동네: 동네가 바뀌는 구간은 걷는 구간이 아니라 "○○(으)로 대중교통 N분"이다
+    const res = await page.request.post(`${process.env.E2E_API_URL ?? "http://localhost:8000/v1"}/courses/generate`, {
+      data: { regions: ["seoul-hongdae", "seoul-seongsu"], purpose: "friends", party_size: 3, budget_total: 150_000, duration_min: 420, start_at: `${new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}T12:00:00+09:00` },
+    });
+    expect(res.ok()).toBeTruthy();
+    const hop = (await res.json()) as { courses: { id: string; totals: { price: number } }[] };
+    expect(hop.courses[0]!.totals.price).toBeLessThanOrEqual(150_000);
+    await page.goto(`/course/${hop.courses[0]!.id}`);
+    await expect(page.getByLabel("코스 일정").getByText(/\(으\)로 (대중교통|자동차|도보)/).first()).toBeVisible();
+    await expectHealthyLayout(page);
+  });
+
   test("지역 선택: 시도에서 시·군으로 들어가고, 행정구역이 아닌 동네는 역으로 찾는다", async ({ page }) => {
     await page.goto("/plan");
     // 처음에는 시도만 보인다 — 전국 300여 개 지역이 한꺼번에 쏟아지지 않는다
