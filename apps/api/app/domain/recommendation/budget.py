@@ -12,6 +12,8 @@ from app.domain.models import BudgetTooLowError, NoTemplateError, Slot, Template
 FULLDAY_MIN_DURATION = 330  # "반나절"(6h) and up; a 4-stop band template tops out around 4.5h
 FULLDAY_LATEST_START_H = 15
 MIN_STAY_INSIDE_WINDOW = 45  # a gated slot must open at least this long before the window closes
+NIGHT_FROM_H = 21  # kitchens close around 21:30: from here on it is a night out, not a dinner
+NIGHT_UNTIL_H = 5
 SLOT_MIN_PER_STOP = 60  # a stop (stay + getting there) needs about an hour of the meeting window
 
 
@@ -22,8 +24,14 @@ class SlotBudget:
     budget: float  # per-person target b_s
 
 
+def is_night(start_at: datetime) -> bool:
+    return start_at.hour >= NIGHT_FROM_H or start_at.hour < NIGHT_UNTIL_H
+
+
 def time_band_for(start_at: datetime, duration_min: int | None) -> str:
     hour = start_at.hour + start_at.minute / 60
+    if is_night(start_at):
+        return "night"
     # fullday = lunch … dinner. A long window that starts in the late afternoon has room for one
     # meal only, so it stays on its own band (an 18:00–24:00 plan must not get two dinners).
     if duration_min is not None and duration_min >= FULLDAY_MIN_DURATION and hour < FULLDAY_LATEST_START_H:

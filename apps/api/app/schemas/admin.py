@@ -302,7 +302,7 @@ class TemplateIn(Strict):
     code: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
     purpose: str
     name: str
-    time_band: Literal["lunch", "afternoon", "evening", "fullday"]
+    time_band: Literal["lunch", "afternoon", "evening", "night", "fullday"]
     min_budget_per_person: int = Field(ge=0)
     party_min: int = Field(default=1, ge=1)
     party_max: int = Field(default=8, ge=1)

@@ -240,3 +240,4 @@ SSE 이벤트: `token`(텍스트) · `tool_call` · `course`(코스 카드 paylo
 | `POST /courses/{id}/save` | — | 여행 일정의 하루를 저장하면 **여행 전체**가 저장된다 (저장 안 된 날이 보존 기한에 지워지지 않게) |
 | `GET /me/courses` 항목 | `day`, `days` | 여행 일정의 하루면 몇 일차 / 며칠짜리 |
 | `POST /admin/places/{id}/photos` | multipart `file`, `make_cover` | 그 장소의 실제 사진(JPEG · PNG · WebP, 6MB 이하). 내용(매직 바이트)으로 형식을 확인하고 `/uploads/…` 로 서빙한다 |
+| 코스 `warnings[]` | `NIGHT_HOURS_ESTIMATED` | 출발이 밤(21~05시)이다. 영업시간을 간판("24시")과 이름(야식 · 포차)으로 추정했으니 확인하고 가라는 안내. 밤에는 `*-night` 템플릿(`meta.template`)이 쓰이고, `conditions` 의 `night` 은 시각이 정한다(요청으로 보내도 무시, echo 에도 없다) |

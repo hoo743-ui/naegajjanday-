@@ -145,6 +145,11 @@ def extra_unavailable(name: str, extra: Mapping[str, Any], *, vetoed: bool) -> d
     }
 
 
+def night_notice(condition: Mapping[str, Any]) -> dict[str, Any]:
+    """Hours after dark are inferred from signs and names: the page must say so."""
+    return {"code": "NIGHT_HOURS_ESTIMATED", "detail": str(condition.get("notice") or ""), "meta": {}}
+
+
 def opt_in_categories() -> frozenset[str]:
     """Categories that enter a course only on request (every extras entry that names a category)."""
     return frozenset(str(e["category"]) for e in extra_roles().values() if e.get("category"))

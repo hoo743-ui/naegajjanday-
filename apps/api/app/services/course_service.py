@@ -39,7 +39,7 @@ from app.domain.recommendation.blend import (
     vetoed_roles,
     without_roles,
 )
-from app.domain.recommendation.budget import SlotBudget
+from app.domain.recommendation.budget import SlotBudget, is_night
 from app.domain.recommendation.candidates import FilterContext, area_names_of, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
@@ -62,6 +62,7 @@ from app.domain.recommendation.style import (
     day_conditions,
     extra_roles,
     extra_unavailable,
+    night_notice,
     opt_in_categories,
     resolve_style,
     styled_affinity,
@@ -140,8 +141,17 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         if len(req.regions) >= 2:
-            return await self._plan_across(req, user)
-        return await self._plan_one(req, user)
+            planned = await self._plan_across(req, user)
+        else:
+            planned = await self._plan_one(req, user)
+        night = day_conditions().get("night")
+        if night and is_night(self._local(req.start_at)):
+            notice, out = night_notice(night), planned[5]
+            out.warnings.append(notice)
+            for course in out.courses:
+                if notice not in course.warnings:
+                    course.warnings.append(notice)
+        return planned
 
     async def _note_missing_extras(
         self, req: dto.CourseGenerateRequest, ctx: RequestContext, out: EngineOutput
@@ -322,9 +332,17 @@ class CourseService:
         vetoed = vetoed_roles([p.code for p in purposes])
         vetoed |= frozenset(r.upper() for r in req.skip_roles)
         templates = without_roles(await self._config.templates_for(purpose.id, purpose.code), vetoed)
+        conditions = self._conditions(req)
+        reach = max(
+            [
+                float((day_conditions()[c].get("radius_mult") or {}).get(req.transport, 1.0))
+                for c in conditions
+            ],
+            default=1.0,
+        )
         ctx = await self._build_context(
             origin=origin,
-            radius_m=region.radius_m,
+            radius_m=int(region.radius_m * reach),
             region_id=region.id,
             purpose=purpose,
             party_size=req.party_size,
@@ -350,10 +368,8 @@ class CourseService:
         if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
             ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
-        for name in req.conditions:  # a rainy day: indoors, and a gallery instead of a walk
-            condition = day_conditions().get(name)
-            if condition is None:
-                continue
+        for name in conditions:  # a rainy day: indoors, and a gallery instead of a walk
+            condition = day_conditions()[name]
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
             for tag, roles in styled_avoidance(condition).items():
                 ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
@@ -418,6 +434,14 @@ class CourseService:
         if day.status in OWNED_STATUSES:  # a saved trip stays saved, all of it
             row.user_id, row.status = day.user_id, day.status
         day.status = REPLACED
+
+    def _conditions(self, req: dto.CourseGenerateRequest) -> list[str]:
+        """What the user said about the day, plus what the clock says (`auto`: never from the request)."""
+        known = day_conditions()
+        chosen = [c for c in dict.fromkeys(req.conditions) if c in known and not known[c].get("auto")]
+        if "night" in known and is_night(self._local(req.start_at)):
+            chosen.append("night")
+        return chosen
 
     async def _purpose_names(self, codes: Sequence[str]) -> list[dto.CodeName]:
         found = [await self._config.get_purpose(code) for code in codes]
@@ -490,7 +514,7 @@ class CourseService:
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
             "extras": [r for r in req.extras if r in extra_roles()],
-            "conditions": [c for c in req.conditions if c in day_conditions()],
+            "conditions": [c for c in self._conditions(req) if not day_conditions()[c].get("auto")],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
         }

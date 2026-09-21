@@ -8,7 +8,7 @@ Bulk public data carries no opening hours, so the engine treated every one of th
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -39,8 +39,23 @@ def periods_from(spec: Mapping[str, Any] | str | None) -> tuple[OpeningPeriod, .
 
 
 class DefaultHours:
-    def __init__(self, table: Mapping[str, Any]) -> None:
+    def __init__(self, table: Mapping[str, Any], by_name: Sequence[Mapping[str, Any]] = ()) -> None:
         self._periods = {code: periods_from(spec) for code, spec in table.items()}
+        # what the sign itself says ("24시 …") comes before what the trade usually does
+        self._by_name = [
+            (tuple(rule["words"]), tuple(rule.get("categories") or ()), periods_from(rule.get("hours")))
+            for rule in by_name
+        ]
+
+    def for_place(self, category_code: str, name: str) -> tuple[OpeningPeriod, ...]:
+        for words, categories, periods in self._by_name:
+            if categories and not any(
+                category_code == c or category_code.startswith(f"{c}.") for c in categories
+            ):
+                continue
+            if any(word in name for word in words):
+                return periods
+        return self.for_category(category_code)
 
     def for_category(self, category_code: str) -> tuple[OpeningPeriod, ...]:
         parts = category_code.split(".")
@@ -55,4 +70,5 @@ class DefaultHours:
 def get_default_hours(path: Path = HOURS_PATH) -> DefaultHours:
     if not path.exists():
         return DefaultHours({})
-    return DefaultHours(json.loads(path.read_text(encoding="utf-8")).get("by_category", {}))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return DefaultHours(data.get("by_category", {}), data.get("by_name", []))

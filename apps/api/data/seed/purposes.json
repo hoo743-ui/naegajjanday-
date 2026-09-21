@@ -564,6 +564,62 @@
               "min_slot_budget": 12000
             }
           ]
+        },
+        {
+          "code": "date-night",
+          "name": "밤 데이트",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
     },
@@ -1117,6 +1173,62 @@
               "min_slot_budget": 12000
             }
           ]
+        },
+        {
+          "code": "travel-night",
+          "name": "밤 여행",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
     },
@@ -1630,6 +1742,62 @@
               "min_slot_budget": null
             }
           ]
+        },
+        {
+          "code": "family-night",
+          "name": "밤 가족모임",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
     },
@@ -2158,6 +2326,62 @@
               "min_slot_budget": 12000
             }
           ]
+        },
+        {
+          "code": "friends-night",
+          "name": "밤 친구모임",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
     },
@@ -2674,6 +2898,62 @@
               "min_slot_budget": 12000
             }
           ]
+        },
+        {
+          "code": "solo-night",
+          "name": "밤 혼밥·혼놀",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
     }

@@ -37,7 +37,7 @@ class TestMeta:
         assert date["default_party_size"] == 2
         assert date["budget_per_person"] == {"min": 15000, "max": 60000, "typical": 30000}
         assert (
-            set(date["time_bands"]) == {"lunch", "afternoon", "evening", "fullday"}
+            set(date["time_bands"]) == {"lunch", "afternoon", "evening", "night", "fullday"}
             and date["min_budget_per_person"] > 0
         )
 

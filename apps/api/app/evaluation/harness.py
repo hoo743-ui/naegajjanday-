@@ -150,7 +150,13 @@ def judge(
     seen_kinds: Counter[str] = Counter()
     for s in stops:
         code, name, at = s.place.category_code, s.place.name, s.arrive_at.time()
-        if not s.place.is_event and (limit := _prefix_lookup(closed_after, code)) and at >= _hm(limit):
+        no_door = any(word in name for word in rules.get("no_door_names", ()))  # a beach never closes
+        if (
+            not s.place.is_event
+            and not no_door
+            and (limit := _prefix_lookup(closed_after, code))
+            and at >= _hm(limit)
+        ):
             found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (≥{limit})"))
         if (floor := _prefix_lookup(rules["not_before"], code)) and at < _hm(floor):
             found.append(Finding("TOO_EARLY", f"{name} [{code}] {at:%H:%M}"))
