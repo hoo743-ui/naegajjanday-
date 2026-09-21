@@ -290,6 +290,280 @@
             }
           ],
           "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        },
+        {
+          "code": "date-lunch-plenty",
+          "name": "넉넉한 점심 (데이트)",
+          "time_band": "lunch",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.345,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.125,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.031,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.125,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.187,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.137,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "date-afternoon-plenty",
+          "name": "넉넉한 오후 (데이트)",
+          "time_band": "afternoon",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.197,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.033,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.164,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.264,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.197,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.145,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "date-evening-plenty",
+          "name": "넉넉한 저녁 (데이트)",
+          "time_band": "evening",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.333,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.103,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.063,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.016,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.143,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.342,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "date-fullday-plenty",
+          "name": "넉넉한 하루 (데이트)",
+          "time_band": "fullday",
+          "min_budget_per_person": 80000,
+          "party_min": 2,
+          "party_max": 2,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.222,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.083,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.074,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.019,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.139,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.278,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.185,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
         }
       ]
     },
@@ -558,6 +832,289 @@
               "earliest_start": "18:30",
               "latest_start": null,
               "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "travel-lunch-plenty",
+          "name": "넉넉한 점심 (여행)",
+          "time_band": "lunch",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.314,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.031,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.125,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.156,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.187,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.137,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "travel-afternoon-plenty",
+          "name": "넉넉한 오후 (여행)",
+          "time_band": "afternoon",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.038,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.192,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.154,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.062,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.385,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.169,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "travel-evening-plenty",
+          "name": "넉넉한 저녁 (여행)",
+          "time_band": "evening",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.476,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.063,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.04,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.143,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.0,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.278,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "travel-fullday-plenty",
+          "name": "넉넉한 하루 (여행)",
+          "time_band": "fullday",
+          "min_budget_per_person": 80000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.215,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.031,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.092,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.108,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.062,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.292,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.031,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.169,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
             }
           ]
         }
@@ -835,6 +1392,244 @@
             }
           ],
           "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        },
+        {
+          "code": "family-lunch-plenty",
+          "name": "넉넉한 점심 (가족모임)",
+          "time_band": "lunch",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.435,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.145,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.058,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.036,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.109,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.217,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "family-afternoon-plenty",
+          "name": "넉넉한 오후 (가족모임)",
+          "time_band": "afternoon",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.038,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.269,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.231,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.231,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.231,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "family-evening-plenty",
+          "name": "넉넉한 저녁 (가족모임)",
+          "time_band": "evening",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.594,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.169,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.042,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.153,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "NIGHTVIEW",
+              "budget_share": 0.042,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "family-fullday-plenty",
+          "name": "넉넉한 하루 (가족모임)",
+          "time_band": "fullday",
+          "min_budget_per_person": 80000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.03,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.1,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.33,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
         }
       ]
     },
@@ -1098,6 +1893,271 @@
             }
           ],
           "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        },
+        {
+          "code": "friends-lunch-plenty",
+          "name": "넉넉한 점심 (친구모임)",
+          "time_band": "lunch",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.345,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.125,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.156,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.187,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.137,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "friends-afternoon-plenty",
+          "name": "넉넉한 오후 (친구모임)",
+          "time_band": "afternoon",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.297,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.164,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.033,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.164,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.197,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.145,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "friends-evening-plenty",
+          "name": "넉넉한 저녁 (친구모임)",
+          "time_band": "evening",
+          "min_budget_per_person": 45000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.333,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.079,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.063,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.016,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.143,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.366,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "friends-fullday-plenty",
+          "name": "넉넉한 하루 (친구모임)",
+          "time_band": "fullday",
+          "min_budget_per_person": 80000,
+          "party_min": 2,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.204,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.167,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.074,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.074,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.019,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.258,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.204,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
         }
       ]
     },
@@ -1340,6 +2400,280 @@
             }
           ],
           "_note": "만남 시간을 5시간 반 이상으로 잡았을 때 쓰인다. 점심→낮 활동→쉬어가기→저녁(17시 이후)→밤의 리듬."
+        },
+        {
+          "code": "solo-lunch-plenty",
+          "name": "넉넉한 점심 (혼밥·혼놀)",
+          "time_band": "lunch",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.364,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.169,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.045,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.028,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.101,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.169,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.124,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "solo-afternoon-plenty",
+          "name": "넉넉한 오후 (혼밥·혼놀)",
+          "time_band": "afternoon",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.219,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.05,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.031,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.374,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 5000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.188,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.138,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "solo-evening-plenty",
+          "name": "넉넉한 저녁 (혼밥·혼놀)",
+          "time_band": "evening",
+          "min_budget_per_person": 45000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.397,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.119,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.063,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.016,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.143,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 8000
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.262,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "solo-fullday-plenty",
+          "name": "넉넉한 하루 (혼밥·혼놀)",
+          "time_band": "fullday",
+          "min_budget_per_person": 80000,
+          "party_min": 1,
+          "party_max": 1,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.231,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.115,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.115,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.062,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.023,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.285,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.169,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
         }
       ]
     }

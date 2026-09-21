@@ -147,6 +147,8 @@ export interface GenerateCourseRequest {
   duration_min?: number;
   /** efficient = 가깝고 알뜰하게(기본) · fun = 붐비는 거리·놀거리 위주 */
   style?: CourseStyle;
+  /** 꼭 넣을 자리. ["BAR"] = 술 한잔 포함 */
+  extras?: string[];
   /** 꼭 넣을 동네 명물. 생략 = 가장 뚜렷한 명물을 자동으로, FOCUS_OFF = 넣지 않음 */
   focus?: string;
   transport?: Transport;
@@ -292,6 +294,7 @@ export interface CourseDetail extends Course {
     style?: CourseStyle;
     /** 이 코스가 실제로 중심에 둔 동네 명물 (자동으로 골랐든 사용자가 골랐든) */
     focus?: string | null;
+    extras?: string[];
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

@@ -184,6 +184,7 @@ export function CourseView({ id }: { id: string }) {
         ...(request.duration_min ? { duration_min: request.duration_min } : {}),
         ...(request.style ? { style: request.style } : {}),
         ...(focus ? { focus } : {}),
+        ...(request.extras?.length ? { extras: request.extras } : {}),
         // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],

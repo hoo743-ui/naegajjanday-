@@ -165,6 +165,7 @@ congestion_levels:
 
 tips:
   budget_left: "짠! {{ left }}원 남으니까 디저트 하나 더 어때요?"
+  budget_roomy: "이 동네에서 이 시간이면 {{ used }}원으로 충분해요. 남은 {{ left }}원은 아껴 두거나, 만나는 시간을 늘리면 한두 곳 더 넣어 드릴게요."
   budget_tight: "예산을 거의 딱 맞게 썼어요. 알뜰하게 다녀오세요!"
   budget_over: "예산을 {{ over }}원 넘겼어요. 메뉴를 하나 줄이면 맞출 수 있어요."
   crowded: "{{ name }}, 이 시간엔 붐벼요. 조금 서두르면 좋아요."

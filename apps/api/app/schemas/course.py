@@ -41,6 +41,9 @@ class CourseGenerateRequest(BaseModel):
         max_length=12,
         description="꼭 넣을 동네 명물(signature 의 word). 생략=가장 뚜렷한 명물을 자동으로, '-'=넣지 않음",
     )
+    extras: list[str] = Field(
+        default_factory=list, max_length=4, description='꼭 넣을 자리. 예: ["BAR"] = 술 한잔 포함'
+    )
     transport: Transport = "walk"
     include_roles: list[str] | None = None
     preferences: Preferences = Field(default_factory=Preferences)
@@ -221,6 +224,7 @@ class CourseRequestEcho(BaseModel):
     duration_min: int | None = None
     style: str = "efficient"
     focus: str | None = None
+    extras: list[str] = Field(default_factory=list)
 
 
 class SiblingRef(BaseModel):

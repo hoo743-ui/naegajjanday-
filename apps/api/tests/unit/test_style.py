@@ -78,3 +78,19 @@ def test_fun_bans_chain_cafes_but_keeps_chain_pubs() -> None:
         rejection_reason(cafe, FilterContext.build(ctx, "CAFE", 10000, SUNDAY_6PM), params) == "excluded_tag"
     )
     assert rejection_reason(pub, FilterContext.build(ctx, "BAR", 30000, SUNDAY_6PM), params) != "excluded_tag"
+
+
+def test_asking_for_a_drink_puts_the_bar_in_every_template() -> None:
+    from app.domain.recommendation.style import with_role
+
+    extra = {"role": "BAR", "share": 0.25, "earliest_start_min": 1020, "latest_start_min": 1410}
+    lunch = template(Slot(1, "MEAL", 0.6), Slot(2, "CAFE", 0.4), time_band="lunch")
+    evening = template(Slot(1, "MEAL", 0.5), Slot(2, "BAR", 0.5, is_optional=True), tid=2)
+
+    added, kept = with_role([lunch, evening], extra)
+
+    assert [s.course_role for s in added.slots] == ["MEAL", "CAFE", "BAR"]
+    assert abs(sum(s.budget_share for s in added.slots) - 1.0) < 1e-9  # the others made room
+    assert added.slots[-1].earliest_start_min == 1020  # never a bar stop at lunchtime
+    assert [s.is_optional for s in kept.slots] == [False, False]  # "if it fits" became "for certain"
+    assert kept.slots[1].budget_share == 0.5  # a template that planned for it keeps its own share

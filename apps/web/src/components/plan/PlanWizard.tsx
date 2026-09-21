@@ -144,6 +144,7 @@ export function PlanWizard() {
       ...(data.duration_min ? { duration_min: data.duration_min } : {}),
       style: data.style,
       ...(data.focus ? { focus: data.focus } : {}),
+      ...(data.with_bar ? { extras: ["BAR"] } : {}),
       transport: data.transport,
       preferences: { liked_tags: data.liked_tags, disliked_tags: data.disliked_tags, exclude_place_ids: [] },
       alternatives: 2,

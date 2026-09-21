@@ -2,7 +2,7 @@
 
 import { useId, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, type LucideIcon } from "lucide-react";
+import { Car, Footprints, Heart, PartyPopper, PiggyBank, X, Minus, Plus, TrainFront, Wine, type LucideIcon } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
@@ -258,6 +258,7 @@ export function TasteStep() {
   const transport = useWatch<PlanValues, "transport">({ name: "transport" });
   const style = useWatch<PlanValues, "style">({ name: "style" });
   const focus = useWatch<PlanValues, "focus">({ name: "focus" });
+  const withBar = useWatch<PlanValues, "with_bar">({ name: "with_bar" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
   // 이 동네가 무엇으로 알려져 있는지 먼저 알려 준다 — 뚜렷한 명물이 없는 동네면 이 칸은 아예 안 나온다
@@ -300,6 +301,18 @@ export function TasteStep() {
           ))}
         </div>
       </fieldset>
+
+      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+        <input type="checkbox" className="peer sr-only" checked={withBar} onChange={(e) => setValue("with_bar", e.target.checked, { shouldDirty: true })} />
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBar ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+          ✓
+        </span>
+        <Wine aria-hidden className="size-6 shrink-0 text-blue-deep" />
+        <span className="min-w-0">
+          <b className="block text-[15px] font-extrabold">술 한잔 포함</b>
+          <span className="block text-[12.5px] text-muted-foreground">저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 그만큼 떼어 둘게요.</span>
+        </span>
+      </label>
 
       {specialties.length > 0 ? (
         <fieldset className="rounded-card bg-white p-6 shadow-soft">

@@ -91,8 +91,16 @@ def load_spec(path: Path = SCENARIOS_PATH) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
 
 
-def build_scenarios(spec: dict[str, Any], scope: str, only: dict[str, list[str]]) -> list[Scenario]:
+def build_scenarios(
+    spec: dict[str, Any], scope: str, only: dict[str, list[str]], budget_scale: float = 1.0
+) -> list[Scenario]:
+    """`budget_scale` multiplies every budget: 3.0 asks what a generous budget buys, the case the
+    service exists for (a bigger budget must become a fuller day, not the same course with change)."""
     regions = only.get("region") or spec["regions"][scope]
+
+    def per_person(p: dict[str, Any]) -> int:
+        return round(int(p["budget_per_person"]) * budget_scale / 1000) * 1000
+
     out = []
     for region in regions:
         for purpose, p in spec["purposes"].items():
@@ -103,7 +111,7 @@ def build_scenarios(spec: dict[str, Any], scope: str, only: dict[str, list[str]]
                     out.append(
                         Scenario(
                             region, purpose, start, style, int(p["party_size"]),
-                            int(p["budget_per_person"]) * int(p["party_size"]),
+                            per_person(p) * int(p["party_size"]),
                         )
                     )  # fmt: skip
     return out

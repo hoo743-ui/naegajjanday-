@@ -1,0 +1,10 @@
+{
+  "_comment": "사용자가 이름으로 요청할 수 있는 자리(요청의 extras). 템플릿에 그 자리가 없으면 이 값으로 덧붙이고, 있으면 '여유 되면'을 떼고 확정한다. 시각은 자정부터의 분.",
+  "BAR": {
+    "role": "BAR",
+    "share": 0.26,
+    "earliest_start_min": 1020,
+    "latest_start_min": 1410,
+    "min_slot_budget": 12000
+  }
+}

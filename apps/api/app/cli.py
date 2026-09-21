@@ -415,6 +415,7 @@ def eval_courses(
     purpose: Annotated[list[str] | None, typer.Option(help="이 목적만")] = None,
     start: Annotated[list[str] | None, typer.Option(help="이 시작 시각만, 예: 18:30")] = None,
     style: Annotated[list[str] | None, typer.Option(help="efficient | fun")] = None,
+    budget_scale: Annotated[float, typer.Option(help="예산 배율. 3 = 넉넉한 예산일 때의 품질")] = 1.0,
     save: Annotated[str | None, typer.Option(help="이 이름으로 기준선 저장")] = None,
     compare: Annotated[str | None, typer.Option(help="이 기준선과 전후 비교")] = None,
     show: Annotated[bool, typer.Option(help="모든 코스를 한 줄씩 출력")] = False,
@@ -424,7 +425,7 @@ def eval_courses(
 
     spec = harness.load_spec()
     only = {"region": region or [], "purpose": purpose or [], "start": start or [], "style": style or []}
-    scenarios = harness.build_scenarios(spec, scope, only)
+    scenarios = harness.build_scenarios(spec, scope, only, budget_scale)
 
     async def job(db: Database, settings: Settings) -> None:
         outcomes = await harness.run(db, settings, scenarios, spec)

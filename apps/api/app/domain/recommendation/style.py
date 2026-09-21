@@ -14,9 +14,12 @@ involved (we have none) — once our own save/visit counts exist they belong in 
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import replace
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from app.domain.models import PlaceCandidate, ScoringProfile, Slot, Template
@@ -100,6 +103,48 @@ def _swap_roles(template: Template, swaps: Mapping[str, Mapping[str, Any]]) -> T
             keep = max(slots[donor].budget_share - extra, slots[donor].budget_share * MIN_DONOR_KEEP)
             slots[donor] = replace(slots[donor], budget_share=keep)
     return replace(template, slots=tuple(slots))
+
+
+EXTRA_ROLES_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "extra_roles.json"
+
+
+@lru_cache(maxsize=1)
+def extra_roles(path: Path = EXTRA_ROLES_PATH) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+def with_role(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[Template]:
+    """The user asked for a role by name ("a drink, please"): every template gets that slot for certain.
+
+    A template that already has it keeps its own share and only loses the "if it fits" flag; one that
+    does not gets the slot appended with the share and hours from `extra` (data, per role), and the
+    other shares shrink to make room.
+    """
+    role = str(extra["role"])
+    out: list[Template] = []
+    for template in templates:
+        slots = list(template.slots)
+        at = next((i for i, s in enumerate(slots) if s.course_role == role), None)
+        if at is not None:
+            slots[at] = replace(slots[at], is_optional=False)
+        else:
+            share = float(extra["share"])
+            slots = [replace(s, budget_share=s.budget_share * (1.0 - share)) for s in slots]
+            slots.append(
+                Slot(
+                    position=max((s.position for s in slots), default=0) + 1,
+                    course_role=role,
+                    budget_share=share,
+                    earliest_start_min=extra.get("earliest_start_min"),
+                    latest_start_min=extra.get("latest_start_min"),
+                    min_slot_budget=extra.get("min_slot_budget"),
+                )
+            )
+        out.append(replace(template, slots=tuple(slots)))
+    return out
 
 
 def assign_buzz(candidates: Iterable[PlaceCandidate], radius_m: float = BUZZ_RADIUS_M) -> None:

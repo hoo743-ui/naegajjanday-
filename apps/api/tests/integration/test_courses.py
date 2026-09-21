@@ -108,8 +108,12 @@ class TestGenerate:
         assert all("웨이팅" not in s["place"]["tags"] for s in course["stops"])
 
     async def test_bigger_budget_keeps_the_bar_slot(self, client: httpx.AsyncClient) -> None:
-        course = (await generate(client, budget_total=160000, alternatives=0)).json()["courses"][0]
-        assert [s["role"] for s in course["stops"]] == ["MEAL", "CAFE", "ATTRACTION", "BAR"]
+        body = (await generate(client, budget_total=160000, alternatives=0)).json()
+        course = body["courses"][0]
+        # 80,000원/인이면 "넉넉한 저녁" 틀로 넘어간다: 예산이 들르는 곳의 수와 종류를 정한다
+        assert body["meta"]["template"] == "date-evening-plenty"
+        roles = [s["role"] for s in course["stops"]]
+        assert roles[0] == "MEAL" and roles[-1] == "BAR" and len(roles) >= 4
         bar = course["stops"][-1]
         assert datetime.fromisoformat(bar["arrive_at"]).hour >= 17
 
@@ -119,7 +123,8 @@ class TestGenerate:
         assert solo.status_code == 200 and solo.json()["meta"]["template"] == "solo-lunch"
         trip = await generate(client, region="busan-seomyeon", purpose="travel", party_size=3, budget_total=240000,
                               start_at="2026-09-23T10:00:00+09:00", duration_min=540, transport="transit")  # fmt: skip
-        assert trip.status_code == 200 and trip.json()["meta"]["template"] == "travel-fullday"
+        # 80,000원/인 → 같은 여행 틀에 디저트·술 한잔이 더해진 "넉넉한 하루"
+        assert trip.status_code == 200 and trip.json()["meta"]["template"] == "travel-fullday-plenty"
         assert len(trip.json()["courses"][0]["stops"]) >= 4
 
     async def test_idempotency_key_replays_the_same_response(self, client: httpx.AsyncClient) -> None:

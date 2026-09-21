@@ -189,6 +189,10 @@ class NarrativeService:
         crowded = next((s for s in course.stops if s.congestion is not None and s.congestion >= 0.8), None)
         if crowded is not None:
             return fb.render_text(tips["crowded"], name=crowded.place.name)
+        # "one more dessert" is advice for a little change, not for half the budget: when this much is
+        # left the honest thing to say is that the day simply costs less than what was set aside
+        if left >= float(fb.data.get("budget_roomy_share", 0.3)) * budget_total and "budget_roomy" in tips:
+            return fb.render_text(tips["budget_roomy"], left=_won(left), used=_won(course.total_price))
         if left >= int(fb.data.get("budget_left_tip_min", 3000)):
             return fb.render_text(tips["budget_left"], left=_won(left))
         return str(tips["budget_tight"])

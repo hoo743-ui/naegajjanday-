@@ -39,11 +39,13 @@ from app.domain.recommendation.features import is_open
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
+    extra_roles,
     resolve_style,
     styled_affinity,
     styled_avoidance,
     styled_profile,
     styled_templates,
+    with_role,
 )
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline
 from app.domain.signature import get_signature_rules
@@ -134,6 +136,9 @@ class CourseService:
         if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
             ctx.auto_focus_words = ctx.local_words
         profile, templates = self._apply_style(ctx, profile, templates, req.style)
+        for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
+            if role in extra_roles():
+                templates = with_role(templates, extra_roles()[role])
         engine = RecommendationEngine(self._places, self._travel)
         try:
             out = await engine.generate(ctx, templates, profile)
@@ -198,6 +203,7 @@ class CourseService:
             "duration_min": req.duration_min,
             "style": ctx.style,
             "focus": ctx.focus,
+            "extras": [r for r in req.extras if r in extra_roles()],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
         }
@@ -515,6 +521,7 @@ class CourseService:
                 duration_min=(row.request or {}).get("duration_min"),
                 style=(row.request or {}).get("style") or DEFAULT_STYLE,
                 focus=(row.request or {}).get("focus"),
+                extras=list((row.request or {}).get("extras") or []),
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[
