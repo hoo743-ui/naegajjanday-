@@ -228,3 +228,16 @@ def test_rules_file_is_valid() -> None:
     assert rules.detail_url("PF1") and rules.detail_url("PF1").endswith("PF1")  # type: ignore[union-attr]
     assert all(codes for codes in rules.area_codes_by_sido_slug.values())
     assert rules.max_upstream_calls_per_request > 0
+
+
+def test_an_error_document_is_recognised_so_a_refused_key_is_not_reported_as_an_empty_evening() -> None:
+    from app.infra.ingestion.providers.kopis import upstream_error
+
+    refused = (
+        '<?xml version="1.0" encoding="UTF-8"?><dbs><db><returncode>02</returncode>'
+        "<errmsg>SERVICE KEY IS NOT REGISTERED ERROR</errmsg></db></dbs>"
+    )
+    assert upstream_error(refused) == "SERVICE KEY IS NOT REGISTERED ERROR"
+    assert upstream_error("<dbs><db><mt20id>PF1</mt20id></db></dbs>") is None
+    assert upstream_error("<dbs></dbs>") is None  # a quiet day is not an error
+    assert upstream_error("not xml") is None

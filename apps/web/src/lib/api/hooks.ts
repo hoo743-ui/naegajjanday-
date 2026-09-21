@@ -679,14 +679,18 @@ export function useStays(at: { lat: number; lng: number } | null) {
   });
 }
 
+const MAX_PARTIAL_REFETCH = 6;
+
 /** 고른 시간대에 근처에서 실제로 하는 공연. 키가 없는 환경이면 부르지 않는다(useFeatures().performances). */
 export function usePerformances(params: { lat: number; lng: number; start_at: string; duration_min: number } | null) {
   return useQuery<PerformanceList, ApiError>({
     queryKey: ["performances", params],
-    queryFn: ({ signal }) => api.get("/performances", { query: { ...params!, radius_m: 4000 }, signal }),
+    queryFn: ({ signal }) => api.get("/performances", { query: { ...params!, radius_m: 4000 }, signal, timeoutMs: 25_000 }),
     enabled: params !== null,
     staleTime: 30 * 60_000,
     retry: false,
+    // 큰 도시는 한 번에 다 확인하지 못한다(partial). 받은 만큼 먼저 보여 주고, 서버 캐시가 채워지는 동안 몇 번 더 받아 온다.
+    refetchInterval: (query) => (query.state.data?.partial && query.state.dataUpdateCount < MAX_PARTIAL_REFETCH ? 4_000 : false),
   });
 }
 

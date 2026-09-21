@@ -1,6 +1,7 @@
 {
   "_note": "공연예술통합전산망(KOPIS) Open API 설정(DATA). 키는 여기에 두지 않는다 — apps/api/.env 의 KOPIS_API_KEY. 키가 비어 있으면 어떤 요청도 나가지 않는다. 이용 조건: 화면에 attribution 문구를 반드시 표시한다.",
-  "base_url": "https://www.kopis.or.kr/openApi/restful",
+  "_base_url_note": "2026-09-21 확인: 안내문의 http://kopis.or.kr 는 방화벽이 400(Request Blocked)으로 막고, https://www.kopis.or.kr 는 아래 주소로 리다이렉트된다. 날짜는 요청의 stdate/eddate 로 정한다 — 안내문의 2023년 값은 예시일 뿐이고 오늘 · 미래 날짜도 같은 주소로 받는다.",
+  "base_url": "https://kopis.or.kr/openApi/restful",
   "detail_url_template": "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id={id}",
   "attribution": "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)",
   "timeout_s": 10,
@@ -8,7 +9,9 @@
   "max_list_pages": 3,
   "_budget_note": "목록에는 공연장 좌표가 없어 공연마다 상세(→공연장 ID)·공연장(→좌표)을 더 불러야 한다. 한 번의 화면 조회가 수백 건의 호출이 되지 않도록 요청 1회당 캐시에 없는 호출 수를 max_upstream_calls_per_request 로 막는다. 넘으면 응답에 partial=true 가 붙고, 캐시가 채워진 다음 조회부터 완전해진다.",
   "max_upstream_calls_per_request": 40,
-  "concurrency": 5,
+  "_time_note": "큰 도시는 하루 공연이 수백 건이라 처음 조회가 20초를 넘겼고, 웹은 15초에 포기해 카드가 말없이 안 떴다. 한 번의 응답은 이 시간 안에서 끝내고 partial=true 로 돌려준다 — 받은 것은 캐시에 남아 다음 조회가 이어서 채운다.",
+  "max_seconds_per_request": 7,
+  "concurrency": 8,
   "ttl_s": {
     "list": 1800,
     "detail": 21600,

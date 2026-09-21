@@ -81,6 +81,7 @@ class KopisRules:
     rows: int = 100
     max_list_pages: int = 3
     max_upstream_calls_per_request: int = 40
+    max_seconds_per_request: float = 7.0
     concurrency: int = 5
     ttl_list_s: float = 1800.0
     ttl_detail_s: float = 21600.0
@@ -102,6 +103,7 @@ class KopisRules:
                 data.get("max_upstream_calls_per_request", base.max_upstream_calls_per_request)
             ),
             concurrency=max(1, int(data.get("concurrency", base.concurrency))),
+            max_seconds_per_request=float(data.get("max_seconds_per_request", base.max_seconds_per_request)),
             ttl_list_s=float(ttl.get("list", base.ttl_list_s)),
             ttl_detail_s=float(ttl.get("detail", base.ttl_detail_s)),
             ttl_venue_s=float(ttl.get("venue", base.ttl_venue_s)),
@@ -186,6 +188,18 @@ def _rows(xml: str | bytes) -> list[ET.Element]:
     return [db for db in root.iter("db") if db.find("returncode") is None]
 
 
+def upstream_error(xml: str | bytes) -> str | None:
+    """The message of an error document (`<returncode>` + `<errmsg>`), else None. Never contains the key."""
+    try:
+        root = ET.fromstring(xml)  # trusted official host only
+    except ET.ParseError:
+        return None
+    for db in root.iter("db"):
+        if db.find("returncode") is not None:
+            return (db.findtext("errmsg") or db.findtext("returncode") or "error").strip()
+    return None
+
+
 def parse_list(xml: str | bytes) -> list[PerformanceSummary]:
     out: list[PerformanceSummary] = []
     for db in _rows(xml):
@@ -264,6 +278,9 @@ class KopisClient:
         self._venue_id_by_name: dict[str, str] = {}
         self._locks: dict[str, asyncio.Lock] = {}
         self.upstream_calls = 0  # how many real requests were made (budgeting, tests)
+        # KOPIS answers a bad or unregistered key with HTTP 200 and an error document. Swallowing it
+        # would tell the user "nothing is on tonight" when the truth is "we are not allowed to ask".
+        self.last_error: str | None = None
 
     @property
     def available(self) -> bool:
@@ -280,11 +297,14 @@ class KopisClient:
     async def _get(self, path: str, params: Mapping[str, str]) -> bytes | None:
         self.upstream_calls += 1
         try:
-            async with httpx.AsyncClient(timeout=self.rules.timeout_s, transport=self._transport) as client:
+            async with httpx.AsyncClient(
+                timeout=self.rules.timeout_s, transport=self._transport, follow_redirects=True
+            ) as client:
                 resp = await client.get(
                     f"{self.rules.base_url}/{path}", params={"service": self._key, **params}
                 )
                 resp.raise_for_status()
+                self.last_error = upstream_error(resp.content) or self.last_error
                 return resp.content
         except httpx.HTTPError as exc:
             # never log the exception text or the URL: both carry the key

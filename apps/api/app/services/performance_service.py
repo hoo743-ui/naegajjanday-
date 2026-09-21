@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date, datetime, time, timedelta, timezone
+from time import monotonic
 from typing import Protocol
 
 from sqlalchemy import select
@@ -23,6 +24,9 @@ from app.schemas.performance import PerformanceList, PerformanceOut, Performance
 
 LOCAL_TZ = timezone(timedelta(hours=9))  # showtimes are local wall-clock times
 NO_KEY_REASON = "공연 정보(KOPIS) 키가 아직 설정되지 않았어요."
+REFUSED_REASON = (
+    "공연 정보(KOPIS) 서버가 키를 받아 주지 않았어요. 키가 맞는지, 이용 승인이 났는지 확인해 주세요."
+)
 NO_SHOW_REASON = "이 시간대에 시작하는 공연을 주변에서 찾지 못했어요."
 FAR_AWAY_DEG = 1.5  # a point this far from every known region is not in the country
 
@@ -64,7 +68,12 @@ class PerformanceService:
             for row in await self._src.list_performances(day, day, area_code=code):
                 summaries.setdefault(row.id, row)
 
-        budget = _Budget(self._src, rules.max_upstream_calls_per_request)
+        refused = getattr(self._src, "last_error", None)
+        if not summaries and refused:  # the key is wrong or not yet approved: say so, do not say "no shows"
+            return PerformanceList(
+                available=False, reason=f"{REFUSED_REASON} ({refused})", attribution=rules.attribution
+            )
+        budget = _Budget(self._src, rules.max_upstream_calls_per_request, rules.max_seconds_per_request)
         items: list[PerformanceOut] = []
         pending = list(summaries.values())
         for at in range(0, len(pending), rules.concurrency):
@@ -173,15 +182,17 @@ class PerformanceService:
 class _Budget:
     """Caps the UNCACHED upstream calls of one request; cached lookups are always allowed."""
 
-    def __init__(self, source: PerformanceSource, limit: int) -> None:
+    def __init__(self, source: PerformanceSource, limit: int, seconds: float = 0.0) -> None:
         self._src = source
         self._left = limit
+        self._deadline = monotonic() + seconds if seconds > 0 else None
         self.exhausted = False
 
     def allow(self, kind: str, ident: str) -> bool:
         if self._src.is_cached(kind, ident):
             return True
-        if self._left <= 0:
+        # out of calls or out of time: answer with what we have; the cache carries the rest forward
+        if self._left <= 0 or (self._deadline is not None and monotonic() > self._deadline):
             self.exhausted = True
             return False
         self._left -= 1
