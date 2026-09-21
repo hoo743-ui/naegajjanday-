@@ -29,7 +29,7 @@ export function FinalCta() {
               floating
               className="mx-auto drop-shadow-[0_14px_24px_rgba(20,33,61,.25)]"
             />
-            <h2 className="my-3.5 text-[clamp(29px,4.4vw,54px)] font-extrabold">
+            <h2 className="my-3.5 text-[clamp(29px,4.4vw,54px)] font-extrabold font-serif">
               얼마 쓸 거예요?
               <br />
               코스는 짠이가 짤게요

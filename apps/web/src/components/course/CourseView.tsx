@@ -249,8 +249,8 @@ export function CourseView({ id }: { id: string }) {
         </div>
 
         {/* 타임라인: 모바일에서는 지도 위로 올라오는 바텀시트 모양 */}
-        <div className="relative z-10 -mt-7 rounded-t-[28px] bg-soft shadow-[0_-10px_40px_rgba(47,80,160,.14)] lg:mt-0 lg:rounded-none lg:shadow-none">
-          <span aria-hidden className="mx-auto block h-1 w-10 translate-y-2.5 rounded-full bg-[#D5DDEB] lg:hidden" />
+        <div className="relative z-10 -mt-7 rounded-t-[28px] bg-soft shadow-[0_-10px_40px_rgba(72,54,24,.12)] lg:mt-0 lg:rounded-none lg:shadow-none">
+          <span aria-hidden className="mx-auto block h-1 w-10 translate-y-2.5 rounded-full bg-line lg:hidden" />
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
@@ -374,7 +374,7 @@ export function CourseView({ id }: { id: string }) {
           </div>
 
           {/* 액션 바 */}
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/90 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-xl lg:sticky lg:bottom-0">
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/90 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-xl lg:sticky lg:bottom-0">
             <div className="mx-auto flex max-w-[640px] items-center gap-2 px-4 pt-3 sm:px-6 lg:max-w-none lg:px-7">
               {readOnly ? null : (
                 <Button type="button" variant="soft" size="xl" onClick={() => onReroll()} disabled={reroll.isPending} className="max-sm:px-4" aria-label="다른 장소들로 코스 다시 짜기">

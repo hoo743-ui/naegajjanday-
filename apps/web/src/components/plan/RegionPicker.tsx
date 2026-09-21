@@ -157,7 +157,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         {query ? (
           matches.length === 0 && (stations.data?.items.length ?? 0) === 0 && !stations.isFetching ? (
             <EmptyState size="sm" mood="think" title={`‘${query}’ 은(는) 찾지 못했어요`} description="가까운 지하철역이나 구 이름으로 다시 찾아볼까요?">
-              <button type="button" onClick={() => setQ("")} className="rounded-full bg-[#F0F4FA] px-4 py-2 text-sm font-extrabold text-ink-2 hover:bg-line">
+              <button type="button" onClick={() => setQ("")} className="rounded-full bg-soft px-4 py-2 text-sm font-extrabold text-ink-2 hover:bg-line">
                 전체 지역 보기
               </button>
             </EmptyState>

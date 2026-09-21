@@ -52,7 +52,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
         "inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-[background,box-shadow] duration-300",
         overlay ? "fixed" : "sticky",
         solid &&
-          "bg-white/80 shadow-[0_1px_0_rgba(20,33,61,.07)] backdrop-blur-xl backdrop-saturate-150",
+          "bg-paper/85 shadow-[0_1px_0_rgba(16,25,46,.08)] backdrop-blur-xl",
       )}
     >
       <div className="wrap flex h-(--header-h) items-center justify-between gap-4">

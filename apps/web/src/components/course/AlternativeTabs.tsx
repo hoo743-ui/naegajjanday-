@@ -34,7 +34,7 @@ export function AlternativeTabs({ items, currentId, onSelect, label = "다른 �
   };
 
   return (
-    <div role="tablist" aria-label={label} className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-[#EAF0FA] p-1">
+    <div role="tablist" aria-label={label} className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-paper-2 p-1">
       {items.map((item, i) => {
         const selected = item.id === currentId;
         return (

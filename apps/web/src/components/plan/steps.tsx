@@ -250,13 +250,13 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           몇 명이서?
         </h3>
         <div className="flex items-center gap-4">
-          <button type="button" onClick={() => setParty(party - 1)} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-12 place-items-center rounded-[14px] bg-[#F0F4FA] transition-colors hover:bg-line disabled:opacity-40">
+          <button type="button" onClick={() => setParty(party - 1)} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
             <Minus aria-hidden className="size-5" />
           </button>
           <output aria-live="polite" className="tabular min-w-[64px] text-center text-2xl font-extrabold">
             {party}명
           </output>
-          <button type="button" onClick={() => setParty(party + 1)} disabled={party >= maxParty} aria-label="인원 늘리기" className="grid size-12 place-items-center rounded-[14px] bg-[#F0F4FA] transition-colors hover:bg-line disabled:opacity-40">
+          <button type="button" onClick={() => setParty(party + 1)} disabled={party >= maxParty} aria-label="인원 늘리기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
             <Plus aria-hidden className="size-5" />
           </button>
           {purpose?.max_party_size && party >= maxParty ? (
@@ -302,7 +302,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
                   onClick={() => setBudget(amount)}
                   className={cn(
                     "tabular rounded-full px-4 py-2.5 text-sm font-extrabold transition-colors",
-                    on ? "bg-ink text-white" : "bg-[#F0F4FA] text-ink-2 hover:bg-line",
+                    on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
                   )}
                 >
                   {qk.label} · {wonCompact(amount)}
@@ -512,7 +512,7 @@ export function TasteStep() {
                           "rounded-full border-2 px-4 py-2 text-sm font-extrabold transition-all duration-150 active:scale-95",
                           state === "like" && "border-blue-deep bg-blue-deep text-white",
                           state === "avoid" && "border-pink-deep bg-pink-soft text-pink-deep line-through",
-                          state === "none" && "border-transparent bg-[#F0F4FA] text-ink-2 hover:bg-line",
+                          state === "none" && "border-transparent bg-soft text-ink-2 hover:bg-line",
                         )}
                       >
                         {state === "like" ? <Heart aria-hidden className="mr-1 -mt-0.5 inline size-3.5 fill-current" /> : null}

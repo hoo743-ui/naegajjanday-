@@ -202,7 +202,7 @@ export function PlanWizard() {
               <li key={s.key} className="flex-1" aria-current={i === step ? "step" : undefined}>
                 <button type="button" disabled={!done} onClick={() => void go(i)} className="group block w-full text-left disabled:cursor-default" aria-label={`${i + 1}단계 ${s.title}${done ? " (완료, 돌아가기)" : i === step ? " (현재)" : ""}`}>
                   <span className="block h-1.5 overflow-hidden rounded-full bg-[#E3E9F4]">
-                    <motion.span className="bg-grad block h-full origin-left rounded-full" initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }} />
+                    <motion.span className="block h-full origin-left rounded-full bg-blue-deep" initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }} />
                   </span>
                   <span className={cn("mt-2 block text-xs font-extrabold transition-colors sm:text-[13px]", i === step ? "text-blue-deep" : done ? "text-ink-2 group-hover:text-ink" : "text-muted-foreground")}>
                     {i + 1}. {s.title}
@@ -287,7 +287,7 @@ export function PlanWizard() {
         </div>
 
         {/* 하단 고정 내비게이션 */}
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/85 pb-[max(14px,env(safe-area-inset-bottom))] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[max(14px,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 px-5 pt-3.5">
             <p className="tabular hidden min-w-0 flex-1 truncate text-sm font-bold text-ink-2 sm:block" aria-live="polite">
               {[placeLabel, purpose?.name, step >= 2 ? `${values.party_size}명` : null, step >= 2 ? won(values.budget_total) : null].filter(Boolean).join(" · ") || "세 가지만 알려 주세요"}

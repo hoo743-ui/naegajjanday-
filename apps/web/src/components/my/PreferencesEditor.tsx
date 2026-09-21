@@ -81,7 +81,7 @@ export function PreferencesEditor() {
                       "rounded-full border-2 px-4 py-2 text-sm font-extrabold transition-all duration-150 active:scale-95",
                       like && "border-blue-deep bg-blue-deep text-white",
                       avoid && "border-pink-deep bg-pink-soft text-pink-deep line-through",
-                      !like && !avoid && "border-transparent bg-[#F0F4FA] text-ink-2 hover:bg-line",
+                      !like && !avoid && "border-transparent bg-soft text-ink-2 hover:bg-line",
                     )}
                   >
                     {like ? <Heart aria-hidden className="mr-1 -mt-0.5 inline size-3.5 fill-current" /> : null}
@@ -110,7 +110,7 @@ export function PreferencesEditor() {
                   setDraft((d) => (d ? { ...d, transport: mode } : d));
                 }}
               />
-              <span className="block cursor-pointer rounded-full bg-[#F0F4FA] px-4 py-2 text-sm font-extrabold text-ink-2 peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+              <span className="block cursor-pointer rounded-full bg-soft px-4 py-2 text-sm font-extrabold text-ink-2 peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
                 {transportLabel(mode)}
               </span>
             </label>

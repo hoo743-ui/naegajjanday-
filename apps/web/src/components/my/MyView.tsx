@@ -82,7 +82,7 @@ export function MyView() {
 
       <section aria-labelledby="saved-title">
         <div className="mb-3 flex items-end justify-between">
-          <h2 id="saved-title" className="text-xl font-extrabold tracking-tight">
+          <h2 id="saved-title" className="text-xl font-extrabold tracking-tight font-serif">
             저장한 코스
           </h2>
           <Button asChild variant="link" className="px-0 font-extrabold">
@@ -93,7 +93,7 @@ export function MyView() {
       </section>
 
       <section aria-labelledby="pref-title">
-        <h2 id="pref-title" className="mb-3 text-xl font-extrabold tracking-tight">
+        <h2 id="pref-title" className="mb-3 text-xl font-extrabold tracking-tight font-serif">
           내 취향
         </h2>
         <PreferencesEditor />

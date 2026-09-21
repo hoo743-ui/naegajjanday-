@@ -120,7 +120,7 @@ export function ExploreView() {
                 onClick={() => changeType(option.value)}
                 className={cn(
                   "h-10 shrink-0 rounded-full px-4 text-[14.5px] font-extrabold transition-colors",
-                  type === option.value ? "bg-ink text-white" : "bg-[#F0F4FA] text-ink-2 hover:bg-line",
+                  type === option.value ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
                 )}
               >
                 {option.label}

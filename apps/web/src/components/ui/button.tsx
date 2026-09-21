@@ -21,7 +21,7 @@ const buttonVariants = cva(
         // 브랜드 CTA — index.html 의 .btn-primary / .btn-ghost / .btn-white
         brand:
           "bg-[image:var(--grad-btn)] bg-[length:170%_100%] font-bold tracking-tight text-white shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_8px_22px_rgba(47,107,234,.28)] duration-300 hover:-translate-y-px hover:bg-[position:100%_0] hover:shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_12px_30px_rgba(255,111,165,.3)]",
-        soft: "bg-[#F0F4FA] font-bold tracking-tight text-ink-2 hover:bg-line",
+        soft: "bg-soft font-bold tracking-tight text-ink-2 hover:bg-line",
         white:
           "bg-white font-bold tracking-tight text-blue-deep shadow-[0_10px_28px_rgba(20,33,61,.18)] duration-300 hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(20,33,61,.22)]",
       },

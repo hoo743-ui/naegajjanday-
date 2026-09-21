@@ -14,7 +14,7 @@ export function HowItWorks() {
       <div className="wrap">
         <div className="text-center">
           <span className="inline-flex rounded-full bg-blue-soft px-3.5 py-2 text-sm font-extrabold text-blue-deep">짜는 방법</span>
-          <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold">
+          <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold font-serif">
             네 단계의 약속 준비를
             <br />
             <span className="gt">한 번의 입력으로</span>

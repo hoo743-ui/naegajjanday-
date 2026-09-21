@@ -80,7 +80,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
             {leg ? (
               <li className="py-2 pl-7 text-[13px] text-muted-foreground" aria-label={`${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${minutes(travelMin)}, ${distance(distanceM)}`}>
                 <div className="flex gap-2.5">
-                  <span aria-hidden className="w-0 self-stretch border-l-2 border-dashed border-[#C5D0E4]" />
+                  <span aria-hidden className="w-0 self-stretch border-l-2 border-dashed border-line" />
                   <div className="grid gap-1 py-1">
                     <div className="tabular flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold">
                       <Icon aria-hidden className="size-4 text-blue-deep" />

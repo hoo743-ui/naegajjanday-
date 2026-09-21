@@ -2,44 +2,50 @@
 @import "tw-animate-css";
 
 /* ─────────────────────────────────────────────────────────────
-   디자인 토큰 — 정본은 루트 index.html 의 :root 이다. 값을 바꿀 땐 거기와 함께 바꾼다.
+   디자인 토큰 — 이름과 역할은 루트 index.html 의 :root 에서 왔다(그 파일은 고치지 않는다).
+   값은 docs/21 "조용한 영수증"이 정본이다: 따뜻한 종이 · 깊은 잉크 · 돈에만 쓰는 금색.
    ───────────────────────────────────────────────────────────── */
 :root {
   --blue: #4f8cff;
-  --blue-deep: #2f6bea;
+  --blue-deep: #2a5bd7;
   --blue-soft: #eaf1ff;
   --pink: #ff8fb8;
   --pink-deep: #e0457f;
   --pink-soft: #ffedf4;
-  --gold: #f5b93a;
-  --gold-deep: #e29a14;
+  --gold: #e9b44c;
+  --gold-deep: #b8842a;
   --gold-soft: #fff3d6;
   --gold-ink: #6b4700;
   --violet: #8e8bff;
-  --ink: #14213d;
-  --ink-2: #34425f;
-  --muted: #5f6c87;
-  --line: #e6ecf6;
-  --bg: #ffffff;
-  --soft: #f5f8fe;
+  --ink: #10192e;
+  --ink-2: #34405a;
+  --muted: #5e6882;
+  --line: #e8e2d6;
+  /* 종이: 영수증의 종이색이 서비스 전체의 바탕으로 번져 나온 것. 카드는 그 위에 얹은 흰 종이다 */
+  --paper: #fbf8f2;
+  --paper-2: #f4efe6;
+  --bg: var(--paper);
+  --soft: #f6f2ea;
   --navy: #0b1224;
   --success: #12805c;
   --success-soft: #e2f6ee;
   --danger: #d6336c;
 
-  --grad: linear-gradient(120deg, #2f6bea 0%, #8fa8ff 48%, #ff8fb8 100%);
-  --grad-btn: linear-gradient(120deg, #2f6bea, #6c8fff 55%, #ff7fb0);
-  --grad-soft: linear-gradient(120deg, #eaf2ff 0%, #f4eeff 50%, #ffeaf3 100%);
+  --grad: linear-gradient(120deg, #2a5bd7 0%, #8d9df2 48%, #f5a58c 100%);
+  --grad-btn: linear-gradient(120deg, #2a5bd7, #6a84ee 58%, #f29a8e);
+  --grad-soft: linear-gradient(120deg, #eef2fb 0%, #f4f0f8 50%, #fbeee8 100%);
   /* 그림자는 3단계만 쓴다: 놓여 있음(sm) → 떠 있음(기본) → 들어 올림(lg, hover·모달) */
-  --shadow-sm: 0 0 0 1px rgba(20, 33, 61, 0.04), 0 1px 2px rgba(20, 33, 61, 0.05), 0 4px 12px rgba(20, 33, 61, 0.04);
-  --shadow: 0 0 0 1px rgba(20, 33, 61, 0.03), 0 2px 4px rgba(20, 33, 61, 0.04), 0 12px 32px rgba(47, 80, 160, 0.1);
-  --shadow-lg: 0 0 0 1px rgba(20, 33, 61, 0.03), 0 8px 16px rgba(20, 33, 61, 0.05), 0 28px 64px rgba(47, 80, 160, 0.18);
-  --r: 20px;
+  /* 머리카락 선(잉크 7%) + 아주 길고 옅은 그림자. 광원은 하나(위), 그림자 색은 종이처럼 따뜻하게 */
+  --shadow-sm: 0 0 0 1px rgba(16, 25, 46, 0.07), 0 1px 2px rgba(16, 25, 46, 0.03), 0 8px 20px -8px rgba(72, 54, 24, 0.08);
+  --shadow: 0 0 0 1px rgba(16, 25, 46, 0.06), 0 2px 4px rgba(16, 25, 46, 0.03), 0 28px 56px -20px rgba(72, 54, 24, 0.16);
+  --shadow-lg: 0 0 0 1px rgba(16, 25, 46, 0.05), 0 10px 20px -6px rgba(16, 25, 46, 0.06), 0 48px 96px -28px rgba(72, 54, 24, 0.26);
+  --r: 24px;
 
   /* 모션 — 길이 3단계 + 이징 3종. 컴포넌트에서 임의의 ms·cubic-bezier 를 새로 만들지 않는다. */
   --dur-1: 120ms; /* 눌림·색 변화 */
   --dur-2: 220ms; /* hover 들림·토글 */
   --dur-3: 420ms; /* 등장·패널 전환 */
+  --dur-4: 520ms; /* 화면 전환 */
   --motion-out: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --motion-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -58,21 +64,23 @@
   --popover-foreground: var(--ink);
   --primary: var(--blue-deep);
   --primary-foreground: #ffffff;
-  --secondary: #f0f4fa;
+  --secondary: #f3eee5;
   --secondary-foreground: var(--ink-2);
-  --muted-bg: #f0f4fa;
+  --muted-bg: #f3eee5;
   --muted-foreground: var(--muted);
   --accent: var(--blue-soft);
   --accent-foreground: var(--blue-deep);
   --destructive: var(--danger);
   --border: var(--line);
-  --input: #d9e1f0;
+  --input: #ddd6c9;
   --ring: var(--blue);
-  --radius: 0.875rem;
+  --radius: 1rem;
 }
 
 @theme inline {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  /* 제목의 세리프: 잡지 · 문구점의 인상. 제목에만 쓴다(본문 · UI 는 산세리프 그대로) */
+  --font-serif: var(--font-serif-kr), "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", Batang, Georgia, serif;
   --font-round: var(--font-jua), "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 
   /* 굵기 — Pretendard 는 가변 서체라 중간값을 쓸 수 있다. 화면 전반의 font-bold/extrabold 를
@@ -103,6 +111,8 @@
   --color-ink-2: var(--ink-2);
   --color-line: var(--line);
   --color-soft: var(--soft);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
   --color-navy: var(--navy);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -196,7 +206,7 @@
     font-size: 1rem;
     color: var(--ink);
     background: var(--bg);
-    line-height: 1.6;
+    line-height: 1.7;
     letter-spacing: -0.011em;
     word-break: keep-all;
     overflow-wrap: break-word;
@@ -208,12 +218,16 @@
   }
   /* 제목은 클수록 자간을 더 좁히고 행간을 더 붙인다 */
   h1 {
-    letter-spacing: -0.04em;
-    line-height: 1.16;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
   }
   h2 {
-    letter-spacing: -0.034em;
-    line-height: 1.24;
+    letter-spacing: -0.026em;
+    line-height: 1.28;
+  }
+  /* 세리프는 화면의 큰 제목에만: h1, 그리고 font-serif 를 붙인 섹션 제목. 카드 안의 작은 제목은 UI 글꼴 그대로 */
+  h1 {
+    font-family: var(--font-serif);
   }
   h3, h4 {
     letter-spacing: -0.024em;
@@ -257,7 +271,7 @@
   /* 얇고 조용한 스크롤바 */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #cfd8e8 transparent;
+    scrollbar-color: #d6cebf transparent;
   }
   input[type="range"].jj-range {
     -webkit-appearance: none;
@@ -265,7 +279,7 @@
     width: 100%;
     height: 10px;
     border-radius: 10px;
-    background: linear-gradient(90deg, #2f6bea, #ff8fb8);
+    background: linear-gradient(90deg, #2a5bd7, #f5a58c);
     outline-offset: 6px;
   }
   input[type="range"].jj-range::-webkit-slider-thumb {
@@ -275,7 +289,7 @@
     border-radius: 50%;
     background: #fff;
     border: 3px solid var(--blue-deep);
-    box-shadow: 0 4px 12px rgba(47, 107, 234, 0.35);
+    box-shadow: 0 4px 12px rgba(42, 91, 215, 0.3);
     cursor: grab;
   }
   input[type="range"].jj-range::-moz-range-thumb {
@@ -341,9 +355,9 @@
 
 @utility bg-hero {
   background:
-    radial-gradient(640px 520px at 0% 0%, #dce8ff 0, rgba(220, 232, 255, 0) 70%),
-    radial-gradient(600px 520px at 100% 8%, #ffe0ec 0, rgba(255, 224, 236, 0) 70%),
-    radial-gradient(520px 420px at 50% 100%, #eee8ff 0, rgba(238, 232, 255, 0) 70%);
+    radial-gradient(760px 560px at 0% 0%, rgba(42, 91, 215, 0.07) 0, rgba(42, 91, 215, 0) 70%),
+    radial-gradient(680px 540px at 100% 6%, rgba(245, 165, 140, 0.1) 0, rgba(245, 165, 140, 0) 70%),
+    var(--paper);
 }
 
 /* ── 영수증: 서비스의 시그니처. 코스는 "예산 안에서 끝나는 하루의 영수증"이다 ──
@@ -366,7 +380,7 @@
 
 /* 마스크는 그림자까지 잘라 내므로, 그림자는 바깥 래퍼에 둔다 */
 @utility receipt-wrap {
-  filter: drop-shadow(0 1px 1px rgba(20, 33, 61, 0.06)) drop-shadow(0 18px 40px rgba(47, 80, 160, 0.16));
+  filter: drop-shadow(0 1px 1px rgba(16, 25, 46, 0.07)) drop-shadow(0 22px 44px rgba(72, 54, 24, 0.16));
 }
 
 @utility receipt-rule {
@@ -384,7 +398,7 @@
 }
 
 @utility bg-soft-band {
-  background: linear-gradient(180deg, #fff 0%, var(--soft) 14%, var(--soft) 86%, #fff 100%);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 14%, var(--paper-2) 86%, var(--paper) 100%);
 }
 
 @utility bg-premium {
@@ -404,7 +418,7 @@
 }
 
 @utility skeleton-shimmer {
-  background: linear-gradient(90deg, #eef2f8 25%, #f7f9fd 37%, #eef2f8 63%);
+  background: linear-gradient(90deg, #efe9de 25%, #f8f4ec 37%, #efe9de 63%);
   background-size: 400% 100%;
   animation: var(--animate-shimmer);
 }
@@ -422,7 +436,7 @@
 
 /* ── 지도 (Leaflet) ─────────────────────────────────────────── */
 .jj-map {
-  background: #eef2f8;
+  background: #efeae0;
   font-family: var(--font-sans);
   z-index: 0; /* Leaflet 의 내부 z-index(400~1000)가 헤더·하단 바 위로 올라오지 않게 가둔다 */
 }

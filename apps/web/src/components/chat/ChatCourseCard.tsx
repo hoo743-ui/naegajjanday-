@@ -40,7 +40,7 @@ export function ChatCourseCard({ course }: { course: Course }) {
           <span className="text-[13px] font-extrabold text-muted-foreground">총 예상 지출</span>
           <b className="tabular text-xl font-extrabold tracking-tight text-ink">{won(totals.price)}</b>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#EEF2F8]" aria-hidden>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-paper-2" aria-hidden>
           <div className={cn("h-full rounded-full", over ? "bg-pink-deep" : "bg-grad")} style={{ width: `${used}%` }} />
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12.5px] font-extrabold">

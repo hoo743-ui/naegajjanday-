@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Jua } from "next/font/google";
+import { Jua, Noto_Serif_KR } from "next/font/google";
 import { MockBadge } from "@/components/MockBadge";
 import { Providers } from "./providers";
 // 본문 서체: Pretendard Variable 셀프호스팅. 한글은 unicode-range 조각(dynamic subset)으로 필요한 글자만 받는다.
@@ -13,6 +13,15 @@ const jua = Jua({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-jua",
+  preload: false,
+});
+
+/** 제목에만 쓰는 세리프. 필요한 굵기 둘만 싣고, 한글은 unicode-range 조각으로 쓰는 글자만 받는다. */
+const serif = Noto_Serif_KR({
+  weight: ["600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-serif-kr",
   preload: false,
 });
 
@@ -37,12 +46,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#2F6BEA",
+  themeColor: "#FBF8F2",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={jua.variable}>
+    <html lang="ko" className={`${jua.variable} ${serif.variable}`}>
       <body>
         <a
           href="#main"

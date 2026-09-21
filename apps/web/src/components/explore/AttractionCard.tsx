@@ -145,7 +145,7 @@ export function AttractionCard({ item }: { item: Attraction }) {
         {item.tags.length > 0 ? (
           <ul aria-label="태그" className="flex flex-wrap gap-1.5">
             {item.tags.map((tag) => (
-              <li key={tag} className="rounded-full bg-[#F0F4FA] px-2.5 py-1 text-xs font-bold text-ink-2">
+              <li key={tag} className="rounded-full bg-soft px-2.5 py-1 text-xs font-bold text-ink-2">
                 {tag}
               </li>
             ))}

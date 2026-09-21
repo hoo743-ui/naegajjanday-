@@ -123,7 +123,7 @@ export function EventsStrip({ region }: { region?: string }) {
     <section aria-labelledby="events-heading" className="bg-grad-soft rounded-[32px] p-5 sm:p-7">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 id="events-heading" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+          <h2 id="events-heading" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl font-serif">
             이번 주 이벤트
           </h2>
           <p className="text-sm font-bold text-muted-foreground">오늘부터 7일 안에 열리는 축제·전시·공연이에요.</p>

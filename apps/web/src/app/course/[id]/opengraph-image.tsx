@@ -68,7 +68,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
 
         {/* 오른쪽: 영수증 */}
-        <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 440, padding: "40px 36px", background: "#fffdf7", boxShadow: "0 24px 60px rgba(47,80,160,.2)" }}>
+        <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 440, padding: "40px 36px", background: "#fffdf7", boxShadow: "0 24px 60px rgba(72,54,24,.16)" }}>
           <Teeth at="top" />
           <div style={{ display: "flex", justifyContent: "center", fontSize: 26, fontWeight: 800 }}>내가짠데이</div>
           <div style={{ display: "flex", margin: "18px 0", borderTop: "3px dashed rgba(20,33,61,.22)" }} />

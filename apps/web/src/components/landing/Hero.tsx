@@ -88,13 +88,13 @@ export function Hero() {
             />
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2" role="group" aria-label="인원">
-                <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-10 place-items-center rounded-xl bg-[#F0F4FA] transition-colors hover:bg-line disabled:opacity-40">
+                <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-10 place-items-center rounded-xl bg-soft transition-colors hover:bg-line disabled:opacity-40">
                   <Minus aria-hidden className="size-4" />
                 </button>
                 <output aria-live="polite" className="tabular min-w-12 text-center text-[17px] font-extrabold">
                   {party}명
                 </output>
-                <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-10 place-items-center rounded-xl bg-[#F0F4FA] transition-colors hover:bg-line disabled:opacity-40">
+                <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-10 place-items-center rounded-xl bg-soft transition-colors hover:bg-line disabled:opacity-40">
                   <Plus aria-hidden className="size-4" />
                 </button>
                 <span className="tabular ml-1 text-[13px] font-bold text-muted-foreground">1인 {Math.floor(budget / party).toLocaleString("ko-KR")}원</span>

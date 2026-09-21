@@ -45,7 +45,7 @@ function Frame({ label, height, children }: { label: string; height: number; chi
 }
 
 const tooltipStyle = {
-  contentStyle: { borderRadius: 14, border: "1px solid #E6ECF6", boxShadow: "0 12px 32px rgba(47,80,160,.14)", fontSize: 13, fontWeight: 700 },
+  contentStyle: { borderRadius: 14, border: "1px solid #E6ECF6", boxShadow: "0 12px 32px rgba(72,54,24,.12)", fontSize: 13, fontWeight: 700 },
   labelStyle: { color: "#14213D", fontWeight: 800, marginBottom: 4 },
 } as const;
 

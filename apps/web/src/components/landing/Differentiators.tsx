@@ -87,7 +87,7 @@ export function Differentiators() {
       <div className="wrap">
         <div className="text-center">
           <span className="inline-flex rounded-full bg-pink-soft px-3.5 py-2 text-sm font-extrabold text-pink-deep">무엇이 다른가요</span>
-          <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold">
+          <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold font-serif">
             아끼는 것이 아니라,
             <br />
             <span className="hl">예산 안에서 더 잘 즐기게</span> 합니다

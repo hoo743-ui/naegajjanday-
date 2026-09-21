@@ -165,7 +165,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               </span>
             ) : null}
             {place.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="rounded-full bg-[#F0F4FA] px-2 py-0.5 text-ink-2">
+              <span key={tag} className="rounded-full bg-soft px-2 py-0.5 text-ink-2">
                 {tag}
               </span>
             ))}
@@ -215,7 +215,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               setStreet((v) => !v);
               if (!street) track("place_link_clicked", { course_id: courseId, position: stop.position, to: "roadview" });
             }}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-[#F0F4FA] hover:text-ink"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-soft hover:text-ink"
           >
             <Eye aria-hidden className="size-3.5" />
             {street ? "거리뷰 닫기" : "가게 앞 거리뷰"}
@@ -238,17 +238,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           target="_blank"
           rel="noreferrer"
           onClick={() => track("place_link_clicked", { course_id: courseId, position: stop.position, to: "kakaomap" })}
-          className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-[#F0F4FA] hover:text-ink"
+          className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-soft hover:text-ink"
         >
           실제 사진·메뉴 보기
           <ExternalLink aria-hidden className="size-3.5" />
         </a>
         {editable ? (
           <div className="flex items-center gap-1.5">
-            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1 || !canMoveUp} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1 || !canMoveUp} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
               <ChevronUp aria-hidden className="size-4" />
             </button>
-            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count || !canMoveDown} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-[#F0F4FA] disabled:opacity-30">
+            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count || !canMoveDown} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
               <ChevronDown aria-hidden className="size-4" />
             </button>
             <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} />
