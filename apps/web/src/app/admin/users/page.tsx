@@ -1,17 +1,38 @@
 "use client";
 
+import Link from "next/link";
 import { CalendarRange, UserPlus, Users } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
 import { StatCard } from "@/components/admin/StatCard";
 import { BarsChart, DonutChart, TrendChart, heatStyle } from "@/components/admin/charts";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUserAnalytics } from "@/lib/api/admin";
+import { isNotReady, useUserAnalytics } from "@/lib/api/admin";
 import { dateRange, num, percent } from "@/lib/format";
 
 export default function AdminUsersPage() {
   const q = useUserAnalytics();
 
+  // 501 NOT_IMPLEMENTED: 고장이 아니라 아직 없는 통계다 (API DB 는 코스 생성만 본다 — DAU·유입은 제품 분석 도구가 있어야 한다)
+  if (isNotReady(q.error)) {
+    return (
+      <>
+        <AdminPageHeader title="사용자 분석" description="활성 사용자, 유입, 주차별 리텐션" />
+        <Panel>
+          <EmptyState
+            mood="think"
+            title="아직 준비 중인 통계예요"
+            description="사용자 분석은 제품 분석 도구(PostHog·GA4)를 연결한 뒤에 볼 수 있어요. 그동안 코스 생성·저장 지표는 ‘추천 결과 통계’에서 확인해 주세요."
+          >
+            <Button asChild variant="soft" size="md">
+              <Link href="/admin/recommendations">추천 결과 통계 보기</Link>
+            </Button>
+          </EmptyState>
+        </Panel>
+      </>
+    );
+  }
   if (q.isError) {
     return (
       <>

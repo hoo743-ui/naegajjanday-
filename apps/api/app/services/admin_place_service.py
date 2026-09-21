@@ -50,7 +50,7 @@ def snapshot(place: Place) -> dict[str, Any]:
     return {f: getattr(place, f) for f in SNAPSHOT_FIELDS}
 
 
-def place_out(p: Place) -> dto.AdminPlaceOut:
+def place_out(p: Place, tags: dict[str, float] | None = None) -> dto.AdminPlaceOut:
     return dto.AdminPlaceOut(
         id=p.public_id,
         name=p.name,
@@ -64,6 +64,7 @@ def place_out(p: Place) -> dto.AdminPlaceOut:
         is_free=p.is_free,
         data_quality=p.data_quality,
         sources=sorted({s.provider for s in p.sources}),
+        tags=tags or {},
         created_at=as_utc(p.created_at) or utcnow(),
     )
 
@@ -79,6 +80,25 @@ class AdminPlaceService:
         if place is None:
             raise errors.PlaceNotFound()
         return place
+
+    async def _tags(self, place_ids: Sequence[int]) -> dict[int, dict[str, float]]:
+        """Queried, not read off `Place.place_tags`: `_set_tags` rewrites the rows with bulk SQL, and with
+        `expire_on_commit=False` a loaded collection would keep showing the old tags."""
+        out: dict[int, dict[str, float]] = {i: {} for i in place_ids}
+        if not place_ids:
+            return out
+        rows = await self._s.execute(
+            select(PlaceTag.place_id, Tag.name, PlaceTag.weight)
+            .join(Tag, Tag.id == PlaceTag.tag_id)
+            .where(PlaceTag.place_id.in_(place_ids))
+            .order_by(PlaceTag.weight.desc(), Tag.name)
+        )
+        for place_id, name, weight in rows.all():
+            out[place_id][name] = weight
+        return out
+
+    async def _out(self, place: Place) -> dto.AdminPlaceOut:
+        return place_out(place, (await self._tags([place.id]))[place.id])
 
     async def _category(self, code: str) -> Category:
         cat = await self._s.scalar(select(Category).where(Category.code == code))
@@ -118,8 +138,9 @@ class AdminPlaceService:
             stmt = stmt.where(Place.id < after)
         rows = (await self._s.scalars(stmt.limit(limit + 1))).all()
         page = rows[:limit]
+        tags = await self._tags([p.id for p in page])
         return dto.AdminPlaceList(
-            items=[place_out(p) for p in page],
+            items=[place_out(p, tags[p.id]) for p in page],
             next_cursor=encode_cursor(page[-1].id) if len(rows) > limit and page else None,
         )
 
@@ -134,7 +155,7 @@ class AdminPlaceService:
             place.last_verified_at = utcnow()
         self._revise(place, action, before, note)
         await self._s.commit()
-        return place_out(place)
+        return await self._out(place)
 
     async def bulk_approve(self, ids: Sequence[str]) -> dto.BulkResult:
         rows = (await self._s.scalars(select(Place).where(Place.public_id.in_(ids)).options(*LOAD))).all()
@@ -187,7 +208,7 @@ class AdminPlaceService:
         place = await self._get(place.public_id)
         self._revise(place, "create", None)
         await self._s.commit()
-        return place_out(place)
+        return await self._out(place)
 
     async def _set_tags(self, place_id: int, tags: dict[str, float]) -> None:
         from sqlalchemy import delete
@@ -209,6 +230,10 @@ class AdminPlaceService:
             await self._set_tags(place.id, tags)
         for key, value in data.items():
             setattr(place, key, value)
+        if (
+            "address" in data
+        ):  # every reader shows `road_address or address`, so the operator's value has to win
+            place.road_address = None
         if "price_per_person" in data:  # an operator-entered price replaces the category prior
             place.price_is_estimated = False
         if place.is_free:
@@ -218,7 +243,7 @@ class AdminPlaceService:
             place.approved_at = place.approved_at or utcnow()
         self._revise(place, "edit", before)
         await self._s.commit()
-        return place_out(await self._get(public_id))
+        return await self._out(await self._get(public_id))
 
     async def merge(self, public_id: str, body: dto.MergeRequest) -> dto.AdminPlaceOut:
         """Duplicate merge: sources and course history move to the survivor, the duplicate is hidden."""
@@ -240,7 +265,7 @@ class AdminPlaceService:
         self._revise(duplicate, "merge", dup_before, f"merged into {survivor.public_id}")
         self._revise(survivor, "merge", before, body.note or f"absorbed {duplicate.public_id}")
         await self._s.commit()
-        return place_out(await self._get(public_id))
+        return await self._out(await self._get(public_id))
 
     async def revisions(self, public_id: str) -> dto.RevisionList:
         place = await self._get(public_id)

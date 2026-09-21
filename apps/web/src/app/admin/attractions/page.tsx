@@ -75,10 +75,9 @@ export default function AdminAttractionsPage() {
                     lng: v.lng,
                     is_free: v.is_free,
                     price_per_person: v.is_free ? 0 : v.price_per_person,
-                    opening_hours: v.opening_hours || undefined,
                     description: v.description || undefined,
                     tags: v.tags.split(",").map((t) => t.trim()).filter(Boolean),
-                    status: "approved",
+                    // status · 운영 시간은 API 가 받지 않는다: 직접 등록은 서버가 바로 ‘승인됨’으로 만든다
                   },
                   { onSuccess: () => form.reset({ ...DEFAULTS, region: v.region, category: v.category }) },
                 ),
@@ -122,10 +121,10 @@ export default function AdminAttractionsPage() {
               <Field id="a-price" label="1인 가격 (원)" error={errors.price_per_person?.message}>
                 <Input id="a-price" type="number" step={500} inputMode="numeric" disabled={isFree} aria-describedby="a-price-desc" {...form.register("price_per_person", { valueAsNumber: true })} />
               </Field>
-              <Field id="a-hours" label="운영 시간" hint="예: 매일 10:00-18:00, 월 휴무">
-                <Input id="a-hours" aria-describedby="a-hours-desc" {...form.register("opening_hours")} />
+              <Field id="a-hours" label="운영 시간" hint="아직 직접 입력할 수 없어요. 분류별 기본 운영 시간이 적용돼요.">
+                <Input id="a-hours" disabled aria-describedby="a-hours-desc" {...form.register("opening_hours")} />
               </Field>
-              <Field id="a-tags" label="태그" hint="쉼표로 구분. 예: 산책, 조용한, 실내">
+              <Field id="a-tags" label="태그" hint="쉼표로 구분. 태그 목록에 등록된 이름만 쓸 수 있어요. 예: 산책, 조용한, 실내">
                 <Input id="a-tags" aria-describedby="a-tags-desc" {...form.register("tags")} />
               </Field>
               <Field id="a-desc" label="한 줄 소개" error={errors.description?.message} className="sm:col-span-2">
@@ -174,9 +173,9 @@ function ImportPanel({ regions }: { regions: { slug: string; name: string }[] })
             className="block w-full rounded-md border border-dashed border-input bg-soft p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-extrabold file:text-blue-deep"
           />
         </Field>
-        <Field id="i-region" label="지역 (선택)" hint="파일에 지역 열이 없을 때 일괄 지정">
+        <Field id="i-region" label="지역" required hint="파일의 장소가 모두 이 지역으로 들어가요. 지역마다 파일을 나눠 올려 주세요.">
           <select id="i-region" value={region} onChange={(e) => setRegion(e.target.value)} className={nativeSelectClass} aria-describedby="i-region-desc">
-            <option value="">파일 값 사용</option>
+            <option value="">선택</option>
             {regions.map((r) => (
               <option key={r.slug} value={r.slug}>
                 {r.name}
@@ -186,17 +185,24 @@ function ImportPanel({ regions }: { regions: { slug: string; name: string }[] })
         </Field>
         <div aria-live="polite" className="grid gap-2">
           {file && file.size > 10 * 1024 * 1024 ? <FormMessage tone="error">10MB 가 넘어요. 파일을 나눠서 올려 주세요.</FormMessage> : null}
-          {upload.isSuccess ? <FormMessage tone="success">{upload.data.accepted}건을 접수했어요. (잡 {upload.data.job_id}) 처리되면 승인 큐에 나타나요.</FormMessage> : null}
+          {upload.isSuccess ? (
+            <FormMessage tone={upload.data.status === "failed" || upload.data.failed ? "error" : "success"}>
+              {upload.data.created === undefined
+                ? `${upload.data.accepted}건을 접수했어요. (잡 ${upload.data.job_id}) 처리되면 승인 큐에 나타나요.`
+                : `${upload.data.accepted}건을 읽어 ${upload.data.created}곳을 새로 등록하고 ${upload.data.updated ?? 0}곳을 갱신했어요.${upload.data.failed ? ` ${upload.data.failed}건은 실패했어요.` : ""} (잡 ${upload.data.job_id})`}
+            </FormMessage>
+          ) : null}
           {upload.error ? <FormMessage tone="error">{upload.error.detail ?? mascotCopyForError(upload.error).description}</FormMessage> : null}
         </div>
         <Button
           type="button"
           variant="outline"
-          disabled={!file || file.size > 10 * 1024 * 1024 || upload.isPending}
+          disabled={!file || !region || file.size > 10 * 1024 * 1024 || upload.isPending}
           onClick={() =>
             file &&
+            region &&
             upload.mutate(
-              { file, region: region || undefined },
+              { file, region },
               {
                 onSuccess: () => {
                   setFile(null);

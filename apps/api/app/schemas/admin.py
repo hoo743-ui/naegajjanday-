@@ -30,6 +30,9 @@ class AdminPlaceOut(BaseModel):
     is_free: bool
     data_quality: float
     sources: list[str] = Field(default_factory=list)
+    tags: dict[str, float] = Field(
+        default_factory=dict, description="tag name → weight (same shape as the PATCH body)"
+    )
     created_at: datetime
 
 
@@ -142,10 +145,15 @@ class AdminEventOut(BaseModel):
     region: str
     title: str
     category: str | None
+    description: str | None = None
+    address: str | None = None
+    lat: float
+    lng: float
     starts_on: date
     ends_on: date
     is_free: bool
     price: int | None
+    booking_url: str | None = None
     status: str
     provider: str
 

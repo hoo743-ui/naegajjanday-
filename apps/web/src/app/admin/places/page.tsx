@@ -9,7 +9,7 @@ import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
 import { flattenCategories } from "@/components/admin/categories";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Field, FormMessage, nativeSelectClass } from "@/components/admin/Field";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge, statusLabel } from "@/components/admin/StatusBadge";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ const STATUS_TABS: { value: PlaceStatus | "all"; label: string }[] = [
   { value: "approved", label: "승인됨" },
   { value: "rejected", label: "반려" },
   { value: "hidden", label: "숨김" },
+  { value: "closed", label: "폐업" },
   { value: "all", label: "전체" },
 ];
 
@@ -59,7 +60,7 @@ export default function AdminPlacesPage() {
     },
     { key: "region", header: "지역", cell: (p) => p.region?.name ?? "-", hideBelow: "sm" },
     { key: "price", header: "1인 가격", align: "right", cell: (p) => <span className="tabular">{p.is_free ? "무료" : won(p.price_per_person)}</span> },
-    { key: "source", header: "출처", cell: (p) => <code className="text-xs">{p.source}</code>, hideBelow: "md" },
+    { key: "source", header: "출처", cell: (p) => <span className="text-xs">{p.source}</span>, hideBelow: "md" },
     { key: "created", header: "수집일", cell: (p) => <span className="tabular">{dateShort(p.created_at)}</span>, hideBelow: "lg" },
     { key: "status", header: "상태", cell: (p) => <StatusBadge status={p.status} /> },
   ];
@@ -143,12 +144,13 @@ function PlaceDetail({ place, onClose }: { place: AdminPlace; onClose: () => voi
         </SheetTitle>
         <SheetDescription>
           {place.category_name} · {place.region?.name ?? "지역 없음"} · 출처 {place.source}
+          {place.data_quality !== undefined ? ` · 데이터 품질 ${Math.round(place.data_quality * 100)}%` : ""}
           {place.duplicate_of ? ` · ‘${place.duplicate_of.name}’ 과(와) 중복 의심` : ""}
         </SheetDescription>
       </SheetHeader>
 
       <div className="grid gap-5 p-4">
-        <Tabs defaultValue="diff">
+        <Tabs defaultValue={place.source_raw || place.normalized ? "diff" : "edit"}>
           <TabsList>
             <TabsTrigger value="diff">원본 비교</TabsTrigger>
             <TabsTrigger value="edit">장소 수정</TabsTrigger>
@@ -191,7 +193,7 @@ const show = (value: unknown): string => (value === undefined ? "—" : typeof v
 /** 수집 원본(source_raw) 과 정규화 결과(normalized) 를 키 단위로 나란히 놓고, 달라진 키를 강조한다 */
 function RawDiff({ raw, normalized }: { raw?: Record<string, unknown>; normalized?: Record<string, unknown> }) {
   const keys = useMemo(() => [...new Set([...Object.keys(raw ?? {}), ...Object.keys(normalized ?? {})])].sort(), [raw, normalized]);
-  if (keys.length === 0) return <EmptyState size="sm" title="비교할 원본 데이터가 없어요" description="직접 등록한 장소이거나 원본을 보관하지 않는 출처예요." />;
+  if (keys.length === 0) return <EmptyState size="sm" title="비교할 원본 데이터가 없어요" description="수집 원본 비교는 아직 준비 중이에요. 지금은 ‘장소 수정’ 탭에서 정규화된 값을 확인하고 고칠 수 있어요." />;
   const changed = keys.filter((k) => show(raw?.[k]) !== show(normalized?.[k])).length;
 
   return (
@@ -232,6 +234,26 @@ function RawDiff({ raw, normalized }: { raw?: Record<string, unknown>; normalize
   );
 }
 
+/** 수정 이력의 action · 필드명은 API enum/컬럼명이다 → 운영자에게는 번역해서 보여준다 */
+const ACTION_LABEL: Record<string, string> = { create: "등록", approve: "승인", reject: "반려", edit: "수정", merge: "병합" };
+const FIELD_LABEL: Record<string, string> = {
+  name: "이름",
+  status: "상태",
+  lat: "위도",
+  lng: "경도",
+  address: "주소",
+  phone: "전화",
+  description: "소개",
+  thumbnail_url: "대표 이미지",
+  price_per_person: "1인 가격",
+  is_free: "무료 여부",
+  category: "분류",
+  category_id: "분류 (내부 번호)",
+  tags: "태그",
+};
+const showField = (field: string, value: unknown): string =>
+  value === null || value === undefined ? "—" : field === "status" && typeof value === "string" ? statusLabel(value) : typeof value === "boolean" ? (value ? "예" : "아니오") : show(value);
+
 function Revisions({ id }: { id: string }) {
   const revisions = usePlaceRevisions(id);
   if (revisions.isPending) return <Skeleton className="h-24 rounded-xl" />;
@@ -242,12 +264,14 @@ function Revisions({ id }: { id: string }) {
       {revisions.data.items.map((r) => (
         <li key={r.id} className="rounded-xl border p-3 text-[13px]">
           <p className="font-extrabold">
+            {r.action ? `${ACTION_LABEL[r.action] ?? r.action} · ` : ""}
             {r.actor} <span className="tabular font-medium text-muted-foreground">· {dateShort(r.created_at)}</span>
           </p>
+          {r.note ? <p className="mt-0.5 text-ink-2">메모: {r.note}</p> : null}
           <ul className="mt-1 grid gap-0.5 text-ink-2">
             {Object.entries(r.changes).map(([field, c]) => (
               <li key={field} className="break-all">
-                <code className="text-xs">{field}</code>: <span className="line-through">{show(c.from)}</span> → <b className="text-ink">{show(c.to)}</b>
+                <span className="text-xs font-bold">{FIELD_LABEL[field] ?? field}</span>: <span className="line-through">{showField(field, c.from)}</span> → <b className="text-ink">{showField(field, c.to)}</b>
               </li>
             ))}
           </ul>
@@ -265,7 +289,7 @@ const editSchema = z.object({
   price_per_person: z.number({ error: "숫자로 입력해 주세요" }).int().min(0, "0 이상이어야 해요").max(1_000_000),
   is_free: z.boolean(),
   tags: z.string(),
-  status: z.enum(["pending", "approved", "rejected", "hidden"]),
+  status: z.enum(["pending", "approved", "rejected", "hidden", "closed"]),
 });
 type EditValues = z.infer<typeof editSchema>;
 
@@ -276,7 +300,7 @@ function PlaceEditForm({ place }: { place: AdminPlace }) {
     resolver: zodResolver(editSchema),
     defaultValues: { name: place.name, category: place.category, address: place.address, price_per_person: place.price_per_person ?? 0, is_free: place.is_free, tags: place.tags.join(", "), status: place.status },
   });
-  const { errors, isDirty } = form.formState;
+  const { errors, isDirty, dirtyFields } = form.formState;
   const options = flattenCategories(categories.data?.items ?? []);
 
   return (
@@ -285,8 +309,22 @@ function PlaceEditForm({ place }: { place: AdminPlace }) {
       className="grid gap-3.5"
       onSubmit={form.handleSubmit((v) =>
         update.mutate(
-          { id: place.id, input: { ...v, price_per_person: v.is_free ? 0 : v.price_per_person, tags: v.tags.split(",").map((t) => t.trim()).filter(Boolean) } },
-          { onSuccess: (_saved, vars) => form.reset({ ...v, tags: (vars.input.tags ?? []).join(", ") }) },
+          {
+            id: place.id,
+            // PATCH 는 "보낸 것만 바꾼다" → 손댄 항목만 보낸다. (가격을 모르는 곳을 다른 항목만 고쳐 저장해도 0원이 되지 않게)
+            input: {
+              name: dirtyFields.name ? v.name : undefined,
+              category: dirtyFields.category ? v.category : undefined,
+              address: dirtyFields.address ? v.address : undefined,
+              status: dirtyFields.status ? v.status : undefined,
+              is_free: dirtyFields.is_free ? v.is_free : undefined,
+              price_per_person: v.is_free ? (dirtyFields.is_free ? 0 : undefined) : dirtyFields.price_per_person || dirtyFields.is_free ? v.price_per_person : undefined,
+              // 태그는 통째로 교체된다 → 손댔을 때만 보내고, 기존 태그의 가중치는 그대로 돌려보낸다
+              tags: dirtyFields.tags ? v.tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+              tag_weights: place.tag_weights,
+            },
+          },
+          { onSuccess: (_saved, vars) => form.reset({ ...v, tags: vars.input.tags ? vars.input.tags.join(", ") : v.tags }) },
         ),
       )}
     >
@@ -316,13 +354,14 @@ function PlaceEditForm({ place }: { place: AdminPlace }) {
             <option value="approved">승인됨</option>
             <option value="rejected">반려</option>
             <option value="hidden">숨김</option>
+            <option value="closed">폐업</option>
           </select>
         </Field>
       </div>
       <label className="flex items-center gap-2 text-sm font-bold text-ink-2">
         <input type="checkbox" className="size-4 accent-[#2F6BEA]" {...form.register("is_free")} /> 무료 장소 (공원·산책로 등)
       </label>
-      <Field id="p-tags" label="태그" hint="쉼표로 구분">
+      <Field id="p-tags" label="태그" hint="쉼표로 구분. 태그 목록에 등록된 이름만 쓸 수 있어요.">
         <Input id="p-tags" aria-describedby="p-tags-desc" {...form.register("tags")} />
       </Field>
 

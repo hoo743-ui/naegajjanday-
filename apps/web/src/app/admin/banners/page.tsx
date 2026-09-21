@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useAdminBanners, useAdminRegions, useDeleteBanner, useSaveBanner } from "@/lib/api/admin";
+import { kstDate, useAdminBanners, useAdminRegions, useDeleteBanner, useSaveBanner } from "@/lib/api/admin";
+import { IS_MOCKING } from "@/lib/api/client";
 import type { AdminBanner } from "@/lib/api/types";
-import { dateRange, num, percent } from "@/lib/format";
+import { dateRange, dateShort, num, percent } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 
 /** 노출 위치는 프론트에 실제로 슬롯이 있는 곳만 고를 수 있다 (화면 구조에 묶인 값) */
@@ -25,21 +26,29 @@ const PLACEMENTS = [
 ];
 const placementLabel = (value: string) => PLACEMENTS.find((p) => p.value === value)?.label ?? value;
 
+/** 실제 API 의 배너에는 부제목 필드가 없다 (보내면 422) → 목 모드에서만 입력을 연다 */
+const SUBTITLE_SUPPORTED = IS_MOCKING;
+
+/** 시작·종료는 비어 있을 수 있다 (null = 기한 없음) */
+const periodLabel = (from: string | null, to: string | null) => (from && to ? dateRange(from, to) : from ? `${dateShort(from)} ~` : to ? `~ ${dateShort(to)}` : "기한 없음");
+
 const linkSchema = z.string().trim().min(1, "이동할 주소를 입력해 주세요").refine((v) => (v.startsWith("/") && !v.startsWith("//")) || /^https:\/\//.test(v), "‘/경로’ 또는 https:// 주소만 쓸 수 있어요");
 
 const schema = z
   .object({
     title: z.string().trim().min(1, "제목을 입력해 주세요").max(40, "40자까지 쓸 수 있어요"),
     subtitle: z.string().trim().max(60, "60자까지 쓸 수 있어요"),
-    image_url: z.union([z.literal(""), z.url("주소 형식을 확인해 주세요")]),
+    // API `BannerIn.image_url` 은 필수다
+    image_url: z.string().trim().min(1, "이미지 주소를 입력해 주세요").refine((v) => /^https:\/\//.test(v), "https:// 로 시작하는 주소만 쓸 수 있어요"),
     link_url: linkSchema,
     placement: z.string().min(1),
     region: z.string(),
-    starts_at: z.string().min(1, "시작일을 골라 주세요"),
-    ends_at: z.string().min(1, "종료일을 골라 주세요"),
+    // 비워 두면 기한 없이 노출된다 (API 는 null 을 받는다)
+    starts_at: z.string(),
+    ends_at: z.string(),
     is_active: z.boolean(),
   })
-  .refine((v) => v.ends_at >= v.starts_at, { path: ["ends_at"], message: "종료일이 시작일보다 빨라요" });
+  .refine((v) => !v.starts_at || !v.ends_at || v.ends_at >= v.starts_at, { path: ["ends_at"], message: "종료일이 시작일보다 빨라요" });
 type Values = z.infer<typeof schema>;
 
 const EMPTY: Values = { title: "", subtitle: "", image_url: "", link_url: "", placement: "home", region: "", starts_at: "", ends_at: "", is_active: true };
@@ -50,6 +59,9 @@ export default function AdminBannersPage() {
   const remove = useDeleteBanner();
   const [editing, setEditing] = useState<AdminBanner | "new" | null>(null);
   const [removing, setRemoving] = useState<AdminBanner | null>(null);
+  const regions = useAdminRegions();
+  const regionName = (slug: string) => regions.data?.items.find((r) => r.slug === slug)?.name ?? slug;
+  const hasStats = banners.data?.items.some((b) => b.impressions !== null) ?? false;
 
   const columns: Column<AdminBanner>[] = [
     {
@@ -62,10 +74,15 @@ export default function AdminBannersPage() {
         </span>
       ),
     },
-    { key: "placement", header: "위치", hideBelow: "sm", cell: (b) => `${placementLabel(b.placement)}${b.region ? ` · ${b.region}` : ""}` },
-    { key: "period", header: "기간", hideBelow: "md", cell: (b) => <span className="tabular whitespace-nowrap">{dateRange(b.starts_at, b.ends_at)}</span> },
-    { key: "imp", header: "노출", align: "right", hideBelow: "lg", cell: (b) => <span className="tabular">{num(b.impressions)}</span> },
-    { key: "ctr", header: "클릭률", align: "right", cell: (b) => <span className="tabular">{b.impressions ? percent(b.clicks / b.impressions, 1) : "-"}</span> },
+    { key: "placement", header: "위치", hideBelow: "sm", cell: (b) => `${placementLabel(b.placement)}${b.region ? ` · ${regionName(b.region)}` : ""}` },
+    { key: "period", header: "기간", hideBelow: "md", cell: (b) => <span className="tabular whitespace-nowrap">{periodLabel(b.starts_at, b.ends_at)}</span> },
+    // 노출·클릭은 API 가 집계해 줄 때만 열을 만든다 (없는 값을 0 으로 보이지 않게)
+    ...(hasStats
+      ? ([
+          { key: "imp", header: "노출", align: "right", hideBelow: "lg", cell: (b) => <span className="tabular">{b.impressions === null ? "-" : num(b.impressions)}</span> },
+          { key: "ctr", header: "클릭률", align: "right", cell: (b) => <span className="tabular">{b.impressions && b.clicks !== null ? percent(b.clicks / b.impressions, 1) : "-"}</span> },
+        ] satisfies Column<AdminBanner>[])
+      : []),
     {
       key: "active",
       header: "노출 중",
@@ -137,7 +154,7 @@ export default function AdminBannersPage() {
         <DialogContent className="rounded-card">
           <DialogHeader>
             <DialogTitle>이 배너를 삭제할까요?</DialogTitle>
-            <DialogDescription>{removing?.title} · 노출·클릭 기록도 함께 사라져요.</DialogDescription>
+            <DialogDescription>{removing?.title} · 삭제하면 되돌릴 수 없어요.</DialogDescription>
           </DialogHeader>
           {remove.error ? <FormMessage tone="error">{mascotCopyForError(remove.error).description}</FormMessage> : null}
           <DialogFooter>
@@ -160,11 +177,13 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: banner
-      ? { title: banner.title, subtitle: banner.subtitle ?? "", image_url: banner.image_url ?? "", link_url: banner.link_url, placement: banner.placement, region: banner.region ?? "", starts_at: banner.starts_at.slice(0, 10), ends_at: banner.ends_at.slice(0, 10), is_active: banner.is_active }
+      ? { title: banner.title, subtitle: banner.subtitle ?? "", image_url: banner.image_url ?? "", link_url: banner.link_url, placement: banner.placement, region: banner.region ?? "", starts_at: kstDate(banner.starts_at), ends_at: kstDate(banner.ends_at), is_active: banner.is_active }
       : EMPTY,
   });
   const { errors } = form.formState;
   const preview = form.watch();
+  // 실제 API 의 `BannerPatch` 는 region 을 받지 않는다
+  const regionLocked = banner !== null && !IS_MOCKING;
 
   return (
     <form
@@ -172,32 +191,33 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
       className="grid gap-4"
       onSubmit={form.handleSubmit((v) =>
         save.mutate(
-          { id: banner?.id, input: { title: v.title, subtitle: v.subtitle || null, image_url: v.image_url || null, link_url: v.link_url, placement: v.placement, region: v.region || null, starts_at: v.starts_at, ends_at: v.ends_at, is_active: v.is_active } },
+          // 날짜(YYYY-MM-DD)는 어댑터가 KST 하루의 시작·끝 시각으로 바꿔 보낸다. 빈 값 = 기한 없음(null)
+          { id: banner?.id, input: { title: v.title, subtitle: v.subtitle || null, image_url: v.image_url, link_url: v.link_url, placement: v.placement, region: v.region || null, starts_at: v.starts_at || null, ends_at: v.ends_at || null, is_active: v.is_active } },
           { onSuccess: onDone },
         ),
       )}
     >
       <DialogHeader>
         <DialogTitle>{banner ? "배너 수정" : "배너 만들기"}</DialogTitle>
-        <DialogDescription>이미지가 없으면 브랜드 그라디언트 위에 글자만 보여요.</DialogDescription>
+        <DialogDescription>이미지 주소는 꼭 넣어야 해요. 기간을 비워 두면 기한 없이 노출돼요.</DialogDescription>
       </DialogHeader>
 
       <div aria-hidden className="bg-grad-soft relative overflow-hidden rounded-2xl bg-cover bg-center p-5" style={preview.image_url && !errors.image_url ? { backgroundImage: `linear-gradient(90deg,rgba(255,255,255,.92),rgba(255,255,255,.35)),url("${encodeURI(preview.image_url)}")` } : undefined}>
         <p className="text-xs font-extrabold text-blue-deep">미리보기 · {placementLabel(preview.placement)}</p>
         <p className="mt-1 text-lg font-extrabold tracking-tight">{preview.title || "배너 제목"}</p>
-        <p className="text-sm text-ink-2">{preview.subtitle || "부제목"}</p>
+        {SUBTITLE_SUPPORTED ? <p className="text-sm text-ink-2">{preview.subtitle || "부제목"}</p> : null}
       </div>
 
       <Field id="b-title" label="제목" required error={errors.title?.message}>
         <Input id="b-title" aria-invalid={Boolean(errors.title)} aria-describedby="b-title-desc" {...form.register("title")} />
       </Field>
-      <Field id="b-subtitle" label="부제목" error={errors.subtitle?.message}>
-        <Input id="b-subtitle" aria-describedby="b-subtitle-desc" {...form.register("subtitle")} />
+      <Field id="b-subtitle" label="부제목" error={errors.subtitle?.message} hint={SUBTITLE_SUPPORTED ? undefined : "부제목은 아직 저장할 수 없어요. 제목에 담아 주세요."}>
+        <Input id="b-subtitle" disabled={!SUBTITLE_SUPPORTED} aria-describedby="b-subtitle-desc" {...form.register("subtitle")} />
       </Field>
       <Field id="b-link" label="누르면 이동할 곳" required error={errors.link_url?.message} hint="예: /explore?type=festival">
         <Input id="b-link" aria-invalid={Boolean(errors.link_url)} aria-describedby="b-link-desc" {...form.register("link_url")} />
       </Field>
-      <Field id="b-image" label="이미지 주소" error={errors.image_url?.message} hint="업로드된 이미지의 https 주소. (파일 업로드는 presign API 연결 후 제공)">
+      <Field id="b-image" label="이미지 주소" required error={errors.image_url?.message} hint="이미지 파일 업로드는 아직 준비 중이에요. 다른 곳에 올린 이미지의 https 주소를 넣어 주세요.">
         <Input id="b-image" type="url" placeholder="https://" aria-invalid={Boolean(errors.image_url)} aria-describedby="b-image-desc" {...form.register("image_url")} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -211,8 +231,8 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
             ))}
           </select>
         </Field>
-        <Field id="b-region" label="지역 한정" hint={regions.isError ? "지역 목록을 불러오지 못했어요" : undefined}>
-          <select id="b-region" className={nativeSelectClass} disabled={regions.isPending} aria-describedby="b-region-desc" {...form.register("region")}>
+        <Field id="b-region" label="지역 한정" hint={regions.isError ? "지역 목록을 불러오지 못했어요" : regionLocked ? "만든 뒤에는 바꿀 수 없어요. 바꾸려면 새로 만들어 주세요." : undefined}>
+          <select id="b-region" className={nativeSelectClass} disabled={regions.isPending || regionLocked} aria-describedby="b-region-desc" {...form.register("region")}>
             <option value="">전체 지역</option>
             {regions.data?.items.map((r) => (
               <option key={r.slug} value={r.slug}>
@@ -221,10 +241,10 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
             ))}
           </select>
         </Field>
-        <Field id="b-start" label="시작일" required error={errors.starts_at?.message}>
+        <Field id="b-start" label="시작일" error={errors.starts_at?.message}>
           <Input id="b-start" type="date" aria-invalid={Boolean(errors.starts_at)} aria-describedby="b-start-desc" {...form.register("starts_at")} />
         </Field>
-        <Field id="b-end" label="종료일" required error={errors.ends_at?.message}>
+        <Field id="b-end" label="종료일" error={errors.ends_at?.message}>
           <Input id="b-end" type="date" aria-invalid={Boolean(errors.ends_at)} aria-describedby="b-end-desc" {...form.register("ends_at")} />
         </Field>
       </div>

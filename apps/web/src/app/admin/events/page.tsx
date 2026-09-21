@@ -6,49 +6,57 @@ import { useForm } from "react-hook-form";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
+import { flattenCategories } from "@/components/admin/categories";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Field, FormMessage, nativeSelectClass } from "@/components/admin/Field";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useAdminEvents, useAdminRegions, useDeleteEvent, useSaveEvent } from "@/lib/api/admin";
+import { providerLabel, useAdminEvents, useAdminRegions, useDeleteEvent, useSaveEvent } from "@/lib/api/admin";
+import { useCategories } from "@/lib/api/hooks";
 import type { AdminEvent } from "@/lib/api/types";
 import { dateRange, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 
-/** 이벤트 유형은 API enum 의 번역(표시용 라벨)이다 */
-const TYPES = [
-  { value: "festival", label: "축제" },
-  { value: "exhibition", label: "전시" },
-  { value: "performance", label: "공연" },
-  { value: "market", label: "마켓" },
-];
-const typeLabel = (type: string) => TYPES.find((t) => t.value === type)?.label ?? type;
+/**
+ * 이벤트 유형 = 카테고리 코드 (API `category`, 없는 코드는 422). 선택지는 카테고리 트리에서 놀거리·문화 역할만 추린다.
+ * 예전 목 데이터의 짧은 값(festival 등)은 표시용으로만 번역한다.
+ */
+const EVENT_ROLES = new Set(["CULTURE", "ATTRACTION", "ACTIVITY"]);
+const LEGACY_TYPE_LABEL: Record<string, string> = { festival: "축제", exhibition: "전시", performance: "공연", market: "마켓" };
+const DEFAULT_TYPE = "culture.festival";
 
-const schema = z
-  .object({
-    title: z.string().trim().min(1, "행사 이름을 입력해 주세요").max(80),
-    type: z.string().min(1),
-    region: z.string(),
-    venue: z.string().trim().min(1, "장소를 입력해 주세요"),
-    starts_on: z.string().min(1, "시작일을 골라 주세요"),
-    ends_on: z.string().min(1, "종료일을 골라 주세요"),
-    is_free: z.boolean(),
-    price: z.number({ error: "숫자로 입력해 주세요" }).int().min(0).max(1_000_000),
-    link_url: z.union([z.literal(""), z.url("주소 형식을 확인해 주세요")]),
-    status: z.enum(["draft", "published", "ended"]),
-  })
-  .refine((v) => v.ends_on >= v.starts_on, { path: ["ends_on"], message: "종료일이 시작일보다 빨라요" });
-type Values = z.infer<typeof schema>;
+/** 지역·좌표는 등록할 때만 받는다 (API `EventPatch` 에 없다) → 등록 때만 필수 */
+const makeSchema = (creating: boolean) =>
+  z
+    .object({
+      title: z.string().trim().min(1, "행사 이름을 입력해 주세요").max(80),
+      type: z.string(),
+      region: creating ? z.string().min(1, "지역을 골라 주세요") : z.string(),
+      venue: creating ? z.string().trim().min(1, "장소를 입력해 주세요") : z.string().trim(),
+      lat: creating ? z.number({ error: "위도를 숫자로 입력해 주세요" }).min(33, "대한민국 범위(33~39)를 벗어났어요").max(39, "대한민국 범위(33~39)를 벗어났어요") : z.number().optional(),
+      lng: creating ? z.number({ error: "경도를 숫자로 입력해 주세요" }).min(124, "대한민국 범위(124~132)를 벗어났어요").max(132, "대한민국 범위(124~132)를 벗어났어요") : z.number().optional(),
+      starts_on: z.string().min(1, "시작일을 골라 주세요"),
+      ends_on: z.string().min(1, "종료일을 골라 주세요"),
+      is_free: z.boolean(),
+      price: z.number({ error: "숫자로 입력해 주세요" }).int().min(0).max(1_000_000),
+      link_url: z.union([z.literal(""), z.url("주소 형식을 확인해 주세요")]),
+      status: z.enum(["draft", "published", "ended"]),
+    })
+    .refine((v) => v.ends_on >= v.starts_on, { path: ["ends_on"], message: "종료일이 시작일보다 빨라요" });
+type Values = z.infer<ReturnType<typeof makeSchema>>;
 
-const EMPTY: Values = { title: "", type: "festival", region: "", venue: "", starts_on: "", ends_on: "", is_free: true, price: 0, link_url: "", status: "draft" };
+const EMPTY: Values = { title: "", type: DEFAULT_TYPE, region: "", venue: "", lat: undefined, lng: undefined, starts_on: "", ends_on: "", is_free: true, price: 0, link_url: "", status: "draft" };
 
 export default function AdminEventsPage() {
   const events = useAdminEvents();
   const [editing, setEditing] = useState<AdminEvent | "new" | null>(null);
   const [removing, setRemoving] = useState<AdminEvent | null>(null);
   const remove = useDeleteEvent();
+  const categories = useCategories();
+  const typeNames = new Map(flattenCategories(categories.data?.items ?? []).map((o) => [o.code, o.label.replace(/^(· )+/, "")]));
+  const typeLabel = (type: string) => typeNames.get(type) ?? LEGACY_TYPE_LABEL[type] ?? (type || "유형 없음");
 
   const columns: Column<AdminEvent>[] = [
     {
@@ -58,7 +66,9 @@ export default function AdminEventsPage() {
         <span>
           <b className="block font-extrabold">{e.title}</b>
           <span className="text-xs text-muted-foreground">
-            {typeLabel(e.type)} · {e.venue}
+            {typeLabel(e.type)}
+            {e.venue ? ` · ${e.venue}` : ""}
+            {e.provider && e.provider !== "admin" ? ` · ${providerLabel(e.provider)} 수집` : ""}
           </span>
         </span>
       ),
@@ -147,14 +157,20 @@ export default function AdminEventsPage() {
 function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => void }) {
   const save = useSaveEvent();
   const regions = useAdminRegions();
+  const categories = useCategories();
+  const creating = event === null;
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema(creating)),
     defaultValues: event
-      ? { title: event.title, type: event.type, region: event.region ?? "", venue: event.venue, starts_on: event.starts_on, ends_on: event.ends_on, is_free: event.is_free, price: event.price ?? 0, link_url: event.link_url ?? "", status: event.status }
+      ? { title: event.title, type: event.type, region: event.region ?? "", venue: event.venue, lat: event.lat, lng: event.lng, starts_on: event.starts_on, ends_on: event.ends_on, is_free: event.is_free, price: event.price ?? 0, link_url: event.link_url ?? "", status: event.status }
       : EMPTY,
   });
   const { errors } = form.formState;
   const isFree = form.watch("is_free");
+  const numeric = { setValueAs: (v: unknown) => (v === "" || v === null || v === undefined ? undefined : Number(v)) };
+  const typeOptions = flattenCategories(categories.data?.items ?? []).filter((o) => o.role && EVENT_ROLES.has(o.role));
+  const currentType = form.getValues("type");
+  const locked = creating ? undefined : "등록한 뒤에는 바꿀 수 없어요";
 
   return (
     <form
@@ -162,7 +178,7 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
       className="grid gap-4"
       onSubmit={form.handleSubmit((v) =>
         save.mutate(
-          { id: event?.id, input: { title: v.title, type: v.type, region: v.region || null, venue: v.venue, starts_on: v.starts_on, ends_on: v.ends_on, is_free: v.is_free, price: v.is_free ? null : v.price, link_url: v.link_url || null, status: v.status } },
+          { id: event?.id, input: { title: v.title, type: v.type, region: v.region || null, venue: v.venue, lat: v.lat, lng: v.lng, starts_on: v.starts_on, ends_on: v.ends_on, is_free: v.is_free, price: v.is_free ? null : v.price, link_url: v.link_url || null, status: v.status } },
           { onSuccess: onDone },
         ),
       )}
@@ -175,19 +191,19 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
         <Input id="e-title" aria-invalid={Boolean(errors.title)} aria-describedby="e-title-desc" {...form.register("title")} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="e-type" label="유형">
-          <select id="e-type" className={nativeSelectClass} {...form.register("type")}>
-            {!TYPES.some((t) => t.value === form.getValues("type")) ? <option value={form.getValues("type")}>{form.getValues("type")}</option> : null}
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
+        <Field id="e-type" label="유형" hint={categories.isError ? "분류 목록을 불러오지 못했어요" : locked}>
+          <select id="e-type" className={nativeSelectClass} disabled={!creating || categories.isPending} aria-describedby="e-type-desc" {...form.register("type")}>
+            {!typeOptions.some((t) => t.code === currentType) ? <option value={currentType}>{LEGACY_TYPE_LABEL[currentType] ?? (currentType || "유형 없음")}</option> : null}
+            {typeOptions.map((t) => (
+              <option key={t.code} value={t.code}>
                 {t.label}
               </option>
             ))}
           </select>
         </Field>
-        <Field id="e-region" label="지역" hint={regions.isError ? "지역 목록을 불러오지 못했어요" : undefined}>
-          <select id="e-region" className={nativeSelectClass} disabled={regions.isPending} aria-describedby="e-region-desc" {...form.register("region")}>
-            <option value="">전체 지역</option>
+        <Field id="e-region" label="지역" required={creating} error={errors.region?.message} hint={regions.isError ? "지역 목록을 불러오지 못했어요" : locked}>
+          <select id="e-region" className={nativeSelectClass} disabled={!creating || regions.isPending} aria-invalid={Boolean(errors.region)} aria-describedby="e-region-desc" {...form.register("region")}>
+            <option value="">{creating ? "선택" : "지역 없음"}</option>
             {regions.data?.items.map((r) => (
               <option key={r.slug} value={r.slug}>
                 {r.name}
@@ -196,9 +212,17 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
           </select>
         </Field>
       </div>
-      <Field id="e-venue" label="장소" required error={errors.venue?.message}>
+      <Field id="e-venue" label="장소" required={creating} error={errors.venue?.message} hint="행사장 이름이나 주소">
         <Input id="e-venue" aria-invalid={Boolean(errors.venue)} aria-describedby="e-venue-desc" {...form.register("venue")} />
       </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="e-lat" label="위도" required={creating} error={errors.lat?.message} hint={locked ?? "코스의 ‘근처 행사’ 거리 계산에 써요"}>
+          <Input id="e-lat" type="number" step="0.0001" inputMode="decimal" placeholder="37.5560" disabled={!creating} aria-invalid={Boolean(errors.lat)} aria-describedby="e-lat-desc" {...form.register("lat", numeric)} />
+        </Field>
+        <Field id="e-lng" label="경도" required={creating} error={errors.lng?.message} hint={locked}>
+          <Input id="e-lng" type="number" step="0.0001" inputMode="decimal" placeholder="126.9100" disabled={!creating} aria-invalid={Boolean(errors.lng)} aria-describedby="e-lng-desc" {...form.register("lng", numeric)} />
+        </Field>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="e-start" label="시작일" required error={errors.starts_on?.message}>
           <Input id="e-start" type="date" aria-invalid={Boolean(errors.starts_on)} aria-describedby="e-start-desc" {...form.register("starts_on")} />
@@ -216,12 +240,12 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="e-link" label="안내 링크" error={errors.link_url?.message}>
+        <Field id="e-link" label="안내·예매 링크" error={errors.link_url?.message}>
           <Input id="e-link" type="url" placeholder="https://" aria-invalid={Boolean(errors.link_url)} aria-describedby="e-link-desc" {...form.register("link_url")} />
         </Field>
         <Field id="e-status" label="상태">
           <select id="e-status" className={nativeSelectClass} {...form.register("status")}>
-            <option value="draft">초안</option>
+            <option value="draft">초안 (검수 전)</option>
             <option value="published">게시 중</option>
             <option value="ended">종료</option>
           </select>

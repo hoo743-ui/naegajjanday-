@@ -17,12 +17,14 @@ const STATUS: Record<string, { label: string; tone: Tone; pulse?: boolean }> = {
   approved: { label: "승인됨", tone: "green" },
   rejected: { label: "반려", tone: "pink" },
   hidden: { label: "숨김", tone: "neutral" },
+  closed: { label: "폐업", tone: "neutral" },
   // 지역
   draft: { label: "초안", tone: "neutral" },
   collecting: { label: "수집 중", tone: "blue", pulse: true },
   ready: { label: "준비됨", tone: "gold" },
   active: { label: "활성", tone: "green" },
   failed: { label: "실패", tone: "pink" },
+  paused: { label: "일시 중지", tone: "neutral" },
   // 수집 잡
   queued: { label: "대기", tone: "neutral" },
   running: { label: "진행 중", tone: "blue", pulse: true },
@@ -34,7 +36,11 @@ const STATUS: Record<string, { label: string; tone: Tone; pulse?: boolean }> = {
   ok: { label: "정상", tone: "green" },
   degraded: { label: "느려짐", tone: "gold" },
   down: { label: "중단", tone: "pink" },
+  disabled: { label: "꺼 둠", tone: "neutral" },
 };
+
+/** 배지 없이 글자만 필요할 때 (수정 이력의 상태 값 등) */
+export const statusLabel = (status: string): string => STATUS[status]?.label ?? status;
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
   const info = STATUS[status] ?? { label: status, tone: "neutral" as const };

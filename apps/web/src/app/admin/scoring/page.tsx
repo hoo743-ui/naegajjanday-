@@ -12,13 +12,24 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useSaveTemplate, useScoringProfile, useTemplates, useUpdateScoringProfile } from "@/lib/api/admin";
 import { useCategories, usePurposes } from "@/lib/api/hooks";
-import { SCORE_FEATURES, type CourseTemplate, type ScoreBreakdown, type TemplateSlot } from "@/lib/api/types";
+import { SCORE_FEATURES, type CourseTemplate, type TemplateSlot } from "@/lib/api/types";
 import { FEATURE_INFO, dateShort, roleLabel, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 import { cn } from "@/lib/utils";
 
+/** API 허용 오차: 가중치 합 |Σ-1| ≤ 0.001, 슬롯 배분 합 ≤ 0.01. 화면이 더 느슨하면 저장이 422 로 떨어진다 */
+const WEIGHT_EPS = 0.001;
 const EPS = 0.005;
 const sumOf = (values: number[]) => values.reduce((a, b) => a + b, 0);
+
+const TIME_BAND_LABEL: Record<string, string> = { lunch: "점심", afternoon: "오후", evening: "저녁", fullday: "하루 종일" };
+
+/** 피처 키는 API 가 정한다. 아는 키는 화면 순서대로, 새로 생긴 키는 그 뒤에 그대로 보여준다 (하드코딩한 개수에 기대지 않는다) */
+function featureKeys(weights: Record<string, number>): string[] {
+  const known: readonly string[] = SCORE_FEATURES;
+  return [...known.filter((k) => k in weights), ...Object.keys(weights).filter((k) => !known.includes(k))];
+}
+const featureInfo = (key: string): { label: string; hint: string } => (FEATURE_INFO as Record<string, { label: string; hint: string }>)[key] ?? { label: key, hint: "아직 설명이 등록되지 않은 피처예요." };
 
 export default function AdminScoringPage() {
   const purposes = usePurposes();
@@ -33,7 +44,7 @@ export default function AdminScoringPage() {
     <>
       <AdminPageHeader
         title="추천 설정"
-        description="장소 점수의 8개 피처 가중치와 코스 템플릿을 목적별로 조정해요. 코드 배포 없이 다음 추천부터 바로 반영됩니다."
+        description="장소 점수의 피처 가중치와 코스 템플릿을 목적별로 조정해요. 코드 배포 없이 다음 추천부터 바로 반영됩니다."
         actions={
           purposes.data && purposes.data.items.length > 0 ? (
             <label className="flex items-center gap-2 text-sm font-extrabold text-ink-2">
@@ -70,7 +81,7 @@ export default function AdminScoringPage() {
 function WeightsEditor({ purpose }: { purpose: string }) {
   const profile = useScoringProfile(purpose);
   const update = useUpdateScoringProfile();
-  const [weights, setWeights] = useState<ScoreBreakdown | null>(null);
+  const [weights, setWeights] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     if (profile.data) setWeights(profile.data.weights);
@@ -80,18 +91,26 @@ function WeightsEditor({ purpose }: { purpose: string }) {
   if (profile.isError) return <Panel title="피처 가중치"><ErrorState error={profile.error} onRetry={() => void profile.refetch()} size="sm" /></Panel>;
   if (!weights) return null;
 
-  const total = sumOf(SCORE_FEATURES.map((k) => weights[k]));
-  const valid = Math.abs(total - 1) < EPS;
-  const dirty = SCORE_FEATURES.some((k) => Math.abs(weights[k] - profile.data.weights[k]) > 1e-9);
+  const keys = featureKeys(weights);
+  const w = (k: string) => weights[k] ?? 0;
+  const total = sumOf(keys.map(w));
+  const valid = Math.abs(total - 1) <= WEIGHT_EPS;
+  const dirty = keys.some((k) => Math.abs(w(k) - (profile.data.weights[k] ?? 0)) > 1e-9);
+  const meta = [
+    `프로필 v${profile.data.version}`,
+    profile.data.updated_at ? `${dateShort(profile.data.updated_at)} 수정${profile.data.updated_by ? ` (${profile.data.updated_by})` : ""}` : null,
+    profile.data.experiment_key ? `실험 ${profile.data.experiment_key}` : null,
+    profile.data.is_active === false ? "비활성" : null,
+  ].filter(Boolean);
 
   const normalize = () => {
     if (total <= 0) return;
-    const scaled = SCORE_FEATURES.map((k) => Math.round((weights[k] / total) * 100) / 100);
+    const scaled = keys.map((k) => Math.round((w(k) / total) * 100) / 100);
     // 반올림 오차는 가장 큰 항목에 몰아서 합을 정확히 1.00 으로 맞춘다
     const diff = Math.round((1 - sumOf(scaled)) * 100) / 100;
     const maxIndex = scaled.indexOf(Math.max(...scaled));
     const next = { ...weights };
-    SCORE_FEATURES.forEach((k, i) => {
+    keys.forEach((k, i) => {
       next[k] = Math.round(((scaled[i] ?? 0) + (i === maxIndex ? diff : 0)) * 100) / 100;
     });
     setWeights(next);
@@ -100,14 +119,14 @@ function WeightsEditor({ purpose }: { purpose: string }) {
   return (
     <Panel
       title="피처 가중치"
-      description={`프로필 v${profile.data.version} · ${dateShort(profile.data.updated_at)} 수정${profile.data.updated_by ? ` (${profile.data.updated_by})` : ""}${profile.data.experiment_key ? ` · 실험 ${profile.data.experiment_key}` : ""}`}
+      description={meta.join(" · ")}
     >
       <p className="mb-4 rounded-xl bg-soft px-3.5 py-2.5 text-[13px] text-ink-2">
         장소 점수 S = Σ w × f. 모든 가중치의 <b>합이 1.00</b>이어야 저장할 수 있어요.
       </p>
       <ul className="grid gap-4">
-        {SCORE_FEATURES.map((key) => {
-          const info = FEATURE_INFO[key];
+        {keys.map((key) => {
+          const info = featureInfo(key);
           const id = `w-${key}`;
           return (
             <li key={key}>
@@ -121,7 +140,7 @@ function WeightsEditor({ purpose }: { purpose: string }) {
                   min={0}
                   max={1}
                   step={0.01}
-                  value={weights[key]}
+                  value={w(key)}
                   onChange={(e) => {
                     update.reset();
                     setWeights({ ...weights, [key]: Math.max(0, Math.min(1, Number(e.target.value) || 0)) });
@@ -134,7 +153,7 @@ function WeightsEditor({ purpose }: { purpose: string }) {
                 min={0}
                 max={0.6}
                 step={0.01}
-                value={[Math.min(0.6, weights[key])]}
+                value={[Math.min(0.6, w(key))]}
                 onValueChange={([v]) => {
                   update.reset();
                   setWeights({ ...weights, [key]: Math.round((v ?? 0) * 100) / 100 });
@@ -159,7 +178,7 @@ function WeightsEditor({ purpose }: { purpose: string }) {
         <Button type="button" variant="outline" size="sm" disabled={valid || total <= 0} onClick={normalize}>
           합계 1로 정규화
         </Button>
-        <Button type="button" variant="brand" size="md" disabled={!valid || !dirty || update.isPending} onClick={() => update.mutate({ purpose, weights })}>
+        <Button type="button" variant="brand" size="md" disabled={!valid || !dirty || update.isPending} onClick={() => update.mutate({ purpose, weights, params: profile.data.params, experiment_key: profile.data.experiment_key, is_active: profile.data.is_active })}>
           {update.isPending ? "저장하는 중…" : "가중치 저장"}
         </Button>
       </div>
@@ -205,6 +224,8 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
   const total = sumOf(slots.map((s) => s.budget_share));
   const valid = slots.length > 0 && Math.abs(total - 1) < EPS;
   const dirty = JSON.stringify(slots) !== JSON.stringify(template.slots);
+  // 체류 시간은 실제 API 에 없는 값이다 (목에만 있다) → 값이 올 때만 열을 만든다
+  const hasStay = template.slots.some((s) => s.stay_min !== undefined);
   const patch = (index: number, change: Partial<TemplateSlot>) => {
     save.reset();
     setSlots((prev) => prev.map((s, i) => (i === index ? { ...s, ...change } : s)));
@@ -215,7 +236,7 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-base font-extrabold">{template.name}</h3>
         <p className="tabular text-xs font-bold text-muted-foreground">
-          {template.time_band} · {template.party_size_min}~{template.party_size_max}명 · 1인 {won(template.min_budget_per_person)}부터{template.is_active ? "" : " · 비활성"}
+          {TIME_BAND_LABEL[template.time_band] ?? template.time_band} · {template.party_size_min}~{template.party_size_max}명 · 1인 {won(template.min_budget_per_person)}부터{template.is_active ? "" : " · 비활성"}
         </p>
       </header>
 
@@ -227,7 +248,7 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
               <th scope="col" className="w-8 pb-2">#</th>
               <th scope="col" className="pb-2">역할</th>
               <th scope="col" className="pb-2">예산 배분</th>
-              <th scope="col" className="pb-2">체류(분)</th>
+              {hasStay ? <th scope="col" className="pb-2">체류(분)</th> : null}
               <th scope="col" className="pb-2 text-center">선택</th>
               <th scope="col" className="pb-2 text-center">순서 자유</th>
               <th scope="col" className="pb-2"><span className="sr-only">삭제</span></th>
@@ -249,9 +270,11 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
                 <td className="py-2 pr-2">
                   <Input aria-label={`${i + 1}번 슬롯 예산 배분`} type="number" min={0} max={1} step={0.05} value={slot.budget_share} onChange={(e) => patch(i, { budget_share: Math.max(0, Math.min(1, Number(e.target.value) || 0)) })} className="tabular h-9 w-24 text-right" />
                 </td>
-                <td className="py-2 pr-2">
-                  <Input aria-label={`${i + 1}번 슬롯 체류 시간(분)`} type="number" min={10} max={480} step={5} value={slot.stay_min} onChange={(e) => patch(i, { stay_min: Math.max(0, Number(e.target.value) || 0) })} className="tabular h-9 w-24 text-right" />
-                </td>
+                {hasStay ? (
+                  <td className="py-2 pr-2">
+                    <Input aria-label={`${i + 1}번 슬롯 체류 시간(분)`} type="number" min={10} max={480} step={5} value={slot.stay_min ?? 0} onChange={(e) => patch(i, { stay_min: Math.max(0, Number(e.target.value) || 0) })} className="tabular h-9 w-24 text-right" />
+                  </td>
+                ) : null}
                 <td className="py-2 text-center">
                   <Switch aria-label={`${i + 1}번 슬롯: 예산이 빠듯하면 빼도 되는 선택 슬롯`} checked={slot.is_optional} onCheckedChange={(v) => patch(i, { is_optional: v })} />
                 </td>
@@ -270,7 +293,7 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2" aria-live="polite">
-        <Button type="button" variant="outline" size="sm" disabled={roles.length === 0} onClick={() => (save.reset(), setSlots((prev) => [...prev, { role: roles[0] ?? "", budget_share: 0, stay_min: 50, is_optional: true, is_order_flexible: false }]))}>
+        <Button type="button" variant="outline" size="sm" disabled={roles.length === 0} onClick={() => (save.reset(), setSlots((prev) => [...prev, { role: roles[0] ?? "", budget_share: 0, ...(hasStay ? { stay_min: 50 } : {}), is_optional: true, is_order_flexible: false }]))}>
           <Plus aria-hidden /> 슬롯 추가
         </Button>
         <p className={cn("tabular mr-auto rounded-lg px-2.5 py-1 text-[13px] font-extrabold", valid ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep")}>배분 합계 {total.toFixed(2)}</p>

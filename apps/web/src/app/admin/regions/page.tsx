@@ -7,12 +7,12 @@ import { DatabaseZap, Play, Plus, Power, X } from "lucide-react";
 import { z } from "zod";
 import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { Field, FormMessage } from "@/components/admin/Field";
+import { Field, FormMessage, nativeSelectClass } from "@/components/admin/Field";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useActivateRegion, useAdminRegions, useCollectRegion, useCreateRegion } from "@/lib/api/admin";
-import type { AdminRegion } from "@/lib/api/types";
+import { COLLECT_PROVIDERS, DEFAULT_COLLECT_PROVIDERS, providerLabel, useActivateRegion, useAdminRegions, useCollectRegion, useCreateRegion, useIngestionJobs } from "@/lib/api/admin";
+import type { AdminRegion, IngestionJob } from "@/lib/api/types";
 import { dateShort, num } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 
@@ -25,6 +25,7 @@ const schema = z.object({
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "영문 소문자·숫자·하이픈만 쓸 수 있어요 (예: seoul-mangwon)"),
   name: z.string().trim().min(1, "이름을 입력해 주세요").max(30),
   parent: z.string().trim().max(48),
+  level: z.number().int().min(1).max(3),
   lat: z.number({ error: "위도를 숫자로 입력해 주세요" }).min(33, "대한민국 범위(33~39)를 벗어났어요").max(39, "대한민국 범위(33~39)를 벗어났어요"),
   lng: z.number({ error: "경도를 숫자로 입력해 주세요" }).min(124, "대한민국 범위(124~132)를 벗어났어요").max(132, "대한민국 범위(124~132)를 벗어났어요"),
   radius_m: z.number({ error: "반경을 숫자로 입력해 주세요" }).int().min(300, "300m 이상").max(10000, "10km 이하"),
@@ -36,8 +37,14 @@ export default function AdminRegionsPage() {
   const regions = useAdminRegions();
   const collect = useCollectRegion();
   const activate = useActivateRegion();
+  const jobs = useIngestionJobs();
   const [formOpen, setFormOpen] = useState(false);
+  const [providers, setProviders] = useState<string[]>(DEFAULT_COLLECT_PROVIDERS);
   const actionError = collect.error ?? activate.error;
+
+  // 지역별 가장 최근 수집 잡 (목록은 최신순). 실제 API 는 지역 응답에 잡 정보를 싣지 않는다
+  const latestJob = new Map<string, IngestionJob>();
+  for (const job of jobs.data?.items ?? []) if (job.region && !latestJob.has(job.region)) latestJob.set(job.region, job);
 
   const columns: Column<AdminRegion>[] = [
     {
@@ -54,17 +61,26 @@ export default function AdminRegionsPage() {
     {
       key: "job",
       header: "수집 진행",
-      cell: (r) =>
-        r.last_job && (r.last_job.status === "running" || r.last_job.status === "queued") ? (
+      cell: (r) => {
+        const job = latestJob.get(r.slug);
+        return r.last_job && (r.last_job.status === "running" || r.last_job.status === "queued") ? (
           <span className="block w-32">
             <span role="progressbar" aria-label={`${r.name} 수집 진행률`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.last_job.progress * 100)} className="block h-2 overflow-hidden rounded-full bg-[#E3E9F4]">
               <span className="bg-grad block h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.round(r.last_job.progress * 100)}%` }} />
             </span>
             <span className="tabular text-xs font-bold text-ink-2">{Math.round(r.last_job.progress * 100)}%</span>
           </span>
+        ) : job ? (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <StatusBadge status={job.status} />
+            <span className="tabular text-xs text-muted-foreground" title={job.error ?? undefined}>
+              {providerLabel(job.provider)} · {job.status === "succeeded" || job.status === "failed" ? `${dateShort(job.finished_at ?? job.started_at ?? "")} · ${num(job.collected)}건` : "순서를 기다리고 있어요"}
+            </span>
+          </span>
         ) : (
           <span className="text-xs text-muted-foreground">{r.last_collected_at ? `${dateShort(r.last_collected_at)} 수집` : "수집 전"}</span>
-        ),
+        );
+      },
     },
     { key: "places", header: "장소", align: "right", cell: (r) => <span className="tabular">{num(r.place_count)}</span> },
     { key: "pending", header: "승인 대기", align: "right", hideBelow: "md", cell: (r) => <span className="tabular">{num(r.pending_count)}</span> },
@@ -76,12 +92,14 @@ export default function AdminRegionsPage() {
       align: "right",
       cell: (r) => (
         <span className="flex justify-end gap-1.5">
-          {r.status === "draft" || r.status === "failed" || r.status === "ready" || r.status === "active" ? (
-            <Button type="button" size="sm" variant={r.status === "draft" || r.status === "failed" ? "default" : "outline"} disabled={collect.isPending} onClick={() => collect.mutate(r.slug)} aria-label={`${r.name} ${r.status === "draft" ? "수집 시작" : "다시 수집"}`}>
+          {/* 실제 API(approved_count 를 준다)에는 ‘수집 중’에서 자동으로 넘어가는 단계가 없다 → 수집 중이어도 다시 돌릴 수 있게 둔다 */}
+          {r.status !== "collecting" || r.approved_count !== undefined ? (
+            <Button type="button" size="sm" variant={r.status === "draft" || r.status === "failed" ? "default" : "outline"} disabled={collect.isPending || providers.length === 0} onClick={() => collect.mutate({ slug: r.slug, providers })} aria-label={`${r.name} ${r.status === "draft" ? "수집 시작" : "다시 수집"}`}>
               <Play aria-hidden /> {r.status === "draft" ? "수집 시작" : r.status === "failed" ? "다시 시도" : "재수집"}
             </Button>
           ) : null}
-          {r.status === "ready" ? (
+          {/* 목: ‘준비됨’에서 활성화. 실제 API: 승인된 장소가 1곳 이상이면 활성화할 수 있다 (없으면 409) */}
+          {r.status === "ready" || (r.approved_count !== undefined && r.status !== "active" && r.approved_count > 0) ? (
             <Button type="button" size="sm" variant="default" className="bg-success hover:bg-success/90" disabled={activate.isPending} onClick={() => activate.mutate(r.slug)} aria-label={`${r.name} 활성화`}>
               <Power aria-hidden /> 활성화
             </Button>
@@ -108,12 +126,12 @@ export default function AdminRegionsPage() {
         <div>
           <p className="font-extrabold text-ink">새 지역 = 데이터만 추가. 코드 수정·배포 없음.</p>
           <p className="mt-1 text-sm text-ink-2">
-            지역은 전부 DB 에서 읽어요. 여기서 <b>중심 좌표·반경·키워드</b>를 등록하고 <b>수집 시작</b>을 누르면 수집 잡이 장소를 모으고(수집 중), 끝나면 승인 큐로 들어가요(준비됨). 검토 뒤 <b>활성화</b>하면 그 순간부터 코스 짜기 화면의 지역 목록에 나타나요.
+            지역은 전부 DB 에서 읽어요. 여기서 <b>중심 좌표·반경·키워드</b>를 등록하고 <b>수집 시작</b>을 누르면 수집 잡이 장소를 모아 승인 큐에 넣어요(수집 중). 장소를 검토해 한 곳 이상 승인한 뒤 <b>활성화</b>하면 그 순간부터 코스 짜기 화면의 지역 목록에 나타나요.
           </p>
         </div>
       </aside>
 
-      {formOpen ? <RegionForm onDone={() => setFormOpen(false)} /> : null}
+      {formOpen ? <RegionForm providers={providers} onDone={() => setFormOpen(false)} /> : null}
 
       {actionError ? (
         <div className="mb-4">
@@ -121,7 +139,18 @@ export default function AdminRegionsPage() {
         </div>
       ) : null}
 
-      <Panel title="등록된 지역" description="수집 중인 지역이 있으면 3초마다 자동으로 새로 고쳐요.">
+      <Panel title="등록된 지역" description="수집 중인 지역이 있으면 자동으로 새로 고쳐요. 활성화는 승인된 장소가 한 곳 이상일 때 할 수 있어요.">
+        <fieldset className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-soft px-4 py-3">
+          <legend className="sr-only">수집에 쓸 출처</legend>
+          <span aria-hidden className="text-sm font-extrabold text-ink-2">수집 출처</span>
+          {COLLECT_PROVIDERS.map((p) => (
+            <label key={p.value} className="flex items-center gap-1.5 text-sm font-bold text-ink-2">
+              <input type="checkbox" className="size-4 accent-[#2F6BEA]" checked={providers.includes(p.value)} onChange={(e) => setProviders((prev) => (e.target.checked ? [...prev, p.value] : prev.filter((v) => v !== p.value)))} />
+              {p.label}
+            </label>
+          ))}
+          <span className="basis-full text-xs text-muted-foreground">{providers.length === 0 ? "출처를 하나 이상 골라야 수집을 시작할 수 있어요." : "출처마다 수집 잡이 1건씩 만들어져요. API 키를 설정하지 않은 출처의 잡은 실패로 끝나요."}</span>
+        </fieldset>
         <DataTable
           caption="등록된 지역 목록"
           columns={columns}
@@ -138,12 +167,12 @@ export default function AdminRegionsPage() {
   );
 }
 
-function RegionForm({ onDone }: { onDone: () => void }) {
+function RegionForm({ providers, onDone }: { providers: string[]; onDone: () => void }) {
   const create = useCreateRegion();
   const collect = useCollectRegion();
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { slug: "", name: "", parent: "", lat: undefined, lng: undefined, radius_m: 1200, keywords: [] },
+    defaultValues: { slug: "", name: "", parent: "", level: 3, lat: undefined, lng: undefined, radius_m: 1200, keywords: [] },
   });
   const { errors } = form.formState;
   const numeric = { setValueAs: (v: unknown) => (v === "" || v === null || v === undefined ? undefined : Number(v)) };
@@ -151,10 +180,10 @@ function RegionForm({ onDone }: { onDone: () => void }) {
   const submit = (startCollect: boolean) =>
     form.handleSubmit((v) =>
       create.mutate(
-        { slug: v.slug, name: v.name, parent: v.parent || null, center: { lat: v.lat, lng: v.lng }, radius_m: v.radius_m, keywords: v.keywords },
+        { slug: v.slug, name: v.name, parent: v.parent || null, level: v.level, center: { lat: v.lat, lng: v.lng }, radius_m: v.radius_m, keywords: v.keywords },
         {
           onSuccess: (region) => {
-            if (startCollect) collect.mutate(region.slug);
+            if (startCollect) collect.mutate({ slug: region.slug, providers });
             form.reset();
             onDone();
           },
@@ -183,6 +212,13 @@ function RegionForm({ onDone }: { onDone: () => void }) {
         <Field id="r-parent" label="상위 지역 슬러그" error={errors.parent?.message} hint="선택. 예: seoul-mapo">
           <Input id="r-parent" placeholder="seoul-mapo" autoComplete="off" aria-describedby="r-parent-desc" {...form.register("parent")} />
         </Field>
+        <Field id="r-level" label="단계" required error={errors.level?.message} hint="코스를 짜는 단위는 ‘동네’예요. 만든 뒤에는 바꿀 수 없어요.">
+          <select id="r-level" className={nativeSelectClass} aria-describedby="r-level-desc" {...form.register("level", { valueAsNumber: true })}>
+            <option value={1}>1 · 시·도</option>
+            <option value={2}>2 · 시·군·구</option>
+            <option value={3}>3 · 동네</option>
+          </select>
+        </Field>
         <Controller
           control={form.control}
           name="keywords"
@@ -206,7 +242,7 @@ function RegionForm({ onDone }: { onDone: () => void }) {
           <Button type="submit" variant="outline" disabled={create.isPending}>
             초안으로 저장
           </Button>
-          <Button type="button" variant="brand" size="md" disabled={create.isPending} onClick={(e) => void submit(true)(e)}>
+          <Button type="button" variant="brand" size="md" disabled={create.isPending || providers.length === 0} title={providers.length === 0 ? "아래 ‘수집 출처’를 하나 이상 골라 주세요" : undefined} onClick={(e) => void submit(true)(e)}>
             <Play aria-hidden /> 저장하고 수집 시작
           </Button>
         </div>
