@@ -19,7 +19,9 @@ import { mascotCopyForError } from "@/lib/mascot-copy";
 import { resolveStart } from "./meet-time";
 import { PLAN_DEFAULTS, STEPS, planSchema, type PlanValues } from "./schema";
 import { ReceiptProgress } from "./ReceiptProgress";
-import { BudgetStep, PurposeStep, RegionStep, TasteStep } from "./steps";
+import { TasteStep } from "./PreferenceStep";
+import { BudgetStep, PurposeStep, RegionStep } from "./steps";
+import { MOVE_LABEL, PACE_LABEL } from "@/lib/preference";
 
 const MIN_LOADER_MS = 2400;
 const TRANSPORT_LABEL = { walk: "걸어서", transit: "대중교통", car: "자동차" } as const;
@@ -153,9 +155,14 @@ export function PlanWizard() {
       ...(data.rainy ? { conditions: ["rain"] } : {}),
       transport: data.transport,
       preferences: { liked_tags: data.liked_tags, disliked_tags: data.disliked_tags, exclude_place_ids: [] },
+      // docs/30: 고른 말 그대로 보낸다 — 엔진의 손잡이로 바꾸는 것은 API 의 해석 레이어
+      ...(data.pace.length > 0 ? { pace: data.pace } : {}),
+      move_style: data.move_style,
+      ...(data.wishes.length > 0 ? { wishes: data.wishes } : {}),
       alternatives: 2,
     };
     track("plan_step_completed", { step: 4, step_name: "taste" });
+    track("course_generation_started", { pace: data.pace.length, wishes: data.wishes.length, detailed: data.liked_tags.length + data.disliked_tags.length, move_style: data.move_style });
     track("course_generate_requested", { region: body.region, purpose: body.purpose, party_size: body.party_size, budget_total: body.budget_total, transport: data.transport });
     try {
       // 로더의 단계 문구가 읽힐 만큼은 보여 준다
@@ -193,7 +200,8 @@ export function PlanWizard() {
     { value: placeLabel ? (values.regions_before.length > 0 ? `${placeLabel} 외 ${values.regions_before.length}곳` : placeLabel) : undefined },
     { value: purpose ? (values.purposes_extra.length > 0 ? `${purpose.name} +${values.purposes_extra.length}` : purpose.name) : undefined },
     { value: step >= 2 ? `${values.party_size}명 · ${won(values.budget_total)}` : undefined },
-    { value: step >= 3 ? `${values.style === "fun" ? "재미 우선" : "알뜰 · 효율"} · ${TRANSPORT_LABEL[values.transport]}` : undefined },
+    // 취향 줄: 고른 하루(없으면 짠이가 알아서) · 이동
+    { value: step >= 3 ? `${values.pace.length ? values.pace.map((p) => PACE_LABEL[p]).join(" · ") : "짠이가 알아서"} · ${values.move_style === "balanced" ? TRANSPORT_LABEL[values.transport] : MOVE_LABEL[values.move_style]}` : undefined },
   ];
   // 짠이는 방금 고른 것에 한 줄로 반응한다
   const jjani =

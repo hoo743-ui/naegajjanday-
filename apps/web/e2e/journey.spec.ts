@@ -22,7 +22,8 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.locator("#purposes").getByText("데이트").first()).toBeVisible();
     await expectHealthyLayout(page);
 
-    await page.getByRole("link", { name: "무료로 추천받기" }).first().click();
+    // 행동은 히어로의 예산 자리에만 있다 (docs/31 §10): 헤더의 "무료로 추천받기"는 없앴다
+    await page.getByRole("link", { name: /이 예산으로 짜기/ }).click();
     await expect(page).toHaveURL(/\/plan/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("어디서");
   });
@@ -57,11 +58,18 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(when.getByText(/18:00 ~ 21:00/)).toBeVisible();
     await expectHealthyLayout(page);
     await goTo("취향");
-    // 코스 스타일: 기본은 알뜰·효율, 라벨을 눌러 재미 우선으로 바꿀 수 있다
-    await expect(page.getByRole("radio", { name: /알뜰 · 효율/ })).toBeChecked();
-    await page.getByText("재미 우선", { exact: true }).click();
-    await expect(page.getByRole("radio", { name: /재미 우선/ })).toBeChecked();
-    // 태그 그룹명이 API 원시 코드(activity/feature/…)로 새지 않아야 한다
+    // 짧은 질문 셋 (docs/30 · docs/32 B §10): 아무것도 안 골라도 되고, "특별한 경험"은 재미 우선 코스가 된다
+    const special = page.getByRole("checkbox", { name: /특별한 경험/ });
+    await expect(special).not.toBeChecked();
+    await special.click();
+    await expect(special).toBeChecked();
+    await expect(page.getByRole("radio", { name: /적당히 이동/ })).toBeChecked();
+    // 고른 것을 말로 되읽는다
+    await expect(page.getByRole("heading", { name: "좋아요. 이렇게 이해했어요." })).toBeVisible();
+    await expect(page.getByText("특별한 경험").last()).toBeVisible();
+    // 세부 태그는 "더 자세히" 안에. 그룹명이 API 원시 코드(activity/feature/…)로 새지 않아야 한다
+    await page.getByRole("button", { name: /더 자세히/ }).click();
+    await expect(page.getByText("술 한잔 포함", { exact: true })).toBeVisible();
     await expect(page.getByRole("group", { name: /^(activity|feature|food|mood)$/ })).toHaveCount(0);
     await expectHealthyLayout(page);
 

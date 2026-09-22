@@ -18,7 +18,7 @@ interface ResultHeaderProps {
 
 /**
  * 결과 화면의 헤더 (docs/25 §5): 뒤로 · 지금 보는 코스 · 조건 바꾸기 · 공유. 그 이상은 없다.
- * 코스를 받은 사람에게 랜딩의 메뉴와 "무료로 추천받기"를 다시 보여 주지 않는다 — 여기서 할 일은 이 코스를 쓰는 것이다.
+ * 코스를 받은 사람에게 랜딩의 메뉴를 다시 보여 주지 않는다 — 여기서 할 일은 이 코스를 쓰는 것이다.
  * 공유는 데스크톱에서만 여기에 있다. 모바일은 엄지가 닿는 하단 바에 있다(같은 이름의 버튼이 한 화면에 둘이 되지 않게).
  */
 export function ResultHeader({ title, subtitle, changeHref, onShare, shared = false }: ResultHeaderProps) {

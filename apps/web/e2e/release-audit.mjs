@@ -60,7 +60,7 @@ const wonToNum = (s) => Number(String(s).replace(/[^0-9]/g, ""));
 async function wizard(page, flow) {
   const t0 = Date.now();
   await page.goto(`${WEB}/`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("link", { name: /이 예산으로 코스 받기/ }).first().click();
+  await page.getByRole("link", { name: /이 예산으로 짜기/ }).first().click();
   await page.waitForURL(/\/plan/);
   await page.getByRole("heading", { level: 1 }).waitFor();
   // 1. 지역: 많이 찾는 동네에서 홍대입구

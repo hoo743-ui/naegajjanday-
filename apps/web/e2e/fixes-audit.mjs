@@ -59,7 +59,9 @@ console.log("\n[2] 코스를 짜는 중 · 결과를 보는 중에는 헤더에 
   check((await page.locator("header").getByRole("link", { name: "무료로 추천받기" }).count()) === 0, "/plan 의 헤더에 제자리 링크가 없다");
   await page.goto(`${WEB}/explore`, { timeout: 120000 });
   await page.locator("main article").first().waitFor({ timeout: 60000 });
-  check((await page.locator("header").getByRole("link", { name: "무료로 추천받기" }).count()) === 1, "다른 화면(/explore)에는 그대로 있다");
+  // docs/31 §10: 헤더에는 CTA 를 두지 않는다 — 코스 짜기의 입구는 메뉴의 "코스 짜기" 하나
+  check((await page.locator("header").getByRole("link", { name: "무료로 추천받기" }).count()) === 0, "다른 화면(/explore)에도 헤더 CTA 가 없다");
+  check((await page.locator("header").getByRole("link", { name: "코스 짜기" }).count()) >= 1, "메뉴의 '코스 짜기'가 입구다");
 
   console.log("\n[3] 이벤트 좌우 버튼은 실제로 목록을 옮긴다 (검사 도구는 요소 안의 가로 스크롤을 못 본다)");
   const nextBtn = page.getByRole("button", { name: "다음 이벤트" });

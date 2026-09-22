@@ -254,6 +254,10 @@ export interface GenerateCourseRequest {
   alternatives?: number;
   /** 여행 일정의 하루를 다시 짤 때: 바꿀 그 날의 코스 id. 새 코스가 같은 여행의 같은 날 자리에 들어간다 */
   replaces?: string;
+  /** docs/30 세 질문: 어떤 하루 · 얼마나 이동 · 꼭 원하는 것 (해석은 API 가 한다) */
+  pace?: ("relaxed" | "packed" | "foodie" | "special")[];
+  move_style?: MoveStyle;
+  wishes?: ("night" | "walk" | "exhibition" | "value" | "romantic")[];
 }
 
 export type CourseStyle = "efficient" | "fun";

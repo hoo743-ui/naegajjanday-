@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, Check, Clock, CopyPlus, Maximize2, Minimize2, RotateCw, Share2, TriangleAlert, Users } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, TrainFront, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -14,7 +14,8 @@ import { ApiError } from "@/lib/api/client";
 import { useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { clock, dateLabel, won } from "@/lib/format";
+import { clock, dateLabel, transportLabel, won } from "@/lib/format";
+import type { Transport } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { BudgetTools } from "./BudgetTools";
@@ -34,6 +35,7 @@ import { RouteIssues } from "./RouteIssues";
 import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
 
+const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
 const LOADING_STAGES = ["코스를 펼치는 중…", "지도에 핀 꽂는 중…"];
 const FORK_STAGES = ["친구 코스의 조건을 그대로 가져오는 중…", "예산에 맞는 곳만 고르는 중…", "내 코스로 옮겨 적는 중…"];
 const REROLL_STAGES = ["다른 곳들로 다시 살펴보는 중…", "예산에 맞는 곳만 고르는 중…", "가장 덜 걷는 동선 계산 중…"];
@@ -357,7 +359,8 @@ export function CourseView({ id }: { id: string }) {
     <>
       <ResultHeader
         title={[placeLabel, purposeLabel].filter(Boolean).join(" · ")}
-        subtitle={[data.label, `${request.party_size}명`, `예산 ${won(request.budget_total)}`].join(" · ")}
+        // 인원 · 예산 · 날짜는 아래 조건 칩과 요약이 말한다 — 머리에 한 줄로 몰아넣지 않는다 (docs/32 B §12)
+        subtitle={data.label}
         changeHref={readOnly ? undefined : changeHref}
         onShare={() => void onShare()}
         shared={shared}
@@ -417,16 +420,25 @@ export function CourseView({ id }: { id: string }) {
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-3 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
-              <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-x-2 text-body-sm font-semibold text-ink-2">
-                {/* 지역 · 목적 · 인원 · 예산은 결과 헤더에 있다 → 칩은 헤더에 없는 것(언제 · 날씨 · 며칠째)만 */}
-                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), tripDay && request.trip_budget_total ? `여행 전체 ${won(request.trip_budget_total)}` : null, request.style === "fun" ? "재미 우선" : null]
-                  .filter((c): c is string => Boolean(c))
-                  .map((c) => (
-                    // 칩(알약)이 아니라 영수증 머리의 한 줄: "9월 25일 (금) · 18:00 ~ 22:00"
-                    <li key={c} className="after:ml-2 after:text-muted-foreground after:content-['·'] last:after:content-none">
-                      {c}
-                    </li>
-                  ))}
+              {/* 조건 칩: 아이콘 + 짧은 말 (docs/32 B §12). 돈은 바로 아래 요약이 가장 크게 말한다 */}
+              <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-1.5 text-body-sm font-semibold text-ink-2">
+                {(
+                  [
+                    request.days && request.days > 1 ? { icon: CalendarRange, text: `${request.day}일차 / ${request.days}일` } : null,
+                    { icon: CalendarDays, text: dateLabel(request.start_at) },
+                    { icon: Clock, text: meetWindow(request.start_at, request.duration_min) },
+                    { icon: Users, text: `${request.party_size}명` },
+                    { icon: MODE_ICON[request.transport] ?? Footprints, text: transportLabel(request.transport) },
+                    request.conditions?.includes("rain") ? { icon: CloudRain, text: "비 오는 날" } : null,
+                    tripDay && request.trip_budget_total ? { icon: Wallet, text: `여행 전체 ${won(request.trip_budget_total)}` } : null,
+                    request.style === "fun" ? { icon: PartyPopper, text: "재미 우선" } : null,
+                  ].filter(Boolean) as { icon: LucideIcon; text: string }[]
+                ).map(({ icon: Icon, text }) => (
+                  <li key={text} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-paper-2 px-2.5">
+                    <Icon aria-hidden className="size-3.5 text-muted-foreground" />
+                    {text}
+                  </li>
+                ))}
               </ul>
               <h1 className="sr-only">
                 {data.label}: {data.summary}

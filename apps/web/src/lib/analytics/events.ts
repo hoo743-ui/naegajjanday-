@@ -2,6 +2,13 @@
 export interface AnalyticsEvents {
   plan_started: { entry: "landing_hero" | "landing_cta" | "nav" | "result_reroll" | "direct" | "chat" };
   plan_step_completed: { step: 1 | 2 | 3 | 4; step_name: "region" | "purpose" | "budget" | "taste"; value?: string };
+  /** docs/30 세 질문: 무엇을 고르고 무엇을 건너뛰는지. 개인정보 없이 고른 값의 코드만 */
+  preference_style_selected: { pace: string };
+  travel_preference_selected: { move_style: string };
+  quick_preference_selected: { wish: string; on: boolean };
+  advanced_preference_opened: Record<string, never>;
+  advanced_preference_selected: { tag: string; state: "like" | "avoid" | "none" };
+  course_generation_started: { pace: number; wishes: number; detailed: number; move_style: string };
   plan_abandoned: { step: number };
   course_generate_requested: {
     region?: string;

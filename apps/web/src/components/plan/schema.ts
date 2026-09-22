@@ -14,8 +14,14 @@ export const planSchema = z
     liked_tags: z.array(z.string()),
     disliked_tags: z.array(z.string()),
     transport: z.enum(["walk", "transit", "car"]),
-    /** efficient = 가깝고 알뜰하게 · fun = 재미 우선 */
+    /** efficient = 가깝고 알뜰하게 · fun = 재미 우선. docs/30 부터는 "어떤 하루"에서 읽힌다(특별한 경험 → fun) */
     style: z.enum(["efficient", "fun"]),
+    /** 어떤 하루 (docs/30): 0~2개. 비워 두면 짠이가 균형 있게 */
+    pace: z.array(z.enum(["relaxed", "packed", "foodie", "special"])).max(2),
+    /** 얼마나 이동해도 괜찮은지: 거리 필터가 아니라 엔진의 이동 선호 (docs/29) */
+    move_style: z.enum(["local", "balanced", "explorer"]),
+    /** 꼭 반영하고 싶은 것 (선택) */
+    wishes: z.array(z.enum(["night", "walk", "exhibition", "value", "romantic"])),
     /** 꼭 넣을 동네 명물. "" = 짠이가 알아서(가장 뚜렷한 명물), "-" = 넣지 않기 */
     focus: z.string().max(12),
     /** 술 한잔 포함: 저녁 5시 이후에 술집 자리를 꼭 넣는다 */
@@ -49,6 +55,9 @@ export const PLAN_DEFAULTS: PlanValues = {
   disliked_tags: [],
   transport: "walk",
   style: "efficient",
+  pace: [],
+  move_style: "balanced",
+  wishes: [],
   focus: "",
   with_bar: false,
   with_baseball: false,
@@ -63,7 +72,8 @@ export const STEPS = [
   { key: "region", title: "지역", question: "어디서 놀까요?", fields: ["region", "regions_before"] },
   { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "nights", "meet_day", "start_time", "duration_min"] },
-  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["style", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags", "transport"] },
+  // 4단계는 그대로 (docs/32 B §10): 취향 단계 안에 짧은 질문 셋(어떤 하루 · 얼마나 이동 · 꼭 원하는 것), 세부 태그는 "더 자세히" 안에
+  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["pace", "style", "move_style", "transport", "wishes", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags"] },
 ] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
 
 export type StepKey = (typeof STEPS)[number]["key"];
