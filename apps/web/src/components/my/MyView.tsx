@@ -38,7 +38,7 @@ export function MyView() {
   if (status === "loading") return <JjaniLoader stages={["내 코스를 꺼내는 중…"]} />;
   if (status === "anonymous" || !me) {
     return (
-      <EmptyState mood="hi" size="lg" title="로그인하고 코스를 모아 보세요" description="저장한 코스를 다시 꺼내 보고, 다녀온 곳으로 취향을 맞춰 드려요." className="min-h-[60vh]">
+      <EmptyState mood="hi" size="lg" title="로그인하고 코스를 모아 보세요" description="저장한 코스를 다시 꺼내 보고, 다녀온 곳으로 취향을 맞춰 드려요." className="wrap min-h-[60vh] content-center">
         <Button asChild variant="brand" size="md">
           <Link href="/login?next=/my">로그인하기</Link>
         </Button>

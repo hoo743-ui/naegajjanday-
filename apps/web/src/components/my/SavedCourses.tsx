@@ -41,11 +41,12 @@ export function SavedCourses() {
 
   return (
     <>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      {/* 저장한 하루들 = 영수증 묶음의 장부: 줄마다 날짜 · 경로 · 합계 (카드 격자가 아니라 한 줄씩 쌓인다, docs/31 §3 A) */}
+      <ul className="border-b-[1.5px] border-dashed border-ink/20">
         {items.map((c) => (
           // 한 장의 작은 영수증: 저장한 하루가 쌓인다 (docs/25 §5 내 코스)
-          <li key={c.id} className="receipt-wrap group relative transition-transform duration-200 hover:-translate-y-0.5">
-            <div className="receipt px-5 pt-6 pb-5">
+          <li key={c.id} className="group relative border-t-[1.5px] border-dashed border-ink/20 transition-colors hover:bg-white/60">
+            <div className="py-5 pr-14 pl-1">
             <p className="tabular text-caption font-extrabold text-blue-deep">
               {[c.region_name, c.purpose_name, `${c.party_size}명`].filter(Boolean).join(" · ")}
               {c.day && c.days && c.days > 1 ? <span className="ml-2 rounded-full bg-blue-soft px-2 py-0.5">{`${c.days - 1}박 ${c.days}일 · ${c.day}일차`}</span> : null}

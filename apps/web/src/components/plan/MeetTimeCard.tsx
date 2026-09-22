@@ -40,7 +40,7 @@ export function MeetTimeCard() {
   const error = formState.errors.start_time?.message ?? formState.errors.meet_day?.message;
 
   return (
-    <section aria-labelledby="meet-label" className="rounded-card bg-white p-6 shadow-soft">
+    <section aria-labelledby="meet-label" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
       <h3 id="meet-label" className="mb-4 text-body-sm font-semibold text-muted-foreground">
         언제 만나요?
       </h3>

@@ -36,30 +36,35 @@ function LostRoute() {
   );
 }
 
-/** 목록이 비었을 때·아직 아무것도 없을 때. 모든 리스트/페이지의 빈 상태는 이 컴포넌트를 쓴다. */
+/**
+ * 목록이 비었을 때·아직 아무것도 없을 때. 모든 리스트/페이지의 빈 상태는 이 컴포넌트를 쓴다.
+ * 가운데 큰 캐릭터 + 가운데 제목(템플릿의 빈 화면)이 아니라, 왼쪽에 짠이가 서고 오른쪽에서 할 일을 알려 준다 (docs/31 §9).
+ */
 export function EmptyState({ mood = "think", title, description, children, footnote, size = "md", scene, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center",
-        size === "sm" ? "gap-2 px-4 py-8" : "gap-3 px-6 py-14",
+        "grid grid-cols-[auto_minmax(0,1fr)] items-start text-left",
+        size === "sm" ? "gap-x-3 gap-y-2 px-1 py-6" : "gap-x-5 gap-y-3 py-12",
         className,
       )}
     >
       {scene === "lost" ? (
-        <div className="flex items-end gap-1">
+        <div className="col-span-2 flex items-end gap-1">
           <LostRoute />
           <Jjani mood={mood} size={SIZE[size]} />
         </div>
       ) : (
-        <Jjani mood={mood} size={SIZE[size]} />
+        <Jjani mood={mood} size={Math.round(SIZE[size] * 0.66)} className="row-span-4" />
       )}
+      <div className={cn("grid content-start gap-2", scene === "lost" && "col-span-2")}>
       <h3 className={cn("text-ink", size === "sm" ? "text-body font-bold" : size === "lg" ? "mt-1 font-serif text-h1" : "text-h3 font-bold")}>{title}</h3>
       {description ? (
         <p className={cn("max-w-md text-muted-foreground", size === "sm" ? "text-body-sm" : "text-body")}>{description}</p>
       ) : null}
-      {children ? <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">{children}</div> : null}
-      {footnote ? <p className="mt-2 text-caption text-muted-foreground/80">{footnote}</p> : null}
+      {children ? <div className="mt-2 flex flex-wrap items-center gap-2.5">{children}</div> : null}
+      {footnote ? <p className="mt-1 text-caption text-muted-foreground/80">{footnote}</p> : null}
+      </div>
     </div>
   );
 }

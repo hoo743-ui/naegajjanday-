@@ -19,8 +19,9 @@ import { MeetTimeCard } from "./MeetTimeCard";
 import { RegionPicker } from "./RegionPicker";
 import type { PlanValues } from "./schema";
 
+// 고르는 칸 (docs/31 §6): 떠오르는 흰 카드가 아니라 종이 위에 그은 테두리 하나. 고르면 파랗게 찍힌다
 const optionCard =
-  "flex cursor-pointer items-center gap-3.5 rounded-[20px] border-2 border-transparent bg-white p-4 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card peer-checked:border-blue-deep peer-checked:bg-blue-soft peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue";
+  "flex cursor-pointer items-center gap-3.5 rounded-lg border-[1.5px] border-line p-4 transition-colors duration-200 hover:border-ink-2 peer-checked:border-blue-deep peer-checked:bg-blue-soft peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue";
 
 function FieldError({ name }: { name: keyof PlanValues }) {
   const { formState } = useFormContext<PlanValues>();
@@ -56,7 +57,7 @@ export function RegionStep() {
   return (
     <div className="grid gap-4">
       {before.length > 0 ? (
-        <section aria-label="들를 동네 순서" className="rounded-card bg-white p-5 shadow-soft">
+        <section aria-label="들를 동네 순서" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
           <h3 className="text-body-sm font-semibold text-muted-foreground">이 순서로 들러요</h3>
           <ol className="mt-2.5 flex flex-wrap items-center gap-2">
             {before.map((slug, i) => (
@@ -103,7 +104,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
     return (
       <div className="grid gap-3 sm:grid-cols-2" aria-busy="true">
         {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-[92px] rounded-[20px]" />
+          <Skeleton key={i} className="h-[92px] rounded-lg" />
         ))}
       </div>
     );
@@ -130,9 +131,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
               }}
             />
             <span className={cn(optionCard, "items-start")}>
-              <span className="bg-grad-soft grid size-12 shrink-0 place-items-center rounded-2xl text-blue-deep">
-                <PurposeIcon icon={p.icon} className="size-6" />
-              </span>
+              <PurposeIcon icon={p.icon} className="mt-1 size-6 shrink-0 text-blue-deep" />
               <span className="min-w-0 flex-1">
                 <b className="block text-body-lg font-extrabold">{p.name}</b>
                 {p.description ? <span className="block text-body-sm text-muted-foreground">{p.description}</span> : null}
@@ -146,7 +145,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
       </div>
       <FieldError name="purpose" />
       {selected && purposes.data.items.length > 1 ? (
-        <div className="mt-5 rounded-card bg-white p-5 shadow-soft" role="group" aria-label="함께 고를 목적">
+        <div className="mt-8 border-t-[1.5px] border-dashed border-ink/20 pt-6" role="group" aria-label="함께 고를 목적">
           <h3 className="text-body-sm font-semibold text-muted-foreground">다른 목적도 겹치나요? (선택)</h3>
           <p className="mt-1 text-body-sm text-ink-2">
             위에서 고른 것이 하루의 틀이 되고, 여기서 더 고른 것까지 모두 맞는 곳을 찾아요. 예를 들어 가족이 함께면 술집은 빠져요.
@@ -194,7 +193,7 @@ function NightsCard() {
   const { setValue } = useFormContext<PlanValues>();
   const nights = useWatch<PlanValues, "nights">({ name: "nights" });
   return (
-    <section aria-labelledby="nights-title" className="rounded-card bg-white p-6 shadow-soft">
+    <section aria-labelledby="nights-title" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
       <h3 id="nights-title" className="text-body-sm font-semibold text-muted-foreground">며칠 일정인가요?</h3>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="일정 길이">
         {NIGHTS.map((o) => (
@@ -252,7 +251,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
 
   return (
     <div className="grid gap-5">
-      <section aria-labelledby="party-label" className="rounded-card bg-white p-6 shadow-soft">
+      <section aria-labelledby="party-label" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
         <h3 id="party-label" className="mb-3 text-body-sm font-semibold text-muted-foreground">
           몇 명이서?
         </h3>
@@ -275,7 +274,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
         <FieldError name="party_size" />
       </section>
 
-      <section className="rounded-card bg-white p-6 shadow-soft">
+      <section className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
         <label htmlFor={sliderId} className="mb-4 flex items-baseline justify-between text-body-sm font-semibold text-muted-foreground">
           총 예산
           <b className="money text-price text-ink">{won(budget)}</b>
@@ -328,7 +327,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
 
       {/* 돈을 움직이면 하루가 어떻게 달라지는지 그 자리에서 보여 준다 (docs/19 — 영수증은 서비스의 시그니처) */}
       {/* 데스크톱은 옆의 진행 영수증이 이 예시를 이어서 찍는다 */}
-      <details className="group rounded-card bg-white p-5 shadow-soft lg:hidden">
+      <details className="group border-t-[1.5px] border-dashed border-ink/20 pt-6 lg:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink-2 [&::-webkit-details-marker]:hidden">
           이 예산이면 이런 하루예요
           <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-caption text-gold-ink">예시 · 열어 보기</span>
@@ -408,13 +407,13 @@ export function TasteStep() {
 
   return (
     <div className="grid gap-5">
-      <fieldset className="rounded-card bg-white p-6 shadow-soft">
+      <fieldset className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
         <legend className="float-left mb-3 w-full text-body-sm font-semibold text-muted-foreground">어떤 코스가 좋아요?</legend>
         <div className="clear-both grid gap-2.5 sm:grid-cols-2">
           {STYLES.map((s) => (
             <label key={s.value} className="relative block">
               <input type="radio" value={s.value} className="peer sr-only" {...register("style")} checked={style === s.value} onChange={() => setValue("style", s.value, { shouldDirty: true })} />
-              <span className={cn(optionCard, "bg-soft shadow-none")}>
+              <span className={optionCard}>
                 <s.icon aria-hidden className="size-7 shrink-0 text-blue-deep" />
                 <span className="min-w-0">
                   <b className="block text-body font-extrabold">{s.label}</b>
@@ -426,7 +425,7 @@ export function TasteStep() {
         </div>
       </fieldset>
 
-      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+      <label className="flex cursor-pointer items-center gap-3.5 border-t-[1.5px] border-dashed border-ink/20 py-5">
         <input type="checkbox" className="peer sr-only" checked={rainy} onChange={(e) => setValue("rainy", e.target.checked, { shouldDirty: true })} />
         <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", rainy ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
@@ -438,7 +437,7 @@ export function TasteStep() {
         </span>
       </label>
 
-      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+      <label className="flex cursor-pointer items-center gap-3.5 border-t-[1.5px] border-dashed border-ink/20 py-5">
         <input type="checkbox" className="peer sr-only" checked={withBar} onChange={(e) => setValue("with_bar", e.target.checked, { shouldDirty: true })} />
         <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBar ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
@@ -450,7 +449,7 @@ export function TasteStep() {
         </span>
       </label>
 
-      <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
+      <label className="flex cursor-pointer items-center gap-3.5 border-t-[1.5px] border-dashed border-ink/20 py-5">
         <input type="checkbox" className="peer sr-only" checked={withBaseball} onChange={(e) => setValue("with_baseball", e.target.checked, { shouldDirty: true })} />
         <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBaseball ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
@@ -463,7 +462,7 @@ export function TasteStep() {
       </label>
 
       {specialties.length > 0 ? (
-        <fieldset className="rounded-card bg-white p-6 shadow-soft">
+        <fieldset className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
           <legend className="float-left mb-1 w-full text-body-sm font-semibold text-muted-foreground">{local.data?.region}에 왔다면</legend>
           <p className="clear-both mb-3 text-body-sm text-ink-2">이 동네 간판에 유독 많이 걸린 말이에요. 하나 고르면 예산 안에서 그 집을 꼭 넣어 드려요.</p>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="꼭 넣을 동네 명물">
@@ -487,7 +486,7 @@ export function TasteStep() {
         </fieldset>
       ) : null}
 
-      <section className="rounded-card bg-white p-6 shadow-soft">
+      <section className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
         <h3 className="text-body-sm font-semibold text-muted-foreground">끌리는 분위기 (선택)</h3>
         <p className="mt-1 mb-4 text-body-sm text-muted-foreground">
           한 번 누르면 <b className="text-blue-deep">좋아요</b>, 한 번 더 누르면 <b className="text-pink-deep">피할래요</b>, 또 누르면 해제돼요.
@@ -536,13 +535,13 @@ export function TasteStep() {
         )}
       </section>
 
-      <fieldset className="rounded-card bg-white p-6 shadow-soft">
+      <fieldset className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
         <legend className="float-left mb-3 w-full text-body-sm font-semibold text-muted-foreground">어떻게 이동해요?</legend>
         <div className="clear-both grid grid-cols-3 gap-2.5">
           {TRANSPORTS.map((t) => (
             <label key={t.value} className="relative block">
               <input type="radio" value={t.value} className="peer sr-only" {...register("transport")} checked={transport === t.value} onChange={() => setValue("transport", t.value, { shouldDirty: true })} />
-              <span className={cn(optionCard, "flex-col gap-1 bg-soft p-3.5 text-center shadow-none")}>
+              <span className={cn(optionCard, "flex-col gap-1 p-3.5 text-center")}>
                 <t.icon aria-hidden className="size-6 text-blue-deep" />
                 <b className="text-body font-extrabold">{t.label}</b>
                 <span className="text-caption text-muted-foreground">{t.hint}</span>

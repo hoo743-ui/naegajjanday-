@@ -38,7 +38,7 @@ export function HotPlaces({ regionSlug, partySize }: { regionSlug: string; party
   const widened = hot.data && hot.data.scope !== hot.data.region;
 
   return (
-    <section aria-labelledby="hot-places" className="rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="hot-places" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
       <h3 id="hot-places" className="text-body font-extrabold text-ink">
         {hot.data?.scope}에서 사람들이 많이 가는 곳
       </h3>
