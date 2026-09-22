@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { LottiePlayer } from "@/components/LottiePlayer";
 import { cn } from "@/lib/utils";
 import { Jjani } from "./Jjani";
 
@@ -35,49 +34,58 @@ export function JjaniLoader({ stages = DEFAULT_STAGES, interval = 1500, fullscre
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-col items-center justify-center gap-5 px-6 text-center",
-        fullscreen ? "bg-hero fixed inset-0 z-[80] bg-white" : "min-h-[52vh] py-16",
+        "grid place-content-center px-6",
+        fullscreen ? "fixed inset-0 z-[80] bg-paper" : "min-h-[52vh] py-16",
         className,
       )}
     >
-      <div className="relative">
-        <span aria-hidden className="absolute inset-x-0 top-5 mx-auto size-40 rounded-full bg-white/80 blur-[2px]" />
-        <Jjani mood="think" size={148} floating decorative className="relative" />
-        <LottiePlayer
-          src="/lottie/coin-spin.json"
-          className="absolute -top-1 -right-7 size-14"
-          fallback={<span className="block size-full rounded-full border-4 border-gold-deep bg-gold" />}
-        />
-      </div>
+      {/* 기다리는 동안 보이는 것도 브랜드 언어로 (docs/32 B §21): 스피너 대신 경로가 이어지고 영수증 줄이 찍힌다 */}
+      <div className="grid w-[min(400px,calc(100vw-48px))] gap-6">
+        <div className="flex items-center gap-3">
+          <Jjani mood="think" size={52} decorative className="shrink-0" />
+          <div className="h-7 min-w-0 overflow-hidden">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.p
+                key={stage}
+                initial={reduced ? false : { y: 14, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={reduced ? undefined : { y: -14, opacity: 0 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="truncate text-body-lg font-bold text-ink"
+              >
+                {stage}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+        </div>
 
-      <div className="h-8 overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.p
-            key={stage}
-            initial={reduced ? false : { y: 18, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={reduced ? undefined : { y: -18, opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
-            className="text-body-lg font-extrabold text-ink"
-          >
-            {stage}
-          </motion.p>
-        </AnimatePresence>
-      </div>
-
-      {stages.length > 1 ? (
-        <div className="flex gap-1.5" aria-hidden>
-          {stages.map((s, i) => (
-            <span
-              key={s}
-              className={cn(
-                "h-1.5 rounded-full transition-all duration-500",
-                i === index ? "w-7 bg-blue-deep" : "w-1.5 bg-line",
-              )}
-            />
+        {/* 오늘의 경로가 한 곳씩 이어진다 */}
+        <div aria-hidden className="relative flex items-center justify-between">
+          <span className="absolute inset-x-1.5 top-1/2 border-t-2 border-dashed border-ink/20" />
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} style={{ animationDelay: `${i * 0.35}s` }} className="loader-node relative size-3 rounded-full border-2 border-ink bg-paper" />
           ))}
         </div>
-      ) : null}
+
+        {/* 영수증 줄이 한 줄씩 찍힌다 */}
+        <div aria-hidden className="grid gap-3 border-t-[1.5px] border-dashed border-ink/20 pt-5">
+          {[0.55, 0.42, 0.62].map((w, i) => (
+            <span key={i} style={{ animationDelay: `${0.2 + i * 0.35}s` }} className="loader-line flex items-end gap-2">
+              <span className="h-2.5 rounded-full bg-ink/10" style={{ width: `${w * 100}%` }} />
+              <span className="receipt-leader" />
+              <span className="h-2.5 w-14 rounded-full bg-gold/35" />
+            </span>
+          ))}
+        </div>
+
+        {stages.length > 1 ? (
+          <div className="flex gap-1.5" aria-hidden>
+            {stages.map((s, i) => (
+              <span key={s} className={cn("h-1 rounded-full transition-all duration-500", i === index ? "w-6 bg-ink" : "w-1.5 bg-line")} />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

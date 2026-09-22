@@ -804,6 +804,40 @@ html[data-intro="play"] .hero-intro [data-beat="jjani"] {
 html[data-intro="play"] .hero-intro [data-beat="act"] {
   animation: quiet-in 0.5s var(--motion-out) 2.35s both;
 }
+/* 기다리는 동안 (JjaniLoader): 경로의 점이 차례로 켜지고 영수증 줄이 찍혔다 옅어진다. 2.4초 한 바퀴, 조용히 */
+.loader-node {
+  animation: loader-node 2.4s var(--motion-in-out) infinite both;
+}
+.loader-line {
+  animation: loader-line 2.4s var(--motion-out) infinite both;
+}
+@keyframes loader-node {
+  0%,
+  12% {
+    background: var(--paper);
+  }
+  30%,
+  80% {
+    background: var(--ink);
+  }
+  100% {
+    background: var(--paper);
+  }
+}
+@keyframes loader-line {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  18%,
+  78% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
 @keyframes quiet-in {
   from {
     opacity: 0;

@@ -120,6 +120,12 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           <span className="photo-edge relative mt-0.5 size-16 shrink-0 overflow-hidden rounded-md">
             <Image src={place.thumbnail_url} alt="" fill sizes="64px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
           </span>
+        ) : !place.thumbnail_url && example ? (
+          // 그 가게의 사진이 아니라 같은 업종의 예시 사진: 같은 자리에 작게, "예시"라고 사진 위에 적는다 (docs/32 B §14)
+          <a href={example.page_url ?? example.url} target="_blank" rel="noreferrer" title={`이 가게의 사진이 아니라 같은 업종의 예시 사진이에요 · © ${example.author} · ${example.license}`} className="photo-edge relative mt-0.5 size-16 shrink-0 overflow-hidden rounded-md">
+            <Image src={example.url} alt="" fill sizes="64px" className="object-cover opacity-80 saturate-[.7]" unoptimized={!canOptimize(example.url)} />
+            <span className="absolute inset-x-0 bottom-0 bg-ink/65 py-0.5 text-center text-caption font-semibold text-white">예시</span>
+          </a>
         ) : null}
 
         <div className="min-w-0 flex-1">
@@ -166,25 +172,9 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         </p>
       </div>
 
-      {place.rating !== null || stop.congestion || place.tags.length > 0 || (!place.thumbnail_url && example) ? (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-caption font-semibold">
-          {!place.thumbnail_url && example ? (
-            // 그 가게의 실제 사진이 아니라 업종 대표 이미지임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
-            <a
-              href={example.page_url ?? example.url}
-              target="_blank"
-              rel="noreferrer"
-              title="이 가게의 사진이 아니라 같은 업종의 예시 사진이에요"
-              className="mr-1 inline-flex items-center gap-2 rounded-full border border-line py-0.5 pr-2.5 pl-0.5 font-medium text-muted-foreground hover:border-ink-2"
-            >
-              <span className="relative size-7 shrink-0 overflow-hidden rounded-full">
-                <Image src={example.url} alt="" fill sizes="28px" className="object-cover" unoptimized={!canOptimize(example.url)} />
-              </span>
-              <span className="max-w-[210px] truncate text-caption">
-                예시 사진 · © {example.author} · {example.license}
-              </span>
-            </a>
-          ) : null}
+      {/* 2차 정보: 평점(자료가 있을 때만) · 혼잡도 · 태그는 칩이 아니라 한 줄의 글 (docs/32 B §13) */}
+      {place.rating !== null || stop.congestion || place.tags.length > 0 ? (
+        <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption font-semibold text-muted-foreground">
           {place.rating !== null ? (
             <span className="tabular inline-flex items-center gap-1 text-ink-2">
               <Star aria-hidden className="size-3.5 fill-gold text-gold-deep" />
@@ -200,16 +190,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {stop.congestion.level}
             </span>
           ) : null}
-          {place.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="rounded-full bg-soft px-2 py-0.5 text-ink-2">
-              {tag}
-            </span>
-          ))}
-        </div>
+          {place.tags.length > 0 ? <span>{place.tags.slice(0, 3).map((tag) => `#${tag}`).join("  ")}</span> : null}
+        </p>
       ) : null}
 
       {/* 이유는 상자가 아니라 본문이다: 왼쪽의 가는 선 하나로 "짠이의 말"임을 표시한다 */}
       {stop.reason ? <p className="mt-2.5 text-body-sm text-ink-2">{stop.reason}</p> : null}
+      {!place.thumbnail_url && example ? (
+        <p className="mt-1 truncate text-caption text-muted-foreground/80">
+          예시 사진 · © {example.author} · {example.license}
+        </p>
+      ) : null}
 
       {/* 도구는 한 줄: 왼쪽은 읽을 것(왜 여기 · 거리뷰 · 지도 앱), 오른쪽은 바꿀 것(순서 · 바꾸기) */}
       <div className="mt-1.5 -mb-2 flex items-center justify-between gap-2">
