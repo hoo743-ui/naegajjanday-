@@ -47,7 +47,7 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
           const value = lines[i]?.value;
           return (
             <li key={s.key} aria-current={i === step ? "step" : undefined} className="min-w-0 border-l border-dashed border-ink/15 first:border-l-0">
-              <button type="button" disabled={!done} onClick={() => onJump(i)} aria-label={label(i, step)} className="block w-full min-w-0 px-2.5 py-1.5 text-left disabled:cursor-default">
+              <button type="button" disabled={!done} onClick={() => onJump(i)} aria-label={label(i, step)} className="block min-h-11 w-full min-w-0 px-2.5 py-1.5 text-left disabled:cursor-default">
                 <span className={cn("tabular flex items-center gap-1 text-caption font-extrabold", i === step ? "text-blue-deep" : done ? "text-ink-2" : "text-muted-foreground")}>
                   {done ? <Check aria-hidden className="size-3" /> : null}
                   {String(i + 1).padStart(2, "0")} {s.title.split(" · ")[0]}

@@ -59,7 +59,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
       <div className="wrap flex h-(--header-h) items-center justify-between gap-4">
         <Link
           href="/"
-          className="-ml-1 flex items-center gap-2 rounded-xl px-1 font-round text-h2 leading-none hover:opacity-80"
+          className="-ml-1 flex min-h-11 items-center gap-2 rounded-xl px-1 font-round text-h2 leading-none hover:opacity-80"
           aria-label="내가짠데이 홈"
           aria-current={pathname === "/" ? "page" : undefined}
         >
@@ -81,7 +81,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
               onClick={link.href === "/plan" ? () => track("plan_started", { entry: "nav" }) : undefined}
               aria-current={pathname.startsWith(link.href) ? "page" : undefined}
               // 지금 있는 곳은 상자가 아니라 밑줄 한 줄 (간판 · 지도의 선처럼)
-              className="relative px-3 py-2 text-ink-2/80 after:absolute after:inset-x-3 after:bottom-0.5 after:h-[2px] after:bg-transparent hover:text-ink aria-[current=page]:text-ink aria-[current=page]:after:bg-ink"
+              className="relative inline-flex min-h-11 items-center px-3 text-ink-2/80 after:absolute after:inset-x-3 after:bottom-0.5 after:h-[2px] after:bg-transparent hover:text-ink aria-[current=page]:text-ink aria-[current=page]:after:bg-ink"
             >
               {link.label}
             </Link>

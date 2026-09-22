@@ -9,7 +9,7 @@ import type { PlanValues } from "./schema";
 
 const chip = (on: boolean, disabled = false) =>
   cn(
-    "tabular rounded-full px-4 py-2.5 text-body-sm font-extrabold transition-colors",
+    "tabular inline-flex min-h-11 items-center rounded-full px-4 text-body-sm font-extrabold transition-colors",
     on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
     disabled && "cursor-not-allowed opacity-40 hover:bg-soft",
   );

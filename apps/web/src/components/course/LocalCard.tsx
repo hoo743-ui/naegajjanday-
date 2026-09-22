@@ -81,7 +81,7 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
           <ul className="flex flex-wrap gap-x-3 gap-y-1.5">
             {local.sights.map((s) => (
               <li key={s.name}>
-                <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-body-sm font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep">
+                <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1 text-body-sm font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep">
                   <MapPin aria-hidden className="size-3.5 text-blue-deep" />
                   {s.name}
                 </a>

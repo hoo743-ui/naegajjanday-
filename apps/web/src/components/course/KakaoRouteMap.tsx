@@ -303,7 +303,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       <button
         type="button"
         onClick={() => fitRef.current()}
-        className="absolute top-3 right-3 z-[500] inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-body-sm font-semibold text-ink-2 shadow-soft hover:bg-soft hover:text-ink"
+        className="absolute top-3 right-3 z-[500] inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-white px-3.5 text-body-sm font-semibold text-ink-2 shadow-soft hover:bg-soft hover:text-ink"
       >
         <Maximize2 aria-hidden className="size-3.5" />
         코스 전체 보기

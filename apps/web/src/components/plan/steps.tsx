@@ -164,7 +164,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
                     disabled={full}
                     onClick={() => setValue("purposes_extra", on ? extra.filter((c) => c !== p.code) : [...extra, p.code], { shouldDirty: true })}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-body-sm font-semibold disabled:opacity-40",
+                      "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-body-sm font-semibold disabled:opacity-40",
                       on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep",
                     )}
                   >
@@ -307,7 +307,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
                   aria-pressed={on}
                   onClick={() => setBudget(amount)}
                   className={cn(
-                    "tabular rounded-full px-4 py-2.5 text-body-sm font-extrabold transition-colors",
+                    "tabular inline-flex min-h-11 items-center rounded-full px-4 text-body-sm font-extrabold transition-colors",
                     on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
                   )}
                 >
@@ -328,7 +328,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       {/* 돈을 움직이면 하루가 어떻게 달라지는지 그 자리에서 보여 준다 (docs/19 — 영수증은 서비스의 시그니처) */}
       {/* 데스크톱은 옆의 진행 영수증이 이 예시를 이어서 찍는다 */}
       <details className="group border-t-[1.5px] border-dashed border-ink/20 pt-6 lg:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink-2 [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink-2 [&::-webkit-details-marker]:hidden">
           이 예산이면 이런 하루예요
           <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-caption text-gold-ink">예시 · 열어 보기</span>
         </summary>

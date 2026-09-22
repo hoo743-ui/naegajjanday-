@@ -205,7 +205,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           <>
             {/* 어디까지 들어왔는지 — 누르면 그 단계로 돌아간다 */}
             <nav aria-label="지역 단계" className="mb-3 flex flex-wrap items-center gap-1 text-body-sm font-semibold text-muted-foreground">
-              <button type="button" aria-current={path.length === 0 ? "location" : undefined} onClick={() => setPath([])} className={cn("rounded-lg px-2 py-1 hover:bg-ink/[0.05] hover:text-ink", path.length === 0 && "text-ink")}>
+              <button type="button" aria-current={path.length === 0 ? "location" : undefined} onClick={() => setPath([])} className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", path.length === 0 && "text-ink")}>
                 전국
               </button>
               {path.map((node, i) => (
@@ -215,7 +215,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                     type="button"
                     aria-current={i === path.length - 1 ? "location" : undefined}
                     onClick={() => setPath(path.slice(0, i + 1))}
-                    className={cn("rounded-lg px-2 py-1 hover:bg-ink/[0.05] hover:text-ink", i === path.length - 1 && "text-ink")}
+                    className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", i === path.length - 1 && "text-ink")}
                   >
                     {node.name}
                   </button>
@@ -235,7 +235,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       aria-checked={value === r.slug}
                       onClick={() => onChange(r.slug)}
                       className={cn(
-                        "rounded-full border-2 px-3.5 py-1.5 text-body-sm font-semibold transition-colors",
+                        "inline-flex min-h-11 items-center rounded-full border-2 px-3.5 text-body-sm font-semibold transition-colors",
                         value === r.slug ? "border-blue-deep bg-blue-deep text-white" : "border-transparent bg-white text-ink-2 shadow-soft hover:bg-blue-soft",
                       )}
                     >

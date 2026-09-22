@@ -374,7 +374,7 @@ export function CourseView({ id }: { id: string }) {
           {/* 높이는 바텀시트 단계가 정한다: 지도를 크게 · 절반 · 접음(목록 전체). 데스크톱은 늘 화면 높이 */}
           <div
             ref={mapBoxRef}
-            style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "40dvh" : "0px" } as React.CSSProperties}
+            style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "34dvh" : "0px" } as React.CSSProperties}
             className={cn("h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
           >
             <RouteMap stops={data.stops} activeStop={activeStop} onSelect={selectFromMap} route={mapRoute} focus={focus} fitKey={fitKey} access={accessHints.data?.items} />
@@ -418,15 +418,15 @@ export function CourseView({ id }: { id: string }) {
         {/* 타임라인 */}
         <div className="relative z-10 bg-soft">
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
-          <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-3 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
+          <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-3 pb-32 sm:gap-5 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               {/* 조건 칩: 아이콘 + 짧은 말 (docs/32 B §12). 돈은 바로 아래 요약이 가장 크게 말한다 */}
               <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-1.5 text-body-sm font-semibold text-ink-2">
                 {(
                   [
                     request.days && request.days > 1 ? { icon: CalendarRange, text: `${request.day}일차 / ${request.days}일` } : null,
-                    { icon: CalendarDays, text: dateLabel(request.start_at) },
-                    { icon: Clock, text: meetWindow(request.start_at, request.duration_min) },
+                    // 날짜와 시간은 한 칩: 좁은 화면에서 칩이 두 줄이 되어 첫 일정을 밀어내지 않게
+                    { icon: CalendarDays, text: `${dateLabel(request.start_at)} ${meetWindow(request.start_at, request.duration_min)}` },
                     { icon: Users, text: `${request.party_size}명` },
                     { icon: MODE_ICON[request.transport] ?? Footprints, text: transportLabel(request.transport) },
                     request.conditions?.includes("rain") ? { icon: CloudRain, text: "비 오는 날" } : null,

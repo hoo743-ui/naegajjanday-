@@ -136,7 +136,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => (prev ? openInNaverMap(e, point(prev), point(stop), mode) : undefined)}
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
+                        className="-my-2.5 inline-flex min-h-11 items-center gap-1 rounded-md px-1.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
                       >
                         {prev ? "네이버 지도 길찾기" : "네이버 지도에서 보기"}
                         <ExternalLink aria-hidden className="size-3" />

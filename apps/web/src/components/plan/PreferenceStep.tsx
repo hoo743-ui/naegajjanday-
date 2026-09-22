@@ -65,7 +65,7 @@ const PACES: { value: Pace; label: string; hint: string; icon: LucideIcon }[] = 
   { value: "relaxed", label: "여유롭게", hint: "들르는 곳은 적게, 한 곳에 오래", icon: Leaf },
   { value: "packed", label: "알차게", hint: "시간 안에서 여러 곳을 촘촘히", icon: ListChecks },
   { value: "foodie", label: "맛있는 거 중심", hint: "식사에 예산을 더, 동네 맛집 위주", icon: Utensils },
-  { value: "special", label: "특별한 경험", hint: "해 보는 것 · 볼거리 위주, 체인점은 덜 (재미 우선)", icon: Ticket },
+  { value: "special", label: "특별한 경험", hint: "해 보는 것 · 볼거리 위주 (재미 우선)", icon: Ticket },
 ];
 const MAX_PACE = 2;
 
@@ -87,17 +87,25 @@ function DayQuestion() {
       <legend className="float-left w-full text-body font-bold text-ink">
         오늘 어떤 하루를 원하세요? <span className="text-body-sm font-medium text-muted-foreground">하나나 두 개, 안 골라도 괜찮아요</span>
       </legend>
-      <div className="clear-both grid gap-2.5 sm:grid-cols-2">
+      {/* 좁은 화면에서도 두 칸: 네 개가 한 화면을 다 차지하지 않게 */}
+      <div className="clear-both grid grid-cols-2 gap-2.5">
         {PACES.map((p) => {
           const on = pace.includes(p.value);
           return (
-            <button key={p.value} type="button" role="checkbox" aria-checked={on} onClick={() => toggle(p.value)} className={cn(choice, on ? choiceOn : choiceOff)}>
-              <p.icon aria-hidden className="mt-0.5 size-5 shrink-0 text-blue-deep" />
-              <span className="min-w-0">
-                <b className="block text-body font-bold text-ink">{p.label}</b>
-                <span className="mt-0.5 block text-body-sm text-muted-foreground">{p.hint}</span>
+            <button key={p.value} type="button" role="checkbox" aria-checked={on} onClick={() => toggle(p.value)} className={cn(choice, "flex-col gap-1.5 p-3.5 sm:flex-row sm:gap-3.5 sm:p-4", on ? choiceOn : choiceOff)}>
+              {/* 좁은 화면: 체크 동그라미 대신 아이콘 자리에 체크 — 두 칸에 이름이 눌리지 않게 */}
+              <span className="flex w-full items-center gap-2 sm:contents">
+                {on ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep sm:hidden" /> : null}
+                <p.icon aria-hidden className={cn("size-5 shrink-0 text-blue-deep sm:mt-0.5", on && "max-sm:hidden")} />
+                <b className="text-body font-bold text-ink sm:hidden">{p.label}</b>
               </span>
-              <Tick on={on} />
+              <span className="min-w-0">
+                <b className="hidden text-body font-bold text-ink sm:block">{p.label}</b>
+                <span className="block text-caption text-muted-foreground sm:mt-0.5 sm:text-body-sm">{p.hint}</span>
+              </span>
+              <span className="ml-auto hidden sm:block">
+                <Tick on={on} />
+              </span>
             </button>
           );
         })}

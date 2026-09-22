@@ -42,11 +42,11 @@ export function FinalCta() {
               </Link>
             </Button>
             {chatOff ? (
-              <Link href="/explore" className="justify-self-start text-body-sm font-semibold text-ink-2 underline decoration-line decoration-2 underline-offset-4 hover:text-ink hover:decoration-ink">
+              <Link href="/explore" className="inline-flex min-h-11 items-center justify-self-start text-body-sm font-semibold text-ink-2 underline decoration-line decoration-2 underline-offset-4 hover:text-ink hover:decoration-ink">
                 갈 만한 곳 먼저 둘러보기
               </Link>
             ) : (
-              <Link href="/chat" className="justify-self-start text-body-sm font-semibold text-ink-2 underline decoration-line decoration-2 underline-offset-4 hover:text-ink hover:decoration-ink">
+              <Link href="/chat" className="inline-flex min-h-11 items-center justify-self-start text-body-sm font-semibold text-ink-2 underline decoration-line decoration-2 underline-offset-4 hover:text-ink hover:decoration-ink">
                 짠이에게 말로 부탁하기
               </Link>
             )}

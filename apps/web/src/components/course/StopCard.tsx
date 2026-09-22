@@ -136,12 +136,12 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {clock(stop.arrive_at)}부터 {clock(stop.leave_at)}까지
             </span>
           </p>
-          <h3 className="truncate text-body-lg font-semibold">
+          <h3 className="line-clamp-2 text-body-lg font-semibold break-all">
             {/* 이름을 누르면 우리가 가진 그 가게의 정보(조사된 메뉴 가격 · 사진 · 영업시간 · 개업 연도)를 연다 */}
             {stop.place.kind === "event" ? (
               place.name
             ) : (
-              <button type="button" onClick={() => { setSheet(true); track("place_sheet_opened", { course_id: courseId, position: stop.position }); }} className="max-w-full truncate text-left underline decoration-line decoration-2 underline-offset-4 hover:decoration-blue-deep">
+              <button type="button" onClick={() => { setSheet(true); track("place_sheet_opened", { course_id: courseId, position: stop.position }); }} className="max-w-full text-left underline decoration-line decoration-2 underline-offset-4 hover:decoration-blue-deep">
                 {place.name}
               </button>
             )}
@@ -228,7 +228,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
                 setStreet((v) => !v);
                 if (!street) track("place_link_clicked", { course_id: courseId, position: stop.position, to: "roadview" });
               }}
-              className={cn("grid size-11 place-items-center rounded-full hover:bg-soft", street ? "bg-blue-soft text-blue-deep" : "text-ink-2 hover:text-ink")}
+              className={cn("grid size-11 shrink-0 place-items-center rounded-full hover:bg-soft", street ? "bg-blue-soft text-blue-deep" : "text-ink-2 hover:text-ink")}
             >
               <Eye aria-hidden className="size-4" />
             </button>
@@ -241,7 +241,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             aria-label="실제 사진·메뉴 보기"
             title="지도 앱에서 실제 사진 · 메뉴 보기"
             onClick={() => track("place_link_clicked", { course_id: courseId, position: stop.position, to: "kakaomap" })}
-            className="grid size-11 place-items-center rounded-full text-ink-2 hover:bg-soft hover:text-ink"
+            className="grid size-11 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-soft hover:text-ink"
           >
             <ExternalLink aria-hidden className="size-4" />
           </a>
