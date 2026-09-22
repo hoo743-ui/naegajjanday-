@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from pydantic import ValidationError
 from sqlalchemy import select
 
-from app.core import errors
+from app.core import course_key, errors
 from app.core.deps import Container
 from app.core.logging import get_logger
 from app.core.sse import sse
@@ -253,9 +253,14 @@ class ChatService:
                     )
                     resp = await build_course_service(self._c, s).generate(req, user)
                     card = resp.courses[0].model_dump(mode="json")
+                    if (
+                        resp.edit_key
+                    ):  # the chat acts for its anonymous user: remember the key for later swaps
+                        await self._c.cache.set(f"chat:course-key:{card['id']}", resp.edit_key, 86_400)
                     return self._ok(call, _course_digest(card)), card
                 if call.name == "swap_stop":
                     body = SwapRequest(position=args["position"], strategy=args["strategy"])
+                    course_key.use_key(await self._c.cache.get(f"chat:course-key:{args['course_id']}"))
                     out = await build_course_service(self._c, s).swap(str(args["course_id"]), body, user)
                     card = out.model_dump(mode="json")
                     return self._ok(call, _course_digest(card)), card

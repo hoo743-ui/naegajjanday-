@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { identify, resetAnalytics } from "@/lib/analytics";
 import { qk, useMe } from "@/lib/api/hooks";
 import type { Me } from "@/lib/api/types";
-import { getAccessToken, logout as logoutRequest, refreshAccessToken, subscribeToken } from "./token";
+import { IS_MOCKING } from "@/lib/api/client";
+import { getAccessToken, hasSessionHint, logout as logoutRequest, refreshAccessToken, subscribeToken } from "./token";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -32,8 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => subscribeToken(setToken), []);
 
   // 새로고침 직후: 메모리에 access token 이 없으므로 refresh 쿠키로 한 번 복원을 시도한다.
+  // 로그인한 흔적이 없는 방문자는 건너뛴다 (돌아올 답은 401 뿐이다)
   useEffect(() => {
     let alive = true;
+    if (!IS_MOCKING && !hasSessionHint()) {
+      setRestoring(false);
+      return;
+    }
     void refreshAccessToken().finally(() => {
       if (alive) setRestoring(false);
     });

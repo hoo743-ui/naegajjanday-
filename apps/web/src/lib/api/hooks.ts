@@ -12,6 +12,7 @@ import {
 import { getAccessToken, subscribeToken } from "@/lib/auth/token";
 import { ApiError, api, newIdempotencyKey } from "./client";
 import { safeJson, streamSse } from "./sse";
+import { rememberCourseKey } from "@/lib/course-keys";
 import type {
   CourseRoute,
   SuggestionList,
@@ -155,8 +156,12 @@ export function useFeatures() {
 // ── 코스 ────────────────────────────────────────────────────
 export function useGenerateCourse() {
   return useMutation<GenerateCourseResponse, ApiError, GenerateCourseRequest>({
-    mutationFn: (body) =>
-      api.post("/courses/generate", body, { idempotencyKey: newIdempotencyKey(), timeoutMs: 30_000 }),
+    mutationFn: async (body) => {
+      const res = await api.post<GenerateCourseResponse>("/courses/generate", body, { idempotencyKey: newIdempotencyKey(), timeoutMs: 30_000 });
+      // 계정 없이 만든 코스는 이 브라우저만 고칠 수 있다: 편집 키를 기억한다 (docs/28)
+      rememberCourseKey(res.courses.map((c) => c.id), res.edit_key);
+      return res;
+    },
   });
 }
 

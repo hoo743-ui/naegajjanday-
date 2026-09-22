@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -76,10 +78,41 @@ async def _clean_state(request: pytest.FixtureRequest) -> AsyncIterator[None]:
         await c.cache.delete_prefix("")
 
 
+class BrowserLikeClient(httpx.AsyncClient):
+    """Acts like the web app: keeps the edit keys of courses it generated without an account and sends
+    them back (X-Course-Key) on requests to those courses (docs/28). `stranger()` forgets them."""
+
+    course_keys: dict[str, str]
+
+    async def request(self, method: str, url: httpx.URL | str, **kwargs: Any) -> httpx.Response:  # type: ignore[override]
+        path = str(url)
+        found = re.match(r"^/v1/courses/([0-9a-f-]{36})", path)
+        generating = method.upper() == "POST" and path.startswith("/v1/courses/generate")
+        # planning one day of a trip again (`replaces`) is an edit of that day → its key goes along
+        target = (
+            found.group(1) if found else ((kwargs.get("json") or {}).get("replaces") if generating else None)
+        )
+        if target and target in self.course_keys:
+            kwargs["headers"] = {"X-Course-Key": self.course_keys[target], **(kwargs.get("headers") or {})}
+        resp = await super().request(method, url, **kwargs)
+        if generating and resp.status_code == 200:
+            body = resp.json()
+            if body.get("edit_key"):
+                for course in body["courses"]:
+                    self.course_keys[course["id"]] = body["edit_key"]
+                    for sibling in course.get("siblings") or []:
+                        self.course_keys[sibling["id"]] = body["edit_key"]
+        return resp
+
+    def stranger(self) -> None:
+        self.course_keys.clear()
+
+
 @pytest_asyncio.fixture
 async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as c:
+    async with BrowserLikeClient(transport=transport, base_url="http://testserver") as c:
+        c.course_keys = {}
         yield c
 
 

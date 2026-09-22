@@ -9,6 +9,7 @@
 import { chromium, devices } from "@playwright/test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { asCreator, remember } from "./creator.mjs";
 
 const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 const API = process.env.E2E_API_URL ?? "http://localhost:8000/v1";
@@ -27,7 +28,7 @@ mkdirSync(outDir, { recursive: true });
 const d = new Date();
 d.setDate(d.getDate() + 4);
 const ymd = d.toISOString().slice(0, 10);
-const make = async (body) => (await (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json()).courses[0].id;
+const make = async (body) => (await remember(await (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json())).courses[0].id;
 const needsCourse = only.length === 0 || only.some((o) => "course".startsWith(o));
 const courseId = !needsCourse ? "" : await make({ region: "seoul-hongdae", purpose: "date", party_size: 2, budget_total: 120000, start_at: `${ymd}T12:00:00+09:00`, duration_min: 180, alternatives: 2 });
 
@@ -133,7 +134,7 @@ async function open(context, scene) {
 }
 
 for (const scene of SCENES) {
-  const context = await browser.newContext({ ...(mobile ? devices["Pixel 7"] : { viewport: { width: 1440, height: 900 } }), locale: "ko-KR" });
+  const context = await asCreator(await browser.newContext({ ...(mobile ? devices["Pixel 7"] : { viewport: { width: 1440, height: 900 } }), locale: "ko-KR" }));
   // 공연 조회는 17초가 걸리고 이 검사의 대상이 아니다
   await context.route("**/v1/performances**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], partial: false }) }));
   if (scene.admin && adminToken) await context.route("**/v1/auth/refresh", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: adminToken, token_type: "Bearer", expires_in: 900 }) }));

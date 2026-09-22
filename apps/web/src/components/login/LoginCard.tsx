@@ -9,7 +9,7 @@ import { IS_MOCKING } from "@/lib/api/client";
 import { useAuthProviders } from "@/lib/api/hooks";
 import type { OAuthProvider } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { oauthLoginUrl, refreshAccessToken } from "@/lib/auth/token";
+import { markSession, oauthLoginUrl, refreshAccessToken } from "@/lib/auth/token";
 import { cn } from "@/lib/utils";
 
 /** 오픈 리다이렉트 방지: 사이트 내부 경로만 허용 */
@@ -80,6 +80,7 @@ export function LoginCard() {
 
   const onClick = async (event: MouseEvent<HTMLAnchorElement>, provider: OAuthProvider) => {
     track("login_clicked", { provider });
+    markSession(true); // 돌아오면 세션을 복원하라는 흔적 (실패하면 refresh 가 지운다)
     if (!IS_MOCKING) return; // 실제 환경: 링크 그대로 API 의 OAuth 시작점으로 이동
     // 목 모드: OAuth 서버가 없으므로 "로그아웃 표시"만 지우고 세션을 복원한다
     event.preventDefault();

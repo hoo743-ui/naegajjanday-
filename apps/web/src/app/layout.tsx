@@ -52,7 +52,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: 랜딩의 인트로 게이트 스크립트가 첫 페인트 전에 data-intro 를 단다 (이 요소의 속성만 해당)
-    <html lang="ko" className={`${jua.variable} ${serif.variable}`} suppressHydrationWarning>
+    <html lang="ko" className={`${jua.variable} ${serif.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <body>
         <a
           href="#main"

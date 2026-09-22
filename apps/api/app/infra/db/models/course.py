@@ -71,6 +71,8 @@ class Course(Base, TimestampMixin):
     warnings: Mapped[json_list]
     request: Mapped[json_dict]  # preferences etc. needed to re-plan on swap / reorder
     status: Mapped[str] = mapped_column(String(16), default="generated", index=True)
+    # SHA-256 of the edit key given to an anonymous creator (docs/28). None = legacy course (open)
+    edit_key_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     recommendation_log_id: Mapped[int | None] = mapped_column(
         BigIntPK, ForeignKey("recommendation_log.id", ondelete="SET NULL")
     )

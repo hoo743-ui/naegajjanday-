@@ -31,7 +31,18 @@ export function BudgetBar({ totals, budget, partySize, stops, heading, travel, c
       </p>
       <Receipt
         heading={heading}
-        items={stops.map((s) => ({ label: roleLabel(s.role), name: s.place.name, price: s.est_price }))}
+        items={stops.map((s) => {
+          const free = s.place.is_free === true || (s.est_price === 0 && s.place.price_per_person === 0);
+          return {
+            label: roleLabel(s.role),
+            name: s.place.name,
+            price: s.est_price,
+            estimated: s.place.price_is_estimated === true && s.est_price > 0,
+            unknown: !free && s.est_price === 0,
+          };
+        })}
+        // 합계 · 남은 돈은 API 가 계산한 값 하나만 쓴다 (짠이의 한마디 · 영수증 · 정산 문구가 같은 숫자)
+        totals={{ price: totals.price, left: totals.budget_left }}
         budget={budget}
         size="lg"
         footer={

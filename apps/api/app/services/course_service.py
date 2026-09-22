@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import errors
+from app.core import course_key, errors
 from app.core.cache import Cache
 from app.core.config import Settings
 from app.core.logging import get_logger
@@ -563,7 +563,9 @@ class CourseService:
         body = req.model_dump(mode="json")
         digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()[:32]
         owner = user.public_id if user else "anon"
-        keys = [f"course:{owner}:{digest}"]
+        # Same request → same courses is only safe for one owner: anonymous courses carry an edit key, so they
+        # are never handed to another anonymous visitor (only this client's own retry, by idempotency key).
+        keys = [f"course:{owner}:{digest}"] if user else []
         if idempotency_key:
             keys.insert(0, f"idem:{owner}:{hashlib.sha256(idempotency_key.encode()).hexdigest()[:32]}")
         for key in keys:
@@ -573,6 +575,11 @@ class CourseService:
         replaced = await self._day_to_replace(req, user)
         if replaced is not None:
             req = await self._as_that_day(req, replaced)
+        # a new day of an anonymous trip keeps the trip's key (its days are saved and edited together)
+        edit_key: str | None = None
+        if user is None:
+            keep = replaced is not None and replaced.edit_key_hash is not None
+            edit_key = course_key.current_key() if keep else course_key.new_key()
         region, origin, purpose, ctx, profile, out = await self._plan(req, user)
 
         request_id = str(uuid.uuid4())
@@ -623,6 +630,7 @@ class CourseService:
             )
             row = Course(
                 user_id=user.id if user else None,
+                edit_key_hash=course_key.hash_key(edit_key) if edit_key else None,
                 region_id=day["region_id"] if day else region.id,
                 purpose_id=purpose.id,
                 party_size=req.party_size,
@@ -673,6 +681,7 @@ class CourseService:
         ]
         response = dto.CourseGenerateResponse(
             request_id=request_id,
+            edit_key=edit_key,
             local=await self._signature_out(region),
             courses=views,
             nearby_events=[
@@ -695,7 +704,8 @@ class CourseService:
             ),
         )
         payload = response.model_dump(mode="json")
-        await self._cache.set(keys[-1], payload, COURSE_CACHE_TTL_S)
+        if user is not None:
+            await self._cache.set(keys[-1], payload, COURSE_CACHE_TTL_S)
         if idempotency_key:
             await self._cache.set(keys[0], payload, IDEMPOTENCY_TTL_S)
         await self._tracker.track(
@@ -1325,8 +1335,13 @@ class CourseService:
 
     @staticmethod
     def _can_edit(row: Course, user: User | None) -> bool:
-        """An ownerless (anonymously generated) course is open to anyone; an owned one to its owner only."""
-        return row.user_id is None or (user is not None and user.id == row.user_id)
+        """An owned course: its owner only. An ownerless one: whoever holds its edit key (X-Course-Key);
+        a legacy ownerless course without a key hash stays open, as before."""
+        if row.user_id is not None:
+            return user is not None and user.id == row.user_id
+        if row.edit_key_hash is None:
+            return True
+        return course_key.matches(course_key.current_key(), row.edit_key_hash)
 
     @classmethod
     def _check_owner(cls, row: Course, user: User | None) -> None:

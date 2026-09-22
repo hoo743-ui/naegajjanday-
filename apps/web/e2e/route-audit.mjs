@@ -2,10 +2,17 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { mkdirSync } from "node:fs";
+import { asCreator, remember } from "./creator.mjs";
 
 const require = createRequire(path.join(process.cwd(), "package.json"));
 const { chromium, devices } = require("playwright");
-const [out, walkId, carId, twoId] = process.argv.slice(2);
+// 코스 id 는 "id" 또는 "id:편집키" — 편집키가 있으면 만든 사람으로 연다 (docs/28: 다시 짜기 버튼은 만든 사람에게만)
+const [out, ...ids] = process.argv.slice(2);
+const [walkId, carId, twoId] = ids.map((a) => a.split(":")[0]);
+for (const a of ids) {
+  const [id, key] = a.split(":");
+  if (key) await remember({ courses: [{ id }], edit_key: key });
+}
 mkdirSync(out, { recursive: true });
 const WEB = "http://localhost:3000";
 let failures = 0;
@@ -19,7 +26,7 @@ const cardTop = (page, n) => page.evaluate((n) => Math.round(document.querySelec
 const browser = await chromium.launch({ channel: "chrome" });
 
 async function open(opts, id, route) {
-  const ctx = await browser.newContext({ ...opts, locale: "ko-KR" });
+  const ctx = await asCreator(await browser.newContext({ ...opts, locale: "ko-KR" }));
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));

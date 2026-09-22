@@ -186,6 +186,11 @@ class GenerateMeta(BaseModel):
 class CourseGenerateResponse(BaseModel):
     request_id: str
     courses: list[CourseOut]
+    edit_key: str | None = Field(
+        default=None,
+        description="계정 없이 만든 코스의 편집 키. 이 브라우저만 가지고, "
+        "수정 요청에 X-Course-Key 로 보낸다 (docs/28)",
+    )
     nearby_events: list[NearbyEvent] = Field(default_factory=list)
     local: LocalSignature | None = None
     meta: GenerateMeta

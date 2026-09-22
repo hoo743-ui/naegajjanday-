@@ -214,7 +214,7 @@ export function PlanWizard() {
       {loading ? <JjaniLoader fullscreen stages={stages} interval={900} /> : null}
 
       {/* overflow-x-clip: 단계가 옆에서 밀려 들어오는 동안(16px) 모바일에서 가로 스크롤이 순간 생기던 것을 막는다 */}
-      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12 lg:grid lg:max-w-[1120px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-16" aria-hidden={loading || undefined} inert={loading}>
+      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12 lg:grid lg:max-w-[1120px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-16" inert={loading}>
         {/* 진행 표시 = 한 줄씩 찍히는 영수증 (모바일은 위쪽의 얇은 띠, 데스크톱은 옆의 영수증) */}
         <ReceiptProgress step={step} lines={receiptLines} budget={step >= 2 ? { total: values.budget_total, party: values.party_size } : undefined} jjani={jjani} onJump={(i) => void go(i)} />
 
@@ -271,7 +271,7 @@ export function PlanWizard() {
                 <div className="mt-5 rounded-card bg-white shadow-card">
                   {fix ? (
                     <div role="alert">
-                      <EmptyState mood={errorCopy.mood} title={errorCopy.title} description={errorCopy.description} size="sm" footnote={`오류 코드 ${errorCopy.code}${errorCopy.traceId ? ` · ${errorCopy.traceId}` : ""}`}>
+                      <EmptyState mood={errorCopy.mood} title={errorCopy.title} description={errorCopy.description} size="sm">
                         <Button type="button" variant="brand" size="md" onClick={() => fixAt(fix.step)}>
                           {fix.label}
                         </Button>

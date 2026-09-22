@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Header
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.responses import PROBLEMS
+from app.core.course_key import capture_course_key
 from app.core.deps import CurrentUser, OptionalUser, rate_limit
 from app.core.sse import SSE_HEADERS, sse, with_heartbeat
 from app.schemas import course as dto
@@ -14,7 +15,8 @@ from app.schemas import route as route_dto
 from app.schemas.common import Ok
 from app.services.factory import CourseServiceDep
 
-router = APIRouter(prefix="/courses", tags=["courses"])
+# X-Course-Key (the anonymous creator's edit key) is read once per request for the ownership check (docs/28)
+router = APIRouter(prefix="/courses", tags=["courses"], dependencies=[Depends(capture_course_key)])
 
 
 @router.post(

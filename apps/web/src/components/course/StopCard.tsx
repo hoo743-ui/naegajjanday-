@@ -90,7 +90,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           업종 예시 사진은 아래 줄의 작은 썸네일로만 쓴다(같은 라떼 사진이 코스마다 화면을 덮지 않게). */}
       {place.thumbnail_url ? (
         <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/9] overflow-hidden sm:-mx-5 sm:-mt-5">
-          <Image src={place.thumbnail_url} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
+          {/* 첫 장소의 사진은 모바일 첫 화면에서 가장 큰 이미지다 → 먼저 받는다 */}
+          <Image priority={stop.position === 1} src={place.thumbnail_url} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
           {credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span> : null}
         </div>

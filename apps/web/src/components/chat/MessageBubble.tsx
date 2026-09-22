@@ -80,7 +80,6 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
                   <Link href={errorCopy.action.href}>{errorCopy.action.label}</Link>
                 </Button>
               ) : null}
-              <span className="text-caption text-muted-foreground">오류 코드 {errorCopy.code}</span>
             </div>
           </div>
         ) : null}

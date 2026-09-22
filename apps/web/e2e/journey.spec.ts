@@ -3,7 +3,7 @@ import { createCourse, expect, expectHealthyLayout, firstPopulatedRegion, test }
 test.describe("핵심 여정 (실제 API)", () => {
   test("홈: 히어로·목적 카드가 실제 데이터로 뜨고 CTA 가 위저드로 간다", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("예산만 말해요");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("예산만 말하면");
     // 히어로 = 제품: 기본 장면은 "둘이서 4만원", 합계는 예산을 넘지 않고, 예산을 올리면 영수증이 바뀐다
     const hero = page.locator("section").first();
     await expect(hero.getByText("남은 돈")).toBeVisible();
@@ -90,10 +90,13 @@ test.describe("핵심 여정 (실제 API)", () => {
     if (await page.locator(".jj-map").count()) {
       await expect(page.locator(".jj-pin")).toHaveCount(count);
     }
-    // 구간마다 외부 길찾기 링크가 있고, 카카오맵 공식 링크 규격을 따른다
-    const links = page.getByRole("link", { name: /길찾기/ });
+    // 구간마다 외부 길찾기 링크가 있고, 네이버 지도 길찾기 주소 형식을 따른다 (docs/27 §6)
+    const links = page.getByLabel("코스 일정").getByRole("link", { name: /네이버 지도 길찾기/ });
     expect(await links.count()).toBeGreaterThanOrEqual(count - 1);
-    await expect(links.first()).toHaveAttribute("href", /^https:\/\/map\.kakao\.com\/link\/(by\/(walk|traffic|car)|to)\//);
+    await expect(links.first()).toHaveAttribute("href", /^https:\/\/map\.naver\.com\/p\/directions\/[\d.]+,[\d.]+,[^/]+,,\/[\d.]+,[\d.]+,[^/]+,,\/-\/(walk|car|transit)$/);
+    // 코스 전체: 오늘의 이동 · 전체 코스 보기 · 네이버 지도에서 길찾기
+    await expect(page.getByRole("heading", { name: "오늘의 이동" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /네이버 지도에서 길찾기/ })).toHaveAttribute("href", /^https:\/\/map\.naver\.com\/p\/directions\//);
     await expectHealthyLayout(page);
   });
 

@@ -201,6 +201,11 @@ export function CourseView({ id }: { id: string }) {
   };
 
   const onSave = () => {
+    // 로그인하지 않은 것이 확실하면 서버에 묻지 않고 바로 로그인으로 (돌아올 답은 401 뿐이다)
+    if (auth.status === "anonymous") {
+      router.push(`/login?next=${encodeURIComponent(`/course/${id}`)}`);
+      return;
+    }
     save.mutate(undefined, {
       onSuccess: () => {
         track("course_saved", { course_id: id, price: data.totals.price });
@@ -223,8 +228,10 @@ export function CourseView({ id }: { id: string }) {
         setShared(true);
         setTimeout(() => setShared(false), 2200);
       }
-    } catch {
-      // 사용자가 공유 시트를 닫은 경우 등은 조용히 무시
+    } catch (error) {
+      // 공유 시트를 닫은 것은 실패가 아니다. 복사가 막힌 경우(권한 · 보안 연결 아님)는 주소를 직접 보여 준다
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setNotice({ mood: "sorry", title: "링크를 복사하지 못했어요", body: `이 주소를 길게 눌러 복사해 주세요: ${url}` });
     }
   };
 

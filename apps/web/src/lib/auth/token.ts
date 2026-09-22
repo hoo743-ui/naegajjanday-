@@ -14,6 +14,30 @@ let expiresAt = 0;
 let inflight: Promise<string | null> | null = null;
 const listeners = new Set<(token: string | null) => void>();
 
+/**
+ * 로그인한 적이 있다는 흔적 (docs/28). 흔적이 없는 방문자에게는 새로고침 때 refresh 를 부르지 않는다 —
+ * 부르면 401 이 돌아오고, 브라우저가 그것을 모든 페이지의 콘솔 오류로 남겼다(점검에서 59건).
+ * 흔적은 로그인 버튼을 누를 때 · refresh 가 성공할 때 남기고, refresh 가 거절되거나 로그아웃하면 지운다.
+ */
+const SESSION_HINT = "njd_session";
+
+export function hasSessionHint(): boolean {
+  try {
+    return localStorage.getItem(SESSION_HINT) === "1";
+  } catch {
+    return true; // 저장소를 못 쓰면 알 수 없다 → 예전처럼 한 번 시도한다
+  }
+}
+
+export function markSession(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(SESSION_HINT, "1");
+    else localStorage.removeItem(SESSION_HINT);
+  } catch {
+    // 저장소를 못 쓰면 흔적 없이 동작한다
+  }
+}
+
 export function getAccessToken(): string | null {
   return accessToken;
 }
@@ -46,10 +70,12 @@ export function refreshAccessToken(): Promise<string | null> {
       });
       if (!res.ok) {
         setAccessToken(null);
+        if (res.status === 401) markSession(false);
         return null;
       }
       const data = (await res.json()) as TokenResponse;
       setAccessToken(data.access_token, data.expires_in);
+      markSession(true);
       return data.access_token;
     } catch {
       setAccessToken(null);
@@ -69,6 +95,7 @@ export async function logout(): Promise<boolean> {
   const token = accessToken;
   // 응답을 기다리는 동안 다른 요청이 옛 토큰을 쓰지 않게 먼저 비운다
   setAccessToken(null);
+  markSession(false);
   try {
     await mockReady();
     const res = await fetch(`${API_URL}/auth/logout`, {

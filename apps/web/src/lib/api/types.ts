@@ -389,6 +389,8 @@ export interface GenerateMeta {
 export interface GenerateCourseResponse {
   request_id: string;
   courses: Course[];
+  /** 계정 없이 만든 코스의 편집 키 — 이 브라우저만 가진다 (lib/course-keys.ts) */
+  edit_key?: string | null;
   nearby_events: NearbyEvent[];
   meta: GenerateMeta;
 }

@@ -3,6 +3,7 @@
 import { chromium, devices } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { asCreator, remember } from "./creator.mjs";
 
 const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 const API = process.env.E2E_API_URL ?? "http://127.0.0.1:8000/v1";
@@ -16,11 +17,11 @@ const check = (ok, what) => {
 const d = new Date();
 d.setDate(d.getDate() + 5);
 const ymd = d.toISOString().slice(0, 10);
-const generate = async (body) => (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+const generate = async (body) => remember(await (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json());
 
 const browser = await chromium.launch({ channel: "chrome" });
 const stub = (context) => context.route("**/v1/performances**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], partial: false }) }));
-const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" });
+const desktop = await asCreator(await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" }));
 await stub(desktop);
 
 console.log("\n[1] 채팅을 쓸 수 없는 환경에서 채팅 입구는 한 번도 뜨지 않는다");
@@ -99,7 +100,7 @@ console.log("\n[4] 대안 코스 탭: 없는 평점을 약속하지 않고, 누�
 
 console.log("\n[5] 좁은 지도에서도 일곱 곳의 핀이 모두 지도 안에 있고, 그려지는 순간부터 보인다");
 {
-  const mobile = await browser.newContext({ ...devices["Pixel 7"], locale: "ko-KR" });
+  const mobile = await asCreator(await browser.newContext({ ...devices["Pixel 7"], locale: "ko-KR" }));
   await stub(mobile);
   for (const body of [
     { region: "busan-nam", purpose: "date", party_size: 2, budget_total: 240000, start_at: `${ymd}T11:30:00+09:00`, transport: "walk", style: "efficient", alternatives: 0 },

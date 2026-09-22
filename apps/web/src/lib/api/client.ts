@@ -1,4 +1,5 @@
 import { getAccessToken, refreshAccessToken } from "@/lib/auth/token";
+import { courseKeyForRequest } from "@/lib/course-keys";
 import { mockReady } from "./mock-ready";
 import type { ErrorCode, ProblemDetails } from "./types";
 
@@ -121,6 +122,12 @@ export function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** 이 브라우저가 계정 없이 만든 코스면 편집 키를 싣는다 (docs/28) */
+function courseKeyHeader(path: string, body: unknown): Record<string, string> {
+  const key = courseKeyForRequest(path, body);
+  return key ? { "X-Course-Key": key } : {};
+}
+
 async function rawRequest(path: string, options: RequestOptions): Promise<Response> {
   const { method = "GET", query, body, signal, headers, idempotencyKey, timeoutMs = DEFAULT_TIMEOUT_MS, next } = options;
   const controller = new AbortController();
@@ -139,6 +146,7 @@ async function rawRequest(path: string, options: RequestOptions): Promise<Respon
         Accept: "application/json",
         ...(body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
         ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        ...courseKeyHeader(path, body),
         ...authHeaders(),
         ...headers,
       },

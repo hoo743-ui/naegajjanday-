@@ -12,6 +12,7 @@ import { chromium, devices } from "@playwright/test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { asCreator, remember } from "./creator.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
@@ -37,7 +38,7 @@ const IGNORE_REQUEST = [/\/v1\/auth\/refresh/, /dapi\.kakao\.com|daumcdn\.net|ka
 const post = async (body) => {
   const res = await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error(`generate ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return res.json();
+  return remember(await res.json()); // 도구가 만든 코스를 만든 사람으로 연다 (docs/28)
 };
 const day = (() => {
   const d = new Date();
@@ -129,7 +130,7 @@ async function main() {
   const browser = await chromium.launch({ channel: "chrome" });
 
   for (const [vp, options] of Object.entries(VIEWPORTS)) {
-    const context = await browser.newContext({ ...options, locale: "ko-KR" });
+    const context = await asCreator(await browser.newContext({ ...options, locale: "ko-KR" }));
     const page = await context.newPage();
     let where = "";
     const note = (kind, detail) => problems.push(`[${vp}] ${where}: ${kind} — ${detail}`);

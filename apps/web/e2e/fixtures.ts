@@ -99,7 +99,19 @@ export async function createCourse(page: Page, overrides: Record<string, unknown
     data: { region: region.slug, purpose: "date", party_size: 2, budget_total: 80_000, start_at: startAt, ...overrides },
   });
   expect(res.ok(), `generate 실패: ${res.status()} ${await res.text()}`).toBeTruthy();
-  const body = (await res.json()) as { courses: { id: string }[] };
+  const body = (await res.json()) as { courses: { id: string }[]; edit_key?: string | null };
   expect(body.courses.length).toBeGreaterThan(0);
+  // 계정 없이 만든 코스는 만든 브라우저만 고칠 수 있다 (docs/28) → 이 페이지를 만든 사람으로
+  if (body.edit_key) {
+    const entries = Object.fromEntries(body.courses.map((c) => [c.id, body.edit_key as string]));
+    await page.context().addInitScript((keys: Record<string, string>) => {
+      try {
+        const current = JSON.parse(localStorage.getItem("njd_course_keys") ?? "{}") as Record<string, string>;
+        localStorage.setItem("njd_course_keys", JSON.stringify({ ...current, ...keys }));
+      } catch {
+        // about:blank 등
+      }
+    }, entries);
+  }
   return body.courses[0]!.id;
 }

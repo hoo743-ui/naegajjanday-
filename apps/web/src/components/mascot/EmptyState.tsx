@@ -75,14 +75,9 @@ interface ErrorStateProps {
 export function ErrorState({ error, onRetry, size = "md", className }: ErrorStateProps) {
   const copy = mascotCopyForError(error);
   return (
-    <div role="alert" className={className}>
-      <EmptyState
-        mood={copy.mood}
-        title={copy.title}
-        description={copy.description}
-        size={size}
-        footnote={`오류 코드 ${copy.code}${copy.traceId ? ` · ${copy.traceId}` : ""}`}
-      >
+    // 오류 코드 · 추적번호는 사용자에게 보여 주지 않는다 (docs/28). 문의를 받으면 찾을 수 있게 속성으로만 남긴다
+    <div role="alert" className={className} data-error-code={copy.code} data-trace-id={copy.traceId ?? undefined}>
+      <EmptyState mood={copy.mood} title={copy.title} description={copy.description} size={size}>
         {copy.retry && onRetry ? (
           <Button variant="brand" size="md" onClick={onRetry}>
             <RotateCw aria-hidden /> 다시 시도

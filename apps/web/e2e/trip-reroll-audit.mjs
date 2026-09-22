@@ -4,6 +4,7 @@
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { asCreator, remember } from "./creator.mjs";
 
 const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 const API = process.env.E2E_API_URL ?? "http://localhost:8000/v1";
@@ -13,7 +14,7 @@ mkdirSync(outDir, { recursive: true });
 const d = new Date();
 d.setDate(d.getDate() + 5);
 const day = d.toISOString().slice(0, 10);
-const post = async (body) => (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+const post = async (body) => remember(await (await fetch(`${API}/courses/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json());
 const failures = [];
 const check = (ok, what) => {
   console.log(`${ok ? "  ✓" : "  ✗"} ${what}`);
@@ -25,7 +26,7 @@ const [one, two] = trip.courses;
 console.log(`여행: ${trip.courses.map((c) => `${c.label} ${c.stops.length}곳`).join(" | ")}`);
 
 const browser = await chromium.launch({ channel: "chrome" });
-const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" })).newPage();
+const page = await (await asCreator(await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" }))).newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
 
