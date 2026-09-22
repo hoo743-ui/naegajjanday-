@@ -54,10 +54,10 @@ export function MyView() {
 
   return (
     <div className="wrap grid max-w-[920px] gap-6 py-8 sm:py-12">
-      <section aria-label="내 프로필" className="bg-grad-soft flex flex-wrap items-center gap-4 rounded-[32px] p-6 sm:p-8">
+      <section aria-label="내 프로필" className="flex flex-wrap items-center gap-4 border-b border-ink/10 pb-8">
         <Jjani mood="wink" size={84} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-[28px]">{me.nickname} 님</h1>
+          <h1 className="truncate text-[clamp(26px,3.4vw,34px)] font-bold tracking-[-0.03em]">{me.nickname} 님의 하루들</h1>
           {accountLine ? <p className="truncate text-sm font-bold text-ink-2">{accountLine}</p> : null}
         </div>
         <div className="flex gap-2">

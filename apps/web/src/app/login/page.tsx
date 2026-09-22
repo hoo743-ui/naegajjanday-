@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "로그인", robots: { index: false }
 
 export default function LoginPage() {
   return (
-    <PageShell tinted footer={false} className="grid place-items-center px-5 py-10">
+    <PageShell footer={false} className="paper-grain grid place-items-center px-5 py-14">
       <Suspense fallback={<JjaniLoader />}>
         <LoginCard />
       </Suspense>

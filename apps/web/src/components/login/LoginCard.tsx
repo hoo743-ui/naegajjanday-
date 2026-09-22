@@ -94,9 +94,10 @@ export function LoginCard() {
   };
 
   return (
-    <div className="glass mx-auto w-full max-w-[420px] rounded-[32px] p-7 text-center sm:p-9">
-      <Jjani mood="hi" size={120} floating className="mx-auto" />
-      <h1 className="mt-3 text-2xl font-extrabold tracking-tight">다시 만나서 반가워요</h1>
+    <div className="mx-auto w-full max-w-[400px] text-center">
+      <Jjani mood="hi" size={88} className="mx-auto" />
+      <p className="mt-4 font-round text-[20px] leading-none text-ink">내가짠데이</p>
+      <h1 className="mt-4 text-[clamp(26px,4vw,32px)] font-bold tracking-[-0.03em]">다시 만나서 반가워요</h1>
       <p className="mt-1.5 text-[15px] text-muted-foreground">로그인하면 짠 코스를 저장하고, 다녀온 곳으로 취향을 맞춰 드려요.</p>
 
       {errorMessage ? (

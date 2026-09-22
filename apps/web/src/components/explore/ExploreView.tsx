@@ -91,14 +91,17 @@ export function ExploreView() {
 
   return (
     <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-8 pt-8 pb-16 sm:pt-12">
-      <header className="grid gap-3">
-        <span className="inline-flex w-fit items-center rounded-full bg-blue-soft px-3.5 py-2 text-sm font-extrabold text-blue-deep">
+      <header className="grid gap-4">
+        <p className="flex items-center gap-2.5 text-[13px] font-extrabold tracking-[0.02em] text-ink-2">
+          <span aria-hidden className="size-2 rounded-full bg-gold" />
           둘러보기
-        </span>
-        <h1 className="text-[clamp(28px,4vw,44px)] font-extrabold text-ink">
-          돈 안 들이고도 <span className="gt">갈 곳은 많아요</span>
+        </p>
+        <h1 className="text-[clamp(32px,4.6vw,56px)] leading-[1.16] font-bold tracking-[-0.03em] text-ink">
+          돈 안 들이고도
+          <br />
+          갈 곳은 많아요
         </h1>
-        <p className="max-w-xl text-base text-muted-foreground sm:text-lg">
+        <p className="max-w-xl text-base leading-[1.75] text-ink-2 sm:text-[17px]">
           관광지, 공원, 전시, 축제, 문화공간까지. 마음에 드는 곳을 찾으면 그 근처로 예산 코스를 짜 드려요.
         </p>
       </header>
@@ -110,7 +113,8 @@ export function ExploreView() {
           장소 목록
         </h2>
 
-        <div className="grid gap-4 rounded-card border border-line bg-white p-4 shadow-soft sm:p-5">
+        {/* 필터: 흰 상자가 아니라 위아래 선 사이의 한 줄 */}
+        <div className="grid gap-4 border-y border-ink/10 py-5">
           <div role="group" aria-label="종류" className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
             {typeOptions.map((option) => (
               <button
@@ -233,10 +237,11 @@ export function ExploreView() {
           </EmptyState>
         ) : (
           <>
-            <ul className={cn("grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-2 lg:grid-cols-3", attractions.isPlaceholderData && "opacity-60 transition-opacity")}>
-              {items.map((item) => (
-                <li key={item.id}>
-                  <AttractionCard item={item} />
+            {/* 잡지처럼: 맨 위 한 곳은 크게, 나머지는 3열 */}
+            <ul className={cn("grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3", attractions.isPlaceholderData && "opacity-60 transition-opacity")}>
+              {items.map((item, i) => (
+                <li key={item.id} className={cn(i === 0 && "sm:col-span-2 lg:col-span-3 lg:border-b lg:border-ink/10 lg:pb-12")}>
+                  <AttractionCard item={item} feature={i === 0} />
                 </li>
               ))}
             </ul>

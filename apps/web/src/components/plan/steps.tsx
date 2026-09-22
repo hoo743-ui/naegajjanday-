@@ -327,7 +327,8 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       </section>
 
       {/* 돈을 움직이면 하루가 어떻게 달라지는지 그 자리에서 보여 준다 (docs/19 — 영수증은 서비스의 시그니처) */}
-      <details className="group rounded-card bg-white p-5 shadow-soft">
+      {/* 데스크톱은 옆의 진행 영수증이 이 예시를 이어서 찍는다 */}
+      <details className="group rounded-card bg-white p-5 shadow-soft lg:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold text-ink-2 [&::-webkit-details-marker]:hidden">
           이 예산이면 이런 하루예요
           <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-xs text-gold-ink">예시 · 열어 보기</span>

@@ -39,7 +39,8 @@ export function DdayBadge({ endsOn, startsOn }: { endsOn: string; startsOn?: str
   );
 }
 
-export function AttractionCard({ item }: { item: Attraction }) {
+/** feature: 목록 맨 위의 큰 한 장(둘러보기의 잡지 표지). 나머지는 3열 격자의 작은 칸 */
+export function AttractionCard({ item, feature = false }: { item: Attraction; feature?: boolean }) {
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
   const Icon = meta.icon;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
@@ -56,8 +57,9 @@ export function AttractionCard({ item }: { item: Attraction }) {
   };
 
   return (
-    <article className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-white shadow-soft transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-card">
-      <div className={cn("photo-edge relative aspect-[16/10] bg-gradient-to-br", meta.gradient)}>
+    // 흰 상자 대신 사진이 앞에 선다 (docs/25 §5 둘러보기 = 여행 잡지). 카드 전체는 여전히 한 번에 눌린다
+    <article className={cn("group relative flex h-full cursor-pointer flex-col", feature && "lg:grid lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12")}>
+      <div className={cn("photo-edge relative overflow-hidden rounded-[20px] bg-gradient-to-br", feature ? "aspect-[3/2]" : "aspect-[4/3]", meta.gradient)}>
         {photo ? (
           <>
             <Image
@@ -65,7 +67,7 @@ export function AttractionCard({ item }: { item: Attraction }) {
               alt=""
               fill
               unoptimized={!canOptimize(photo)}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes={feature ? "(max-width: 1024px) 100vw, 660px" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             />
             {credit ? (
@@ -97,11 +99,12 @@ export function AttractionCard({ item }: { item: Attraction }) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2.5 p-5">
+      <div className={cn("flex flex-1 flex-col gap-2.5 pt-4", feature && "lg:pt-0")}>
+        {feature ? <p className="text-[13px] font-extrabold text-blue-deep">맨 먼저 볼 곳</p> : null}
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-[17px] leading-snug font-extrabold tracking-tight text-ink">
+          <h3 className={cn("leading-snug font-extrabold tracking-tight text-ink", feature ? "font-serif text-[clamp(24px,2.6vw,34px)] font-bold" : "text-[18px]")}>
             {/* 카드 전체가 눌리도록 버튼의 클릭 영역을 카드까지 넓힌다(after:inset-0). 출처·코스 짜기 링크는 그 위(z-10)에 둔다. */}
-            <button type="button" onClick={openDetail} aria-haspopup="dialog" className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-card focus-visible:after:outline-[3px] focus-visible:after:outline-blue">
+            <button type="button" onClick={openDetail} aria-haspopup="dialog" className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-[20px] focus-visible:after:outline-[3px] focus-visible:after:outline-blue">
               {item.name}
             </button>
           </h3>
@@ -118,7 +121,7 @@ export function AttractionCard({ item }: { item: Attraction }) {
           ) : null}
         </div>
 
-        {item.summary ? <p className="text-sm text-muted-foreground">{item.summary}</p> : null}
+        {item.summary ? <p className={cn("text-muted-foreground", feature ? "line-clamp-4 text-[15.5px] leading-[1.75]" : "line-clamp-2 text-sm")}>{item.summary}</p> : null}
 
         <ul className="grid gap-1 text-[13px] font-bold text-ink-2">
           <li className="flex items-center gap-1.5">
@@ -145,7 +148,7 @@ export function AttractionCard({ item }: { item: Attraction }) {
         {item.tags.length > 0 ? (
           <ul aria-label="태그" className="flex flex-wrap gap-1.5">
             {item.tags.map((tag) => (
-              <li key={tag} className="rounded-full bg-soft px-2.5 py-1 text-xs font-bold text-ink-2">
+              <li key={tag} className="rounded-full border border-line px-2.5 py-1 text-xs font-bold text-ink-2">
                 {tag}
               </li>
             ))}

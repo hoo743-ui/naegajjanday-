@@ -16,12 +16,13 @@ import { decodeStation, useGenerateCourse, usePickedRegion, usePurposes } from "
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { num, toKstIso, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
-import { cn } from "@/lib/utils";
 import { resolveStart } from "./meet-time";
 import { PLAN_DEFAULTS, STEPS, planSchema, type PlanValues } from "./schema";
+import { ReceiptProgress } from "./ReceiptProgress";
 import { BudgetStep, PurposeStep, RegionStep, TasteStep } from "./steps";
 
 const MIN_LOADER_MS = 2400;
+const TRANSPORT_LABEL = { walk: "걸어서", transit: "대중교통", car: "자동차" } as const;
 
 /**
  * 코스 생성이 실패했을 때 고치러 갈 단계. 이미 /plan 에 있으므로 "/plan 으로 가기" 링크는 아무 일도 하지 않는다
@@ -187,32 +188,37 @@ export function PlanWizard() {
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
 
+  // 진행 영수증의 줄: 고른 것만 찍힌다 (예산 · 취향은 그 단계에 와야 찍힌다 — 기본값을 고른 것처럼 보이지 않게)
+  const receiptLines = [
+    { value: placeLabel ? (values.regions_before.length > 0 ? `${placeLabel} 외 ${values.regions_before.length}곳` : placeLabel) : undefined },
+    { value: purpose ? (values.purposes_extra.length > 0 ? `${purpose.name} +${values.purposes_extra.length}` : purpose.name) : undefined },
+    { value: step >= 2 ? `${values.party_size}명 · ${won(values.budget_total)}` : undefined },
+    { value: step >= 3 ? `${values.style === "fun" ? "재미 우선" : "알뜰 · 효율"} · ${TRANSPORT_LABEL[values.transport]}` : undefined },
+  ];
+  // 짠이는 방금 고른 것에 한 줄로 반응한다
+  const jjani =
+    step === 0
+      ? placeLabel
+        ? { mood: "wink" as const, line: `${placeLabel}, 좋은 동네예요` }
+        : { mood: "hi" as const, line: "어디서 만나요?" }
+      : step === 1
+        ? purpose
+          ? { mood: "wink" as const, line: `${purpose.name} 코스로 짤게요` }
+          : { mood: "think" as const, line: "어떤 약속이에요?" }
+        : step === 2
+          ? { mood: "done" as const, line: `${values.party_size}명이서 ${won(values.budget_total)}, 알맞게 써 볼게요` }
+          : { mood: "cheers" as const, line: "거의 다 됐어요. 취향만 알려 주세요" };
+
   return (
     <FormProvider {...form}>
       {loading ? <JjaniLoader fullscreen stages={stages} interval={900} /> : null}
 
       {/* overflow-x-clip: 단계가 옆에서 밀려 들어오는 동안(16px) 모바일에서 가로 스크롤이 순간 생기던 것을 막는다 */}
-      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12" aria-hidden={loading || undefined} inert={loading}>
-        {/* 진행 표시 */}
-        <ol className="mb-8 flex items-center gap-2" aria-label="진행 단계">
-          {STEPS.map((s, i) => {
-            const done = i < step;
-            return (
-              <li key={s.key} className="flex-1" aria-current={i === step ? "step" : undefined}>
-                <button type="button" disabled={!done} onClick={() => void go(i)} className="group block w-full text-left disabled:cursor-default" aria-label={`${i + 1}단계 ${s.title}${done ? " (완료, 돌아가기)" : i === step ? " (현재)" : ""}`}>
-                  <span className="block h-1.5 overflow-hidden rounded-full bg-[#E3E9F4]">
-                    <motion.span className="block h-full origin-left rounded-full bg-blue-deep" initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }} />
-                  </span>
-                  <span className={cn("mt-2 block text-xs font-extrabold transition-colors sm:text-[13px]", i === step ? "text-blue-deep" : done ? "text-ink-2 group-hover:text-ink" : "text-muted-foreground")}>
-                    {i + 1}. {s.title}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12 lg:grid lg:max-w-[1120px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-16" aria-hidden={loading || undefined} inert={loading}>
+        {/* 진행 표시 = 한 줄씩 찍히는 영수증 (모바일은 위쪽의 얇은 띠, 데스크톱은 옆의 영수증) */}
+        <ReceiptProgress step={step} lines={receiptLines} budget={step >= 2 ? { total: values.budget_total, party: values.party_size } : undefined} jjani={jjani} onJump={(i) => void go(i)} />
 
-        <div className="relative">
+        <div className="relative lg:col-start-1 lg:row-start-1">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={step}
@@ -287,8 +293,9 @@ export function PlanWizard() {
 
         {/* 하단 고정 내비게이션 */}
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[max(14px,env(safe-area-inset-bottom))] backdrop-blur-xl">
-          <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 px-5 pt-3.5">
-            <p className="tabular hidden min-w-0 flex-1 truncate text-sm font-bold text-ink-2 sm:block" aria-live="polite">
+          <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 px-5 pt-3.5 lg:max-w-[1120px]">
+            {/* 데스크톱은 옆의 영수증이 같은 것을 보여 준다 → 자리만 지킨다 */}
+            <p className="tabular hidden min-w-0 flex-1 truncate text-sm font-bold text-ink-2 sm:block lg:invisible" aria-live="polite">
               {[placeLabel, purpose?.name, step >= 2 ? `${values.party_size}명` : null, step >= 2 ? won(values.budget_total) : null].filter(Boolean).join(" · ") || "세 가지만 알려 주세요"}
             </p>
             {step > 0 ? (
