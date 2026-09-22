@@ -39,7 +39,7 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
   }
 
   return (
-    <section aria-labelledby="leftover-card" className="grid gap-3 rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="leftover-card" className="rule-section gap-3">
       <div>
         <h2 id="leftover-card" className="text-[15px] font-extrabold text-ink">
           이런 건 어때요?
@@ -50,7 +50,7 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
       </div>
       <ul className="grid gap-2">
         {items.map((item) => (
-          <li key={item.place.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-line p-3">
+          <li key={item.place.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-line bg-white/70 p-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14.5px] font-extrabold text-ink">
                 <span className="text-muted-foreground">{roleLabel(item.role)}</span> {item.place.name}

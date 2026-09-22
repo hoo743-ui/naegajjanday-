@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, Check, Clock, RotateCw, Share2, SlidersHorizontal, Sparkles, TriangleAlert, Users } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, Maximize2, Minimize2, RotateCw, Share2, Sparkles, TriangleAlert, Users } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { JjaniLoader } from "@/components/mascot/JjaniLoader";
@@ -26,11 +27,17 @@ import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
 import { NearbyEvents } from "./NearbyEvents";
+import { ResultHeader } from "./ResultHeader";
 import { RouteMap } from "./RouteMap";
 
 const LOADING_STAGES = ["코스를 펼치는 중…", "지도에 핀 꽂는 중…"];
 const FORK_STAGES = ["친구 코스의 조건을 그대로 가져오는 중…", "예산에 맞는 곳만 고르는 중…", "내 코스로 옮겨 적는 중…"];
 const REROLL_STAGES = ["다른 곳들로 다시 살펴보는 중…", "예산에 맞는 곳만 고르는 중…", "가장 덜 걷는 동선 계산 중…"];
+
+/** 모바일 바텀시트의 세 단계 (docs/25 §5): 지도를 크게 · 절반 · 목록 전체 */
+type SheetStop = "map" | "half" | "full";
+/** 이야기가 이보다 길면 네 줄만 보이고 "더 읽기"로 편다 */
+const STORY_FOLD = 160;
 
 /** "18:00 ~ 21:00" — 만남 시간을 정했을 때만. 맡겼으면 출발 시각만. */
 function meetWindow(startAt: string, durationMin?: number | null): string {
@@ -70,6 +77,21 @@ export function CourseView({ id }: { id: string }) {
   const [notice, setNotice] = useState<{ mood: JjaniMood; title: string; body?: string } | null>(null);
   const viewed = useRef<string | null>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const [sheet, setSheet] = useState<SheetStop>("half");
+  const [storyOpen, setStoryOpen] = useState(false);
+  const mapBoxRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ y: number; moved: boolean } | null>(null);
+  // 목록을 읽던 중에 단계를 바꾸면 지도 칸의 높이만큼 내용이 밀린다 → 그만큼 되돌려 읽던 카드를 제자리에 둔다
+  const shiftFrom = useRef<number | null>(null);
+  const [instantSheet, setInstantSheet] = useState(false);
+  useLayoutEffect(() => {
+    const before = shiftFrom.current;
+    if (before === null) return;
+    shiftFrom.current = null;
+    const after = mapBoxRef.current?.parentElement?.getBoundingClientRect().height ?? before;
+    window.scrollBy({ top: after - before, behavior: "instant" });
+  }, [sheet]);
 
   useEffect(() => {
     if (course.data && viewed.current !== id) {
@@ -78,8 +100,20 @@ export function CourseView({ id }: { id: string }) {
     }
   }, [course.data, id]);
 
-  if (course.isPending) return <JjaniLoader stages={LOADING_STAGES} />;
-  if (course.isError) return <ErrorState error={course.error} onRetry={() => void course.refetch()} size="lg" className="py-10" />;
+  if (course.isPending)
+    return (
+      <>
+        <ResultHeader />
+        <JjaniLoader stages={LOADING_STAGES} />
+      </>
+    );
+  if (course.isError)
+    return (
+      <>
+        <ResultHeader />
+        <ErrorState error={course.error} onRetry={() => void course.refetch()} size="lg" className="py-10" />
+      </>
+    );
 
   const data = course.data;
   const { request } = data;
@@ -90,6 +124,8 @@ export function CourseView({ id }: { id: string }) {
   const viewerKnown = auth.status !== "loading";
   const over = data.totals.budget_left < 0;
   const mood: JjaniMood = data.is_saved ? "cheers" : over ? "sorry" : data.totals.budget_left > 0 ? "wink" : "done";
+  // 짠이의 한마디는 돈으로 말한다: "짠! 12,000원 남아요"
+  const jjaniLine = over ? "괜찮아요, 조금만 더 맞춰 볼까요?" : data.totals.budget_left > 0 ? `짠! ${won(data.totals.budget_left)} 남아요` : "짠! 예산에 딱 맞췄어요";
 
   // 지역 중심이 아니라 역·장소 주변으로 짠 코스면 그 이름으로 부른다 ("영등포구"가 아니라 "신도림역 주변")
   const hopping = (request.regions?.length ?? 0) > 1;
@@ -238,6 +274,18 @@ export function CourseView({ id }: { id: string }) {
     );
   };
 
+  /**
+   * 바텀시트를 그 단계로: 지도 칸의 높이만 바꾼다(지도는 크기가 바뀌면 코스 전체를 다시 맞춘다).
+   * 맨 위에서는 부드럽게 늘고 줄지만, 목록을 읽던 중이면 한 번에 바꾸고 읽던 자리를 지킨다.
+   */
+  const moveSheet = (next: SheetStop) => {
+    const reading = window.scrollY > 8;
+    setInstantSheet(reading || Boolean(reduced));
+    shiftFrom.current = reading ? (mapBoxRef.current?.parentElement?.getBoundingClientRect().height ?? 0) : null;
+    setSheet(next);
+  };
+  const longStory = (narrative.text?.length ?? 0) > STORY_FOLD && narrative.status !== "streaming";
+
   const selectAlternative = (nextId: string) => {
     if (nextId === id) return;
     const label = data.siblings.find((s) => s.id === nextId)?.label ?? "";
@@ -247,40 +295,82 @@ export function CourseView({ id }: { id: string }) {
 
   return (
     <>
+      <ResultHeader
+        title={[placeLabel, purposeLabel].filter(Boolean).join(" · ")}
+        subtitle={[data.label, `${request.party_size}명`, `예산 ${won(request.budget_total)}`].join(" · ")}
+        changeHref={readOnly ? undefined : changeHref}
+        onShare={() => void onShare()}
+        shared={shared}
+      />
       {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={forking ? FORK_STAGES : REROLL_STAGES} interval={900} /> : null}
 
-      <div inert={reroll.isPending || reroll.isSuccess} className="lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)]">
-        {/* 지도: 모바일·태블릿은 위에 붙어 있고(sticky), 데스크톱은 왼쪽에 고정 */}
-        <div className="sticky top-[68px] z-0 h-[40dvh] sm:h-[44dvh] lg:h-[calc(100dvh-68px)]">
-          <RouteMap stops={data.stops} activeStop={activeStop} onSelect={setActiveStop} route={walkRoute.data} access={accessHints.data?.items} />
+      <div inert={reroll.isPending || reroll.isSuccess} className="[overflow-anchor:none] lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)]">
+        {/* 지도 + 바텀시트 손잡이: 모바일 · 태블릿은 헤더 밑에 붙어 있고 목록이 그 아래로 지나간다
+            → 장소를 읽는 동안에도 그 장소의 핀이 보인다. 데스크톱은 왼쪽에 고정 */}
+        <div className="sticky top-[68px] z-20 lg:z-0 lg:h-[calc(100dvh-68px)]">
+          {/* 높이는 바텀시트 단계가 정한다: 지도를 크게 · 절반 · 접음(목록 전체). 데스크톱은 늘 화면 높이 */}
+          <div
+            ref={mapBoxRef}
+            style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "40dvh" : "0px" } as React.CSSProperties}
+            className={cn("h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
+          >
+            <RouteMap stops={data.stops} activeStop={activeStop} onSelect={setActiveStop} route={walkRoute.data} access={accessHints.data?.items} />
+          </div>
+          {/* 바텀시트 손잡이: 누르면 절반 ↔ 전체, 위아래로 끌면 한 단계씩. 오른쪽 버튼은 지도를 크게 ↔ 절반 */}
+          <div className={cn("relative flex h-9 items-center justify-center rounded-t-[24px] bg-soft shadow-[0_-8px_24px_rgba(72,54,24,.10)] lg:hidden", sheet !== "full" && "-mt-5")}>
+            <button
+              type="button"
+              aria-label={sheet === "full" ? "목록 접기" : "목록 크게 보기"}
+              onPointerDown={(e) => {
+                drag.current = { y: e.clientY, moved: false };
+              }}
+              onPointerUp={(e) => {
+                const start = drag.current;
+                if (!start) return;
+                const dy = e.clientY - start.y;
+                if (Math.abs(dy) < 24) return;
+                start.moved = true;
+                moveSheet(dy < 0 ? (sheet === "map" ? "half" : "full") : sheet === "full" ? "half" : "map");
+              }}
+              onClick={() => {
+                const moved = drag.current?.moved;
+                drag.current = null;
+                if (!moved) moveSheet(sheet === "full" ? "half" : "full");
+              }}
+              className="grid h-9 w-28 touch-none place-items-center rounded-full"
+            >
+              <span aria-hidden className="h-1 w-10 rounded-full bg-ink/20" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveSheet(sheet === "map" ? "half" : "map")}
+              aria-label={sheet === "map" ? "지도 작게 보기" : "지도 크게 보기"}
+              className="absolute top-0.5 right-3 grid size-11 place-items-center rounded-full text-ink-2 hover:bg-white"
+            >
+              {sheet === "map" ? <Minimize2 aria-hidden className="size-4" /> : <Maximize2 aria-hidden className="size-4" />}
+            </button>
+          </div>
         </div>
 
-        {/* 타임라인: 모바일에서는 지도 위로 올라오는 바텀시트 모양 */}
-        <div className="relative z-10 -mt-7 rounded-t-[28px] bg-soft shadow-[0_-10px_40px_rgba(72,54,24,.12)] lg:mt-0 lg:rounded-none lg:shadow-none">
-          <span aria-hidden className="mx-auto block h-1 w-10 translate-y-2.5 rounded-full bg-line lg:hidden" />
+        {/* 타임라인 */}
+        <div className="relative z-10 bg-soft">
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
-          <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
+          <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-3 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-1.5">
-                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}${tripDay && request.trip_budget_total ? ` (여행 전체 ${won(request.trip_budget_total)})` : ""}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null]
+                {/* 지역 · 목적 · 인원 · 예산은 결과 헤더에 있다 → 칩은 헤더에 없는 것(언제 · 날씨 · 며칠째)만 */}
+                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), tripDay && request.trip_budget_total ? `여행 전체 ${won(request.trip_budget_total)}` : null, request.style === "fun" ? "재미 우선" : null]
                   .filter((c): c is string => Boolean(c))
                   .map((c) => (
                     <li key={c} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-[12.5px] font-bold text-ink-2">
                       {c}
                     </li>
                   ))}
-                {readOnly ? null : (
-                  <li>
-                    <Link href={changeHref} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-extrabold text-blue-deep hover:bg-blue-soft">
-                      <SlidersHorizontal aria-hidden className="size-3.5" /> 조건 바꾸기
-                    </Link>
-                  </li>
-                )}
               </ul>
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>
-              <JjaniBubble mood={mood} title={over ? "괜찮아요, 조금만 더 맞춰 볼까요?" : data.totals.budget_left > 0 ? "짠! 코스 나왔어요" : "짠! 예산에 딱 맞췄어요"} tone="white" size={64} bubbleKey={`${id}-${data.totals.price}`}>
+              <JjaniBubble mood={mood} title={jjaniLine} tone="white" size={64} bubbleKey={`${id}-${data.totals.price}`}>
                 {data.summary}
               </JjaniBubble>
             </header>
@@ -361,6 +451,7 @@ export function CourseView({ id }: { id: string }) {
                 route={walkRoute.data}
                 access={accessHints.data?.items}
                 onHover={setActiveStop}
+                onView={setActiveStop}
                 onSwap={onSwap}
                 onMove={onMove}
               />
@@ -376,12 +467,19 @@ export function CourseView({ id }: { id: string }) {
                 onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
               />
 
-              {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글 */}
+              {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글. 길면 네 줄만 보이고 펼친다 */}
               {narrative.text ? (
-                <p className="border-l-2 border-gold pl-4 text-[15px] leading-[1.8] whitespace-pre-line text-ink-2" aria-live="polite" aria-busy={narrative.status === "streaming"}>
-                  {narrative.text}
-                  {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
-                </p>
+                <section aria-label="짠이의 코스 이야기" className="grid justify-items-start gap-1.5 border-l-2 border-gold pl-4">
+                  <p className={cn("text-[15px] leading-[1.8] whitespace-pre-line text-ink-2", longStory && !storyOpen && "line-clamp-4")} aria-live="polite" aria-busy={narrative.status === "streaming"}>
+                    {narrative.text}
+                    {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
+                  </p>
+                  {longStory ? (
+                    <button type="button" aria-expanded={storyOpen} onClick={() => setStoryOpen((v) => !v)} className="-ml-2 rounded-full px-2 py-1.5 text-[13px] font-extrabold text-blue-deep hover:bg-blue-soft">
+                      {storyOpen ? "접기" : "이야기 더 읽기"}
+                    </button>
+                  ) : null}
+                </section>
               ) : narrative.status === "streaming" ? (
                 <p className="skeleton-shimmer h-[68px] rounded-2xl" aria-label="짠이가 코스 설명을 쓰는 중" />
               ) : null}
@@ -414,7 +512,8 @@ export function CourseView({ id }: { id: string }) {
                   <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
                 </Button>
               )}
-              <Button type="button" variant="soft" size="xl" onClick={() => void onShare()} className="max-sm:px-4" aria-label="코스 공유하기">
+              {/* 데스크톱의 공유는 결과 헤더에 있다 */}
+              <Button type="button" variant="soft" size="xl" onClick={() => void onShare()} className="max-sm:px-4 lg:hidden" aria-label="코스 공유하기">
                 {shared ? <Check aria-hidden /> : <Share2 aria-hidden />} <span className="max-sm:sr-only">{shared ? "링크 복사됨" : "공유"}</span>
               </Button>
               <span role="status" className="sr-only">

@@ -193,6 +193,27 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
     fitRef.current();
   }, [ready, stops, route]);
 
+  // 바텀시트 단계가 바뀌면 지도 칸의 높이가 달라진다 → 다 바뀐 뒤 한 번만 코스 전체를 다시 맞춘다
+  useEffect(() => {
+    const box = hostRef.current;
+    if (!box || typeof ResizeObserver === "undefined") return;
+    let last = box.clientHeight;
+    let timer = 0;
+    const observer = new ResizeObserver(() => {
+      const height = box.clientHeight;
+      if (Math.abs(height - last) < 8) return;
+      last = height;
+      if (height < 40) return; // 접힌 지도(목록 전체)는 맞추지 않는다: 다시 펼칠 때 맞춘다
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fitRef.current(), 260);
+    });
+    observer.observe(box);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     const map = mapRef.current;
     const stop = stops.find((s) => s.position === activeStop);

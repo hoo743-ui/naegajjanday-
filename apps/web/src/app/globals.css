@@ -332,6 +332,15 @@
   padding-block: var(--section-y);
 }
 
+/* 선만 있는 면 (docs/25 §6): 카드가 아니라 위쪽 머리카락 선 하나로 구획을 나눈다.
+   흰 카드가 줄줄이 쌓이던 결과 화면의 보조 구획(예산 도구 · 동네 · 추천 · 숙소 · 공연 · 행사)이 이것을 쓴다 */
+@utility rule-section {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
 /* 카드 hover: 살짝 들리며 그림자 한 단계 상승 */
 @utility lift {
   transition:

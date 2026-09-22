@@ -101,6 +101,8 @@ async function main() {
     "[aria-labelledby='nearby-events']", "[aria-label='예산 도구'] [aria-live]",
     // 남은 돈으로 갈 만한 곳: 그날 조회된 가게들
     "[aria-labelledby='leftover-card'] ul",
+    // 짠이의 이야기: 길이에 따라 "더 읽기"가 생기거나 없다
+    "[aria-label='짠이의 코스 이야기']",
   ];
   const SCENES = [
     { key: "landing", url: "/", dynamic: [], ready: "h1" },

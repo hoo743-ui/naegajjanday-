@@ -67,7 +67,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
   const added = tried?.course.stops.filter((s) => !before.has(s.place.id)) ?? [];
 
   return (
-    <section aria-label="예산 도구" className="grid gap-3 rounded-card bg-white p-5 shadow-soft">
+    <section aria-label="예산 도구" className="rule-section gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="mr-auto text-[15px] font-extrabold text-ink">예산을 바꾸면?</h2>
         <button
@@ -92,7 +92,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
         {whatIf.isPending ? <p className="skeleton-shimmer h-16 rounded-2xl" aria-label="그 예산으로 짜 보는 중" /> : null}
         {whatIf.isError ? <p className="rounded-2xl bg-paper-2 text-ink-2 px-4 py-3 text-[13.5px] font-bold">{whatIf.error.detail ?? "그 예산으로는 코스를 짜지 못했어요."}</p> : null}
         {tried ? (
-          <div className="grid gap-2 rounded-2xl bg-soft p-4">
+          <div className="grid gap-2 rounded-2xl bg-white p-4 shadow-soft">
             <p className="tabular text-[14px] font-extrabold text-ink">
               예산 {won(tried.budget)}이면 <span className="text-blue-deep">{tried.course.stops.length}곳</span>, 합계 <span className="text-gold-ink">{won(tried.course.totals.price)}</span>
               <span className="font-semibold text-ink-2"> (지금 {stops.length}곳 · {won(total)})</span>

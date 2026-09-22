@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CoursePage({ params }: PageProps) {
   const { id } = await params;
   return (
-    <PageShell footer={false} className="bg-soft">
+    <PageShell footer={false} header={false} className="bg-soft">
       <CourseView id={id} />
     </PageShell>
   );

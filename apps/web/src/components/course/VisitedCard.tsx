@@ -27,7 +27,7 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
   }
 
   return (
-    <section aria-labelledby="visited-card" className="grid gap-3 rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="visited-card" className="rule-section gap-3">
       <h2 id="visited-card" className="text-[15px] font-extrabold text-ink">
         다녀오셨나요?
       </h2>
@@ -35,7 +35,7 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
       <div className="flex flex-wrap items-center gap-3">
         <div role="radiogroup" aria-label="이 코스 별점" className="flex gap-1">
           {STARS.map((n) => (
-            <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n}점`} onClick={() => setRating(n)} className="grid size-10 place-items-center rounded-full hover:bg-soft">
+            <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n}점`} onClick={() => setRating(n)} className="grid size-10 place-items-center rounded-full hover:bg-white">
               <Star aria-hidden className={cn("size-6", n <= rating ? "fill-blue-deep text-blue-deep" : "text-line")} />
             </button>
           ))}

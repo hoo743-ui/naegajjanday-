@@ -15,7 +15,7 @@ export function NearbyEvents({ events: all, region, startAt }: { events: NearbyE
   // 며칠 뒤에 다시 연 링크에서, 이미 끝난 행사를 "열리고 있다"고 하지 않는다
   const events = all.filter((event) => event.ends_on >= today);
   return (
-    <section aria-labelledby="nearby-events" className="rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="nearby-events" className="rule-section">
       <h2 id="nearby-events" className="flex items-center gap-2 text-base font-extrabold">
         <PartyPopper aria-hidden className="size-5 text-pink-deep" />
         {upcoming ? "그날 근처에서 열려요" : "근처에서 지금 열리고 있어요"}
@@ -31,11 +31,11 @@ export function NearbyEvents({ events: all, region, startAt }: { events: NearbyE
                 <Link
                   href={`/explore?type=festival${region ? `&region=${encodeURIComponent(region)}` : ""}`}
                   onClick={() => track("event_clicked", { event_id: event.id, from: "course" })}
-                  className="bg-grad-soft block h-full rounded-2xl p-4 transition-transform duration-200 hover:-translate-y-0.5"
+                  className="block h-full rounded-2xl bg-white p-4 shadow-soft transition-transform duration-200 hover:-translate-y-0.5"
                 >
                   <span className="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
-                    <span className={event.is_free ? "rounded-full bg-success-soft px-2 py-0.5 text-success" : "rounded-full bg-white px-2 py-0.5 text-ink-2"}>{event.is_free ? "무료" : "유료"}</span>
-                    <span className="tabular rounded-full bg-white px-2 py-0.5 text-pink-deep">{left <= 0 ? "오늘까지" : `D-${left}`}</span>
+                    <span className={event.is_free ? "rounded-full bg-success-soft px-2 py-0.5 text-success" : "rounded-full bg-paper-2 px-2 py-0.5 text-ink-2"}>{event.is_free ? "무료" : "유료"}</span>
+                    <span className="tabular rounded-full bg-paper-2 px-2 py-0.5 text-pink-deep">{left <= 0 ? "오늘까지" : `D-${left}`}</span>
                   </span>
                   <b className="mt-2 line-clamp-2 block text-[15px] leading-snug font-extrabold tracking-tight">{event.title}</b>
                   <span className="tabular mt-1 block text-xs font-bold text-ink-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { Bus, Car, ExternalLink, Footprints, TrainFront, TramFront, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/mascot/EmptyState";
 import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
@@ -26,6 +26,8 @@ interface CourseTimelineProps {
   /** stops 와 같은 순서의 가까운 지하철 출구·버스 정류장 */
   access?: AccessHint[];
   onHover: (position: number | null) => void;
+  /** 스크롤해서 화면 가운데를 지나는 장소: 지도에서 그 핀을 켠다 (모바일에는 hover 가 없다) */
+  onView?: (position: number) => void;
   onSwap: (position: number, strategy: SwapStrategy) => void;
   onMove: (position: number, delta: -1 | 1) => void;
 }
@@ -51,7 +53,29 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onSwap, onMove }: CourseTimelineProps) {
+export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onSwap, onMove }: CourseTimelineProps) {
+  const listRef = useRef<HTMLOListElement>(null);
+  const onViewRef = useRef(onView);
+  useEffect(() => {
+    onViewRef.current = onView;
+  }, [onView]);
+
+  // 보고 있는 장소 = 화면 높이의 50~60% 띠를 지나는 카드. 모바일은 위쪽 절반이 지도라, 카드가 읽히는 자리가 이 띠다
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) onViewRef.current?.(Number((entry.target as HTMLElement).dataset.position));
+        }
+      },
+      { rootMargin: "-50% 0px -40% 0px" },
+    );
+    list.querySelectorAll<HTMLElement>("article[data-position]").forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [course.stops]);
+
   if (course.stops.length === 0) {
     return (
       <EmptyState
@@ -65,7 +89,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
   const noSignal = featuresWithoutSignal(course.stops, style);
 
   return (
-    <ol aria-label="코스 일정" className="grid gap-0">
+    <ol ref={listRef} aria-label="코스 일정" className="grid gap-0">
       {course.stops.map((stop, i) => {
         const leg = stop.from_prev;
         const mode = leg?.mode ?? "walk";

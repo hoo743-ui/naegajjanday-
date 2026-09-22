@@ -23,7 +23,7 @@ const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${enco
 export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
   if (local.specialties.length === 0 && local.sights.length === 0) return null;
   return (
-    <section aria-labelledby="local-card" className="grid gap-3.5 rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="local-card" className="rule-section gap-3.5">
       <h2 id="local-card" className="flex items-center gap-2 text-[15px] font-extrabold text-ink">
         <Sparkles aria-hidden className="size-4 text-blue-deep" />
         {local.region}, 이런 동네예요
@@ -47,7 +47,7 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
               );
               const shape = cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13.5px]",
-                on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink",
+                on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-ink",
               );
               return (
                 <li key={s.word}>

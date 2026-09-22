@@ -24,7 +24,7 @@ export function StayCard({ at, day }: StayCardProps) {
   if (stays.isError || stays.data.items.length === 0) return null; // 등재 숙소가 없는 동네: 아무 말도 하지 않는다
 
   return (
-    <section aria-labelledby="stay-card" className="grid gap-3.5 rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="stay-card" className="rule-section gap-3.5">
       <h2 id="stay-card" className="flex items-center gap-2 text-[15px] font-extrabold text-ink">
         <BedDouble aria-hidden className="size-4 text-blue-deep" />
         {day}일차 밤, 이 근처에서 묵는다면
@@ -33,7 +33,7 @@ export function StayCard({ at, day }: StayCardProps) {
         {stays.data.items.map((stay) => (
           <li key={stay.id}>
             <a href={kakaoSearch(stay.name)} target="_blank" rel="noreferrer" onClick={() => track("stay_clicked", { day })} className="flex items-center gap-3 rounded-2xl border border-line p-2.5 hover:border-blue-deep">
-              <span className="relative block size-16 shrink-0 overflow-hidden rounded-xl bg-soft">
+              <span className="relative block size-16 shrink-0 overflow-hidden rounded-xl bg-paper-2">
                 {stay.thumbnail_url ? <Image src={stay.thumbnail_url} alt="" fill sizes="64px" unoptimized className="object-cover" /> : null}
               </span>
               <span className="min-w-0">

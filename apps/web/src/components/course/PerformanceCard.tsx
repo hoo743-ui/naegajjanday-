@@ -21,7 +21,7 @@ export function PerformanceCard({ at, startAt, durationMin }: PerformanceCardPro
   if (!enabled || !shows.data?.available || shows.data.items.length === 0) return null;
 
   return (
-    <section aria-labelledby="performance-card" className="grid gap-3 rounded-card bg-white p-5 shadow-soft">
+    <section aria-labelledby="performance-card" className="rule-section gap-3">
       <h2 id="performance-card" className="flex items-center gap-2 text-[15px] font-extrabold text-ink">
         <Ticket aria-hidden className="size-4 text-blue-deep" />이 시간에 근처에서 하는 공연
       </h2>

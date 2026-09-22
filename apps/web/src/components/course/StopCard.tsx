@@ -67,6 +67,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   return (
     <motion.article
       layout={reduced ? false : "position"}
+      data-position={stop.position}
       onMouseEnter={() => onHover(stop.position)}
       onMouseLeave={() => onHover(null)}
       onFocusCapture={() => onHover(stop.position)}

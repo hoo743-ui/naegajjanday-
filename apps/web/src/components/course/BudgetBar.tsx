@@ -30,6 +30,7 @@ export function BudgetBar({ totals, budget, partySize, stops, heading, className
         heading={heading}
         items={stops.map((s) => ({ label: roleLabel(s.role), name: s.place.name, price: s.est_price }))}
         budget={budget}
+        size="lg"
         footer={
           <>
             <span className="tabular font-bold">
