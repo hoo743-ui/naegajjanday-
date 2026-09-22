@@ -23,6 +23,8 @@ from app.domain.models import (
     TransportMode,
 )
 from app.domain.recommendation import budget as B
+from app.domain.recommendation import day_score
+from app.domain.recommendation import features as F
 from app.domain.recommendation.candidates import FilterContext, hard_filter
 from app.domain.recommendation.composer import (
     MIN_OPEN_BUFFER_MIN,
@@ -91,17 +93,44 @@ class RecommendationEngine:
     async def generate(
         self, ctx: RequestContext, templates: Sequence[Template], profile: ScoringProfile
     ) -> EngineOutput:
-        params = profile.params
         b = ctx.budget_per_person
         band = B.time_band_for(ctx.start_at, ctx.duration_min)
         template = B.select_template(
             templates, time_band=band, party_size=ctx.party_size, budget_per_person=b
         )
+        out = await self._generate_with(ctx, template, profile)
+        # v2 (docs/29 §6): a template with the same kind of experience twice (a café, then a dessert café)
+        # is compared with the same day where the second one is something the day lacks. Whole days are
+        # compared, not slots: the one with the better day score is kept.
+        alt = day_score.structure_alternative(template, ctx.structure_fill) if ctx.is_v2 else None
+        if alt is not None:
+            try:
+                other = await self._generate_with(ctx, alt, profile)
+            except NoCourseError:
+                other = None
+            if (
+                other is not None
+                and _no_worse_filled(other, out)
+                and other.courses[0].objective > out.courses[0].objective
+            ):
+                out = other
+        return out
+
+    async def _generate_with(
+        self, ctx: RequestContext, template: Template, profile: ScoringProfile
+    ) -> EngineOutput:
+        params = profile.params
+        b = ctx.budget_per_person
         slot_budgets = B.allocate(template, b, ctx.include_roles)
         # a short meeting window gets fewer stops, not the same stops with every stay cut in half
         start_min = ctx.start_at.hour * 60 + ctx.start_at.minute
         slot_budgets, trimmed = B.fit_to_duration(
-            slot_budgets, ctx.duration_min, b, start_min=start_min, keep_roles=ctx.keep_roles
+            slot_budgets,
+            ctx.duration_min,
+            b,
+            per_stop_min=B.SLOT_MIN_PER_STOP * ctx.slot_min_scale,  # a relaxed day: fewer, longer stops
+            start_min=start_min,
+            keep_roles=ctx.keep_roles,
         )
 
         warnings: list[dict[str, Any]] = []
@@ -128,7 +157,7 @@ class RecommendationEngine:
                     slot_budgets,
                     ctx.duration_min,
                     b,
-                    per_stop_min=NOMINAL_SLOT_MIN * stay_scale,
+                    per_stop_min=NOMINAL_SLOT_MIN * ctx.slot_min_scale * stay_scale,
                     keep_roles=ctx.keep_roles,
                 )
                 trimmed += more
@@ -161,12 +190,12 @@ class RecommendationEngine:
                     break
                 vprofile = variant_profile(profile, variant)
                 vfinals, _, vcomposer = self._search(ctx, vprofile, slot_budgets, pools, stay_scale)
-                pick = self._pick(vfinals, selected, b, vprofile, strict_only=True)
+                pick = self._pick(ctx, vfinals, selected, b, vprofile, strict_only=True)
                 if pick is not None:
                     chosen.append((str(variant.get("label", FALLBACK_LABEL)), pick, vcomposer))
                     selected.append(pick.keys)
             while len(chosen) <= ctx.alternatives:
-                pick = self._pick(finals, selected, b, profile, strict_only=False)
+                pick = self._pick(ctx, finals, selected, b, profile, strict_only=False)
                 if pick is None:
                     break
                 chosen.append((FALLBACK_LABEL, pick, composer))
@@ -196,7 +225,7 @@ class RecommendationEngine:
         slots = len(slot_budgets)
         if not ctx.duration_min or slots == 0:
             return 1.0
-        scale = ctx.duration_min / (slots * NOMINAL_SLOT_MIN)
+        scale = ctx.duration_min / (slots * NOMINAL_SLOT_MIN * ctx.slot_min_scale)
         start_min = ctx.start_at.hour * 60 + ctx.start_at.minute
         for before, sb in enumerate(slot_budgets):
             gate = sb.slot.earliest_start_min
@@ -213,8 +242,11 @@ class RecommendationEngine:
         if ctx.wanted_categories and not ctx.recentered:
             await self._recenter_on_wanted(ctx, slot_budgets)
         await self._settle_on_foot(ctx, slot_budgets)
+        if not ctx.core_radius_m:
+            ctx.core_radius_m = ctx.radius_m
         cache: dict[tuple[str, float], list[PlaceCandidate]] = {}
         pools: dict[int, list[PlaceCandidate]] = {}
+        rings: dict[int, list[PlaceCandidate]] = {}
         for i, sb in enumerate(slot_budgets):
             est_arrive = ctx.start_at + timedelta(minutes=i * NOMINAL_SLOT_MIN + 10)
             fc = FilterContext.build(ctx, sb.slot.course_role, sb.budget, est_arrive)
@@ -238,12 +270,87 @@ class RecommendationEngine:
                     break
                 radius *= params.radius_expand_factor
             pools[sb.slot.position] = pool
-        assign_buzz(p for pool in pools.values() for p in pool)
-        mark_local((p for pool in pools.values() for p in pool), ctx, get_signature_rules())
+            if ctx.is_v2:
+                role = sb.slot.course_role
+                rings[sb.slot.position] = await self._ring(ctx, role, fc, radius, params, cache)
+        every = [p for group in (*pools.values(), *rings.values()) for p in group]
+        assign_buzz(every)
+        mark_local(every, ctx, get_signature_rules())
+        if rings:
+            pools = self._admit_rings(ctx, pools, rings, params)
         unfiltered = [p for found in cache.values() for p in found]
         pools = wanted_pools(pools, ctx.wanted_categories)
         pools = wanted_places(pools, ctx.wanted_place_ids)
         return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
+
+    async def _ring(
+        self,
+        ctx: RequestContext,
+        role: str,
+        fc: FilterContext,
+        core: float,
+        params: Any,
+        cache: dict[tuple[str, float], list[PlaceCandidate]],
+    ) -> list[PlaceCandidate]:
+        """v2 adaptive reach (docs/29 §2): the places of the adjacent rings that pass the hard filters.
+        Whether any of them is worth the trip is decided once the whole pool is marked (`_admit_rings`)."""
+        found: dict[tuple[bool, int], PlaceCandidate] = {}
+        tiers = day_score.reach_tiers(params, ctx)
+        # the rings are nested: one fetch at the outermost covers them all (the travel curve, not the ring,
+        # decides how much further costs)
+        for mult in tiers[-1:]:
+            radius = min(ctx.core_radius_m * mult, params.reach_max_m(ctx.transport))
+            if radius <= core:
+                continue
+            key = (role, -radius)  # a separate cache line: these are standouts only, not the whole ring
+            if key not in cache:
+                standouts = getattr(self._source, "fetch_standouts", None)
+                cache[key] = (
+                    await standouts(
+                        role,
+                        ctx.origin,
+                        radius,
+                        min_popularity=params.worth_trip_min,
+                        name_words=ctx.local_words,
+                        place_ids=sorted(ctx.landmark_ids),
+                    )
+                    if standouts is not None
+                    else await self._source.fetch(
+                        role, ctx.origin, radius, ctx.start_at.date(), ctx.local_words
+                    )
+                )
+            for p in hard_filter(cache[key], fc, params):
+                if haversine_m(ctx.origin, p.point) > core:
+                    found.setdefault((p.is_event, p.id), p)
+        return list(found.values())
+
+    @staticmethod
+    def _admit_rings(
+        ctx: RequestContext,
+        pools: dict[int, list[PlaceCandidate]],
+        rings: dict[int, list[PlaceCandidate]],
+        params: Any,
+    ) -> dict[int, list[PlaceCandidate]]:
+        """A place beyond the neighbourhood joins only when it is worth going further for: what the area
+        is known for, vouched for by a public body, measurably visited, or a strong match for the purpose.
+        A far place that is merely as good as a near one never gets in (docs/29 §2 "확장할 가치").
+        Joining is not winning: it still has to beat the near places on the day score."""
+        listed = get_signature_rules().listed_score
+        out = dict(pools)
+        for position, ring in rings.items():
+
+            def worth(p: PlaceCandidate) -> float:
+                purpose = F.purpose_fit(p.tags, ctx.purpose_tag_affinity)
+                vouched = listed if p.is_curated else 0.0
+                return max(p.local_score, vouched, p.popularity, purpose if purpose >= 0.7 else 0.0)
+
+            standouts = sorted(
+                (p for p in ring if worth(p) >= params.worth_trip_min), key=lambda p: (-worth(p), p.id)
+            )[: params.ring_seats]
+            if standouts:
+                out[position] = [*pools.get(position, []), *standouts]
+                ctx.ring_keys |= {(p.is_event, p.id) for p in standouts}
+        return out
 
     async def _recenter_on_wanted(self, ctx: RequestContext, slot_budgets: Sequence[B.SlotBudget]) -> None:
         """The user asked for a kind of place by name (a ballpark) and the neighbourhood's radius does
@@ -318,6 +425,7 @@ class RecommendationEngine:
 
     @staticmethod
     def _pick(
+        ctx: RequestContext,
         finals: Sequence[Partial],
         selected: Sequence[Key],
         b: float,
@@ -331,7 +439,7 @@ class RecommendationEngine:
             pool,
             selected,
             key=lambda p: p.keys,
-            relevance=lambda p: objective(p, b, params, final=True),
+            relevance=lambda p: objective(p, b, params, final=True, ctx=ctx),
             lam=params.mmr_lambda,
             max_overlap=params.max_overlap if strict_only else 1.0,
         )
@@ -353,9 +461,20 @@ class RecommendationEngine:
         if solution.feasible and solution.order != identity:
             sequence = [(stops[i - 1].place, stops[i - 1].sb) for i in solution.order]
             replanned = composer.replan(sequence, strict=True)
-            if replanned is not None and replanned.travel_min < partial.travel_min:
+            if replanned is not None and self._better_order(replanned, partial, composer):
                 return replanned, solution.solver
         return partial, solution.solver
+
+    @staticmethod
+    def _better_order(replanned: Partial, partial: Partial, composer: CourseComposer) -> bool:
+        """v1: less travel wins. v2: the reordered day must score at least as well as a whole."""
+        ctx, params = composer._ctx, composer._params
+        if not ctx.is_v2:
+            return replanned.travel_min < partial.travel_min
+        b = ctx.budget_per_person
+        before = objective(partial, b, params, final=True, ctx=ctx)
+        after = objective(replanned, b, params, final=True, ctx=ctx)
+        return after >= before and replanned.travel_min <= partial.travel_min
 
     def _route_problem(self, partial: Partial, composer: CourseComposer) -> RouteProblem:
         ctx = composer._ctx
@@ -441,6 +560,7 @@ def build_course(
             slot=s.sb.slot,
             slot_share=s.sb.share,
             slot_base_budget=s.sb.budget,
+            reason_codes=day_score.reason_codes(s, partial.stops, ctx, profile.params),
         )
         for i, s in enumerate(partial.stops)
     ]
@@ -460,9 +580,21 @@ def build_course(
         total_distance_m=sum(s.distance_m_from_prev for s in stops),
         duration_min=int((stops[-1].leave_at - ctx.start_at).total_seconds() // 60) if stops else 0,
         score=round(partial.score_sum / max(1, len(stops)), 4),
-        objective=round(objective(partial, ctx.budget_per_person, profile.params, final=True), 4),
+        objective=round(objective(partial, ctx.budget_per_person, profile.params, final=True, ctx=ctx), 4),
         optimizer=solver,
         warnings=course_warnings,
+    )
+
+
+def _empty_slots(out: EngineOutput) -> int:
+    return sum(1 for w in out.courses[0].warnings if w.get("code") == "SLOT_EMPTY")
+
+
+def _no_worse_filled(other: EngineOutput, out: EngineOutput) -> bool:
+    """A different structure only wins as a whole day: as many stops, and no slot it could not fill (the day
+    score is a per-stop average, so a shorter day could otherwise look better)."""
+    return len(other.courses[0].stops) >= len(out.courses[0].stops) and _empty_slots(other) <= _empty_slots(
+        out
     )
 
 

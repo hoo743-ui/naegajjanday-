@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Float, ForeignKey, Index, Integer, SmallInteger, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infra.db.base import (
     Base,
     BigIntPK,
+    JsonB,
     TimestampMixin,
     UtcDateTime,
     UuidStr,
@@ -100,6 +102,8 @@ class CourseStop(Base, TimestampMixin):
     score: Mapped[float] = mapped_column(Float, default=0.0)
     score_breakdown: Mapped[json_dict]
     reason: Mapped[str | None] = mapped_column(Text)
+    # why this place, as codes (docs/29 §15); null on stops made before
+    reason_codes: Mapped[list[Any] | None] = mapped_column(JsonB, default=list, nullable=True)
     congestion: Mapped[float | None] = mapped_column(Float)
     slot: Mapped[json_dict]  # snapshot of the template slot + allocated budget (for swap / reorder)
 

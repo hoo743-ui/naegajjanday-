@@ -47,6 +47,8 @@ class PlaceScorer:
             bayes = F.bayesian_rating(p.rating_avg, p.rating_count, prior, params.bayes_m)
         return {
             "budget": F.budget_fit(p.price_per_person, p.is_free, x.slot_budget, x.slot_share, params),
+            # v1 feeds the hop from the previous stop here (the bundle effect); v2 (docs/29) feeds the
+            # distance from the area's centre — where the area is liveliest — and prices hops in the day score
             "distance": F.distance_fit(x.distance_m, params.distance_scale(ctx.transport)),
             "rating": F.rating_fit(bayes),
             "sentiment": F.sentiment_fit(p.sentiment_score, p.sentiment_count, p.aspect_scores, params),

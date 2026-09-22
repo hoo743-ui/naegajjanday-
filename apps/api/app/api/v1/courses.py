@@ -10,6 +10,7 @@ from app.api.v1.responses import PROBLEMS
 from app.core.course_key import capture_course_key
 from app.core.deps import CurrentUser, OptionalUser, rate_limit
 from app.core.sse import SSE_HEADERS, sse, with_heartbeat
+from app.domain.recommendation.preference import interpret
 from app.schemas import course as dto
 from app.schemas import route as route_dto
 from app.schemas.common import Ok
@@ -33,6 +34,27 @@ async def generate(
     idempotency_key: Annotated[str | None, Header(max_length=128)] = None,
 ) -> dto.CourseGenerateResponse:
     return await service.generate(body, user, idempotency_key)
+
+
+@router.post(
+    "/interpret",
+    response_model=dto.InterpretResponse,
+    responses=PROBLEMS(422),
+    summary="고른 하루를 어떻게 이해했는지 (코스를 만들기 전 확인용)",
+)
+async def interpret_preferences(body: dto.InterpretRequest) -> dto.InterpretResponse:
+    got = interpret(
+        pace=body.pace,
+        move_style=body.move_style,
+        wishes=body.wishes,
+        liked_tags=body.liked_tags,
+        disliked_tags=body.disliked_tags,
+        budget_total=body.budget_total,
+        party_size=body.party_size,
+    )
+    return dto.InterpretResponse(
+        summary=[dto.SummaryLine.model_validate(line) for line in got.summary], layers=got.layers()
+    )
 
 
 @router.get(

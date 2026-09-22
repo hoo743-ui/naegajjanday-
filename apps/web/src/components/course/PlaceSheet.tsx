@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { distinctPhotos } from "@/lib/photo-key";
 import { BadgeCheck, Clock, ExternalLink, Phone, Utensils } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePlaceDetail } from "@/lib/api/hooks";
@@ -26,7 +27,8 @@ export function PlaceSheet({ place, partySize, onClose }: PlaceSheetProps) {
   const detail = usePlaceDetail(place?.id ?? null);
   if (!place) return null;
   const d = detail.data;
-  const photos = [...new Set([place.thumbnail_url, ...(d?.images ?? [])].filter((u): u is string => Boolean(u)))].slice(0, MAX_PHOTOS);
+  // 크기만 다른 같은 사진은 한 장으로 (docs/29 §20)
+  const photos = distinctPhotos([place.thumbnail_url, ...(d?.images ?? [])]).slice(0, MAX_PHOTOS);
   const years = d?.since_year ? new Date().getFullYear() - d.since_year : 0;
   const hours = (d?.opening_hours ?? []).filter((h) => h.is_closed || (h.open && h.close));
 

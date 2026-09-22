@@ -146,6 +146,28 @@ class ScoringParams:
     max_leg_min_walk: float = 20.0
     max_leg_min_transit: float = 35.0
     max_leg_min_car: float = 40.0
+    # --- algorithm v2 (docs/29): distance is a preference, not a wall ------------------------------
+    # hard: only a leg nobody would make with that mode (the day stops being a course)
+    hard_leg_min_walk: float = 45.0
+    hard_leg_min_transit: float = 75.0
+    hard_leg_min_car: float = 80.0
+    # the leg length that costs (almost) nothing; the travel curve is read in multiples of it
+    comfort_leg_min_walk: float = 15.0
+    comfort_leg_min_transit: float = 25.0
+    comfort_leg_min_car: float = 25.0
+    comfort_leg_scale: float = 1.0  # a variant ("덜 걷는 코스") or a move style tightens / loosens it
+    # piecewise-linear penalty per leg: x = minutes / comfort, y = penalty (past the last knot: last slope)
+    travel_curve: list[list[float]] = field(
+        default_factory=lambda: [[0.0, 0.0], [1.0, 0.015], [2.0, 0.06], [3.0, 0.16], [4.0, 0.36]]
+    )
+    # adaptive reach: rings around the core area (multiples of its radius), capped per mode
+    reach_tiers: list[float] = field(default_factory=lambda: [1.8, 2.8])
+    reach_max_m_walk: float = 3200.0
+    reach_max_m_transit: float = 9000.0
+    reach_max_m_car: float = 15000.0
+    worth_trip_min: float = 0.5  # a place beyond the core must stand out this much to be considered
+    ring_seats: int = 4  # at most this many outer-ring places join a slot's pool
+    day_score: dict[str, float] = field(default_factory=dict)  # overrides of day_score.DEFAULT_DAY_WEIGHTS
     max_wait_min: int = 45
     group_min_party: int = 6
     group_tag: str | None = None
@@ -171,6 +193,28 @@ class ScoringParams:
             "transit": self.distance_scale_transit_m,
             "car": self.distance_scale_car_m,
         }.get(mode, self.distance_scale_m)
+
+    def hard_leg_min(self, mode: str) -> float:
+        return {
+            "walk": self.hard_leg_min_walk,
+            "transit": self.hard_leg_min_transit,
+            "car": self.hard_leg_min_car,
+        }.get(mode, self.hard_leg_min_walk)
+
+    def comfort_leg_min(self, mode: str) -> float:
+        base = {
+            "walk": self.comfort_leg_min_walk,
+            "transit": self.comfort_leg_min_transit,
+            "car": self.comfort_leg_min_car,
+        }.get(mode, self.comfort_leg_min_walk)
+        return base * self.comfort_leg_scale
+
+    def reach_max_m(self, mode: str) -> float:
+        return {
+            "walk": self.reach_max_m_walk,
+            "transit": self.reach_max_m_transit,
+            "car": self.reach_max_m_car,
+        }.get(mode, self.reach_max_m_walk)
 
     def max_leg_min(self, mode: str) -> float:
         return {
@@ -246,6 +290,20 @@ class RequestContext:
     purpose_tag_affinity: dict[str, float] = field(default_factory=dict)
     category_rating_avg: dict[str, float] = field(default_factory=dict)
     alternatives: int = 2
+    # docs/29: "v1" = distance as a hard limit (the original engine, kept for comparison),
+    # "v2" = distance as a preference and the whole day scored ("Best Day")
+    algorithm: str = "v1"
+    move_style: str = "balanced"  # local | balanced | explorer (v2)
+    core_radius_m: int = 0  # the neighbourhood's own radius before the reach grew (v2, set by the engine)
+    ring_keys: set[tuple[bool, int]] = field(default_factory=set)  # places admitted from an outer ring
+    # docs/30 preference interpretation: minutes a stop takes (relaxed > 1 > packed), and which kind a
+    # repeated slot should become first ("전시 넣기" → CULTURE)
+    slot_min_scale: float = 1.0
+    structure_fill: tuple[str, ...] = ()
+
+    @property
+    def is_v2(self) -> bool:
+        return self.algorithm == "v2"
 
     @property
     def budget_per_person(self) -> float:
@@ -269,6 +327,7 @@ class StopResult:
     slot: Slot | None = None
     slot_share: float = 0.0
     slot_base_budget: float = 0.0
+    reason_codes: list[str] = field(default_factory=list)  # why this place (docs/29 §15)
 
 
 @dataclass(slots=True)

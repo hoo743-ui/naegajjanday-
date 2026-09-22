@@ -318,8 +318,24 @@ export interface Stop {
   score: number;
   score_breakdown: ScoreBreakdown;
   reason: string | null;
+  /** 왜 이 장소인지 (docs/29 §15). 예전 코스에는 없다 */
+  reason_codes?: ReasonCode[];
   congestion: Congestion | null;
 }
+
+export type ReasonCode =
+  | "PURPOSE_MATCH"
+  | "LOCAL_SIGNIFICANCE"
+  | "WORTH_THE_TRIP"
+  | "UNIQUE_EXPERIENCE"
+  | "USER_PREFERENCE"
+  | "HIGH_PLACE_QUALITY"
+  | "BUDGET_FIT"
+  | "DIVERSITY"
+  | "ROUTE_BALANCE";
+
+/** 얼마나 이동해도 괜찮은지 (docs/29 §10): 거리를 자르는 필터가 아니라 엔진의 이동 선호 */
+export type MoveStyle = "local" | "balanced" | "explorer";
 
 export interface CourseTotals {
   price: number;

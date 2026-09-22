@@ -10,12 +10,14 @@ from sqlalchemy.orm import selectinload
 
 from app.core import errors
 from app.core.config import Settings
+from app.domain import media
 from app.infra.db.base import as_utc, utcnow
 from app.infra.db.models import (
     Category,
     CourseStop,
     IngestionJob,
     Place,
+    PlaceImage,
     PlaceRevision,
     PlaceSource,
     PlaceTag,
@@ -228,6 +230,26 @@ class AdminPlaceService:
         place.images = [url, *[u for u in (place.images or []) if u != url]]
         if make_cover or not place.thumbnail_url:
             place.thumbnail_url = url
+        # the image pipeline's record of it (docs/29): an operator's own photo of this place is verified
+        key = media.image_key(url)
+        exists = await self._s.scalar(
+            select(PlaceImage.id).where(PlaceImage.place_id == place.id, PlaceImage.image_key == key)
+        )
+        if exists is None:
+            self._s.add(
+                PlaceImage(
+                    place_id=place.id,
+                    image_key=key,
+                    url=url,
+                    source="upload",
+                    source_query="operator upload",
+                    collected_at=utcnow(),
+                    image_type=media.REAL_PLACE,
+                    verification_status=media.VERIFIED,
+                    relevance=1.0,
+                    evidence={"note": "uploaded by an operator for this place"},
+                )
+            )
         self._revise(place, "edit", before)
         await self._s.commit()
         return await self._out(place)

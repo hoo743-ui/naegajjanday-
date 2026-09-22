@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     app_env: Literal["local", "test", "staging", "production"] = "local"
     app_name: str = "naegajjanday-api"
     engine_version: str = "1.0.0"
+    # docs/29: v1 = distance as a hard limit (kept for comparison), v2 = the whole day scored ("Best Day").
+    # A request may name one (offline comparison, A/B); every course remembers the one it was made with.
+    recommendation_algorithm: Literal["v1", "v2"] = "v2"
     log_level: str = "INFO"
     log_json: bool = True
     public_base_url: str = "http://localhost:8000"

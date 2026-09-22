@@ -46,6 +46,8 @@ async def app(tmp_path_factory: pytest.TempPathFactory) -> AsyncIterator[FastAPI
         jwt_secret="test-secret-test-secret-test-secret-1234",
         upload_dir=tmp_path_factory.mktemp("uploads"),
         osrm_foot_url="",  # no network in tests: walking legs fall back to the engine estimate
+        naver_map_client_id=None,  # no network in tests: car legs keep the engine estimate
+        naver_map_client_secret=None,
     )
     application = create_app(settings)
     async with application.router.lifespan_context(application):

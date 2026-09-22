@@ -441,6 +441,56 @@ def build_signatures(
     )
 
 
+@cli.command("images-canonicalize")
+def images_canonicalize(
+    apply: Annotated[bool, typer.Option(help="반영한다. 없으면 무엇이 바뀔지 보고만 한다")] = False,
+    raw_dir: Annotated[
+        Path | None, typer.Option(help="default: %LOCALAPPDATA%/naegajjanday/raw/tourapi")
+    ] = None,
+) -> None:
+    """장소 사진 검증 (docs/29): 원본 기록과 대조해 VERIFIED · LIKELY · UNVERIFIED · REJECTED,
+    같은 사진은 한 장소만."""
+    from app.services import image_service
+
+    target = raw_dir or bulk_download.default_raw_dir() / "tourapi"
+
+    async def job(db: Database, settings: Settings) -> None:
+        async with db.sessionmaker() as session:
+            await image_service.canonicalize(session, target, apply=apply, log=typer.echo)
+
+    _run(job)
+
+
+@cli.command("images-fingerprint")
+def images_fingerprint(
+    limit: Annotated[int, typer.Option(help="이번에 받을 사진 수")] = 300,
+    region: Annotated[list[str] | None, typer.Option(help="이 지역(slug) 장소의 사진만")] = None,
+) -> None:
+    """보여 주는 사진의 파일을 받아 해시 · 지각 해시로 다른 장소와 같은 사진 · 깨진 사진을 거른다
+    (docs/29)."""
+    from sqlalchemy import select as sa_select
+
+    from app.infra.db.models import Place, Region
+    from app.services import image_service
+
+    async def job(db: Database, settings: Settings) -> None:
+        async with db.sessionmaker() as session:
+            ids = None
+            if region:
+                ids = list(
+                    (
+                        await session.execute(
+                            sa_select(Place.id)
+                            .join(Region, Region.id == Place.region_id)
+                            .where(Region.slug.in_(region))
+                        )
+                    ).scalars()
+                )
+            await image_service.fingerprint(session, limit=limit, place_ids=ids, log=typer.echo)
+
+    _run(job)
+
+
 @cli.command("eval-courses")
 def eval_courses(
     scope: Annotated[str, typer.Option(help="quick(4개 지역) | full(20개 지역)")] = "quick",
@@ -452,6 +502,10 @@ def eval_courses(
     save: Annotated[str | None, typer.Option(help="이 이름으로 기준선 저장")] = None,
     compare: Annotated[str | None, typer.Option(help="이 기준선과 전후 비교")] = None,
     show: Annotated[bool, typer.Option(help="모든 코스를 한 줄씩 출력")] = False,
+    algorithm: Annotated[str | None, typer.Option(help="v1 | v2 (docs/29). 생략 시 서버 기본값")] = None,
+    move_style: Annotated[str | None, typer.Option(help="local | balanced | explorer")] = None,
+    duration: Annotated[int | None, typer.Option(help="일정 길이(분)")] = None,
+    transport: Annotated[str, typer.Option(help="walk | transit | car")] = "walk",
 ) -> None:
     """추천 품질 점수표: 실제 파이프라인을 시나리오 행렬로 돌려 품질 규칙 위반을 집계한다 (DB 기록 없음)."""
     from app.evaluation import harness
@@ -461,7 +515,16 @@ def eval_courses(
     scenarios = harness.build_scenarios(spec, scope, only, budget_scale)
 
     async def job(db: Database, settings: Settings) -> None:
-        outcomes = await harness.run(db, settings, scenarios, spec)
+        outcomes = await harness.run(
+            db,
+            settings,
+            scenarios,
+            spec,
+            algorithm=algorithm,
+            move_style=move_style,
+            duration_min=duration,
+            transport=transport,
+        )
         summary = harness.summarize(outcomes, spec["rules"])
         if show:
             for o in outcomes:

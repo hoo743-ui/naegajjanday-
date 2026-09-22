@@ -19,6 +19,7 @@ from app.core import course_key, errors
 from app.core.cache import Cache
 from app.core.config import Settings
 from app.core.logging import get_logger
+from app.domain.media import distinct_photos
 from app.domain.models import (
     BudgetTooLowError,
     CourseResult,
@@ -32,6 +33,7 @@ from app.domain.models import (
     StopResult,
     Template,
 )
+from app.domain.recommendation import day_score
 from app.domain.recommendation.blend import (
     blend_affinity,
     blend_profiles,
@@ -58,6 +60,7 @@ from app.domain.recommendation.itinerary import (
     merge_legs,
     regions_by_day,
 )
+from app.domain.recommendation.preference import Interpreted, interpret, reweight_templates
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
@@ -420,6 +423,9 @@ class CourseService:
             user=user,
         )
         ctx.area_names = area_names_of(region.name)
+        # docs/29: which engine plans this course, and how far this person is happy to go for better
+        ctx.algorithm = req.algorithm or self._settings.recommendation_algorithm
+        ctx.move_style = req.move_style or "balanced"
         ctx.wanted_place_ids = frozenset(must_visit)
         if must_visit:  # a leg of a whole-city trip: the sight is the point, however short the leg
             ctx.keep_roles = frozenset(str(r) for r in (itinerary_rules().get("city") or {}).get("roles", []))
@@ -434,7 +440,18 @@ class CourseService:
         ctx.focus_request = req.focus if req.focus in ctx.local_words else None  # only what it is known for
         if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
             ctx.auto_focus_words = ctx.local_words
-        profile, templates = self._apply_style(ctx, profile, templates, req.style)
+        # docs/30: the few answers of the wizard, read into the engine's own knobs
+        understood = interpret(
+            pace=req.pace,
+            move_style=req.move_style,
+            wishes=req.wishes,
+            liked_tags=ctx.liked_tags,
+            disliked_tags=ctx.disliked_tags,
+        )
+        profile, templates = self._apply_style(
+            ctx, profile, templates, understood.style if req.pace else req.style
+        )
+        profile, templates = self._apply_understood(ctx, profile, templates, understood)
         for name in conditions:  # a rainy day: indoors, and a gallery instead of a walk
             condition = day_conditions()[name]
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
@@ -592,7 +609,7 @@ class CourseService:
                 request=body,
                 candidate_count=out.candidates_count,
                 scoring_profile_version=profile.label,
-                engine_version=self._settings.engine_version,
+                engine_version=f"{self._settings.engine_version}+{ctx.algorithm}",  # A/B-ready (docs/29)
                 selected_courses=[],
                 warnings=out.warnings,
             )
@@ -602,6 +619,11 @@ class CourseService:
             "stay_scale": out.stay_scale,
             "duration_min": req.duration_min,
             "style": ctx.style,
+            # a swap or reorder re-plans with the engine the course was made with (docs/29)
+            "algorithm": ctx.algorithm,
+            "move_style": ctx.move_style,
+            "pace": list(req.pace),
+            "wishes": list(req.wishes),
             "focus": ctx.focus,
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
@@ -697,6 +719,7 @@ class CourseService:
             ],
             meta=dto.GenerateMeta(
                 engine_version=self._settings.engine_version,
+                algorithm=ctx.algorithm,
                 scoring_profile=profile.label,
                 template=out.template.code,
                 candidates=out.candidates_count,
@@ -823,6 +846,7 @@ class CourseService:
                 score=s.score,
                 score_breakdown=s.score_breakdown,
                 reason=narrative.reasons.get(s.position),
+                reason_codes=list(s.reason_codes),
                 congestion=s.congestion,
                 slot=_slot_snapshot(s),
             )
@@ -831,6 +855,9 @@ class CourseService:
 
     def _view(self, row: Course, stops: Sequence[StopResult], origin: GeoPoint) -> dto.CourseOut:
         reasons = {s.position: s.reason for s in row.stops}
+        codes = {s.position: list(s.reason_codes or []) for s in row.stops}
+        # no photo twice in one course (docs/29 §21): a later stop with the same photo shows the category tile
+        photos = distinct_photos([s.place.thumbnail_url for s in stops])
         budget = row.budget_total
         segments = (row.request or {}).get("segments") or []
         hops = {seg["from_position"]: seg for seg in segments if seg.get("hop")}
@@ -854,7 +881,7 @@ class CourseService:
                 dto.StopOut(
                     position=s.position,
                     role=s.role,
-                    place=place_brief(s.place),
+                    place=place_brief(s.place, photo=photo),
                     arrive_at=self._out_time(s.arrive_at),
                     leave_at=self._out_time(s.leave_at),
                     est_price=s.est_price,
@@ -870,6 +897,7 @@ class CourseService:
                     score=s.score,
                     score_breakdown=s.score_breakdown,
                     reason=reasons.get(s.position),
+                    reason_codes=s.reason_codes or codes.get(s.position, []),
                     congestion=(
                         dto.Congestion(
                             level=self._narrative.congestion_level(s.congestion), value=round(s.congestion, 2)
@@ -878,7 +906,7 @@ class CourseService:
                         else None
                     ),
                 )
-                for s in stops
+                for s, photo in zip(stops, photos, strict=True)
             ],
             route=dto.RouteOut(
                 polyline=encode_polyline([origin, *(s.place.point for s in stops)]), optimizer=row.optimizer
@@ -919,6 +947,7 @@ class CourseService:
                     slot=_slot_from_snapshot(s.slot or {}, s.position, s.course_role),
                     slot_share=float((s.slot or {}).get("share", 0.0)),
                     slot_base_budget=float((s.slot or {}).get("budget", 0.0)),
+                    reason_codes=list(s.reason_codes or []),
                 )
             )
         return row, stops, GeoPoint(row.origin_lat, row.origin_lng)
@@ -1052,12 +1081,44 @@ class CourseService:
             user=user,
         )
         profile, _ = self._apply_style(ctx, profile, [], (row.request or {}).get("style"))
+        # the same reading of pace and wishes as when it was made (docs/30)
+        understood = interpret(
+            pace=(row.request or {}).get("pace") or [],
+            wishes=(row.request or {}).get("wishes") or [],
+            liked_tags=ctx.liked_tags,
+            disliked_tags=ctx.disliked_tags,
+        )
+        profile, _ = self._apply_understood(ctx, profile, [], understood)
+        # the engine the course was made with; courses from before docs/29 were planned by v1
+        ctx.algorithm = str((row.request or {}).get("algorithm") or "v1")
+        ctx.move_style = str((row.request or {}).get("move_style") or "balanced")
+        ctx.core_radius_m = region.radius_m if region else 1200
+        # a place that joined from beyond the neighbourhood keeps saying so after a replan
+        ctx.ring_keys = {
+            (s.event_id is not None, s.event_id or s.place_id or 0)
+            for s in row.stops
+            if "WORTH_THE_TRIP" in (s.reason_codes or [])
+        }
         # a swap must not bring in what the course was never asked to have (a ballpark on a day off)
         kept = (row.request or {}).get("extras") or []
         asked = {str(extra_roles()[r].get("category")) for r in kept if r in extra_roles()}
         ctx.blocked_categories = opt_in_categories() - asked
         stay_scale = float((row.request or {}).get("stay_scale", 1.0))
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
+
+    @staticmethod
+    def _apply_understood(
+        ctx: RequestContext, profile: ScoringProfile, templates: Sequence[Template], understood: Interpreted
+    ) -> tuple[ScoringProfile, list[Template]]:
+        """Pace and wishes as soft weights on top of the purpose (docs/30 §13: preferences and style never
+        override the hard limits — budget, time, party, "술 한잔 포함" stay where they were)."""
+        if not (understood.pace or understood.wishes):
+            return profile, list(templates)
+        twist = understood.as_style()
+        ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, twist)
+        ctx.slot_min_scale = understood.slot_scale
+        ctx.structure_fill = understood.structure_fill
+        return styled_profile(profile, twist), reweight_templates(templates, understood.role_share)
 
     @staticmethod
     def _apply_style(
@@ -1122,6 +1183,8 @@ class CourseService:
         pool = await self._places.fetch(target.role, origin, radius, ctx.start_at.date())
         fc = FilterContext.build(ctx, target.role, max(sb.budget, target.slot_budget), target.arrive_at)
         pool = [p for p in hard_filter(pool, fc, profile.params) if p.public_id != target.place.public_id]
+        if ctx.is_v2:  # the same reach as generation: a standout a little further may replace it (docs/29)
+            pool = await self._with_ring(pool, target, origin, radius, fc, ctx, profile)
 
         options: list[tuple[PlaceCandidate, Partial]] = []
         for cand in pool:
@@ -1139,7 +1202,7 @@ class CourseService:
         b = ctx.budget_per_person
 
         def j(item: tuple[PlaceCandidate, Partial]) -> float:
-            return objective(item[1], b, profile.params, final=True)
+            return objective(item[1], b, profile.params, final=True, ctx=ctx)
 
         current = target.place
         if req.strategy == "cheaper":
@@ -1169,6 +1232,32 @@ class CourseService:
             )
         )
         return out
+
+    async def _with_ring(
+        self,
+        pool: list[PlaceCandidate],
+        target: StopResult,
+        origin: GeoPoint,
+        radius: float,
+        fc: FilterContext,
+        ctx: RequestContext,
+        profile: ScoringProfile,
+    ) -> list[PlaceCandidate]:
+        params = profile.params
+        tiers = day_score.reach_tiers(params, ctx)
+        far = min(ctx.core_radius_m * max(tiers), params.reach_max_m(ctx.transport)) if tiers else 0.0
+        if far <= radius:
+            return pool
+        found = await self._places.fetch_standouts(
+            target.role, origin, far, min_popularity=params.worth_trip_min, place_ids=sorted(ctx.landmark_ids)
+        )
+        ring = [
+            p
+            for p in hard_filter(found, fc, params)
+            if p.public_id != target.place.public_id and haversine_m(origin, p.point) > radius
+        ]
+        admitted = RecommendationEngine._admit_rings(ctx, {0: pool}, {0: ring}, params)
+        return admitted[0]
 
     async def _leftover_options(
         self, row: Course, stops: Sequence[StopResult], user: User | None, *, same_role: bool = False
@@ -1521,7 +1610,10 @@ def _slot_from_snapshot(raw: dict[str, Any], position: int, role: str) -> Slot:
     )
 
 
-def place_brief(p: PlaceCandidate) -> dto.PlaceBrief:
+_KEEP = object()
+
+
+def place_brief(p: PlaceCandidate, *, photo: str | object | None = _KEEP) -> dto.PlaceBrief:
     return dto.PlaceBrief(
         id=p.public_id,
         kind="event" if p.is_event else "place",
@@ -1531,7 +1623,7 @@ def place_brief(p: PlaceCandidate) -> dto.PlaceBrief:
         lat=p.lat,
         lng=p.lng,
         address=p.address,
-        thumbnail_url=p.thumbnail_url,
+        thumbnail_url=p.thumbnail_url if photo is _KEEP else photo,
         rating=p.rating_avg,
         review_count=p.rating_count,
         price_per_person=None if p.is_free else p.price_per_person,

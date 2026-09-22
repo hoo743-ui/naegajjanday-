@@ -14,6 +14,7 @@ The rules and scenarios are data (`data/eval/scenarios.json`).
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, time, timedelta
@@ -21,11 +22,17 @@ from pathlib import Path
 from typing import Any, cast
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import select
+
 from app.core import errors
 from app.core.cache import MemoryCache
 from app.core.config import API_ROOT, Settings
-from app.domain.models import CourseResult, RequestContext
+from app.domain.media import SHOWABLE, distinct_photos
+from app.domain.models import CourseResult, GeoPoint, RequestContext
+from app.domain.recommendation.day_score import REPEATABLE, experience_kind
+from app.domain.routing.travel_time import haversine_m
 from app.infra.analytics.base import NoopTracker
+from app.infra.db.models import PlaceImage
 from app.infra.db.session import Database
 from app.infra.tagging import get_tag_rules
 from app.schemas import course as dto
@@ -51,6 +58,9 @@ CHECKS: dict[str, str] = {
     "SAME_KIND_TWICE": "같은 종류를 두 번 간다",
     "SNACK_AS_MEAL": "데이트·가족의 식사 자리가 분식·간식",
     "VAGUE_SIGHT": "명소 이름이 지역명 그대로거나 너무 모호하다",
+    "REPEATED_KIND": "같은 경험(카페 · 카페)을 되풀이한다",
+    "PHOTO_TWICE": "한 코스에 같은 사진이 두 번",
+    "PHOTO_UNVERIFIED": "검증되지 않은 사진을 보여 준다",
 }
 
 
@@ -85,6 +95,13 @@ class Outcome:
     has_specialty: bool = False  # the neighbourhood has a clear specialty (domain.signature)
     local_stops: int = 0  # stops that stand for the neighbourhood: a specialty shop or a landmark
     error: str | None = None
+    # docs/29 day metrics
+    between_min: int = 0  # travel between stops (the first leg from the area's centre excluded)
+    kinds: int = 0  # distinct kinds of experience
+    concentration: float = 0.0  # largest share of stops in one 500 m block
+    purpose_fit: float = 0.0
+    beyond_core: int = 0  # stops outside the neighbourhood's own radius
+    spread_m: int = 0  # the widest distance between two stops
 
 
 def load_spec(path: Path = SCENARIOS_PATH) -> dict[str, Any]:
@@ -160,7 +177,9 @@ def judge(
             found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (≥{limit})"))
         if (floor := _prefix_lookup(rules["not_before"], code)) and at < _hm(floor):
             found.append(Finding("TOO_EARLY", f"{name} [{code}] {at:%H:%M}"))
-        if s.position > 1 and s.travel_min_from_prev > int(rules["max_walk_leg_min"]):
+        # v1 promised "20 min a leg"; v2 prices a longer leg instead of forbidding it -> flag the long ones
+        leg_limit = int(rules.get("max_walk_leg_min_v2", 30) if ctx.is_v2 else rules["max_walk_leg_min"])
+        if s.position > 1 and s.travel_min_from_prev > leg_limit:
             found.append(Finding("LONG_WALK", f"→ {name} {s.travel_min_from_prev}분"))
         if scenario.purpose == "family" and s.role in rules["family_avoid_roles"]:
             found.append(Finding("FAMILY_BAR", name))
@@ -180,6 +199,10 @@ def judge(
     for code, n in seen_kinds.items():
         if n > 1:
             found.append(Finding("SAME_KIND_TWICE", code))
+    experiences = Counter(k for s in stops if (k := experience_kind(s.place)))
+    for kind, n in experiences.items():
+        if n > REPEATABLE.get(kind, 1):
+            found.append(Finding("REPEATED_KIND", f"{kind} x{n}"))
     use = course.total_price / max(1, scenario.budget_total)
     if use > 1.0:
         found.append(Finding("OVER_BUDGET", f"{use:.0%}"))
@@ -188,8 +211,44 @@ def judge(
     return found
 
 
+def _concentration(points: list[tuple[float, float]], cell_m: float = 500.0) -> float:
+    if not points:
+        return 0.0
+    d_lat = cell_m / 111_000
+    cells = Counter(
+        (math.floor(lat / d_lat), math.floor(lng / (d_lat / max(0.2, math.cos(math.radians(lat))))))
+        for lat, lng in points
+    )
+    return max(cells.values()) / len(points)
+
+
+async def _photo_status(session: Any, stops: list[Any]) -> dict[int, str]:
+    """place id -> verification status of the photo the course shows for it (docs/29 §27)."""
+    urls = {
+        s.place.id: s.place.thumbnail_url for s in stops if s.place.thumbnail_url and not s.place.is_event
+    }
+    if not urls:
+        return {}
+    rows = (
+        await session.execute(
+            select(PlaceImage.place_id, PlaceImage.url, PlaceImage.verification_status).where(
+                PlaceImage.place_id.in_(list(urls))
+            )
+        )
+    ).all()
+    return {pid: status for pid, url, status in rows if urls.get(pid) == url}
+
+
 async def run(
-    db: Database, settings: Settings, scenarios: list[Scenario], spec: dict[str, Any]
+    db: Database,
+    settings: Settings,
+    scenarios: list[Scenario],
+    spec: dict[str, Any],
+    *,
+    algorithm: str | None = None,
+    move_style: str | None = None,
+    duration_min: int | None = None,
+    transport: str = "walk",
 ) -> list[Outcome]:
     tz = ZoneInfo(settings.timezone)
     day = (datetime.now(tz) + timedelta(days=int(spec.get("days_ahead", 5)))).date()
@@ -211,6 +270,10 @@ async def run(
                 start_at=datetime.combine(day, _hm(sc.start), tzinfo=tz),
                 style=sc.style,
                 alternatives=0,
+                algorithm=algorithm,
+                move_style=move_style,
+                duration_min=duration_min,
+                transport=transport,
             )
             outcome = Outcome(sc)
             try:
@@ -225,6 +288,31 @@ async def run(
             names = frozenset({region.name, region.name.removesuffix("입구").removesuffix("역")})
             outcome.findings = judge(course, ctx, sc, spec["rules"], names)
             outcome.price, outcome.walk_min = course.total_price, course.total_travel_min
+            photos = distinct_photos([s.place.thumbnail_url for s in course.stops])
+            status = await _photo_status(session, course.stops)
+            for s, shown in zip(course.stops, photos, strict=True):
+                if s.place.thumbnail_url and shown is None:
+                    outcome.findings.append(Finding("PHOTO_TWICE", s.place.name))
+                elif shown and not s.place.is_event and status.get(s.place.id) not in SHOWABLE:
+                    outcome.findings.append(Finding("PHOTO_UNVERIFIED", s.place.name))
+            centre = GeoPoint(region.center_lat, region.center_lng)
+            points = [(s.place.lat, s.place.lng) for s in course.stops]
+            n_stops = max(1, len(course.stops))
+            outcome.between_min = sum(s.travel_min_from_prev for s in course.stops[1:])
+            outcome.kinds = len({k for s in course.stops if (k := experience_kind(s.place))})
+            outcome.concentration = _concentration(points)
+            outcome.purpose_fit = (
+                sum(s.score_breakdown.get("purpose_fit", 0.0) for s in course.stops) / n_stops
+            )
+            outcome.beyond_core = sum(
+                1 for s in course.stops if haversine_m(centre, s.place.point) > region.radius_m
+            )
+            outcome.spread_m = round(
+                max(
+                    (haversine_m(a.place.point, b.place.point) for a in course.stops for b in course.stops),
+                    default=0.0,
+                )
+            )
             outcome.stops = [
                 {
                     "role": s.role,
@@ -237,6 +325,9 @@ async def run(
                     # paid stops only: a free street or park is not something anyone vouches for
                     "vouched": s.place.is_curated,
                     "specialty": bool(s.place.local_word),
+                    "kind": experience_kind(s.place),
+                    "leg": s.travel_min_from_prev,
+                    "reasons": list(s.reason_codes),
                 }
                 for s in course.stops
             ]
@@ -264,7 +355,30 @@ def summarize(outcomes: list[Outcome], rules: dict[str, Any]) -> dict[str, Any]:
         if sights:
             name, n = sights.most_common(1)[0]
             repeats[region] = (name, n / len(items))
+    ok = [o for o in outcomes if o.stops]
+    n_ok = max(1, len(ok))
+
+    def share(pred: Any) -> float:
+        return round(sum(1 for o in ok if pred(o)) / n_ok, 3)
+
+    shown = max(1, sum(1 for s in stops if s["photo"]))
+    day = {
+        "avg_between_min": round(sum(o.between_min for o in ok) / n_ok, 1),
+        "avg_kinds": round(sum(o.kinds for o in ok) / n_ok, 2),
+        "avg_concentration": round(sum(o.concentration for o in ok) / n_ok, 3),
+        "repeat_rate": share(lambda o: any(f.code == "REPEATED_KIND" for f in o.findings)),
+        "purpose_fit": round(sum(o.purpose_fit for o in ok) / n_ok, 3),
+        "budget_fit_rate": share(lambda o: o.price <= o.scenario.budget_total),
+        "schedule_conflict_rate": share(
+            lambda o: any(f.code in ("CLOSED_AT_ARRIVAL", "TOO_EARLY") for f in o.findings)
+        ),
+        "photo_mismatch_rate": round(by_code["PHOTO_UNVERIFIED"] / shown, 3),
+        "photo_dup_rate": share(lambda o: any(f.code == "PHOTO_TWICE" for f in o.findings)),
+        "beyond_core_rate": round(sum(o.beyond_core for o in ok) / max(1, len(stops)), 3),
+        "avg_spread_m": round(sum(o.spread_m for o in ok) / n_ok),
+    }
     return {
+        **day,
         "scenarios": total,
         "clean": clean,
         "clean_rate": round(clean / max(1, total), 3),
@@ -305,6 +419,17 @@ def render(summary: dict[str, Any], outcomes: list[Outcome], *, examples: int = 
         f" · 전체 코스의 {summary.get('local_rate', 0):.0%} 에 동네 명물·대표 볼거리가 하나 이상",
         f"보증된 곳: 돈을 쓰는 장소의 {summary.get('vouched_rate', 0):.0%} 에 공적 표식"
         "(관광공사·모범음식점·백년가게·30년)",
+        f"하루: 장소 사이 이동 평균 {summary.get('avg_between_min', 0)}분"
+        f" · 경험 종류 {summary.get('avg_kinds', 0)}가지"
+        f" · 한 블록 집중 {summary.get('avg_concentration', 0):.0%}"
+        f" · 경험 반복 {summary.get('repeat_rate', 0):.0%}"
+        f" · 목적 적합 {summary.get('purpose_fit', 0):.2f}",
+        f"      예산 안 {summary.get('budget_fit_rate', 0):.0%}"
+        f" · 일정 충돌 {summary.get('schedule_conflict_rate', 0):.0%}"
+        f" · 동네 밖 장소 {summary.get('beyond_core_rate', 0):.0%}"
+        f" · 장소 간 최대 거리 평균 {summary.get('avg_spread_m', 0)}m",
+        f"사진: 오매칭 {summary.get('photo_mismatch_rate', 0):.1%}"
+        f" · 한 코스 중복 {summary.get('photo_dup_rate', 0):.1%}",
         "",
         "결함 (많은 순):",
     ]
@@ -358,6 +483,26 @@ def compare(name: str, summary: dict[str, Any], outcomes: list[Outcome]) -> str:
     delta("실제 사진", before["real_photo_rate"], summary["real_photo_rate"], good_up=True)
     delta("예산 사용", before["avg_budget_use"], summary["avg_budget_use"], good_up=True)
     delta("평균 장소 수", before["avg_stops"], summary["avg_stops"], good_up=True, pct=False)
+    # docs/29: more travel is not worse by itself - shown as a plain change, judged with the rest
+    for key, label, good_up, pct in (
+        ("avg_kinds", "경험 종류", True, False),
+        ("avg_concentration", "한 블록 집중", False, True),
+        ("repeat_rate", "경험 반복", False, True),
+        ("purpose_fit", "목적 적합", True, False),
+        ("budget_fit_rate", "예산 안", True, True),
+        ("schedule_conflict_rate", "일정 충돌", False, True),
+        ("photo_mismatch_rate", "사진 오매칭", False, True),
+        ("photo_dup_rate", "사진 중복", False, True),
+    ):
+        if key in before:
+            delta(label, before[key], summary[key], good_up=good_up, pct=pct)
+    for key, label in (
+        ("avg_between_min", "장소 사이 이동(분)"),
+        ("beyond_core_rate", "동네 밖 장소"),
+        ("avg_spread_m", "장소 간 최대 거리(m)"),
+    ):
+        if key in before and before[key] != summary[key]:
+            lines.append(f"  · {label}: {before[key]} -> {summary[key]}")
     for code in CHECKS:
         a, b = before["findings"].get(code, 0), summary["findings"].get(code, 0)
         delta(code, a, b, good_up=False, pct=False)

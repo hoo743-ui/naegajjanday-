@@ -32,7 +32,8 @@ DEFAULT_VARIANTS: list[dict[str, Any]] = [
     {
         "label": "덜 걷는 코스",
         "weight_mult": {"distance": 2.5},
-        "params": {"lambda_travel": 0.045, "distance_scale_m": 500.0},
+        # v1 reads lambda_travel / distance_scale; v2 (docs/29) reads the comfortable leg and the reach
+        "params": {"lambda_travel": 0.045, "distance_scale_m": 500.0, "comfort_leg_scale": 0.55},
     },
 ]
 

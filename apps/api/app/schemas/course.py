@@ -9,6 +9,10 @@ from app.schemas.common import LatLng
 from app.schemas.meta import LocalSignature
 
 Transport = Literal["walk", "transit", "car"]
+Algorithm = Literal["v1", "v2"]
+MoveStyle = Literal["local", "balanced", "explorer"]
+Pace = Literal["relaxed", "packed", "foodie", "special"]
+Wish = Literal["night", "walk", "exhibition", "value", "romantic"]
 SwapStrategy = Literal["cheaper", "closer", "higher_rated", "random_top"]
 
 
@@ -67,6 +71,26 @@ class CourseGenerateRequest(BaseModel):
         default_factory=list, max_length=6, description='코스에서 뺄 자리 (예: ["CAFE"])'
     )
     preferences: Preferences = Field(default_factory=Preferences)
+    move_style: MoveStyle | None = Field(
+        default=None,
+        description="이동 성향. local=가까운 곳 위주 · balanced=거리와 경험의 균형(기본) · "
+        "explorer=조금 멀어도 특별한 곳 (docs/29)",
+    )
+    algorithm: Algorithm | None = Field(
+        default=None, description="추천 알고리즘 버전(비교 · 실험용). 생략 시 서버 기본값 (docs/29)"
+    )
+    pace: list[Pace] = Field(
+        default_factory=list,
+        max_length=2,
+        description="어떤 하루 (docs/30): relaxed=여유롭게 · packed=알차게 · "
+        "foodie=맛있는 거 중심 · special=특별한 경험",
+    )
+    wishes: list[Wish] = Field(
+        default_factory=list,
+        max_length=5,
+        description="꼭 반영하고 싶은 것: night=야경 · walk=산책 · exhibition=전시 · "
+        "value=가성비 · romantic=로맨틱",
+    )
     alternatives: int = Field(default=2, ge=0, le=3)
     replaces: str | None = Field(
         default=None,
@@ -86,6 +110,31 @@ class CourseGenerateRequest(BaseModel):
         if not self.region and self.origin is None:
             raise ValueError("region 또는 origin 중 하나는 필요해요")
         return self
+
+
+class InterpretRequest(BaseModel):
+    """What the wizard knows before anything is built: enough to say back how it was understood (docs/30)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pace: list[Pace] = Field(default_factory=list, max_length=2)
+    move_style: MoveStyle | None = None
+    wishes: list[Wish] = Field(default_factory=list, max_length=5)
+    liked_tags: list[str] = Field(default_factory=list, max_length=20)
+    disliked_tags: list[str] = Field(default_factory=list, max_length=20)
+    budget_total: int | None = Field(default=None, ge=1000, le=10_000_000)
+    party_size: int = Field(default=1, ge=1, le=20)
+
+
+class SummaryLine(BaseModel):
+    kind: Literal["pace", "move", "wish", "detail", "budget"]
+    key: str
+    text: str
+
+
+class InterpretResponse(BaseModel):
+    summary: list[SummaryLine]
+    layers: dict[str, list[str]] = Field(description="style · preference · avoid 로 나눈 해석 (화면용 아님)")
 
 
 class PlaceBrief(BaseModel):
@@ -129,6 +178,11 @@ class StopOut(BaseModel):
     score: float
     score_breakdown: dict[str, float]
     reason: str | None = None
+    reason_codes: list[str] = Field(
+        default_factory=list,
+        description="왜 여기인지 (PURPOSE_MATCH · LOCAL_SIGNIFICANCE · WORTH_THE_TRIP · UNIQUE_EXPERIENCE · "
+        "USER_PREFERENCE · HIGH_PLACE_QUALITY · BUDGET_FIT · DIVERSITY · ROUTE_BALANCE)",
+    )
     congestion: Congestion | None = None
 
 
@@ -177,6 +231,7 @@ class NearbyEvent(BaseModel):
 
 class GenerateMeta(BaseModel):
     engine_version: str
+    algorithm: str = "v1"
     scoring_profile: str
     template: str | None = None
     candidates: int

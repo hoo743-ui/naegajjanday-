@@ -93,6 +93,29 @@ class PlaceSource(Base, TimestampMixin):
     match_confidence: Mapped[float | None] = mapped_column(Float)
 
 
+class PlaceImage(Base, TimestampMixin):
+    """One photo of one place with where it came from and how sure we are it is that place (docs/29 §17).
+    `place.thumbnail_url` / `place.images` are the display projection of the showable rows."""
+
+    __tablename__ = "place_image"
+    __table_args__ = (UniqueConstraint("place_id", "image_key", name="uq_place_image_place_key"),)
+
+    id: Mapped[pk]
+    place_id: Mapped[int] = mapped_column(BigIntPK, ForeignKey("place.id", ondelete="CASCADE"), index=True)
+    image_key: Mapped[str] = mapped_column(String(64), index=True)  # same photo = same key (domain.media)
+    url: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(32))  # tourapi | upload
+    source_place_id: Mapped[str | None] = mapped_column(Text)  # e.g. the TourAPI contentid
+    source_query: Mapped[str | None] = mapped_column(Text)  # how it was found (a record id, never a keyword)
+    collected_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    image_type: Mapped[str] = mapped_column(String(24), default="REAL_PLACE")
+    verification_status: Mapped[str] = mapped_column(String(16), default="UNVERIFIED", index=True)
+    relevance: Mapped[float] = mapped_column(Float, default=0.0)  # internal, never shown
+    file_hash: Mapped[str | None] = mapped_column(String(64))  # sha256 of the bytes, when fetched
+    phash: Mapped[str | None] = mapped_column(String(16))  # 64-bit difference hash, when fetched
+    evidence: Mapped[json_dict]  # name similarity, distance, address match, other sizes, why rejected
+
+
 class PlaceStats(Base, TimestampMixin):
     __tablename__ = "place_stats"
 

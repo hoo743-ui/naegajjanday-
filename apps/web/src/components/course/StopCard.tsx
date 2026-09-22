@@ -9,6 +9,7 @@ import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
 import type { ScoreFeature, Stop, SwapStrategy } from "@/lib/api/types";
 import { clock, num, roleLabel, won } from "@/lib/format";
 import { canOptimize, photoCredit } from "@/lib/photo-credit";
+import { ReasonList } from "./ReasonList";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SwapMenu } from "./SwapMenu";
@@ -280,6 +281,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
             className="overflow-hidden"
           >
+            <ReasonList codes={stop.reason_codes} className="mt-3" />
             <ScoreBreakdown scores={stop.score_breakdown} total={stop.score} hidden={hidden} className="mt-3" />
           </motion.div>
         ) : null}

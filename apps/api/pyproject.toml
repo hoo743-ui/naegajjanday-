@@ -29,6 +29,9 @@ dependencies = [
 
 [project.optional-dependencies]
 ortools = ["ortools>=9.11"]
+images = [
+    "pillow>=12.3.0",
+]
 
 [dependency-groups]
 dev = [

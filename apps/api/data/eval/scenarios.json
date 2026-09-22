@@ -65,6 +65,8 @@
   "rules": {
     "min_stops": 3,
     "max_walk_leg_min": 20,
+    "max_walk_leg_min_v2": 30,
+    "_max_walk_v2_note": "v2(docs/29)는 긴 구간을 금지하지 않고 비선형으로 값을 매긴다. 30분(곡선의 '보통 이상')을 넘는 구간만 결함으로 센다.",
     "min_budget_use": 0.45,
     "closed_after": {
       "_note": "영업시간 데이터가 없는 동안 쓰는 상식선: 이 시각 이후에 도착하면 '문 닫은 곳에 데려갔다'로 센다.",

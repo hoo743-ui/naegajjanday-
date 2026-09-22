@@ -26,6 +26,7 @@ CURATED_TAG = "관광공사 소개"  # derived by tag_rules.json › listed_by_k
 # of everything else in the radius. Distance is then one score among the others, as it should be.
 NOTABLE_LIMIT = 200  # a real photo (tourism board), a measured price, or a local-specialty sign
 CORE_LIMIT = 400  # nearest first
+STANDOUT_LIMIT = 150  # v2 adaptive reach: the far places that might be worth the trip
 SPREAD_LIMIT = 150  # spread over the whole radius
 SPREAD_MULTIPLIER, SPREAD_MODULUS = 7919, 1009  # a fixed shuffle of ids: same request, same pool
 OVEREXPOSED_TOP_RATIO = 0.05
@@ -184,6 +185,48 @@ class SqlPlaceRepository:
                 cand = event_to_candidate(event)
                 if cand.course_role == role:
                     out.append(cand)
+        return out
+
+    async def fetch_standouts(
+        self,
+        role: str,
+        origin: GeoPoint,
+        radius_m: float,
+        *,
+        min_popularity: float,
+        name_words: Sequence[str] = (),
+        place_ids: Sequence[int] = (),
+    ) -> list[PlaceCandidate]:
+        """Only the places worth going further for (docs/29 adaptive reach): measurably visited, vouched for
+        by a public body (a quality tag, or a tourism-board listing — they carry its photo), a landmark of
+        the area, or a sign with the area's specialty. Loading every shop within 3 km to keep four was the
+        slowest part of a v2 request."""
+        rules = get_tag_rules()
+        vouched = select(PlaceTag.place_id).join(Tag, Tag.id == PlaceTag.tag_id)
+        standout = or_(
+            PlaceStats.popularity >= min_popularity,
+            Place.thumbnail_url.is_not(None),
+            Place.id.in_(vouched.where(Tag.name.in_(sorted(rules.quality_tags)))),
+            Place.id.in_(list(place_ids)) if place_ids else Place.id.is_(None),
+            *(Place.name.contains(word) for word in name_words),
+        )
+        stmt = (
+            select(Place)
+            .join(Category, Category.id == Place.category_id)
+            .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
+            .where(Place.status == "approved", Category.course_role == role, standout)
+            .where(within(Place, origin, radius_m, self._dialect))
+            .options(*FULL_LOAD)
+            .order_by(PlaceStats.popularity.desc().nulls_last(), Place.id)
+            .limit(STANDOUT_LIMIT)
+        )
+        out = []
+        for place in (await self._s.scalars(stmt)).all():
+            if haversine_m(origin, GeoPoint(place.lat, place.lng)) > radius_m or rules.is_unlisted(
+                place.name
+            ):
+                continue
+            out.append(to_candidate(place))
         return out
 
     async def events_near(
