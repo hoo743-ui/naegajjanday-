@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronDown, ChevronUp, Clock, ExternalLink, Eye, Star, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Eye, Star, Users } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
 import type { ScoreFeature, Stop, SwapStrategy } from "@/lib/api/types";
@@ -36,6 +36,8 @@ interface StopCardProps {
   /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  /** 오늘의 핵심 장소(그 가게의 실제 사진이 있는 곳 중 돈을 가장 많이 쓰는 곳): 사진을 크게. 나머지는 줄 하나 (docs/31 §6) */
+  featured?: boolean;
 }
 
 /** 혼잡도 value(0~1, 높을수록 붐빔) → 배지 색. 문구(level)는 API 가 준 그대로 쓴다. */
@@ -50,7 +52,7 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onMove, canMoveUp = true, canMoveDown = true }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onMove, canMoveUp = true, canMoveDown = true, featured = false }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
@@ -82,15 +84,16 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       aria-label={`${stop.position}번째 ${roleLabel(stop.role)}: ${place.name}`}
       aria-busy={swapping}
       className={cn(
-        "relative overflow-hidden rounded-card border bg-white p-4 shadow-soft transition-[box-shadow,border-color] duration-300 sm:p-5",
+        // 상자가 아니라 일정의 한 줄 (docs/31 §6). 지금 보고 있는 곳만 종이 한 장이 깔린다
+        "relative rounded-lg px-3 py-4 transition-[background-color,box-shadow] duration-300",
         onFocusStop && "cursor-pointer",
-        active ? "border-blue-deep/70 shadow-card ring-2 ring-blue-deep/15" : "border-transparent",
+        active ? "bg-white shadow-soft" : "bg-transparent",
       )}
     >
       {/* 그 가게의 실제 사진이면 크게 보여 준다: "실제로 있는 곳"이라는 믿음이 여기서 생긴다.
           업종 예시 사진은 아래 줄의 작은 썸네일로만 쓴다(같은 라떼 사진이 코스마다 화면을 덮지 않게). */}
-      {place.thumbnail_url ? (
-        <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/9] overflow-hidden sm:-mx-5 sm:-mt-5">
+      {place.thumbnail_url && featured ? (
+        <div className="photo-edge relative mb-4 aspect-[16/10] overflow-hidden rounded-lg">
           {/* 첫 장소의 사진은 모바일 첫 화면에서 가장 큰 이미지다 → 먼저 받는다 */}
           <Image priority={stop.position === 1} src={place.thumbnail_url} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
@@ -99,25 +102,32 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       ) : null}
 
       <div className="flex items-start gap-3.5">
-        {/* 순번 = 지도에서 이 장소 보기 (키보드로도 카드 → 지도 연동을 쓸 수 있게). 누르는 자리는 44px 로 넓힌다 */}
+        {/* 순번 = 일정 선 위의 점 = 지도의 핀 번호. 누르면 지도에서 이 장소 보기 (키보드로도). 누르는 자리는 44px 로 넓힌다 */}
         <button
           type="button"
           onClick={() => onFocusStop?.(stop.position)}
           aria-label={`지도에서 ${stop.position}번 ${place.name} 보기`}
           className={cn(
-            "tabular relative mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-body-sm font-bold text-white transition-colors duration-300 after:absolute after:-inset-1.5 after:content-['']",
+            "tabular absolute top-4 -left-[23px] grid size-7 shrink-0 place-items-center rounded-full text-body-sm font-bold text-white ring-4 ring-soft transition-colors duration-300 after:absolute after:-inset-2 after:content-['']",
             active ? "bg-blue-deep" : "bg-ink hover:bg-blue-deep",
           )}
         >
           {stop.position}
         </button>
 
+        {/* 핵심이 아닌 곳의 실제 사진은 작게: 사진이 없어도 줄이 성립한다 */}
+        {place.thumbnail_url && !featured ? (
+          <span className="photo-edge relative mt-0.5 size-16 shrink-0 overflow-hidden rounded-md">
+            <Image src={place.thumbnail_url} alt="" fill sizes="64px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
+          </span>
+        ) : null}
+
         <div className="min-w-0 flex-1">
-          <p className="tabular flex flex-wrap items-center gap-x-2 text-caption font-extrabold text-blue-deep">
+          <p className="tabular flex flex-wrap items-center gap-x-2 text-caption font-bold text-blue-deep">
             <span>{roleLabel(stop.role)}</span>
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <Clock aria-hidden className="size-3" />
-              {clock(stop.arrive_at)} – {clock(stop.leave_at)}
+            {/* 시각은 일정 왼쪽 칸에 있다. 읽는 사람에게는 여기서도 한 번 */}
+            <span className="sr-only">
+              {clock(stop.arrive_at)}부터 {clock(stop.leave_at)}까지
             </span>
           </p>
           <h3 className="truncate text-body-lg font-semibold">
@@ -136,8 +146,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </p>
         </div>
 
-        {/* 금액: 카드에서 가장 큰 글자 */}
-        <p className="money shrink-0 text-right text-price-sm">
+        {/* 금액: 영수증 줄의 오른쪽 끝 */}
+        <p className="money shrink-0 text-right text-h3">
           {priceUnknown ? (
             <span className="text-body-sm font-semibold text-muted-foreground">가격 정보 없음</span>
           ) : (
@@ -199,10 +209,10 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       ) : null}
 
       {/* 이유는 상자가 아니라 본문이다: 왼쪽의 가는 선 하나로 "짠이의 말"임을 표시한다 */}
-      {stop.reason ? <p className="mt-3 border-l-2 border-line pl-3 text-body-sm font-medium text-ink-2">{stop.reason}</p> : null}
+      {stop.reason ? <p className="mt-2.5 text-body-sm text-ink-2">{stop.reason}</p> : null}
 
       {/* 도구는 한 줄: 왼쪽은 읽을 것(왜 여기 · 거리뷰 · 지도 앱), 오른쪽은 바꿀 것(순서 · 바꾸기) */}
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-2.5">
+      <div className="mt-1.5 -mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-0.5">
           <button
             type="button"
@@ -212,7 +222,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
               setOpen((v) => !v);
             }}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft"
+            className="-ml-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft"
           >
             왜 여기?
             <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />

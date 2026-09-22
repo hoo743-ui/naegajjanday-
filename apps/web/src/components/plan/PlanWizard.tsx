@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
-import { ArrowLeft, ArrowRight, RotateCw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ReceiptText, RotateCw } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { JjaniLoader } from "@/components/mascot/JjaniLoader";
@@ -310,7 +310,7 @@ export function PlanWizard() {
             */}
             {isLast ? (
               <Button key="submit" type="submit" variant="brand" size="xl" className="max-sm:flex-1" disabled={loading}>
-                <Sparkles aria-hidden /> 코스 짜 주세요
+                <ReceiptText aria-hidden /> 코스 짜 주세요
               </Button>
             ) : (
               <Button key="next" type="button" variant="brand" size="xl" className="group max-sm:flex-1" onClick={() => void go(step + 1)}>

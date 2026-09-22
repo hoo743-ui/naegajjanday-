@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Sparkles } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { FOCUS_OFF, type LocalSignature } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
   return (
     <section aria-labelledby="local-card" className="rule-section gap-3.5">
       <h2 id="local-card" className="flex items-center gap-2 text-body font-extrabold text-ink">
-        <Sparkles aria-hidden className="size-4 text-blue-deep" />
+        <MapPin aria-hidden className="size-4 text-blue-deep" />
         {local.region}, 이런 동네예요
       </h2>
 

@@ -44,7 +44,7 @@ export function BudgetBar({ totals, budget, partySize, stops, heading, travel, c
         // 합계 · 남은 돈은 API 가 계산한 값 하나만 쓴다 (짠이의 한마디 · 영수증 · 정산 문구가 같은 숫자)
         totals={{ price: totals.price, left: totals.budget_left }}
         budget={budget}
-        size="lg"
+
         footer={
           <>
             <span className="tabular font-bold">

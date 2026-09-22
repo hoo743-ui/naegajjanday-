@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, Check, Clock, Maximize2, Minimize2, RotateCw, Share2, Sparkles, TriangleAlert, Users } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, CopyPlus, Maximize2, Minimize2, RotateCw, Share2, TriangleAlert, Users } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -14,10 +14,11 @@ import { ApiError } from "@/lib/api/client";
 import { useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/format";
+import { clock, dateLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { BudgetTools } from "./BudgetTools";
+import { DaySummary } from "./DaySummary";
 import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
 import { PerformanceCard } from "./PerformanceCard";
@@ -416,12 +417,13 @@ export function CourseView({ id }: { id: string }) {
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-3 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
-              <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-1.5">
+              <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-x-2 text-body-sm font-semibold text-ink-2">
                 {/* 지역 · 목적 · 인원 · 예산은 결과 헤더에 있다 → 칩은 헤더에 없는 것(언제 · 날씨 · 며칠째)만 */}
                 {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), tripDay && request.trip_budget_total ? `여행 전체 ${won(request.trip_budget_total)}` : null, request.style === "fun" ? "재미 우선" : null]
                   .filter((c): c is string => Boolean(c))
                   .map((c) => (
-                    <li key={c} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-caption font-semibold text-ink-2">
+                    // 칩(알약)이 아니라 영수증 머리의 한 줄: "9월 25일 (금) · 18:00 ~ 22:00"
+                    <li key={c} className="after:ml-2 after:text-muted-foreground after:content-['·'] last:after:content-none">
                       {c}
                     </li>
                   ))}
@@ -429,13 +431,10 @@ export function CourseView({ id }: { id: string }) {
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>
-              <JjaniBubble mood={mood} title={jjaniLine} tone="white" size={64} bubbleKey={`${id}-${data.totals.price}`}>
-                {data.summary}
-              </JjaniBubble>
             </header>
 
             {readOnly && viewerKnown ? (
-              <p role="note" className="flex items-center gap-2 rounded-2xl bg-blue-soft px-4 py-3 text-body-sm font-semibold text-blue-deep">
+              <p role="note" className="flex items-center gap-2 border-l-2 border-blue-deep pl-3 text-body-sm font-semibold text-blue-deep">
                 <Users aria-hidden className="size-4 shrink-0" />
                 친구가 짠 코스예요. 아래 버튼으로 같은 조건의 내 코스를 만들면 바꾸고 저장할 수 있어요.
               </p>
@@ -444,42 +443,20 @@ export function CourseView({ id }: { id: string }) {
             <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} label={tripDay ? "날짜별 코스" : undefined} />
 
             <div id="course-panel" role={data.siblings.length > 1 ? "tabpanel" : undefined} aria-label={data.label} className="grid gap-4">
-              <BudgetBar
+              <DaySummary
                 totals={data.totals}
                 budget={request.budget_total}
                 partySize={request.party_size}
                 stops={data.stops}
-                heading={[placeLabel, purposeLabel, `${request.party_size}명`].filter(Boolean).join(" · ")}
-                // 예산 + 이동 = 오늘의 하루 한 장 (docs/27 §15)
-                travel={{ mode: request.transport, minutes: courseRoute.data?.totals.travel_min ?? data.totals.travel_min, distanceM: courseRoute.data?.totals.distance_m ?? data.totals.distance_m }}
+                transport={request.transport}
+                travelMin={courseRoute.data?.totals.travel_min ?? data.totals.travel_min}
+                distanceM={courseRoute.data?.totals.distance_m ?? data.totals.distance_m}
+                mood={mood}
+                line={over ? jjaniLine : undefined}
+                summary={data.summary}
+                bubbleKey={`${id}-${data.totals.price}`}
               />
-
-              {!readOnly ? (
-                <BudgetTools
-                  baseRequest={baseRequest}
-                  budget={request.budget_total}
-                  partySize={request.party_size}
-                  stops={data.stops}
-                  total={data.totals.price}
-                  heading={[dateLabel(request.start_at), placeLabel].filter(Boolean).join(" · ")}
-                  courseUrl={typeof window === "undefined" ? "" : window.location.href}
-                />
-              ) : null}
-
-              {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
-
-              <dl className="tabular grid grid-cols-3 divide-x divide-line border-y border-line py-3 text-center">
-                {[
-                  { k: "총 소요", v: minutes(data.totals.duration_min) },
-                  { k: `${transportLabel(request.transport)} 이동`, v: minutes(courseRoute.data?.totals.travel_min ?? data.totals.travel_min) },
-                  { k: "이동 거리", v: distance(courseRoute.data?.totals.distance_m ?? data.totals.distance_m) },
-                ].map((item) => (
-                  <div key={item.k} className="px-2">
-                    <dt className="text-caption font-semibold text-muted-foreground">{item.k}</dt>
-                    <dd className="text-body font-extrabold">{item.v}</dd>
-                  </div>
-                ))}
-              </dl>
+              <hr aria-hidden className="tear-line my-1" />
 
               {uniqueWarnings(data.warnings).map((w, i) => (
                 <p
@@ -521,6 +498,18 @@ export function CourseView({ id }: { id: string }) {
                 onMove={onMove}
               />
 
+              {/* 오늘의 영수증: 일정을 다 읽은 뒤에 한 장으로. 저장 · 공유하는 것이 이것이다 */}
+              <h2 className="mt-4 text-h3 font-bold">오늘의 영수증</h2>
+              <BudgetBar
+                totals={data.totals}
+                budget={request.budget_total}
+                partySize={request.party_size}
+                stops={data.stops}
+                heading={[placeLabel, purposeLabel, `${request.party_size}명`].filter(Boolean).join(" · ")}
+                // 예산 + 이동 = 오늘의 하루 한 장 (docs/27 §15)
+                travel={{ mode: request.transport, minutes: courseRoute.data?.totals.travel_min ?? data.totals.travel_min, distanceM: courseRoute.data?.totals.distance_m ?? data.totals.distance_m }}
+              />
+
               <RoutePanel
                 stops={data.stops}
                 transport={request.transport}
@@ -531,6 +520,20 @@ export function CourseView({ id }: { id: string }) {
                 activeStop={activeStop}
                 onShowAll={showWholeCourse}
               />
+
+              {!readOnly ? (
+                <BudgetTools
+                  baseRequest={baseRequest}
+                  budget={request.budget_total}
+                  partySize={request.party_size}
+                  stops={data.stops}
+                  total={data.totals.price}
+                  heading={[dateLabel(request.start_at), placeLabel].filter(Boolean).join(" · ")}
+                  courseUrl={typeof window === "undefined" ? "" : window.location.href}
+                />
+              ) : null}
+
+              {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
 
               {/* 늦게 도착하는 것은 장소 목록 뒤에 둔다: 추천(조회 뒤에 뜬다)과 이야기(스켈레톤 68px → 본문 250px)가 목록 위에
                   있을 때는, 화면이 뜬 뒤 1초 동안 첫 장소 카드가 613px 아래로 밀렸다(누르려던 버튼이 달아난다). 추천은 "마지막
@@ -597,7 +600,7 @@ export function CourseView({ id }: { id: string }) {
               </span>
               {readOnly ? (
                 <Button type="button" variant="brand" size="xl" className="flex-1" onClick={() => onReroll(true)} disabled={reroll.isPending || !viewerKnown}>
-                  <Sparkles aria-hidden /> 이 코스로 내 코스 만들기
+                  <CopyPlus aria-hidden /> 이 코스로 내 코스 만들기
                 </Button>
               ) : data.is_saved ? (
                 <Button asChild variant="brand" size="xl" className="flex-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, RefreshCw, Shuffle, Sparkles, TrendingDown, type LucideIcon } from "lucide-react";
+import { MapPin, RefreshCw, Shuffle, ThumbsUp, TrendingDown, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ const OPTIONS: { strategy: SwapStrategy; label: string; hint: string; icon: Luci
   { strategy: "cheaper", label: "더 저렴하게", hint: "이보다 싼 곳으로", icon: TrendingDown },
   { strategy: "closer", label: "더 가까이", hint: "앞 장소에서 덜 걷게", icon: MapPin },
   // 평점·리뷰 자료가 아직 없다 → 이 전략은 짠이 점수가 가장 높은 대안을 준다. 없는 "평점"을 약속하지 않는다.
-  { strategy: "higher_rated", label: "점수 높은 곳", hint: "짠이 점수가 가장 높은 곳으로", icon: Sparkles },
+  { strategy: "higher_rated", label: "점수 높은 곳", hint: "짠이 점수가 가장 높은 곳으로", icon: ThumbsUp },
 ];
 
 interface SwapMenuProps {

@@ -5,7 +5,7 @@ import { Bus, Car, ExternalLink, Footprints, TrainFront, TramFront, type LucideI
 import { EmptyState } from "@/components/mascot/EmptyState";
 import type { AccessHint } from "@/lib/api/hooks";
 import type { Course, CourseRoute, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
-import { distance, minutes, transportLabel } from "@/lib/format";
+import { clock, distance, minutes, transportLabel } from "@/lib/format";
 import { naverWebDirections, openInNaverMap, type MapPoint } from "@/lib/naver-map";
 import { StopCard } from "./StopCard";
 
@@ -85,8 +85,11 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
   }
 
   const noSignal = featuresWithoutSignal(course.stops, style);
+  // 오늘의 핵심 장소: 그 가게의 실제 사진이 있는 곳 중 돈을 가장 많이 쓰는 곳 하나만 사진을 크게 (docs/31 §6 · §14)
+  const featured = course.stops.filter((s) => s.place.thumbnail_url).reduce<Stop | undefined>((best, s) => (!best || s.est_price > best.est_price ? s : best), undefined)?.position;
 
   return (
+    // 하루의 흐름 (docs/31 §2): 왼쪽 칸은 시각, 가운데 점선은 이동, 오른쪽은 할 일. 장소의 순번이 선 위의 점이다
     <ol ref={listRef} aria-label="코스 일정" className="grid gap-0">
       {course.stops.map((stop, i) => {
         const leg = stop.from_prev;
@@ -104,11 +107,11 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
           <Fragment key={stop.place.id}>
             {leg ? (
               <li
-                className="py-2 pl-7 text-body-sm text-muted-foreground"
+                className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-5 text-body-sm text-muted-foreground"
                 aria-label={unavailable ? "다음 장소까지 경로 정보를 불러오지 못했어요" : `${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${estimated ? "약 " : ""}${minutes(travelMin)}, ${distance(distanceM)}${estimated && i > 0 ? " (추정)" : ""}`}
               >
-                <div className="flex gap-2.5">
-                  <span aria-hidden className="w-0 self-stretch border-l-2 border-dashed border-line" />
+                <span aria-hidden />
+                <div className="border-l-2 border-dashed border-ink/20 py-1.5 pl-5">
                   <div className="grid gap-1 py-1">
                     <div className="tabular flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold">
                       <Icon aria-hidden className="size-4 text-blue-deep" />
@@ -167,7 +170,12 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 </div>
               </li>
             ) : null}
-            <li>
+            <li className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-5">
+              <p aria-hidden className="tabular pt-[18px] text-right leading-tight">
+                <span className="block text-body font-bold text-ink">{clock(stop.arrive_at)}</span>
+                <span className="text-caption text-muted-foreground">{clock(stop.leave_at)}</span>
+              </p>
+              <div className="border-l-2 border-dashed border-ink/20 pl-2">
               <StopCard
                 courseId={course.id}
                 stop={stop}
@@ -185,7 +193,9 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 onFocusStop={onFocusStop}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
                 onMove={(delta) => onMove(stop.position, delta)}
+                featured={stop.position === featured}
               />
+              </div>
             </li>
           </Fragment>
         );
