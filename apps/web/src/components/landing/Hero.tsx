@@ -1,9 +1,12 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Minus, Plus } from "lucide-react";
+import { DAY_LINE_PATH, DAY_LINE_STOPS, DAY_LINE_VIEWBOX, tearHoles, DAY_LINE_TEAR } from "@/components/brand/day-line";
+import { Money } from "@/components/brand/Money";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { Jjani } from "@/components/mascot/Jjani";
@@ -13,11 +16,11 @@ import { useRegions } from "@/lib/api/hooks";
 import type { JjaniMood } from "@/lib/mascot-copy";
 
 /**
- * 히어로 = 제품 그 자체. 예산을 움직이면 영수증이 바뀐다.
- * (이전 히어로는 3,000px 짜리 스크롤 고정 데모였다: 아무리 내려도 같은 화면이고, 장면마다 패널 절반이 비어 있었다.)
+ * 히어로 = 제품 그 자체 (docs/25 §5). 왼쪽은 약속 한 문장, 오른쪽은 살아 있는 영수증. 예산을 움직이면 영수증이 다시 찍힌다.
+ * 뒤에는 한옥 지붕 너머 도시가 보이는 사진을 아주 옅게 — 깊이만 준다. 주인공은 돈 → 영수증 → 하루다.
+ * 바닥에는 첫 진입 시퀀스가 그린 "하루의 선"이 옅게 남아 있다.
  *
  * 영수증의 품목은 실제 가게가 아니라 **업종 평균가로 만든 예시**다 — 그렇게 적어 둔다.
- * 실제 코스는 "이 예산으로 코스 받기"를 눌러야 전국 데이터에서 짜인다.
  */
 const MIN = 10000;
 const MAX = 120000;
@@ -25,15 +28,16 @@ const STEP = 5000;
 
 function reaction(left: number, budget: number): { mood: JjaniMood; say: string } {
   const ratio = left / budget;
-  if (ratio <= 0.05) return { mood: "cheers", say: "예산을 꽉 채웠어요. 한 푼도 안 넘겨요!" };
-  if (ratio <= 0.2) return { mood: "done", say: `짠! ${left.toLocaleString("ko-KR")}원이 남아요` };
+  if (ratio <= 0.05) return { mood: "cheers", say: "예산을 꽉 채웠어요. 한 푼도 안 넘겨요" };
+  if (ratio <= 0.2) return { mood: "done", say: `여기서 ${left.toLocaleString("ko-KR")}원 남아요` };
   return { mood: "wink", say: `${left.toLocaleString("ko-KR")}원 남으니 디저트 하나 더?` };
 }
 
 export function Hero() {
   const reduced = useReducedMotion();
   const sliderId = useId();
-  const [budget, setBudget] = useState(40000); // 브랜드의 대표 장면: 둘이서 4만원
+  // 둘이서 5만 원: 식사 · 카페 · 산책 · 놀거리를 다 하고 8,000원이 남는 하루 (첫 진입 시퀀스의 영수증과 같은 계산)
+  const [budget, setBudget] = useState(50000);
   const [party, setParty] = useState(2);
   const regions = useRegions();
 
@@ -49,36 +53,66 @@ export function Hero() {
   }, [regions.data]);
 
   const rise = (delay: number) =>
-    reduced ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] as const } };
+    reduced ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] as const } };
 
   return (
-    <section className="bg-hero relative overflow-hidden pt-[calc(var(--header-h)+36px)] pb-16 lg:pt-[calc(var(--header-h)+64px)] lg:pb-24">
-      <div className="wrap grid items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
-        <div className="text-center lg:text-left">
-          <motion.p {...rise(0)} className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-[13px] font-bold text-blue-deep shadow-soft">
+    <section className="paper-grain relative isolate overflow-hidden bg-paper pt-[calc(var(--header-h)+40px)] pb-20 lg:pt-[calc(var(--header-h)+72px)] lg:pb-28">
+      {/* 깊이: 한옥 지붕 너머의 도시. 영수증 뒤쪽에만, 아주 옅게 */}
+      <div aria-hidden className="absolute inset-y-0 right-0 -z-10 w-full lg:w-[62%]">
+        <Image
+          src="/images/story/bukchon-roofs.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 62vw"
+          className="object-cover opacity-[0.16] grayscale-[35%] [mask-image:linear-gradient(to_left,black_20%,transparent_92%),linear-gradient(to_top,transparent,black_30%)] [mask-composite:intersect]"
+        />
+      </div>
+
+      {/* 하루의 선: 인트로가 그린 선이 바닥에 옅게 남아 있다 */}
+      <svg aria-hidden viewBox={DAY_LINE_VIEWBOX} preserveAspectRatio="xMidYMax meet" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 mx-auto h-auto w-[min(1400px,140vw)] max-w-none translate-x-[-1%] opacity-[0.13] lg:w-full">
+        <path d={DAY_LINE_PATH} fill="none" stroke="#10192E" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+        {DAY_LINE_STOPS.map(([x, y]) => (
+          <circle key={x} cx={x} cy={y} r={4.5} fill="#10192E" />
+        ))}
+        {tearHoles().map((x) => (
+          <circle key={x} cx={x} cy={DAY_LINE_TEAR.y} r={2} fill="#10192E" />
+        ))}
+      </svg>
+
+      {/* 모바일: 약속 → 영수증 → 예산 조절 (예산을 움직이면 바로 위의 영수증이 다시 찍힌다). 데스크톱: 왼쪽 두 칸 · 오른쪽 영수증 */}
+      <div className="wrap grid items-center gap-x-20 gap-y-12 lg:grid-cols-[1.08fr_.92fr] lg:grid-rows-[auto_auto]">
+        <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+          <motion.p {...rise(0)} className="flex items-center gap-2.5 text-[13px] font-extrabold tracking-[0.02em] text-ink-2">
+            <span aria-hidden className="size-2 rounded-full bg-gold" />
             내 예산에 맞게, 내가 짠 데이
           </motion.p>
-          <motion.h1 {...rise(0.05)} className="my-5 text-[clamp(36px,5vw,62px)] font-extrabold">
-            예산만 말해요.
+          <motion.h1 {...rise(0.06)} className="mt-6 text-[clamp(38px,4.9vw,68px)] leading-[1.14] font-bold tracking-[-0.035em]">
+            예산만 말하면,
             <br />
-            하루는 <span className="gt">짠이가 짤게요.</span>
+            하루가 <span className="relative whitespace-nowrap">영수증<span aria-hidden className="absolute inset-x-0 bottom-[0.08em] -z-10 h-[0.22em] rounded-full bg-gold/45" /></span>으로
+            <br />
+            나온다.
           </motion.h1>
-          <motion.p {...rise(0.1)} className="mx-auto max-w-[540px] text-[clamp(16px,1.5vw,18px)] leading-[1.7] text-muted-foreground lg:mx-0">
-            지역 · 인원 · 예산 세 가지면 식사부터 카페, 놀거리까지 한 코스로. 얼마를 쓰고 <b className="font-bold text-ink">얼마가 남는지</b> 영수증으로 먼저 보여 드려요.
+          <motion.p {...rise(0.12)} className="mt-6 max-w-[500px] text-[clamp(16px,1.4vw,18px)] leading-[1.75] text-ink-2">
+            지역 · 인원 · 예산을 말하면, 짠이가 전국의 실제 장소로 식사부터 카페, 놀거리까지 한 코스로 이어요. 얼마를 쓰고 <b className="font-bold text-ink">얼마가 남는지</b>부터 영수증으로 보여 드려요.
           </motion.p>
+        </div>
 
-          {/* 바로 만져 보는 입력 — 설명 대신 제품 */}
-          <motion.div {...rise(0.16)} className="mx-auto mt-8 max-w-[540px] rounded-[28px] bg-white p-5 text-left shadow-card sm:p-6 lg:mx-0">
+        <div className="order-3 lg:order-none lg:col-start-1 lg:row-start-2 lg:self-start">
+
+          {/* 바로 만져 보는 예산: 카드가 아니라 위아래 선 사이의 한 줄 */}
+          <motion.div {...rise(0.18)} className="max-w-[520px] border-y border-ink/10 py-6">
             <div className="flex items-end justify-between gap-4">
-              <label htmlFor={sliderId} className="text-sm font-extrabold text-muted-foreground">
+              <label htmlFor={sliderId} className="text-[13px] font-extrabold text-muted-foreground">
                 오늘 쓸 돈
               </label>
-              <b className="tabular text-[30px] leading-none font-extrabold tracking-tight text-ink">{budget.toLocaleString("ko-KR")}원</b>
+              <Money value={budget} className="text-[clamp(30px,3.4vw,40px)] leading-none font-extrabold tracking-[-0.035em] text-ink" />
             </div>
             <input
               id={sliderId}
               type="range"
-              className="jj-range mt-4"
+              className="jj-range mt-5"
               min={MIN}
               max={MAX}
               step={STEP}
@@ -86,18 +120,18 @@ export function Hero() {
               onChange={(e) => setBudget(Number(e.target.value))}
               aria-valuetext={`${budget.toLocaleString("ko-KR")}원, ${party}명`}
             />
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2" role="group" aria-label="인원">
-                <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-10 place-items-center rounded-xl bg-soft transition-colors hover:bg-line disabled:opacity-40">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5" role="group" aria-label="인원">
+                <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-11 place-items-center rounded-full border border-line bg-white/70 hover:border-ink-2 disabled:opacity-40">
                   <Minus aria-hidden className="size-4" />
                 </button>
                 <output aria-live="polite" className="tabular min-w-12 text-center text-[17px] font-extrabold">
                   {party}명
                 </output>
-                <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-10 place-items-center rounded-xl bg-soft transition-colors hover:bg-line disabled:opacity-40">
+                <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-11 place-items-center rounded-full border border-line bg-white/70 hover:border-ink-2 disabled:opacity-40">
                   <Plus aria-hidden className="size-4" />
                 </button>
-                <span className="tabular ml-1 text-[13px] font-bold text-muted-foreground">1인 {Math.floor(budget / party).toLocaleString("ko-KR")}원</span>
+                <span className="tabular ml-1.5 text-[13px] font-bold text-muted-foreground">1인 {Math.floor(budget / party).toLocaleString("ko-KR")}원</span>
               </div>
               <Button asChild variant="brand" size="lg" className="group max-sm:w-full">
                 <Link href="/plan" onClick={() => track("plan_started", { entry: "landing_hero" })}>
@@ -108,7 +142,7 @@ export function Hero() {
           </motion.div>
 
           {proof ? (
-            <motion.dl {...rise(0.22)} className="tabular mx-auto mt-7 flex max-w-[540px] flex-wrap justify-center gap-x-7 gap-y-2 text-sm lg:mx-0 lg:justify-start">
+            <motion.dl {...rise(0.24)} className="tabular mt-6 flex max-w-[520px] flex-wrap gap-x-7 gap-y-2 text-[13.5px]">
               {[
                 { k: "전국 장소", v: `${proof.places.toLocaleString("ko-KR")}곳` },
                 { k: "코스를 짜는 동네", v: `${proof.regions}곳` },
@@ -123,19 +157,19 @@ export function Hero() {
           ) : null}
         </div>
 
-        {/* 영수증 무대 */}
-        <motion.div {...rise(0.12)} className="relative mx-auto w-full max-w-[400px]">
-          <div className="mb-3 flex items-end gap-2">
-            <Jjani mood={mood} className="h-auto w-[88px] shrink-0 lg:w-[104px]" />
-            <div className="relative mb-6 min-w-0 rounded-[20px] rounded-bl-md bg-white px-4 py-3 shadow-card" aria-live="polite">
+        {/* 떠 있는 영수증. 짠이는 옆에서 작게 들여다본다 (콘텐츠 80 : 캐릭터 20) */}
+        <motion.div {...rise(0.14)} className="relative mx-auto w-full max-w-[400px] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mr-0">
+          <div className="absolute -top-2 -left-3 z-10 flex items-end gap-2 sm:-left-14 lg:-left-20">
+            <Jjani mood={mood} className="h-auto w-[64px] shrink-0 drop-shadow-[0_8px_14px_rgba(72,54,24,.18)] lg:w-[76px]" />
+            <div className="relative mb-9 max-w-[200px] rounded-2xl rounded-bl-sm bg-white px-3.5 py-2 shadow-soft" aria-live="polite">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.b
                   key={say}
-                  initial={reduced ? false : { opacity: 0, y: 6 }}
+                  initial={reduced ? false : { opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={reduced ? undefined : { opacity: 0, y: -6 }}
+                  exit={reduced ? undefined : { opacity: 0, y: -5 }}
                   transition={{ duration: 0.18 }}
-                  className="block font-round text-[17px] leading-snug font-normal text-ink lg:text-[18px]"
+                  className="tabular block text-[13.5px] leading-snug font-extrabold text-ink"
                 >
                   {say}
                 </motion.b>
@@ -143,7 +177,10 @@ export function Hero() {
             </div>
           </div>
           <Receipt
-            heading={`${party}명 · 저녁 코스 · 예시`}
+            className="pt-16"
+            size="lg"
+            heading={`서울 · ${party}명 · 데이트 · 예시`}
+            caption="저녁 6시 ~ 10시"
             items={items}
             budget={budget}
             footer={
@@ -154,8 +191,6 @@ export function Hero() {
               </>
             }
           />
-          <span aria-hidden className="absolute -top-8 -right-6 -z-10 size-44 rounded-full bg-pink/25 blur-3xl" />
-          <span aria-hidden className="absolute -bottom-6 -left-10 -z-10 size-52 rounded-full bg-blue/25 blur-3xl" />
         </motion.div>
       </div>
     </section>

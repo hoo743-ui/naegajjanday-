@@ -400,6 +400,13 @@
     radial-gradient(circle at var(--tooth) 100%, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 100% / calc(var(--tooth) * 2) 51% repeat-x;
 }
 
+/* 위쪽 가장자리만 영수증 톱니로: 긴 영수증이 끝나는 자리(랜딩의 마지막 장면) */
+@utility tear-top {
+  --tooth: 10px;
+  -webkit-mask: radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 100% repeat-x;
+  mask: radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 100% repeat-x;
+}
+
 /* 마스크는 그림자까지 잘라 내므로, 그림자는 바깥 래퍼에 둔다 */
 @utility receipt-wrap {
   filter: drop-shadow(0 1px 1px rgba(16, 25, 46, 0.07)) drop-shadow(0 22px 44px rgba(72, 54, 24, 0.16));
@@ -472,6 +479,11 @@
     box-shadow: inset 0 0 0 1px rgba(16, 25, 46, 0.06);
     pointer-events: none;
   }
+}
+
+/* 한지의 결: 아주 옅은 정지 노이즈 한 장(움직이지 않는다). 종이 면 위에 깐다 */
+@utility paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .28 0 0 0 0 .16 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @utility skeleton-shimmer {
@@ -666,6 +678,134 @@
   font-weight: 690;
   white-space: nowrap;
   box-shadow: 0 2px 6px rgba(20, 33, 61, 0.25);
+}
+
+/* ── 첫 진입 시퀀스 (components/landing/IntroSequence.tsx, docs/25 §4) ─────────────────────
+   시간표(초): 0.2 금빛 점 · 0.34 가운데 → 선의 시작 · 0.86~1.96 선을 그리며 구른다 · 1.98 절취선 · 2.16 영수증 출력
+   · 2.4 문장 · 2.62 짠이 · 3.4~3.9 걷힘. 자바스크립트 없이도 끝나면 스스로 걷힌다(visibility: hidden). */
+html[data-intro="skip"] .jj-intro {
+  display: none;
+}
+.jj-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(4px, 1.4vw, 16px);
+  padding-inline: 4vw;
+  background-color: var(--paper);
+  animation: jj-intro-out 0.5s var(--motion-in-out) 3.4s forwards;
+}
+.jj-intro.is-leaving {
+  animation: jj-intro-out 0.26s ease-out forwards;
+}
+.jj-intro-stage {
+  position: relative;
+  width: min(96vw, 1080px);
+}
+.jj-intro-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: jj-draw 1.1s linear 0.86s forwards;
+}
+.jj-intro-coin {
+  opacity: 0;
+  animation: jj-coin-life 1.9s linear 0.2s forwards;
+}
+.jj-intro-coin circle,
+.jj-intro-stop {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.jj-intro-coin circle {
+  animation: jj-pop 0.32s var(--motion-spring) 0.2s both;
+}
+.jj-intro-stop {
+  opacity: 0;
+  animation: jj-pop 0.3s var(--motion-spring) both;
+}
+.jj-intro-hole,
+.jj-intro-row {
+  opacity: 0;
+  animation: jj-fade 0.3s ease-out both;
+}
+.jj-intro-wordmark {
+  font-family: var(--font-jua), "Pretendard Variable", sans-serif;
+  font-size: 23px;
+  fill: var(--ink);
+}
+.jj-intro-item {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 650;
+  fill: var(--ink-2);
+}
+.jj-intro-item.is-price {
+  font-weight: 780;
+  fill: var(--ink);
+}
+.jj-intro-left-label {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 13px;
+  font-weight: 780;
+  fill: var(--gold-ink);
+}
+.jj-intro-left {
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  fill: var(--gold-ink);
+}
+.jj-intro-jjani {
+  position: absolute;
+  opacity: 0;
+  animation: jj-jjani 0.5s var(--motion-spring) 2.62s both;
+}
+.jj-intro-copy {
+  text-align: center;
+  font-size: clamp(24px, 3.4vw, 42px);
+  font-weight: 700;
+  line-height: 1.32;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  opacity: 0;
+  animation: jj-rise 0.6s var(--motion-out) 2.4s both;
+}
+@keyframes jj-intro-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes jj-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes jj-coin-life {
+  0% { opacity: 0; }
+  6% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes jj-pop {
+  from { opacity: 0; transform: scale(0); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes jj-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes jj-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes jj-jjani {
+  from { opacity: 0; transform: translateY(10px) scale(0.6); }
+  to { opacity: 1; transform: none; }
 }
 
 /* 모션 최소화: CSS 애니메이션은 여기서, JS(GSAP/Motion)는 usePrefersReducedMotion 으로 끈다 */

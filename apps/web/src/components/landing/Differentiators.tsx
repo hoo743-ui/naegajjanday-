@@ -1,6 +1,7 @@
-import { Footprints, Route, Ticket, Wallet, X, type LucideIcon } from "lucide-react";
+import { Footprints, Route, Ticket, Wallet, type LucideIcon } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
+import { ChapterMark } from "./ChapterMark";
 import { Reveal } from "./Reveal";
 
 const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from: string; to: string }[] = [
@@ -16,7 +17,7 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
     icon: Route,
     tag: "장소가 아니라 코스",
     title: "맛집 하나로 끝나지 않는 하루 전체",
-    body: "식사에서 아낀 돈은 카페로 넘어갑니다. 식당·카페·놀거리를 따로 고르지 않고, 총액이 맞는 조합을 통째로 제안해요.",
+    body: "식사에서 아낀 돈은 카페로 넘어갑니다. 식당 · 카페 · 놀거리를 따로 고르지 않고, 총액이 맞는 조합을 통째로 제안해요.",
     from: "장소 추천",
     to: "하루 소비 코스",
   },
@@ -33,8 +34,8 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
     tag: "관광지 · 축제까지",
     title: "오늘 열리는 축제도 코스에 넣어요",
     body: "공원, 전시, 문화공간, 지금 진행 중인 축제까지 후보에 올립니다. 무료로 즐길 거리는 예산을 아껴 주는 카드예요.",
-    from: "식당·카페만",
-    to: "놀거리·행사 포함",
+    from: "식당 · 카페만",
+    to: "놀거리 · 행사 포함",
   },
 ];
 
@@ -42,76 +43,59 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
 const OLD_WAY = ["맛집 검색", "가격 확인", "카페 검색", "놀거리 검색", "계산기로 더하기"];
 const DEMO = { budget: 40000, party: 2 };
 
-function Compare() {
-  return (
-    <Reveal className="mt-12 grid items-stretch gap-5 lg:grid-cols-[1fr_auto_1fr]">
-      <div className="flex flex-col rounded-[32px] border border-line bg-white p-7 sm:p-8">
-        <p className="text-sm font-extrabold text-muted-foreground">늘 하던 방식</p>
-        <ol className="mt-5 grid gap-2.5">
-          {OLD_WAY.map((step, i) => (
-            <li key={step} className="flex items-center gap-3 rounded-2xl bg-[#F3F5FA] px-4 py-3 text-[15px] font-bold text-ink-2">
-              <span className="tabular text-xs font-extrabold text-muted-foreground">{i + 1}</span>
-              {step}
-            </li>
-          ))}
-        </ol>
-        <p className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-pink-soft px-4 py-3.5 text-pink-deep">
-          <span className="flex items-center gap-2 text-[15px] font-extrabold">
-            <X aria-hidden className="size-4" /> 더해 보니 예산 초과
-          </span>
-          <b className="tabular text-lg font-extrabold">+12,000원</b>
-        </p>
-        <p className="mt-3 text-center text-sm font-bold text-muted-foreground">…그래서 처음부터 다시 검색</p>
-      </div>
-
-      <p aria-hidden className="grid place-items-center font-round text-2xl text-muted-foreground max-lg:py-1">
-        <span className="max-lg:rotate-90">→</span>
-      </p>
-
-      <div className="flex flex-col justify-center rounded-[32px] bg-grad-soft p-6 sm:p-8">
-        <p className="mb-4 text-center text-sm font-extrabold text-blue-deep">내가짠데이: 예산부터 말하면</p>
-        <Receipt
-          className="mx-auto w-full max-w-[360px]"
-          heading={`${DEMO.party}명 · 40,000원 · 예시`}
-          items={sampleCourse(DEMO.budget / DEMO.party, DEMO.party)}
-          budget={DEMO.budget}
-        />
-      </div>
-    </Reveal>
-  );
-}
-
+/**
+ * 장면 03 — 무엇이 다른가요. 흰 카드 여섯 장이던 구획을 열린 배치로:
+ * 왼쪽은 지워지는 옛 방식(줄이 그어진 목록), 오른쪽은 영수증 한 장. 아래 네 가지는 선으로만 나눈 격자.
+ */
 export function Differentiators() {
   return (
-    <section id="different" className="bg-soft-band scroll-mt-20 py-20 lg:py-28">
+    <section id="different" className="scroll-mt-20 py-[clamp(72px,10vw,140px)]">
       <div className="wrap">
-        <div className="text-center">
-          <span className="inline-flex rounded-full bg-pink-soft px-3.5 py-2 text-sm font-extrabold text-pink-deep">무엇이 다른가요</span>
-          <h2 className="mt-4 mb-4 text-[clamp(29px,4.2vw,50px)] font-extrabold font-serif">
-            아끼는 것이 아니라,
-            <br />
-            <span className="hl">예산 안에서 더 잘 즐기게</span> 합니다
-          </h2>
-        </div>
+        <ChapterMark n="03" label="무엇이 다른가요" />
+        <h2 className="mt-12 max-w-[760px] font-serif text-[clamp(30px,3.8vw,50px)] leading-[1.22] font-bold tracking-[-0.03em]">
+          아끼는 것이 아니라,
+          <br />
+          예산 안에서 <span className="relative whitespace-nowrap">더 잘 즐기게<span aria-hidden className="absolute inset-x-0 bottom-[0.06em] -z-10 h-[0.2em] rounded-full bg-gold/40" /></span> 합니다
+        </h2>
 
-        <Compare />
+        <Reveal className="mt-14 grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
+          <div>
+            <p className="text-[13px] font-extrabold text-muted-foreground">늘 하던 방식</p>
+            <ol className="mt-4 grid border-l-2 border-line pl-6">
+              {OLD_WAY.map((step, i) => (
+                <li key={step} className="flex items-baseline gap-3 py-2 text-[17px] font-bold text-ink-2/70">
+                  <span className="tabular text-[12px] font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="line-through decoration-ink/25 decoration-[1.5px]">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-5 flex items-baseline justify-between gap-3 border-t border-pink/40 pt-4 text-pink-deep">
+              <span className="text-[15px] font-extrabold">더해 보니 예산 초과</span>
+              <b className="tabular text-[22px] font-extrabold tracking-tight">+12,000원</b>
+            </p>
+            <p className="mt-2 text-[14px] font-bold text-muted-foreground">…그래서 처음부터 다시 검색</p>
+          </div>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <div>
+            <p className="mb-4 text-[13px] font-extrabold text-blue-deep">내가짠데이: 예산부터 말하면</p>
+            <Receipt className="w-full max-w-[380px]" heading={`${DEMO.party}명 · 40,000원 · 예시`} items={sampleCourse(DEMO.budget / DEMO.party, DEMO.party)} budget={DEMO.budget} />
+          </div>
+        </Reveal>
+
+        <div className="mt-20 grid gap-x-16 md:grid-cols-2">
           {ITEMS.map((item, i) => (
-            <Reveal as="article" key={item.tag} delay={(i % 2) * 0.08} className="flex flex-col gap-4 rounded-[32px] border border-line bg-white p-8 shadow-soft transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-card">
-              <div className="flex items-center gap-3">
-                <span className="bg-grad-soft grid size-[54px] place-items-center rounded-[18px] text-blue-deep">
-                  <item.icon aria-hidden className="size-[26px]" />
-                </span>
-                <span className="rounded-lg bg-blue-soft px-3 py-1.5 text-[13px] font-extrabold text-blue-deep">{item.tag}</span>
-              </div>
-              <h3 className="text-[clamp(20px,2.2vw,25px)] font-extrabold">{item.title}</h3>
-              <p className="text-[15.5px] text-muted-foreground">{item.body}</p>
-              <p className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-sm font-extrabold">
-                <span className="rounded-full bg-[#EEF1F7] px-3.5 py-1.5 text-[#66718A] line-through">{item.from}</span>
-                <span aria-hidden className="text-[#9AA4B8]">→</span>
+            <Reveal as="article" key={item.tag} delay={(i % 2) * 0.06} className="grid content-start gap-3 border-t border-ink/12 py-9">
+              <p className="flex items-center gap-2 text-[13px] font-extrabold text-blue-deep">
+                <item.icon aria-hidden className="size-4" />
+                {item.tag}
+              </p>
+              <h3 className="text-[clamp(20px,2vw,24px)] font-extrabold tracking-tight">{item.title}</h3>
+              <p className="max-w-[500px] text-[15.5px] leading-[1.75] text-ink-2">{item.body}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-[13.5px] font-extrabold">
+                <span className="text-muted-foreground line-through">{item.from}</span>
+                <span aria-hidden className="text-muted-foreground">→</span>
                 <span className="sr-only">대신</span>
-                <span className="rounded-full bg-ink px-3.5 py-1.5 text-white">{item.to}</span>
+                <span className="text-ink">{item.to}</span>
               </p>
             </Reveal>
           ))}
