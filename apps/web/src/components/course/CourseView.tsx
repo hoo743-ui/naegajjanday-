@@ -11,7 +11,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { useAccessHints, useCourse, useCourseNarrative, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop, useWalkRoute } from "@/lib/api/hooks";
+import { useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, distance, minutes, transportLabel, won } from "@/lib/format";
@@ -28,7 +28,10 @@ import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
 import { NearbyEvents } from "./NearbyEvents";
 import { ResultHeader } from "./ResultHeader";
+import { toMapRoute } from "./map-shared";
+import { RouteIssues } from "./RouteIssues";
 import { RouteMap } from "./RouteMap";
+import { RoutePanel } from "./RoutePanel";
 
 const LOADING_STAGES = ["코스를 펼치는 중…", "지도에 핀 꽂는 중…"];
 const FORK_STAGES = ["친구 코스의 조건을 그대로 가져오는 중…", "예산에 맞는 곳만 고르는 중…", "내 코스로 옮겨 적는 중…"];
@@ -36,6 +39,8 @@ const REROLL_STAGES = ["다른 곳들로 다시 살펴보는 중…", "예산에
 
 /** 모바일 바텀시트의 세 단계 (docs/25 §5): 지도를 크게 · 절반 · 목록 전체 */
 type SheetStop = "map" | "half" | "full";
+/** 헤더 높이 (sticky 오프셋) */
+const HEADER_PX = 68;
 /** 이야기가 이보다 길면 네 줄만 보이고 "더 읽기"로 편다 */
 const STORY_FOLD = 160;
 
@@ -68,10 +73,17 @@ export function CourseView({ id }: { id: string }) {
   const narrative = useCourseNarrative(course.data ? id : undefined);
   // 지도용 부가 정보: 실제 보행 경로 + 가까운 역 출구·정류장. 실패해도 코스 화면은 그대로 동작한다.
   const points = useMemo(() => (course.data?.stops ?? []).map((s) => ({ lat: s.place.lat, lng: s.place.lng })), [course.data?.stops]);
-  const walkRoute = useWalkRoute(points);
+  // 코스의 실제 경로 (docs/27): 지도 · 카드 사이 구간 · 이동 요약이 모두 이 하나를 읽는다
+  const courseRoute = useCourseRoute(course.data ? id : undefined, (course.data?.stops ?? []).map((s) => s.place.id));
+  const mapRoute = useMemo(() => toMapRoute(courseRoute.data), [courseRoute.data]);
   const accessHints = useAccessHints(points);
 
   const [activeStop, setActiveStop] = useState<number | null>(null);
+  // 카드 → 지도: 그 장소로 옮겨 가 확대 (n 이 바뀔 때마다) · "전체 코스 지도에서 보기": 코스 전체로 다시 맞춤
+  const [focus, setFocus] = useState<{ position: number; n: number } | null>(null);
+  const [fitKey, setFitKey] = useState(0);
+  // 핀을 눌러 카드로 스크롤하는 동안은, 스크롤이 지나가는 다른 카드가 선택을 빼앗지 않게 한다
+  const viewLock = useRef(0);
   const [shared, setShared] = useState(false);
   const [forking, setForking] = useState(false);
   const [notice, setNotice] = useState<{ mood: JjaniMood; title: string; body?: string } | null>(null);
@@ -286,6 +298,46 @@ export function CourseView({ id }: { id: string }) {
   };
   const longStory = (narrative.text?.length ?? 0) > STORY_FOLD && narrative.status !== "streaming";
 
+  const desktop = () => window.matchMedia("(min-width: 1024px)").matches;
+  /** 그 장소의 카드를 지도 바로 아래(데스크톱은 헤더 아래)로 데려온다 */
+  const scrollToCard = (position: number, delay = 0) => {
+    viewLock.current = Date.now() + 1400 + delay;
+    window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`article[data-position='${position}']`);
+      if (!el) return;
+      const sticky = HEADER_PX + (desktop() ? 0 : (mapBoxRef.current?.parentElement?.getBoundingClientRect().height ?? 0));
+      window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - sticky - 12), behavior: reduced ? "auto" : "smooth" });
+    }, delay);
+  };
+  /** 지도 → 목록: 핀을 누르면 그 카드로. 모바일에서 지도를 크게 보던 중이면 시트를 절반으로 올린다 */
+  const selectFromMap = (position: number | null) => {
+    setActiveStop(position);
+    if (position === null) return;
+    const lift = !desktop() && sheet === "map";
+    if (lift) moveSheet("half");
+    scrollToCard(position, lift ? 340 : 0);
+  };
+  /** 목록 → 지도: 카드를 누르면 지도가 그 장소로. 모바일에서 목록만 보던 중이면 지도가 보이게 절반으로 */
+  const focusStop = (position: number) => {
+    setActiveStop(position);
+    setFocus((f) => ({ position, n: (f?.n ?? 0) + 1 }));
+    if (!desktop() && sheet === "full") moveSheet("half");
+  };
+  /** 스크롤이 화면 가운데를 지나는 카드 → 그 핀 (핀을 눌러 스크롤하는 중에는 쉰다) */
+  const viewFromScroll = (position: number) => {
+    if (Date.now() < viewLock.current) return;
+    setActiveStop(position);
+  };
+  /** 전체 코스: 핀 · 경로 · 순서 · 이동 시간이 모두 보이게. 모바일은 지도를 크게 */
+  const showWholeCourse = () => {
+    setActiveStop(null);
+    setFitKey((k) => k + 1);
+    if (!desktop()) {
+      moveSheet("map");
+      window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+    }
+  };
+
   const selectAlternative = (nextId: string) => {
     if (nextId === id) return;
     const label = data.siblings.find((s) => s.id === nextId)?.label ?? "";
@@ -314,7 +366,7 @@ export function CourseView({ id }: { id: string }) {
             style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "40dvh" : "0px" } as React.CSSProperties}
             className={cn("h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
           >
-            <RouteMap stops={data.stops} activeStop={activeStop} onSelect={setActiveStop} route={walkRoute.data} access={accessHints.data?.items} />
+            <RouteMap stops={data.stops} activeStop={activeStop} onSelect={selectFromMap} route={mapRoute} focus={focus} fitKey={fitKey} access={accessHints.data?.items} />
           </div>
           {/* 바텀시트 손잡이: 누르면 절반 ↔ 전체, 위아래로 끌면 한 단계씩. 오른쪽 버튼은 지도를 크게 ↔ 절반 */}
           <div className={cn("relative flex h-9 items-center justify-center rounded-t-[24px] bg-soft shadow-[0_-8px_24px_rgba(72,54,24,.10)] lg:hidden", sheet !== "full" && "-mt-5")}>
@@ -391,6 +443,8 @@ export function CourseView({ id }: { id: string }) {
                 partySize={request.party_size}
                 stops={data.stops}
                 heading={[placeLabel, purposeLabel, `${request.party_size}명`].filter(Boolean).join(" · ")}
+                // 예산 + 이동 = 오늘의 하루 한 장 (docs/27 §15)
+                travel={{ mode: request.transport, minutes: courseRoute.data?.totals.travel_min ?? data.totals.travel_min, distanceM: courseRoute.data?.totals.distance_m ?? data.totals.distance_m }}
               />
 
               {!readOnly ? (
@@ -410,8 +464,8 @@ export function CourseView({ id }: { id: string }) {
               <dl className="tabular grid grid-cols-3 divide-x divide-line border-y border-line py-3 text-center">
                 {[
                   { k: "총 소요", v: minutes(data.totals.duration_min) },
-                  { k: `${transportLabel(request.transport)} 이동`, v: minutes(data.totals.travel_min) },
-                  { k: "이동 거리", v: distance(data.totals.distance_m) },
+                  { k: `${transportLabel(request.transport)} 이동`, v: minutes(courseRoute.data?.totals.travel_min ?? data.totals.travel_min) },
+                  { k: "이동 거리", v: distance(courseRoute.data?.totals.distance_m ?? data.totals.distance_m) },
                 ].map((item) => (
                   <div key={item.k} className="px-2">
                     <dt className="text-caption font-semibold text-muted-foreground">{item.k}</dt>
@@ -440,6 +494,9 @@ export function CourseView({ id }: { id: string }) {
                 ) : null}
               </div>
 
+              {/* 실제 이동 시간으로 다시 재 보니 어긋나는 곳 (docs/27 §17) */}
+              {courseRoute.data ? <RouteIssues issues={courseRoute.data.issues} onReroll={readOnly ? undefined : () => onReroll()} busy={reroll.isPending} /> : null}
+
               <CourseTimeline
                 course={data}
                 style={request.style}
@@ -448,12 +505,24 @@ export function CourseView({ id }: { id: string }) {
                 swappingPosition={swap.isPending ? (swap.variables?.position ?? null) : null}
                 busy={busy}
                 editable={!readOnly}
-                route={walkRoute.data}
+                route={courseRoute.data}
                 access={accessHints.data?.items}
                 onHover={setActiveStop}
-                onView={setActiveStop}
+                onView={viewFromScroll}
+                onFocusStop={focusStop}
                 onSwap={onSwap}
                 onMove={onMove}
+              />
+
+              <RoutePanel
+                stops={data.stops}
+                transport={request.transport}
+                route={courseRoute.data}
+                loading={courseRoute.isPending}
+                failed={courseRoute.isError}
+                onRetry={() => void courseRoute.refetch()}
+                activeStop={activeStop}
+                onShowAll={showWholeCourse}
               />
 
               {/* 늦게 도착하는 것은 장소 목록 뒤에 둔다: 추천(조회 뒤에 뜬다)과 이야기(스켈레톤 68px → 본문 250px)가 목록 위에

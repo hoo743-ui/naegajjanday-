@@ -106,6 +106,18 @@ class Settings(BaseSettings):
     # Empty string disables it -> straight-line fallback.
     osrm_foot_url: str = "https://routing.openstreetmap.de/routed-foot"
     directions_timeout_s: float = 4.0
+
+    # --- NAVER Maps (NAVER Cloud Platform · Maps) — Route Intelligence (docs/27) ---
+    # Directions 5/15 are DRIVING only; walking uses the OSRM foot router above and transit stays an estimate
+    # (no public NAVER transit API). Both values empty -> car legs keep the engine estimate. Server-side only:
+    # the secret never reaches the browser.
+    naver_map_client_id: str | None = None
+    naver_map_client_secret: str | None = None
+    naver_maps_base_url: str = "https://maps.apigw.ntruss.com"
+    naver_timeout_s: float = 4.0
+    route_cache_ttl_car_s: int = 600  # driving legs use live traffic -> short TTL
+    route_cache_ttl_static_s: int = 86_400  # walking geometry / estimates do not change with traffic
+    geocode_cache_ttl_s: int = 30 * 86_400
     transit_dir: Path = API_ROOT / "data" / "transit"
     media_dir: Path = API_ROOT / "data" / "media"  # curated open-licence category images
     upload_dir: Path | None = None  # operator-uploaded place photos; None = uploads.default_upload_dir()

@@ -117,9 +117,9 @@ export function SvgRouteMap({ stops, activeStop, onSelect }: SvgRouteMapProps) {
       <svg viewBox={`0 0 ${size.w} ${size.h}`} width={size.w} height={size.h} className="block size-full" role="group" aria-label={`코스 약도: ${summary || "장소 없음"}`}>
         <defs>
           <linearGradient id={`${uid}-route`} gradientUnits="userSpaceOnUse" x1={points[0]?.x ?? 0} y1={points[0]?.y ?? 0} x2={points[points.length - 1]?.x ?? size.w} y2={points[points.length - 1]?.y ?? 0}>
-            <stop offset="0" stopColor="#2F6BEA" />
-            <stop offset=".5" stopColor="#8E8BFF" />
-            <stop offset="1" stopColor="#FF6FA5" />
+            {/* 경로는 파랑 한 가지 (docs/25 · docs/27 — 무지개 경로 금지) */}
+            <stop offset="0" stopColor="#2A5BD7" />
+            <stop offset="1" stopColor="#2A5BD7" />
           </linearGradient>
           <filter id={`${uid}-shadow`} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#2F50A0" floodOpacity=".28" />
@@ -159,7 +159,7 @@ export function SvgRouteMap({ stops, activeStop, onSelect }: SvgRouteMapProps) {
               animate={{ pathLength: 1 }}
               transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1], delay: 0.25 }}
             />
-            <path d={route} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 12" className="animate-dash" opacity=".85" />
+            <path d={route} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 12" opacity=".85" />
           </g>
         ) : null}
 

@@ -87,6 +87,7 @@ from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.repositories.user_repo import SqlUserRepository
 from app.schemas import course as dto
+from app.schemas import route as route_dto
 from app.schemas.common import LatLng, decode_cursor, encode_cursor
 from app.schemas.meta import LocalSignature
 from app.services import signature_service
@@ -911,6 +912,36 @@ class CourseService:
                 )
             )
         return row, stops, GeoPoint(row.origin_lat, row.origin_lng)
+
+    async def route(self, public_id: str) -> route_dto.CourseRouteOut:
+        """Route Intelligence (docs/27): the course as a measured, checked route (map · cards · sheet)."""
+        from app.services.route_service import RouteInputStop, RouteService
+
+        row, stops, origin = await self._load(public_id)
+        view = {s.position: s for s in self._view(row, stops, origin).stops}
+        inputs = []
+        for s in stops:
+            v = view.get(s.position)
+            leg = v.from_prev if v else None
+            inputs.append(
+                RouteInputStop(
+                    sequence=s.position,
+                    place_id=s.place.public_id,
+                    name=v.place.name if v else s.place.name,
+                    address=s.place.address,
+                    lat=s.place.lat,
+                    lng=s.place.lng,
+                    arrive_at=s.arrive_at,
+                    leave_at=s.leave_at,
+                    price=s.est_price,
+                    opening_hours=list(s.place.opening_hours),
+                    mode=leg.mode if leg else row.transport,  # type: ignore[arg-type]
+                    hop_to=leg.hop_to if leg else None,
+                    est_minutes=s.travel_min_from_prev or 0,
+                    est_distance_m=s.distance_m_from_prev or 0,
+                )
+            )
+        return await RouteService(self._settings, self._cache).build(public_id, row.transport, inputs)  # type: ignore[arg-type]
 
     async def get(self, public_id: str, viewer: User | None = None) -> dto.CourseDetailResponse:
         row, stops, origin = await self._load(public_id)

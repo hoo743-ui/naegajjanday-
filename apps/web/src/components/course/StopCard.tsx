@@ -28,6 +28,8 @@ interface StopCardProps {
   /** false 면(친구가 짠 코스) 순서 변경·바꾸기 버튼을 아예 그리지 않는다 — 눌러도 403 인 버튼을 두지 않는다 */
   editable?: boolean;
   onHover: (position: number | null) => void;
+  /** 카드(버튼 · 링크가 아닌 곳)나 순번을 누르면: 지도가 이 장소로 옮겨 가 확대한다 (docs/27 §9) */
+  onFocusStop?: (position: number) => void;
   onSwap: (strategy: SwapStrategy) => void;
   onMove: (delta: -1 | 1) => void;
   /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
@@ -47,7 +49,7 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onSwap, onMove, canMoveUp = true, canMoveDown = true }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onMove, canMoveUp = true, canMoveDown = true }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
@@ -71,11 +73,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       onMouseEnter={() => onHover(stop.position)}
       onMouseLeave={() => onHover(null)}
       onFocusCapture={() => onHover(stop.position)}
+      onClick={(e) => {
+        // 카드 안의 버튼 · 링크(바꾸기 · 순서 · 거리뷰 · 지도 앱 …)는 자기 일만 한다
+        if ((e.target as HTMLElement).closest("a, button, input, select, textarea, [role='button'], [role='menu'], [role='dialog']")) return;
+        onFocusStop?.(stop.position);
+      }}
       aria-label={`${stop.position}번째 ${roleLabel(stop.role)}: ${place.name}`}
       aria-busy={swapping}
       className={cn(
         "relative overflow-hidden rounded-card border bg-white p-4 shadow-soft transition-[box-shadow,border-color] duration-300 sm:p-5",
-        active ? "border-blue/60 shadow-card" : "border-transparent",
+        onFocusStop && "cursor-pointer",
+        active ? "border-blue-deep/70 shadow-card ring-2 ring-blue-deep/15" : "border-transparent",
       )}
     >
       {/* 그 가게의 실제 사진이면 크게 보여 준다: "실제로 있는 곳"이라는 믿음이 여기서 생긴다.
@@ -89,9 +97,18 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       ) : null}
 
       <div className="flex items-start gap-3.5">
-        <span aria-hidden className={cn("tabular mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-body-sm font-extrabold text-white transition-colors duration-300", active ? "bg-blue-deep" : "bg-ink")}>
+        {/* 순번 = 지도에서 이 장소 보기 (키보드로도 카드 → 지도 연동을 쓸 수 있게). 누르는 자리는 44px 로 넓힌다 */}
+        <button
+          type="button"
+          onClick={() => onFocusStop?.(stop.position)}
+          aria-label={`지도에서 ${stop.position}번 ${place.name} 보기`}
+          className={cn(
+            "tabular relative mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-body-sm font-bold text-white transition-colors duration-300 after:absolute after:-inset-1.5 after:content-['']",
+            active ? "bg-blue-deep" : "bg-ink hover:bg-blue-deep",
+          )}
+        >
           {stop.position}
-        </span>
+        </button>
 
         <div className="min-w-0 flex-1">
           <p className="tabular flex flex-wrap items-center gap-x-2 text-caption font-extrabold text-blue-deep">

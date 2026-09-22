@@ -103,6 +103,8 @@ async function main() {
     "[aria-labelledby='leftover-card'] ul",
     // 짠이의 이야기: 길이에 따라 "더 읽기"가 생기거나 없다
     "[aria-label='짠이의 코스 이야기']",
+    // 경로 점검: 그 코스의 실제 이동 시간에 따라 생기거나 없다
+    "[aria-label='경로 점검']",
   ];
   const SCENES = [
     { key: "landing", url: "/", dynamic: [], ready: "h1" },

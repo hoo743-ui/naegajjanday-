@@ -3,13 +3,13 @@
 import { Fragment, useEffect, useRef } from "react";
 import { Bus, Car, ExternalLink, Footprints, TrainFront, TramFront, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/mascot/EmptyState";
-import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
-import type { Course, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
+import type { AccessHint } from "@/lib/api/hooks";
+import type { Course, CourseRoute, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { distance, minutes, transportLabel } from "@/lib/format";
+import { naverWebDirections, openInNaverMap, type MapPoint } from "@/lib/naver-map";
 import { StopCard } from "./StopCard";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
-const KAKAO_MODE: Record<Transport, string> = { walk: "walk", transit: "traffic", car: "car" };
 
 interface CourseTimelineProps {
   course: Course;
@@ -21,22 +21,20 @@ interface CourseTimelineProps {
   busy: boolean;
   /** false 면 읽기 전용(친구가 짠 코스): 장소 바꾸기·순서 변경을 숨긴다 */
   editable?: boolean;
-  /** 실제 보행 경로. legs[i] 는 stops[i] → stops[i+1] 구간이다. */
-  route?: WalkRoute;
+  /** 코스 경로(docs/27). legs 의 to_seq 가 그 구간이 도착하는 장소다. 없으면(계산 중 · 실패) 엔진의 추정값을 쓴다 */
+  route?: CourseRoute;
   /** stops 와 같은 순서의 가까운 지하철 출구·버스 정류장 */
   access?: AccessHint[];
   onHover: (position: number | null) => void;
   /** 스크롤해서 화면 가운데를 지나는 장소: 지도에서 그 핀을 켠다 (모바일에는 hover 가 없다) */
   onView?: (position: number) => void;
+  /** 카드를 누르면: 지도가 그 장소로 옮겨 가 확대하고, 그 장소로 오는 구간을 강조한다 */
+  onFocusStop?: (position: number) => void;
   onSwap: (position: number, strategy: SwapStrategy) => void;
   onMove: (position: number, delta: -1 | 1) => void;
 }
 
-/** 카카오맵 공식 링크 규격. 환승·실시간 도착 같은 상세 안내는 지도 앱에 맡긴다. */
-function kakaoDirections(mode: Transport, to: Stop, from?: Stop) {
-  const point = (s: Stop) => `${encodeURIComponent(s.place.name.replace(/[,/]/g, " "))},${s.place.lat},${s.place.lng}`;
-  return from ? `https://map.kakao.com/link/by/${KAKAO_MODE[mode]}/${point(from)}/${point(to)}` : `https://map.kakao.com/link/to/${point(to)}`;
-}
+const point = (s: Stop): MapPoint => ({ lat: s.place.lat, lng: s.place.lng, name: s.place.name });
 
 /**
  * 코스 전체에서 자료가 없는 점수 항목. 리뷰·혼잡도 자료가 없으면 엔진은 모든 장소에 같은 중립값을 넣는다
@@ -53,7 +51,7 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onSwap, onMove }: CourseTimelineProps) {
+export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onMove }: CourseTimelineProps) {
   const listRef = useRef<HTMLOListElement>(null);
   const onViewRef = useRef(onView);
   useEffect(() => {
@@ -94,32 +92,50 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
         const leg = stop.from_prev;
         const mode = leg?.mode ?? "walk";
         const Icon = MODE_ICON[mode] ?? Footprints;
-        // 도보 구간은 실제 길을 따라 잰 값이 있으면 그 값을 보여 준다
-        const real = route?.source === "osrm" && mode === "walk" && i > 0 ? route.legs[i - 1] : undefined;
-        const travelMin = real?.duration_min ?? leg?.travel_min ?? 0;
-        const distanceM = real?.distance_m ?? leg?.distance_m ?? 0;
+        // 장소 사이의 구간은 경로 API 의 값을 쓴다: 실측(네이버 · 보행 라우터) · 추정(엔진) · 계산 못 함을 구분해서 말한다
+        const measured = i > 0 ? route?.legs.find((l) => l.to_seq === stop.position) : undefined;
+        const unavailable = measured?.source === "unavailable";
+        const estimated = !measured || measured.source === "estimate";
+        const travelMin = measured?.duration_min ?? leg?.travel_min ?? 0;
+        const distanceM = measured?.distance_m ?? leg?.distance_m ?? 0;
+        const prev = course.stops[i - 1];
         const hint = access?.[i];
         return (
           <Fragment key={stop.place.id}>
             {leg ? (
-              <li className="py-2 pl-7 text-body-sm text-muted-foreground" aria-label={`${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${minutes(travelMin)}, ${distance(distanceM)}`}>
+              <li
+                className="py-2 pl-7 text-body-sm text-muted-foreground"
+                aria-label={unavailable ? "다음 장소까지 경로 정보를 불러오지 못했어요" : `${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${estimated ? "약 " : ""}${minutes(travelMin)}, ${distance(distanceM)}${estimated && i > 0 ? " (추정)" : ""}`}
+              >
                 <div className="flex gap-2.5">
                   <span aria-hidden className="w-0 self-stretch border-l-2 border-dashed border-line" />
                   <div className="grid gap-1 py-1">
                     <div className="tabular flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold">
                       <Icon aria-hidden className="size-4 text-blue-deep" />
-                      <span aria-hidden>
-                        {i === 0 ? "출발지에서 " : ""}
-                        {leg.hop_to ? `${leg.hop_to}(으)로 ` : ""}
-                        {transportLabel(mode)} {minutes(travelMin)} · {distance(distanceM)}
-                      </span>
+                      {unavailable ? (
+                        <span aria-hidden>경로 정보를 불러오지 못했어요</span>
+                      ) : (
+                        <span aria-hidden>
+                          {i === 0 ? "출발지에서 " : ""}
+                          {leg.hop_to ? `${leg.hop_to}(으)로 ` : ""}
+                          {transportLabel(mode)} {estimated && i > 0 ? "약 " : ""}
+                          {minutes(travelMin)} · {distance(distanceM)}
+                        </span>
+                      )}
+                      {/* 실제 길을 재지 못한 구간은 추정이라고 밝힌다 (대중교통 · 자동차 키 없음 · 라우터 실패) */}
+                      {estimated && !unavailable && i > 0 ? (
+                        <span className="rounded bg-paper-2 px-1.5 py-0.5 text-caption font-semibold text-ink-2" title="실제 길을 재지 못해 직선 거리로 어림한 값이에요. 정확한 시간은 네이버 지도에서 확인하세요.">
+                          추정
+                        </span>
+                      ) : null}
                       <a
-                        href={kakaoDirections(mode, stop, course.stops[i - 1])}
+                        href={prev ? naverWebDirections(point(prev), point(stop), mode) : `https://map.naver.com/p/search/${encodeURIComponent(stop.place.name)}`}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => (prev ? openInNaverMap(e, point(prev), point(stop), mode) : undefined)}
                         className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
                       >
-                        길찾기
+                        {prev ? "네이버 지도 길찾기" : "네이버 지도에서 보기"}
                         <ExternalLink aria-hidden className="size-3" />
                       </a>
                     </div>
@@ -166,6 +182,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 canMoveUp={!leg?.hop_to}
                 canMoveDown={!course.stops[i + 1]?.from_prev?.hop_to}
                 onHover={onHover}
+                onFocusStop={onFocusStop}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
                 onMove={(delta) => onMove(stop.position, delta)}
               />

@@ -10,6 +10,7 @@ from app.api.v1.responses import PROBLEMS
 from app.core.deps import CurrentUser, OptionalUser, rate_limit
 from app.core.sse import SSE_HEADERS, sse, with_heartbeat
 from app.schemas import course as dto
+from app.schemas import route as route_dto
 from app.schemas.common import Ok
 from app.services.factory import CourseServiceDep
 
@@ -113,6 +114,17 @@ async def narrative(course_id: str, service: CourseServiceDep) -> StreamingRespo
             yield sse("error", {"code": "NARRATIVE_FAILED"})
 
     return StreamingResponse(with_heartbeat(events()), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+@router.get(
+    "/{course_id}/route",
+    response_model=route_dto.CourseRouteOut,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(404),
+    summary="코스의 실제 경로: 구간별 거리 · 시간 · 경로 좌표 + 이동 가능 여부 검증 (docs/27)",
+)
+async def course_route(course_id: str, service: CourseServiceDep) -> route_dto.CourseRouteOut:
+    return await service.route(course_id)
 
 
 @router.post("/{course_id}/save", response_model=dto.CourseOut, responses=PROBLEMS(401, 403, 404))

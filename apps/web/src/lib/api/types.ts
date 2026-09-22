@@ -859,3 +859,56 @@ export interface SystemHealth {
   }[];
   checked_at: string;
 }
+
+// ── Route Intelligence (docs/27): GET /courses/{id}/route ────────────────────────
+/** naver = 네이버 Directions(자동차) · osrm = 실제 보행 경로 · estimate = 엔진 추정(직선 × 우회) · unavailable = 계산 못 함 */
+export type RouteLegSource = "naver" | "osrm" | "estimate" | "unavailable";
+
+export interface RouteStop {
+  sequence: number;
+  place_id: string;
+  name: string;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  arrive_at: string;
+  leave_at: string;
+  stay_min: number;
+  price: number;
+}
+
+/** to_seq 번째 장소로 들어오는 구간 */
+export interface RouteLeg {
+  from_seq: number;
+  to_seq: number;
+  origin: string;
+  destination: string;
+  mode: Transport;
+  distance_m: number | null;
+  duration_min: number | null;
+  /** [lat, lng] */
+  path: [number, number][];
+  source: RouteLegSource;
+  geometry: "road" | "straight" | "none";
+  hop_to: string | null;
+}
+
+export interface RouteIssue {
+  code: string;
+  severity: "error" | "warning" | "info";
+  message: string;
+  stop: number | null;
+  leg: number | null;
+}
+
+export interface CourseRoute {
+  course_id: string;
+  transport: Transport;
+  stops: RouteStop[];
+  legs: RouteLeg[];
+  totals: { travel_min: number; distance_m: number; measured: boolean };
+  issues: RouteIssue[];
+  feasible: boolean;
+  providers: { walk: "osrm" | "estimate"; car: "naver" | "estimate"; transit: "estimate" };
+  computed_at: string;
+}

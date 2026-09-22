@@ -589,6 +589,13 @@
   height: 0;
   pointer-events: none;
 }
+/* 코스 당일, 방문 시간이 지난 곳: 흐리게 (docs/27 §8) */
+.jj-pin.is-done {
+  --pin: #a9b4cb !important;
+}
+.jj-pin.is-done .jj-pin-label {
+  color: var(--muted);
+}
 .jj-pin.is-active {
   --size: 58px;
   --pin: var(--blue-deep) !important; /* 고른 핀만 파랑. 나머지는 잉크 */

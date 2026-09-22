@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Maximize2 } from "lucide-react";
-import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
+import type { AccessHint } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type Pt } from "./map-shared";
 
 // ── Kakao Maps JS SDK (쓰는 만큼만 타입 선언) ─────────────────
 interface KLatLng {
@@ -83,8 +83,12 @@ interface KakaoRouteMapProps {
   stops: Stop[];
   activeStop: number | null;
   onSelect: (position: number | null) => void;
-  route?: WalkRoute;
+  route?: MapRoute;
   access?: AccessHint[];
+  /** 카드를 눌렀을 때: 그 장소로 옮겨 가 확대한다 (n 이 바뀔 때마다 다시) */
+  focus?: { position: number; n: number } | null;
+  /** 바뀔 때마다 코스 전체가 보이게 다시 맞춘다 ("전체 코스 지도에서 보기") */
+  fitKey?: number;
   onError: () => void;
 }
 
@@ -92,7 +96,7 @@ interface KakaoRouteMapProps {
  * 카카오 지도. Leaflet 지도와 **같은 것**을 그린다: 실제 보행 경로(구간별 색) · 가까운 지하철 출구 ·
  * 겹치면 부채꼴로 펼쳐지는 번호 핀(`map-shared.ts`). 키를 넣어 지도가 바뀌어도 코스는 똑같이 읽혀야 한다.
  */
-export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, onError }: KakaoRouteMapProps) {
+export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, focus, fitKey, onError }: KakaoRouteMapProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KMap | null>(null);
   const landingRef = useRef(landingClock());
@@ -144,7 +148,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       stops.forEach((s) => pins.extend(new maps.LatLng(s.place.lat, s.place.lng)));
       const bounds = new maps.LatLngBounds();
       stops.forEach((s) => bounds.extend(new maps.LatLng(s.place.lat, s.place.lng)));
-      if (route?.source === "osrm") route.coordinates.forEach(([lat, lng]) => bounds.extend(new maps.LatLng(lat, lng)));
+      if (route?.routed) route.coordinates.forEach(([lat, lng]) => bounds.extend(new maps.LatLng(lat, lng)));
       map.relayout();
       // 핀은 무엇보다 먼저다: 차로 야경을 보러 가는 코스 · 여러 동네를 잇는 코스는 동네 하나보다 넓다.
       // 확대 제한(MAX_FIT_LEVEL)은 "길이 돌아가서 넓어진 만큼"에만 건다 → 모든 번호 핀은 언제나 화면 안에 있다.
@@ -181,8 +185,11 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       stroke(layout.line, 11, "#FFFFFF", "solid", 0.96);
       layout.connectors.forEach((pair) => stroke(pair, 8, "#FFFFFF", "solid", 0.9));
     });
-    layouts.forEach((layout, i) => {
-      const color = routeColor();
+    // 고른 장소로 들어오는 구간은 맨 나중에(맨 위에) 그린다
+    const order = layouts.map((_, i) => i).sort((a, b) => Number(stops[a + 1]!.position === activeStop) - Number(stops[b + 1]!.position === activeStop));
+    order.forEach((i) => {
+      const layout = layouts[i]!;
+      const color = routeColor(stops[i + 1]!.position, activeStop);
       stroke(layout.line, 6, color, legs[i]!.routed ? "solid" : "shortdot"); // 실제 경로가 아니면 점선(곧게 이음)임을 드러낸다
       if (legs[i]!.routed) layout.connectors.forEach((pair) => stroke(pair, 4, color, "shortdot"));
     });
@@ -206,7 +213,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
 
     layouts.forEach((layout, i) => {
       if (!layout.chip || !legs[i]!.label) return;
-      const el = anchor(legChipHtml(legs[i]!.label, routeColor(), layout.chip.angle));
+      const el = anchor(legChipHtml(legs[i]!.label, routeColor(stops[i + 1]!.position, activeStop), layout.chip.angle));
       overlays.push(new maps.CustomOverlay({ position: toCoords(layout.chip), content: el, xAnchor: 0, yAnchor: 0, zIndex: 50 }));
     });
 
@@ -214,7 +221,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
     const landing = landingRef.current(stops.map((s) => s.place.id).join(","));
     stops.forEach((stop, i) => {
       const active = stop.position === activeStop;
-      const el = anchor(pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, spread[i]!, landing));
+      const el = anchor(pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, spread[i]!, landing, passed(stop)));
       el.setAttribute("role", "button");
       el.setAttribute("aria-label", `${stop.position}. ${stop.place.name}`);
       el.style.cursor = "pointer";
@@ -258,6 +265,21 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       window.clearTimeout(timer);
     };
   }, []);
+
+  // 카드를 누르면: 그 장소로 옮겨 가서 동네가 읽히는 만큼 확대한다
+  useEffect(() => {
+    const map = mapRef.current;
+    const stop = focus ? stops.find((s) => s.position === focus.position) : undefined;
+    if (!maps || !map || !stop) return;
+    if (map.getLevel() > 3) map.setLevel(3);
+    map.panTo(new maps.LatLng(stop.place.lat, stop.place.lng));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- n 이 바뀔 때만 (같은 카드를 다시 눌러도 다시 옮긴다)
+  }, [maps, focus?.n]);
+
+  // "전체 코스 지도에서 보기"
+  useEffect(() => {
+    if (fitKey) fitRef.current();
+  }, [fitKey]);
 
   // 타임라인에서 고른 스톱이 화면 밖이면 데려온다
   useEffect(() => {

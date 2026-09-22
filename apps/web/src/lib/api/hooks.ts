@@ -13,6 +13,7 @@ import { getAccessToken, subscribeToken } from "@/lib/auth/token";
 import { ApiError, api, newIdempotencyKey } from "./client";
 import { safeJson, streamSse } from "./sse";
 import type {
+  CourseRoute,
   SuggestionList,
   Attraction,
   AttractionType,
@@ -562,6 +563,20 @@ export function useWalkRoute(points: { lat: number; lng: number }[]) {
     enabled: points.length >= 2,
     staleTime: 30 * 60_000,
     retry: false,
+  });
+}
+
+/**
+ * 코스의 실제 경로 (docs/27): 구간별 거리 · 시간 · 경로 좌표 + 이동 가능 여부 검증. 지도 · 카드 · 바텀시트가 이 하나를 읽는다.
+ * 장소가 바뀌면(바꾸기 · 순서 변경) 키가 바뀌어 다시 계산한다. 실패해도 코스 화면은 엔진의 추정값으로 그대로 동작한다.
+ */
+export function useCourseRoute(courseId: string | undefined, placeIds: string[]) {
+  return useQuery<CourseRoute, ApiError>({
+    queryKey: ["course-route", courseId, placeIds.join(",")],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId ?? "")}/route`, { signal }),
+    enabled: Boolean(courseId) && placeIds.length >= 1,
+    staleTime: 5 * 60_000,
+    retry: 1,
   });
 }
 

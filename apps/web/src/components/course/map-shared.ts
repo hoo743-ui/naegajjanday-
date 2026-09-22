@@ -1,4 +1,4 @@
-import type { Stop } from "@/lib/api/types";
+import type { CourseRoute, Stop } from "@/lib/api/types";
 
 /**
  * 지도 공통: 번호 핀 · 겹친 핀 펼치기 · 경로를 구간별로 나누기.
@@ -33,9 +33,16 @@ export function landingClock() {
   };
 }
 
-export function pinHtml(position: number, name: string, color: string, active: boolean, spread: Spread, landing?: number) {
+/** 코스 당일, 떠날 시각이 이미 지난 곳인가 */
+export function passed(stop: Stop, now = Date.now()): boolean {
+  const leave = new Date(stop.leave_at);
+  return leave.toDateString() === new Date(now).toDateString() && now > leave.getTime();
+}
+
+/** done: 코스 당일에 방문 시간이 지난 곳 — 흐리게 (docs/27 §8) */
+export function pinHtml(position: number, name: string, color: string, active: boolean, spread: Spread, landing?: number, done = false) {
   const { dx, dy, crowded } = spread;
-  const classes = ["jj-pin", active ? "is-active" : "", crowded && !active ? "is-crowded" : "", landing !== undefined ? "is-landing" : ""].filter(Boolean).join(" ");
+  const classes = ["jj-pin", active ? "is-active" : "", done && !active ? "is-done" : "", crowded && !active ? "is-crowded" : "", landing !== undefined ? "is-landing" : ""].filter(Boolean).join(" ");
   const moved = dx !== 0 || dy !== 0;
   // 펼친 핀은 제자리에 점을 남기고 선으로 잇는다 → 번호는 떨어져 있어도 "정확히 어디인지"는 잃지 않는다
   const leader = moved
@@ -138,21 +145,34 @@ export interface DrawLeg {
   label: string;
 }
 
-/** 구간별 경로. 도보 구간은 라우터의 구간 경로를, 그 밖(대중교통 · 차 · 라우터 실패)은 두 지점을 곧게 잇는다. */
-export function legsOf(
-  stops: Stop[],
-  route: { source: "osrm" | "straight"; coordinates: LatLngTuple[]; legs: { duration_min: number; coordinates?: LatLngTuple[] }[] } | undefined,
-  labelOf: (mode: NonNullable<Stop["from_prev"]>["mode"], minutes: number) => string,
-): DrawLeg[] {
-  const real = route?.source === "osrm" && route.coordinates.length > 1;
-  // 구간 경로가 없는 응답(이전 버전 · 캐시)은 전체 선을 스톱 가까운 꼭짓점에서 끊어 쓴다
-  const guessed = real && route.legs.some((leg) => (leg.coordinates?.length ?? 0) < 2) ? splitByStops(route.coordinates, stops) : null;
+/** 코스 경로(GET /courses/{id}/route)를 지도가 그릴 모양으로 — 실제 길을 잰 구간만 그 길을 따라 그린다 */
+export interface MapRoute {
+  /** 실제 길(도로 · 보행로)로 잰 구간이 하나라도 있나 — 화면 맞춤에 그 길까지 넣는다 */
+  routed: boolean;
+  coordinates: LatLngTuple[];
+  /** to = 이 구간이 도착하는 장소의 순번 */
+  legs: { to: number; coords: LatLngTuple[]; routed: boolean; minutes: number | null }[];
+}
+
+export function toMapRoute(route: CourseRoute | undefined): MapRoute | undefined {
+  if (!route) return undefined;
+  const legs = route.legs.map((leg) => ({
+    to: leg.to_seq,
+    coords: leg.path as LatLngTuple[],
+    routed: leg.geometry === "road" && leg.path.length > 1,
+    minutes: leg.duration_min,
+  }));
+  return { routed: legs.some((l) => l.routed), coordinates: legs.filter((l) => l.routed).flatMap((l) => l.coords), legs };
+}
+
+/** 구간별 경로. 실제 길로 잰 구간은 그 길을, 그 밖(추정 · 계산 실패)은 두 지점을 곧게(점선으로) 잇는다. */
+export function legsOf(stops: Stop[], route: MapRoute | undefined, labelOf: (mode: NonNullable<Stop["from_prev"]>["mode"], minutes: number) => string): DrawLeg[] {
   return stops.slice(1).map((stop, i) => {
     const from = stops[i]!;
     const mode = stop.from_prev?.mode ?? "walk";
-    const walked = real && mode === "walk";
-    const path = walked ? (guessed ? guessed[i] : route.legs[i]?.coordinates) : undefined;
-    const minutes = (walked ? route.legs[i]?.duration_min : undefined) ?? stop.from_prev?.travel_min ?? 0;
+    const leg = route?.legs.find((l) => l.to === stop.position);
+    const path = leg?.routed ? leg.coords : undefined;
+    const minutes = leg?.minutes ?? stop.from_prev?.travel_min ?? 0;
     return {
       coords: path && path.length > 1 ? path : [[from.place.lat, from.place.lng], [stop.place.lat, stop.place.lng]],
       routed: Boolean(path && path.length > 1),

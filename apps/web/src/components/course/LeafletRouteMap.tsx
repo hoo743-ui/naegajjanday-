@@ -4,19 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2 } from "lucide-react";
-import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
+import type { AccessHint } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type Pt } from "./map-shared";
 
 interface LeafletRouteMapProps {
   stops: Stop[];
   activeStop: number | null;
   onSelect: (position: number | null) => void;
-  /** 실제 보행 경로. 아직 없거나 실패했으면 스톱을 직선으로 잇는다. */
-  route?: WalkRoute;
+  /** 코스 경로. 아직 없거나 실패했으면 스톱을 직선(점선)으로 잇는다. */
+  route?: MapRoute;
   access?: AccessHint[];
+  /** 카드를 눌렀을 때: 그 장소로 옮겨 가 확대한다 (n 이 바뀔 때마다 다시) */
+  focus?: { position: number; n: number } | null;
+  /** 바뀔 때마다 코스 전체가 보이게 다시 맞춘다 ("전체 코스 지도에서 보기") */
+  fitKey?: number;
   /** 타일을 하나도 받지 못하면 호출 → 부모가 SVG 약도로 되돌린다 */
   onError: () => void;
 }
@@ -38,7 +42,7 @@ const MAX_FIT_ZOOM = 18;
  * OpenStreetMap 타일 + Leaflet. API 키가 필요 없어 어디서든 바로 뜬다.
  * Leaflet 은 window 를 만지므로 effect 안에서 동적으로 불러온다.
  */
-export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, onError }: LeafletRouteMapProps) {
+export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, onError }: LeafletRouteMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const landingRef = useRef(landingClock());
@@ -111,8 +115,11 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
       stroke(layout.line, 11, "#ffffff", undefined, 0.96);
       layout.connectors.forEach((pair) => stroke(pair, 8, "#ffffff", undefined, 0.9));
     });
-    layouts.forEach((layout, i) => {
-      const color = routeColor();
+    // 고른 장소로 들어오는 구간은 맨 나중에(맨 위에) 그린다
+    const order = layouts.map((_, i) => i).sort((a, b) => Number(stops[a + 1]!.position === activeStop) - Number(stops[b + 1]!.position === activeStop));
+    order.forEach((i) => {
+      const layout = layouts[i]!;
+      const color = routeColor(stops[i + 1]!.position, activeStop);
       stroke(layout.line, 6, color, legs[i]!.routed ? undefined : "1 12"); // 실제 경로가 아니면 점선(곧게 이음)임을 드러낸다
       if (legs[i]!.routed) layout.connectors.forEach((pair) => stroke(pair, 4, color, "1 8"));
       if (layout.chip && legs[i]!.label) {
@@ -153,7 +160,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
       const marker = L.marker([stop.place.lat, stop.place.lng], {
         icon: L.divIcon({
           className: "",
-          html: pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, fan, landing),
+          html: pinHtml(stop.position, stop.place.name, stopColor(i, stops.length), active, fan, landing, passed(stop)),
           iconSize: [0, 0],
         }),
         // Leaflet 은 위도(y)로 z 를 정한다 → 순번이 그보다 세게 먹도록 큰 간격을 준다
@@ -177,7 +184,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
     fitRef.current = () => {
       const pins = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       const bounds = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
-      if (route?.source === "osrm") route.coordinates.forEach((at) => bounds.extend(at));
+      if (route?.routed) route.coordinates.forEach((at) => bounds.extend(at));
       map.invalidateSize();
       // 위쪽 여백은 핀 높이(56) + 이름표, 아래는 저작권 표기
       const target = map.getBoundsZoom(bounds, false, L.point(140, 170));
@@ -213,6 +220,20 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
       window.clearTimeout(timer);
     };
   }, []);
+
+  // 카드를 누르면: 그 장소로 옮겨 가서 동네가 읽히는 만큼 확대한다
+  useEffect(() => {
+    const map = mapRef.current;
+    const stop = focus ? stops.find((s) => s.position === focus.position) : undefined;
+    if (!map || !stop) return;
+    map.setView([stop.place.lat, stop.place.lng], Math.max(map.getZoom(), 17), { animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- n 이 바뀔 때만 (같은 카드를 다시 눌러도 다시 옮긴다)
+  }, [focus?.n]);
+
+  // "전체 코스 지도에서 보기"
+  useEffect(() => {
+    if (fitKey) fitRef.current();
+  }, [fitKey]);
 
   useEffect(() => {
     const map = mapRef.current;
