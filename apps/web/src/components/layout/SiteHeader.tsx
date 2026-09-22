@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Jjani } from "@/components/mascot/Jjani";
-import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { useFeatures } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
@@ -45,9 +44,8 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
   useEffect(() => setOpen(false), [pathname]);
 
   const solid = scrolled || open || !overlay;
-  // 코스를 짜는 중이거나 결과를 보는 중에는 "무료로 추천받기"를 띄우지 않는다: /plan 에서는 제자리 링크(눌러도 아무 일 없음)이고,
-  // 결과 화면에서는 방금 받은 사람에게 또 받으라고 하는 셈이다.
-  const showCta = !pathname.startsWith("/plan") && !pathname.startsWith("/course");
+  // 헤더에는 CTA 를 두지 않는다 (docs/31 §10): 행동은 그 행동을 하는 자리(히어로의 예산 · 위저드 · 결과의 저장)에만.
+  // "코스 짜기"는 메뉴의 첫 항목이 그 입구다.
 
   return (
     <header
@@ -80,8 +78,10 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
             <Link
               key={link.href}
               href={link.href}
+              onClick={link.href === "/plan" ? () => track("plan_started", { entry: "nav" }) : undefined}
               aria-current={pathname.startsWith(link.href) ? "page" : undefined}
-              className="rounded-lg px-3 py-2 text-ink-2/80 hover:bg-ink/[0.05] hover:text-ink aria-[current=page]:bg-blue-soft aria-[current=page]:text-blue-deep"
+              // 지금 있는 곳은 상자가 아니라 밑줄 한 줄 (간판 · 지도의 선처럼)
+              className="relative px-3 py-2 text-ink-2/80 after:absolute after:inset-x-3 after:bottom-0.5 after:h-[2px] after:bg-transparent hover:text-ink aria-[current=page]:text-ink aria-[current=page]:after:bg-ink"
             >
               {link.label}
             </Link>
@@ -103,13 +103,6 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
             >
               로그인
             </Link>
-          ) : null}
-          {showCta ? (
-            <Button asChild variant="brand" size="md" className="hidden sm:inline-flex">
-              <Link href="/plan" onClick={() => track("plan_started", { entry: "nav" })}>
-                무료로 추천받기
-              </Link>
-            </Button>
           ) : null}
           <button
             type="button"
@@ -146,13 +139,6 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
               {link.label}
             </Link>
           ))}
-          {showCta ? (
-            <Button asChild variant="brand" size="xl" className="mt-2">
-              <Link href="/plan" onClick={() => track("plan_started", { entry: "nav" })}>
-                무료로 추천받기
-              </Link>
-            </Button>
-          ) : null}
         </nav>
       ) : null}
     </header>

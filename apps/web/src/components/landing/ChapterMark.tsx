@@ -1,15 +1,16 @@
 import { cn } from "@/lib/utils";
 
 /**
- * 랜딩의 장면 머리 (docs/25 §5 "한 장의 긴 영수증이 출력되는 이야기"): 영수증의 한 줄처럼 "01 ─ ─ ─ 과거 × 현재".
- * 장면이 바뀔 때마다 같은 모양이 찍혀서, 스크롤이 영수증을 따라 내려가는 것처럼 읽힌다.
+ * 랜딩의 장면 머리 = 경로 위의 한 정거장 (docs/31 §5). 위 장면에서 내려온 점선이 점 하나에 닿고, 그 옆에 이름.
+ * 장면이 따로 떨어진 광고 블록이 아니라, 앞 장면에서 이어져 내려온 하루의 다음 곳처럼 읽힌다.
+ * `n`(장면 순번)은 화면에 숫자로 찍지 않는다 — 순서는 선이 말한다.
  */
-export function ChapterMark({ n, label, tone = "ink", className }: { n: string; label: string; tone?: "ink" | "light"; className?: string }) {
+export function ChapterMark({ label, tone = "ink", className }: { n?: string; label: string; tone?: "ink" | "light"; className?: string }) {
   return (
-    <p className={cn("tabular flex items-center gap-3 text-body-sm font-extrabold tracking-[0.04em]", tone === "light" ? "text-white/70" : "text-ink-2", className)}>
-      <span>{n}</span>
-      <span aria-hidden className={cn("h-0 flex-1 border-t-[1.5px] border-dashed", tone === "light" ? "border-white/25" : "border-ink/20")} />
-      <span>{label}</span>
+    <p className={cn("relative flex items-center gap-3 pl-6 text-body-sm font-bold", tone === "light" ? "text-white/75" : "text-ink-2", className)}>
+      <span aria-hidden className={cn("absolute bottom-1/2 left-[5px] h-[clamp(56px,7vw,96px)] border-l-2 border-dashed", tone === "light" ? "border-white/30" : "border-ink/20")} />
+      <span aria-hidden className={cn("absolute top-1/2 left-0 size-3 -translate-y-1/2 rounded-full border-2", tone === "light" ? "border-white bg-navy" : "border-ink bg-paper")} />
+      {label}
     </p>
   );
 }

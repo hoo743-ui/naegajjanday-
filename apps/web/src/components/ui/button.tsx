@@ -19,18 +19,18 @@ const buttonVariants = cva(
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         // 브랜드 CTA — index.html 의 .btn-primary / .btn-ghost / .btn-white
-        brand:
-          "relative overflow-hidden bg-blue-deep font-bold tracking-tight text-white shadow-[0_1px_0_rgba(255,255,255,.22)_inset,0_10px_24px_-6px_rgba(42,91,215,.4)] duration-300 after:pointer-events-none after:absolute after:inset-0 after:bg-[linear-gradient(105deg,transparent_42%,rgba(255,255,255,.32)_50%,transparent_58%)] after:bg-[length:250%_100%] after:bg-[position:180%_0] after:bg-no-repeat after:transition-[background-position] after:duration-[900ms] after:ease-out hover:-translate-y-px hover:bg-[#2451c4] hover:shadow-[0_1px_0_rgba(255,255,255,.22)_inset,0_16px_32px_-8px_rgba(42,91,215,.45)] hover:after:bg-[position:-80%_0]",
+        // 행동하는 자리의 버튼 (docs/31 §10): 단색 파랑. 광택 · 들림 · 파란 그림자는 쓰지 않는다
+        brand: "bg-blue-deep font-bold tracking-tight text-white hover:bg-[#2451c4]",
         soft: "bg-soft font-bold tracking-tight text-ink-2 hover:bg-line",
         white:
-          "bg-white font-bold tracking-tight text-blue-deep shadow-[0_10px_28px_rgba(20,33,61,.18)] duration-300 hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(20,33,61,.22)]",
+          "bg-white font-bold tracking-tight text-blue-deep hover:bg-blue-soft",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         xs: "h-6 gap-1 rounded-md px-2 text-caption has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        xl: "h-14 rounded-2xl px-7 text-body-lg has-[>svg]:px-5 [&_svg:not([class*='size-'])]:size-5",
+        xl: "h-14 rounded-xl px-7 text-body-lg has-[>svg]:px-5 [&_svg:not([class*='size-'])]:size-5",
         md: "h-11 rounded-xl px-5 text-body",
         icon: "size-9",
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",

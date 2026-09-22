@@ -1,12 +1,10 @@
-import { Footprints, Route, Ticket, Wallet, type LucideIcon } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { ChapterMark } from "./ChapterMark";
 import { Reveal } from "./Reveal";
 
-const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from: string; to: string }[] = [
+const ITEMS: { tag: string; title: string; body: string; from: string; to: string }[] = [
   {
-    icon: Wallet,
     tag: "예산이 먼저",
     title: "가격을 검색하지 않아요. 예산으로 결정해요",
     body: "예산을 먼저 받고, 그 안에 들어오는 곳만 보여 줍니다. 무조건 싼 곳이 아니라 예산을 알맞게 쓰는 곳이 높은 점수를 받아요.",
@@ -14,7 +12,6 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
     to: "예산 기반 결정",
   },
   {
-    icon: Route,
     tag: "장소가 아니라 코스",
     title: "맛집 하나로 끝나지 않는 하루 전체",
     body: "식사에서 아낀 돈은 카페로 넘어갑니다. 식당 · 카페 · 놀거리를 따로 고르지 않고, 총액이 맞는 조합을 통째로 제안해요.",
@@ -22,7 +19,6 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
     to: "하루 소비 코스",
   },
   {
-    icon: Footprints,
     tag: "진짜 동선 최적화",
     title: "가장 덜 걷는 순서를 계산해요",
     body: "영업시간과 이동시간을 함께 놓고 방문 순서를 풉니다. 밥 먹고 카페 가는 자연스러운 순서는 지키면서요.",
@@ -30,7 +26,6 @@ const ITEMS: { icon: LucideIcon; tag: string; title: string; body: string; from:
     to: "경로 최적화",
   },
   {
-    icon: Ticket,
     tag: "관광지 · 축제까지",
     title: "오늘 열리는 축제도 코스에 넣어요",
     body: "공원, 전시, 문화공간, 지금 진행 중인 축제까지 후보에 올립니다. 무료로 즐길 거리는 예산을 아껴 주는 카드예요.",
@@ -44,14 +39,14 @@ const OLD_WAY = ["맛집 검색", "가격 확인", "카페 검색", "놀거리 �
 const DEMO = { budget: 40000, party: 2 };
 
 /**
- * 장면 03 — 무엇이 다른가요. 흰 카드 여섯 장이던 구획을 열린 배치로:
- * 왼쪽은 지워지는 옛 방식(줄이 그어진 목록), 오른쪽은 영수증 한 장. 아래 네 가지는 선으로만 나눈 격자.
+ * 장면 — 무엇이 다른가요. 왼쪽은 지워지는 옛 방식(줄이 그어진 목록), 오른쪽은 영수증 한 장 — 랜딩에서 실제 영수증 모양은 여기 한 번뿐이다.
+ * 아래 네 가지는 아이콘 격자(SaaS 의 "기능 소개")가 아니라 장부의 줄: 왼쪽 칸에 "무엇이 무엇으로", 오른쪽 칸에 설명 (docs/31 §6).
  */
 export function Differentiators() {
   return (
-    <section id="different" className="scroll-mt-20 py-[clamp(72px,10vw,140px)]">
+    <section id="different" className="scroll-mt-20 py-[clamp(48px,7vw,96px)]">
       <div className="wrap">
-        <ChapterMark n="03" label="무엇이 다른가요" />
+        <ChapterMark label="무엇이 다른가요" />
         <h2 className="mt-12 max-w-[760px] font-serif text-display">
           아끼는 것이 아니라,
           <br />
@@ -82,21 +77,21 @@ export function Differentiators() {
           </div>
         </Reveal>
 
-        <div className="mt-20 grid gap-x-16 md:grid-cols-2">
+        <div className="mt-20 border-b border-ink/12">
           {ITEMS.map((item, i) => (
-            <Reveal as="article" key={item.tag} delay={(i % 2) * 0.06} className="grid content-start gap-3 border-t border-ink/12 py-9">
-              <p className="flex items-center gap-2 text-body-sm font-semibold text-blue-deep">
-                <item.icon aria-hidden className="size-4" />
-                {item.tag}
-              </p>
-              <h3 className="text-h2 font-bold">{item.title}</h3>
-              <p className="max-w-[500px] text-body text-ink-2">{item.body}</p>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-body-sm font-semibold">
-                <span className="text-muted-foreground line-through">{item.from}</span>
-                <span aria-hidden className="text-muted-foreground">→</span>
+            <Reveal as="article" key={item.tag} delay={Math.min(i * 0.04, 0.12)} className="grid gap-x-16 gap-y-3 border-t border-ink/12 py-7 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] md:py-9">
+              <p className="grid content-start gap-1 text-body font-semibold">
+                <span className="text-muted-foreground line-through decoration-ink/30">{item.from}</span>
                 <span className="sr-only">대신</span>
-                <span className="text-ink">{item.to}</span>
+                <span className="text-ink">
+                  <span aria-hidden className="mr-1.5 text-muted-foreground">→</span>
+                  {item.to}
+                </span>
               </p>
+              <div>
+                <h3 className="text-h2 font-bold">{item.title}</h3>
+                <p className="mt-2 max-w-[560px] text-body text-ink-2">{item.body}</p>
+              </div>
             </Reveal>
           ))}
         </div>

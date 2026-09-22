@@ -39,7 +39,8 @@
   --shadow-sm: 0 0 0 1px rgba(16, 25, 46, 0.07), 0 1px 2px rgba(16, 25, 46, 0.03), 0 8px 20px -8px rgba(72, 54, 24, 0.08);
   --shadow: 0 0 0 1px rgba(16, 25, 46, 0.06), 0 2px 4px rgba(16, 25, 46, 0.03), 0 28px 56px -20px rgba(72, 54, 24, 0.16);
   --shadow-lg: 0 0 0 1px rgba(16, 25, 46, 0.05), 0 10px 20px -6px rgba(16, 25, 46, 0.06), 0 48px 96px -28px rgba(72, 54, 24, 0.26);
-  --r: 24px;
+  /* 상자의 반지름 (docs/31): 카드가 기본 레이아웃이 아니므로 크게 둥글릴 이유가 없다. 24px → 12px */
+  --r: 12px;
 
   /* 모션 — 길이 3단계 + 이징 3종. 컴포넌트에서 임의의 ms·cubic-bezier 를 새로 만들지 않는다. */
   --dur-1: 120ms; /* 눌림·색 변화 */
@@ -491,6 +492,19 @@
   align-self: flex-end;
   margin-bottom: 0.32em;
   border-bottom: 1.5px dotted rgba(20, 33, 61, 0.28);
+}
+
+/* ── 레이아웃 언어 (docs/31 §2) ──────────────────────────────────────────
+   구멍 줄: 영수증을 뜯는 자리. 장면과 장면 사이, 요약과 영수증 사이를 상자 대신 이것으로 나눈다 */
+@utility tear-line {
+  height: 6px;
+  border: 0;
+  background: radial-gradient(circle, rgba(16, 25, 46, 0.2) 2.2px, transparent 2.8px) 0 50% / 14px 6px repeat-x;
+}
+
+/* 경로의 선: 들르는 곳(점) 사이를 잇는 세로 점선. 결과 화면의 일정 · 랜딩의 단계가 이 선 위에 선다 */
+@utility rail {
+  background: linear-gradient(to bottom, rgba(16, 25, 46, 0.22) 55%, transparent 0) 50% 0 / 2px 9px repeat-y;
 }
 
 @utility bg-soft-band {

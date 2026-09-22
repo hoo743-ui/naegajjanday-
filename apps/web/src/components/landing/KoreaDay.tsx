@@ -12,59 +12,49 @@ const LINES = [
 ];
 
 /**
- * 장면 01 — 과거 × 현재. 성문 앞을 지나는 오늘의 차들, 궁궐 뒤로 선 빌딩들.
- * 한국적인 이미지로 시작하지만, 곧바로 "그 공간에서 내 하루를 만든다"로 이어진다.
+ * 장면 — 그 하루가 일어나는 곳. 성문 앞을 지나는 오늘의 차들.
+ * 사진은 겹쳐 띄우지 않고 한 장을 넓게 편다(docs/31 §14). 글은 그 아래, 제목 5 : 본문 7 의 비대칭.
  */
 export function KoreaDay() {
   return (
-    <section id="korea" className="scroll-mt-20 py-[clamp(72px,10vw,140px)]">
+    <section id="korea" className="scroll-mt-20 pt-[clamp(56px,8vw,112px)] pb-[clamp(48px,7vw,96px)]">
       <div className="wrap">
-        <ChapterMark n="01" label="과거 × 현재" />
+        <ChapterMark label="그 하루가 일어나는 곳" />
 
-        <div className="mt-12 grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr] lg:gap-20">
-          {/* 사진 두 장: 큰 한 장 위에 작은 한 장을 겹친다. 사진 위에는 글자를 얹지 않는다 */}
-          <Reveal className="relative pb-16 sm:pb-20">
-            <figure>
-              <div className="photo-edge relative aspect-[3/2] overflow-hidden rounded-[20px]">
-                <Image src="/images/story/sungnyemun-night.jpg" alt="밤의 숭례문과 그 앞을 지나는 차들의 빛" fill sizes="(max-width: 1024px) 92vw, 600px" className="object-cover" />
-              </div>
-              <figcaption className="mt-2">
-                <PhotoCredit place="숭례문" />
-              </figcaption>
-            </figure>
-            <figure className="absolute right-0 bottom-0 w-[46%] lg:right-[-6%]">
-              <div className="photo-edge relative aspect-[4/3] overflow-hidden rounded-[16px] shadow-float ring-[6px] ring-paper">
-                <Image src="/images/story/deoksugung.jpg" alt="덕수궁 중화전 뒤로 보이는 도심의 빌딩" fill sizes="(max-width: 1024px) 44vw, 280px" className="object-cover" />
-              </div>
-              <figcaption className="mt-2 text-right">
-                <PhotoCredit place="덕수궁" />
-              </figcaption>
-            </figure>
-          </Reveal>
+        <Reveal className="mt-8">
+          <figure>
+            <div className="photo-edge relative aspect-[4/3] overflow-hidden rounded-lg sm:aspect-[21/9]">
+              <Image src="/images/story/sungnyemun-night.jpg" alt="밤의 숭례문과 그 앞을 지나는 차들의 빛" fill sizes="(max-width: 1200px) 94vw, 1136px" className="object-cover object-[50%_60%]" />
+            </div>
+            <figcaption className="mt-2">
+              <PhotoCredit place="숭례문" />
+            </figcaption>
+          </figure>
+        </Reveal>
 
-          <Reveal delay={0.08}>
-            <h2 className="font-serif text-display">
-              성문 앞에서 시작해도,
-              <br />
-              한강에서 끝나도,
-              <br />
-              하루는 한 장이에요.
-            </h2>
-            <p className="mt-6 max-w-[460px] text-body-lg text-ink-2">
+        <div className="mt-10 grid gap-x-16 gap-y-8 lg:mt-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <h2 className="font-serif text-display">
+            성문 앞에서 시작해도,
+            <br />
+            한강에서 끝나도,
+            <br />
+            하루는 한 장이에요.
+          </h2>
+          <div className="lg:pt-2">
+            <p className="max-w-[520px] text-body-lg text-ink-2">
               궁궐 옆 카페, 시장 골목의 저녁, 바닷가의 산책. 짠이는 한국관광공사와 공공데이터에 있는 실제 장소로 하루를 잇고, 그 하루를 영수증 한 장으로 정리해요.
             </p>
-
             {/* 영수증 문법: 공간 ···· 하루 */}
-            <ul className="mt-9 grid max-w-[420px] gap-3 text-body">
+            <ul className="mt-8 grid max-w-[460px] gap-3 text-body">
               {LINES.map((line) => (
                 <li key={line.place} className="flex items-baseline gap-2">
-                  <span className="font-bold text-ink">{line.place}</span>
+                  <span className="font-semibold text-ink">{line.place}</span>
                   <span aria-hidden className="receipt-leader" />
-                  <span className="font-extrabold text-blue-deep">{line.day}</span>
+                  <span className="font-bold text-blue-deep">{line.day}</span>
                 </li>
               ))}
             </ul>
-          </Reveal>
+          </div>
         </div>
       </div>
     </section>
