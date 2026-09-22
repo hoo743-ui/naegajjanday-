@@ -520,6 +520,7 @@
 }
 .jj-pin.is-active {
   --size: 58px;
+  --pin: var(--blue-deep) !important; /* 고른 핀만 파랑. 나머지는 잉크 */
 }
 /* 겹치는 핀은 (--dx, --dy) 만큼 부채꼴로 펼치고, 제자리에는 점(anchor)을 남겨 선(stem)으로 잇는다 */
 .jj-pin-drop,

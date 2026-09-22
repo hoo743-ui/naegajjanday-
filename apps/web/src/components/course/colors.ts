@@ -1,18 +1,16 @@
-/** 경로 그라디언트(파랑 → 보라 → 핑크) 위에서 i번째 스톱의 색. 지도 핀과 타임라인 번호가 같은 색을 쓴다. */
-const STOPS: [number, number, number][] = [
-  [47, 107, 234], // #2F6BEA
-  [142, 139, 255], // #8E8BFF
-  [255, 111, 165], // #FF6FA5
-];
+/**
+ * 지도와 타임라인의 색 (docs/25): 순번은 잉크, 고른 것만 파랑, 경로는 파랑 한 가지.
+ * 예전에는 순번마다 파랑 → 보라 → 분홍으로 달랐다 — 종이 톤의 화면에서 지도만 따로 놀았다.
+ */
+export const PIN_INK = "#10192E";
+export const ROUTE_BLUE = "#2A5BD7";
 
-export function stopColor(index: number, count: number): string {
-  const t = count <= 1 ? 0 : Math.min(1, Math.max(0, index / (count - 1)));
-  const scaled = t * (STOPS.length - 1);
-  const lo = Math.floor(scaled);
-  const hi = Math.min(STOPS.length - 1, lo + 1);
-  const f = scaled - lo;
-  const a = STOPS[lo] ?? STOPS[0]!;
-  const b = STOPS[hi] ?? a;
-  const mix = (k: 0 | 1 | 2) => Math.round(a[k] + (b[k] - a[k]) * f);
-  return `rgb(${mix(0)} ${mix(1)} ${mix(2)})`;
+/** i번째 스톱의 번호 색. 모든 순번이 같은 잉크다(인자는 호출부를 그대로 두려고 남겼다) */
+export function stopColor(_index?: number, _count?: number): string {
+  return PIN_INK;
+}
+
+/** 구간(경로선 · 이동 시간 칩)의 색 */
+export function routeColor(): string {
+  return ROUTE_BLUE;
 }

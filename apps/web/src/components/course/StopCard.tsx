@@ -12,7 +12,6 @@ import { canOptimize, photoCredit } from "@/lib/photo-credit";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SwapMenu } from "./SwapMenu";
-import { stopColor } from "./colors";
 import { PlaceSheet } from "./PlaceSheet";
 import { RoadviewPeek } from "./RoadviewPeek";
 
@@ -55,14 +54,12 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   const [sheet, setSheet] = useState(false);
   const panelId = useId();
   const { place } = stop;
-  const index = stop.position - 1;
   // 0원이라고 다 무료는 아니다: 요금 자료가 없는 곳도 0원으로 계산돼 온다 → "무료"는 무료라고 확인된 곳에만 쓴다
   const free = place.is_free === true || (stop.est_price === 0 && place.price_per_person === 0);
   const priceUnknown = !free && stop.est_price === 0;
   // 이 장소에 자료가 없는 항목은 "왜 여기?"에서도 뺀다
   const hidden: ScoreFeature[] = [...hiddenFeatures, ...(place.rating === null ? (["rating"] as const) : []), ...(stop.congestion ? [] : (["congestion"] as const))];
   const example = categoryImageFor(useCategoryImages().data?.items, place.category);
-  const photo = place.thumbnail_url ?? example?.url ?? null;
   const credit = photoCredit(place.thumbnail_url);
   // 같은 상호가 전국에 많다 → 주소의 시·구까지 붙여 검색해야 그 지점이 나온다
   const placeQuery = [place.address?.split(" ").slice(1, 3).join(" "), place.name].filter(Boolean).join(" ");
@@ -80,51 +77,20 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         active ? "border-blue/60 shadow-card" : "border-transparent",
       )}
     >
-      {/* 사진은 그 순번의 카드 안에 둔다 — 1번 사진은 1번 카드에. 가게 실사진이 없으면 검수한 업종 대표 사진을 쓴다. */}
-      {photo ? (
-        <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/7] overflow-hidden sm:-mx-5 sm:-mt-5">
-          <Image src={photo} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(photo)} />
-          <span aria-hidden className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
-          <span
-            aria-hidden
-            className="absolute top-3 left-3 grid size-8 place-items-center rounded-full text-sm font-extrabold text-white shadow-soft ring-2 ring-white"
-            style={{ background: stopColor(index, count) }}
-          >
-            {stop.position}
-          </span>
-          {credit ? (
-            <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95">{credit}</span>
-          ) : null}
-          {!place.thumbnail_url && example ? (
-            // 그 가게의 실제 사진이 아니라 업종 대표 이미지임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
-            <a
-              href={example.page_url ?? example.url}
-              target="_blank"
-              rel="noreferrer"
-              className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95 hover:bg-black/65"
-              title="이 가게의 사진이 아니라 같은 업종의 예시 사진이에요"
-            >
-              예시 사진 · © {example.author} · {example.license}
-            </a>
-          ) : null}
+      {/* 그 가게의 실제 사진이면 크게 보여 준다: "실제로 있는 곳"이라는 믿음이 여기서 생긴다.
+          업종 예시 사진은 아래 줄의 작은 썸네일로만 쓴다(같은 라떼 사진이 코스마다 화면을 덮지 않게). */}
+      {place.thumbnail_url ? (
+        <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/9] overflow-hidden sm:-mx-5 sm:-mt-5">
+          <Image src={place.thumbnail_url} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
+          <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
+          {credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95">{credit}</span> : null}
         </div>
       ) : null}
 
-      <div className="flex gap-3.5">
-        {photo ? null : (
-          <div className="relative size-[72px] shrink-0 overflow-hidden rounded-2xl sm:size-[84px]">
-            <span aria-hidden className="bg-grad-soft grid size-full place-items-center font-round text-2xl text-blue-deep/70">
-              {place.name.slice(0, 1)}
-            </span>
-            <span
-              aria-hidden
-              className="absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full text-xs font-extrabold text-white ring-2 ring-white"
-              style={{ background: stopColor(index, count) }}
-            >
-              {stop.position}
-            </span>
-          </div>
-        )}
+      <div className="flex items-start gap-3.5">
+        <span aria-hidden className={cn("tabular mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white transition-colors duration-300", active ? "bg-blue-deep" : "bg-ink")}>
+          {stop.position}
+        </span>
 
         <div className="min-w-0 flex-1">
           <p className="tabular flex flex-wrap items-center gap-x-2 text-xs font-extrabold text-blue-deep">
@@ -148,107 +114,134 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             {place.category_name ?? place.category}
             {place.address ? ` · ${place.address}` : ""}
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-bold">
-            {place.rating !== null ? (
-              <span className="tabular inline-flex items-center gap-1 text-ink-2">
-                <Star aria-hidden className="size-3.5 fill-gold text-gold-deep" />
-                <span className="sr-only">평점</span>
-                {place.rating.toFixed(1)}
-                <span className="font-medium text-muted-foreground">({num(place.review_count)})</span>
-              </span>
-            ) : null}
-            {stop.congestion ? (
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5", congestionTone(stop.congestion.value))}>
-                <Users aria-hidden className="size-3" />
-                <span className="sr-only">도착 시간 혼잡도</span>
-                {stop.congestion.level}
-              </span>
-            ) : null}
-            {place.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="rounded-full bg-soft px-2 py-0.5 text-ink-2">
-                {tag}
-              </span>
-            ))}
-          </div>
         </div>
 
-        <p className="tabular shrink-0 text-right text-base font-extrabold sm:text-[17px]">
-          {!free && !priceUnknown && place.price_is_estimated ? (
-            <span className="mr-1 rounded-md bg-gold-soft px-1.5 py-0.5 align-middle text-[11px] font-bold text-gold-ink" title="이 가게의 메뉴판 가격이 아니라, 같은 지역·같은 업종의 1인 평균가로 계산한 금액이에요">
-              평균가
-            </span>
-          ) : null}
+        {/* 금액: 카드에서 가장 큰 글자 */}
+        <p className="tabular shrink-0 text-right text-xl leading-tight font-extrabold tracking-tight">
           {priceUnknown ? (
             <span className="text-[13px] font-bold text-muted-foreground">가격 정보 없음</span>
           ) : (
             <>
               {free ? "0원" : won(stop.est_price)}
-              <small className="block text-[11.5px] font-bold text-muted-foreground">
+              <small className="mt-0.5 block text-[11.5px] font-bold tracking-normal text-muted-foreground">
                 {free ? "무료" : partySize > 1 ? (place.price_per_person !== null ? `1인 ${won(place.price_per_person)}` : `${partySize}명 합계`) : "1인"}
               </small>
+              {!free && place.price_is_estimated ? (
+                <span className="mt-1 inline-block rounded-md bg-gold-soft px-1.5 py-0.5 text-[11px] font-bold tracking-normal text-gold-ink" title="이 가게의 메뉴판 가격이 아니라, 같은 지역·같은 업종의 1인 평균가로 계산한 금액이에요">
+                  평균가
+                </span>
+              ) : null}
             </>
           )}
         </p>
       </div>
 
-      {stop.reason ? <p className="mt-3.5 rounded-2xl bg-paper-2 text-ink-2 px-3.5 py-2.5 text-[13.5px] font-bold">{stop.reason}</p> : null}
+      {place.rating !== null || stop.congestion || place.tags.length > 0 || (!place.thumbnail_url && example) ? (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-bold">
+          {!place.thumbnail_url && example ? (
+            // 그 가게의 실제 사진이 아니라 업종 대표 이미지임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
+            <a
+              href={example.page_url ?? example.url}
+              target="_blank"
+              rel="noreferrer"
+              title="이 가게의 사진이 아니라 같은 업종의 예시 사진이에요"
+              className="mr-1 inline-flex items-center gap-2 rounded-full border border-line py-0.5 pr-2.5 pl-0.5 font-medium text-muted-foreground hover:border-ink-2"
+            >
+              <span className="relative size-7 shrink-0 overflow-hidden rounded-full">
+                <Image src={example.url} alt="" fill sizes="28px" className="object-cover" unoptimized={!canOptimize(example.url)} />
+              </span>
+              <span className="max-w-[210px] truncate text-[11px]">
+                예시 사진 · © {example.author} · {example.license}
+              </span>
+            </a>
+          ) : null}
+          {place.rating !== null ? (
+            <span className="tabular inline-flex items-center gap-1 text-ink-2">
+              <Star aria-hidden className="size-3.5 fill-gold text-gold-deep" />
+              <span className="sr-only">평점</span>
+              {place.rating.toFixed(1)}
+              <span className="font-medium text-muted-foreground">({num(place.review_count)})</span>
+            </span>
+          ) : null}
+          {stop.congestion ? (
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5", congestionTone(stop.congestion.value))}>
+              <Users aria-hidden className="size-3" />
+              <span className="sr-only">도착 시간 혼잡도</span>
+              {stop.congestion.level}
+            </span>
+          ) : null}
+          {place.tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="rounded-full bg-soft px-2 py-0.5 text-ink-2">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => {
-            if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
-            setOpen((v) => !v);
-          }}
-          className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-extrabold text-blue-deep hover:bg-blue-soft"
-        >
-          왜 여기?
-          <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
-        </button>
-        {KAKAO_KEY ? (
+      {/* 이유는 상자가 아니라 본문이다: 왼쪽의 가는 선 하나로 "짠이의 말"임을 표시한다 */}
+      {stop.reason ? <p className="mt-3 border-l-2 border-line pl-3 text-[13.5px] leading-relaxed font-medium text-ink-2">{stop.reason}</p> : null}
+
+      {/* 도구는 한 줄: 왼쪽은 읽을 것(왜 여기 · 거리뷰 · 지도 앱), 오른쪽은 바꿀 것(순서 · 바꾸기) */}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-2.5">
+        <div className="flex min-w-0 items-center gap-0.5">
           <button
             type="button"
-            aria-expanded={street}
+            aria-expanded={open}
+            aria-controls={panelId}
             onClick={() => {
-              setStreet((v) => !v);
-              if (!street) track("place_link_clicked", { course_id: courseId, position: stop.position, to: "roadview" });
+              if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
+              setOpen((v) => !v);
             }}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-soft hover:text-ink"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] font-extrabold text-blue-deep hover:bg-blue-soft"
           >
-            <Eye aria-hidden className="size-3.5" />
-            {street ? "거리뷰 닫기" : "가게 앞 거리뷰"}
+            왜 여기?
+            <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
           </button>
-        ) : null}
-        {stop.place.category === STADIUM ? (
+          {KAKAO_KEY ? (
+            <button
+              type="button"
+              aria-expanded={street}
+              aria-label={street ? "거리뷰 닫기" : "가게 앞 거리뷰"}
+              title={street ? "거리뷰 닫기" : "가게 앞 거리뷰"}
+              onClick={() => {
+                setStreet((v) => !v);
+                if (!street) track("place_link_clicked", { course_id: courseId, position: stop.position, to: "roadview" });
+              }}
+              className={cn("grid size-11 place-items-center rounded-full hover:bg-soft", street ? "bg-blue-soft text-blue-deep" : "text-ink-2 hover:text-ink")}
+            >
+              <Eye aria-hidden className="size-4" />
+            </button>
+          ) : null}
+          {/* 그 가게의 실제 사진·메뉴판·후기는 지도 앱에 있다(우리가 긁어 올 수는 없다) → 한 번 탭으로 넘긴다. 카카오맵 공식 링크 규격. */}
           <a
-            href={KBO_SCHEDULE}
+            href={`https://map.kakao.com/link/search/${encodeURIComponent(placeQuery)}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1.5 text-[13px] font-extrabold text-blue-deep hover:brightness-95"
+            aria-label="실제 사진·메뉴 보기"
+            title="지도 앱에서 실제 사진 · 메뉴 보기"
+            onClick={() => track("place_link_clicked", { course_id: courseId, position: stop.position, to: "kakaomap" })}
+            className="grid size-11 place-items-center rounded-full text-ink-2 hover:bg-soft hover:text-ink"
           >
-            오늘 경기 있는지 확인
-            <ExternalLink aria-hidden className="size-3.5" />
+            <ExternalLink aria-hidden className="size-4" />
           </a>
-        ) : null}
-        {/* 그 가게의 실제 사진·메뉴판·후기는 지도 앱에 있다(우리가 긁어 올 수는 없다) → 한 번 탭으로 넘긴다. 카카오맵 공식 링크 규격. */}
-        <a
-          href={`https://map.kakao.com/link/search/${encodeURIComponent(placeQuery)}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => track("place_link_clicked", { course_id: courseId, position: stop.position, to: "kakaomap" })}
-          className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[13px] font-bold text-ink-2 hover:bg-soft hover:text-ink"
-        >
-          실제 사진·메뉴 보기
-          <ExternalLink aria-hidden className="size-3.5" />
-        </a>
+          {stop.place.category === STADIUM ? (
+            <a
+              href={KBO_SCHEDULE}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-1 inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1.5 text-[13px] font-extrabold text-blue-deep hover:brightness-95"
+            >
+              오늘 경기 있는지 확인
+              <ExternalLink aria-hidden className="size-3.5" />
+            </a>
+          ) : null}
+        </div>
         {editable ? (
-          <div className="flex items-center gap-1.5">
-            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1 || !canMoveUp} aria-label={`${place.name} 순서를 앞으로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
+          <div className="flex shrink-0 items-center gap-1">
+            <button type="button" onClick={() => onMove(-1)} disabled={busy || stop.position === 1 || !canMoveUp} aria-label={`${place.name} 순서를 앞으로`} className="grid size-11 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
               <ChevronUp aria-hidden className="size-4" />
             </button>
-            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count || !canMoveDown} aria-label={`${place.name} 순서를 뒤로`} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
+            <button type="button" onClick={() => onMove(1)} disabled={busy || stop.position === count || !canMoveDown} aria-label={`${place.name} 순서를 뒤로`} className="grid size-11 place-items-center rounded-full text-ink-2 hover:bg-soft disabled:opacity-30">
               <ChevronDown aria-hidden className="size-4" />
             </button>
             <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} />

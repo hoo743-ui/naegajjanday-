@@ -7,7 +7,7 @@ import { Maximize2 } from "lucide-react";
 import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
-import { stopColor } from "./colors";
+import { routeColor, stopColor } from "./colors";
 import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
 
 interface LeafletRouteMapProps {
@@ -112,7 +112,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, on
       layout.connectors.forEach((pair) => stroke(pair, 8, "#ffffff", undefined, 0.9));
     });
     layouts.forEach((layout, i) => {
-      const color = stopColor(i + 1, stops.length); // 도착 스톱의 색
+      const color = routeColor();
       stroke(layout.line, 6, color, legs[i]!.routed ? undefined : "1 12"); // 실제 경로가 아니면 점선(곧게 이음)임을 드러낸다
       if (legs[i]!.routed) layout.connectors.forEach((pair) => stroke(pair, 4, color, "1 8"));
       if (layout.chip && legs[i]!.label) {

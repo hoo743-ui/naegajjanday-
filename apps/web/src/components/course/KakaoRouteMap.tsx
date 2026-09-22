@@ -5,7 +5,7 @@ import { Maximize2 } from "lucide-react";
 import type { AccessHint, WalkRoute } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
-import { stopColor } from "./colors";
+import { routeColor, stopColor } from "./colors";
 import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, pinHtml, spreadOverlaps, type LatLngTuple, type Pt } from "./map-shared";
 
 // ── Kakao Maps JS SDK (쓰는 만큼만 타입 선언) ─────────────────
@@ -182,7 +182,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       layout.connectors.forEach((pair) => stroke(pair, 8, "#FFFFFF", "solid", 0.9));
     });
     layouts.forEach((layout, i) => {
-      const color = stopColor(i + 1, stops.length); // 도착 스톱의 색
+      const color = routeColor();
       stroke(layout.line, 6, color, legs[i]!.routed ? "solid" : "shortdot"); // 실제 경로가 아니면 점선(곧게 이음)임을 드러낸다
       if (legs[i]!.routed) layout.connectors.forEach((pair) => stroke(pair, 4, color, "shortdot"));
     });
@@ -206,7 +206,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
 
     layouts.forEach((layout, i) => {
       if (!layout.chip || !legs[i]!.label) return;
-      const el = anchor(legChipHtml(legs[i]!.label, stopColor(i + 1, stops.length), layout.chip.angle));
+      const el = anchor(legChipHtml(legs[i]!.label, routeColor(), layout.chip.angle));
       overlays.push(new maps.CustomOverlay({ position: toCoords(layout.chip), content: el, xAnchor: 0, yAnchor: 0, zIndex: 50 }));
     });
 

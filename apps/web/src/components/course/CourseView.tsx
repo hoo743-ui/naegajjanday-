@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, Check, Clock, RotateCw, Share2, Sparkles, TriangleAlert, Users } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, RotateCw, Share2, SlidersHorizontal, Sparkles, TriangleAlert, Users } from "lucide-react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { JjaniLoader } from "@/components/mascot/JjaniLoader";
@@ -180,6 +180,9 @@ export function CourseView({ id }: { id: string }) {
     }
   };
 
+  // 조건 바꾸기: 지역 · 목적을 채운 채로 위저드로 돌아간다 (역 · 장소 기준 코스는 지역이 없어 목적만)
+  const changeHref = `/plan?${new URLSearchParams({ ...(request.region ? { region: request.region.slug } : {}), purpose: request.purpose.code }).toString()}`;
+
   /** fork: 친구 코스를 같은 조건 그대로 내 코스로 새로 만든다 (지금 장소를 빼지 않는다). 아니면 다른 장소들로 다시 짠다. */
   /** focus: 이 동네 명물을 골라(또는 FOCUS_OFF 로 빼고) 다시 짠다. 안 주면 처음 조건 그대로 */
   /** 이 코스를 만든 조건 그대로. 다시 짜기 · 예산 what-if 가 여기서 필요한 것만 바꿔 보낸다 */
@@ -258,23 +261,28 @@ export function CourseView({ id }: { id: string }) {
           {/* grid-cols-[minmax(0,1fr)]: 칸이 긴 문장·상호만큼 늘어나 모바일에서 본문을 밀어내지 않게 (E2E 가 잡은 21px 넘침) */}
           <div className="mx-auto grid max-w-[640px] grid-cols-[minmax(0,1fr)] gap-4 px-4 pt-7 pb-32 sm:px-6 lg:max-w-none lg:px-7 lg:pt-7 lg:pb-28">
             <header className="grid grid-cols-[minmax(0,1fr)] gap-3">
-              <p className="tabular flex flex-wrap gap-x-2 text-[13px] font-extrabold text-blue-deep">
-                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}${tripDay && request.trip_budget_total ? ` (여행 전체 ${won(request.trip_budget_total)})` : ""}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null].filter(Boolean).join(" · ")}
-              </p>
+              <ul aria-label="이 코스의 조건" className="tabular flex flex-wrap items-center gap-1.5">
+                {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, placeLabel, purposeLabel, `${request.party_size}명`, `예산 ${won(request.budget_total)}${tripDay && request.trip_budget_total ? ` (여행 전체 ${won(request.trip_budget_total)})` : ""}`, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), request.style === "fun" ? "재미 우선" : null]
+                  .filter((c): c is string => Boolean(c))
+                  .map((c) => (
+                    <li key={c} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-[12.5px] font-bold text-ink-2">
+                      {c}
+                    </li>
+                  ))}
+                {readOnly ? null : (
+                  <li>
+                    <Link href={changeHref} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-extrabold text-blue-deep hover:bg-blue-soft">
+                      <SlidersHorizontal aria-hidden className="size-3.5" /> 조건 바꾸기
+                    </Link>
+                  </li>
+                )}
+              </ul>
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>
-              <JjaniBubble mood={mood} title={over ? "괜찮아요, 조금만 더 맞춰 볼까요?" : data.totals.budget_left > 0 ? "짠! 코스 나왔어요" : "짠! 예산에 딱 맞췄어요"} tone="white" size={84} bubbleKey={`${id}-${data.totals.price}`}>
+              <JjaniBubble mood={mood} title={over ? "괜찮아요, 조금만 더 맞춰 볼까요?" : data.totals.budget_left > 0 ? "짠! 코스 나왔어요" : "짠! 예산에 딱 맞췄어요"} tone="white" size={64} bubbleKey={`${id}-${data.totals.price}`}>
                 {data.summary}
               </JjaniBubble>
-              {narrative.text ? (
-                <p className="rounded-card bg-white p-5 text-[15px] leading-[1.75] whitespace-pre-line text-ink-2 shadow-soft" aria-live="polite" aria-busy={narrative.status === "streaming"}>
-                  {narrative.text}
-                  {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
-                </p>
-              ) : narrative.status === "streaming" ? (
-                <p className="skeleton-shimmer h-[68px] rounded-card" aria-label="짠이가 코스 설명을 쓰는 중" />
-              ) : null}
             </header>
 
             {readOnly && viewerKnown ? (
@@ -283,8 +291,6 @@ export function CourseView({ id }: { id: string }) {
                 친구가 짠 코스예요. 아래 버튼으로 같은 조건의 내 코스를 만들면 바꾸고 저장할 수 있어요.
               </p>
             ) : null}
-
-            {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
 
             <AlternativeTabs items={data.siblings} currentId={id} onSelect={selectAlternative} label={tripDay ? "날짜별 코스" : undefined} />
 
@@ -309,22 +315,15 @@ export function CourseView({ id }: { id: string }) {
                 />
               ) : null}
 
-              {/* 남은 돈은 자랑하고 끝낼 숫자가 아니다: 그 돈으로 갈 만한 곳을 권한다 */}
-              <LeftoverCard
-                courseId={id}
-                budgetLeft={data.totals.budget_left}
-                budget={request.budget_total}
-                editable={!readOnly}
-                onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
-              />
+              {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
 
-              <dl className="tabular grid grid-cols-3 gap-2 text-center">
+              <dl className="tabular grid grid-cols-3 divide-x divide-line border-y border-line py-3 text-center">
                 {[
                   { k: "총 소요", v: minutes(data.totals.duration_min) },
                   { k: `${transportLabel(request.transport)} 이동`, v: minutes(data.totals.travel_min) },
                   { k: "이동 거리", v: distance(data.totals.distance_m) },
                 ].map((item) => (
-                  <div key={item.k} className="rounded-2xl bg-white px-2 py-3 shadow-soft">
+                  <div key={item.k} className="px-2">
                     <dt className="text-xs font-bold text-muted-foreground">{item.k}</dt>
                     <dd className="text-base font-extrabold tracking-tight">{item.v}</dd>
                   </div>
@@ -365,6 +364,27 @@ export function CourseView({ id }: { id: string }) {
                 onSwap={onSwap}
                 onMove={onMove}
               />
+
+              {/* 늦게 도착하는 것은 장소 목록 뒤에 둔다: 추천(조회 뒤에 뜬다)과 이야기(스켈레톤 68px → 본문 250px)가 목록 위에
+                  있을 때는, 화면이 뜬 뒤 1초 동안 첫 장소 카드가 613px 아래로 밀렸다(누르려던 버튼이 달아난다). 추천은 "마지막
+                  장소에서 걸어갈 수 있는 곳"이므로 마지막 장소 다음이 제자리이기도 하다 */}
+              <LeftoverCard
+                courseId={id}
+                budgetLeft={data.totals.budget_left}
+                budget={request.budget_total}
+                editable={!readOnly}
+                onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
+              />
+
+              {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글 */}
+              {narrative.text ? (
+                <p className="border-l-2 border-gold pl-4 text-[15px] leading-[1.8] whitespace-pre-line text-ink-2" aria-live="polite" aria-busy={narrative.status === "streaming"}>
+                  {narrative.text}
+                  {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
+                </p>
+              ) : narrative.status === "streaming" ? (
+                <p className="skeleton-shimmer h-[68px] rounded-2xl" aria-label="짠이가 코스 설명을 쓰는 중" />
+              ) : null}
 
               {/* 저장한 내 코스: 다녀온 뒤 별점 하나 → ‘다녀옴’ 표시 + 다음 추천의 취향 학습 */}
               {data.is_saved && !readOnly ? <VisitedCard courseId={id} visited={data.status === "completed"} /> : null}
