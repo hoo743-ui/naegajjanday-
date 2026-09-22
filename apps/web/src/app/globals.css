@@ -751,138 +751,104 @@
   box-shadow: 0 2px 6px rgba(20, 33, 61, 0.25);
 }
 
-/* ── 첫 진입 시퀀스 (components/landing/IntroSequence.tsx, docs/25 §4) ─────────────────────
-   시간표(초): 0.2 금빛 점 · 0.34 가운데 → 선의 시작 · 0.86~1.96 선을 그리며 구른다 · 1.98 절취선 · 2.16 영수증 출력
-   · 2.4 문장 · 2.62 짠이 · 3.4~3.9 걷힘. 자바스크립트 없이도 끝나면 스스로 걷힌다(visibility: hidden). */
-html[data-intro="skip"] .jj-intro {
-  display: none;
+/* ── 모션 언어 (docs/32): 움직이는 것은 돈 · 경로 · 영수증 · 짠이 넷뿐이다 ─────────────────────────
+   경로: 들르는 곳(점)이 차례로 놓이고 그 사이 선이 그려진다. 새 코스 · 새 예산이면 다시 그려진다(마운트될 때마다).
+   속성은 transform · opacity · clip-path 만 — 레이아웃을 흔들지 않는다. */
+.day-route {
+  --t0: 0ms;
+  --step: 90ms;
 }
-.jj-intro {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: clamp(4px, 1.4vw, 16px);
-  padding-inline: 4vw;
-  background-color: var(--paper);
-  animation: jj-intro-out 0.5s var(--motion-in-out) 3.4s forwards;
+.day-route .route-dot {
+  animation: stop-in 0.28s var(--motion-out) both;
+  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step));
 }
-.jj-intro.is-leaving {
-  animation: jj-intro-out 0.26s ease-out forwards;
+.day-route .route-text {
+  animation: quiet-in 0.4s var(--motion-out) both;
+  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step) + 60ms);
 }
-.jj-intro-stage {
-  position: relative;
-  width: min(96vw, 1080px);
+.day-route .route-seg {
+  animation: draw-down 0.5s var(--motion-in-out) both;
+  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step) + 80ms);
 }
-.jj-intro-line {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: jj-draw 1.1s linear 0.86s forwards;
+@media (min-width: 640px) {
+  .day-route .route-seg {
+    animation-name: draw-across;
+  }
 }
-.jj-intro-coin {
-  opacity: 0;
-  animation: jj-coin-life 1.9s linear 0.2s forwards;
+/* 출발점만 아주 느리게 숨 쉰다 (4.8초 한 번) — 오래 보고 있어도 피곤하지 않을 만큼 */
+.day-route .route-dot.is-start {
+  animation:
+    stop-in 0.28s var(--motion-out) both calc(var(--t0)),
+    node-breathe 4.8s ease-in-out calc(var(--t0) + 1.2s) infinite;
 }
-.jj-intro-coin circle,
-.jj-intro-stop {
-  transform-box: fill-box;
-  transform-origin: center;
+
+/* 랜딩 첫 방문의 시퀀스 (약 2.8초, 한 세션에 한 번): 종이 → 오늘의 경로가 그려짐 → 점 넷 → 예산이 세어짐 →
+   영수증이 위에서부터 출력 → 짠이 → 행동. 덮개 화면이 아니라 히어로 자신이 이 순서로 놓인다 — 기다리는 로딩이 아니다.
+   게이트(Hero.tsx HERO_INTRO_GATE)가 첫 페인트 전에 html[data-intro=play] 를 단다. 애니메이션이 없어도 화면은 완성돼 있다. */
+html[data-intro="play"] .hero-intro [data-beat="type"] {
+  animation: quiet-in 0.9s var(--motion-out) 0.12s both;
 }
-.jj-intro-coin circle {
-  animation: jj-pop 0.32s var(--motion-spring) 0.2s both;
+html[data-intro="play"] .hero-intro .day-route {
+  --t0: 420ms;
+  --step: 170ms;
 }
-.jj-intro-stop {
-  opacity: 0;
-  animation: jj-pop 0.3s var(--motion-spring) both;
+html[data-intro="play"] .hero-intro [data-beat="money"] {
+  animation: quiet-in 0.6s var(--motion-out) 1.1s both;
 }
-.jj-intro-hole,
-.jj-intro-row {
-  opacity: 0;
-  animation: jj-fade 0.3s ease-out both;
+html[data-intro="play"] .hero-intro [data-beat="receipt"] {
+  animation: print-down 0.8s var(--motion-in-out) 1.65s both;
 }
-.jj-intro-wordmark {
-  font-family: var(--font-jua), "Pretendard Variable", sans-serif;
-  font-size: 23px;
-  fill: var(--ink);
+html[data-intro="play"] .hero-intro [data-beat="jjani"] {
+  animation: quiet-in 0.5s var(--motion-out) 2.25s both;
 }
-.jj-intro-item {
-  font-family: "Pretendard Variable", Pretendard, sans-serif;
-  font-size: 16px;
-  font-weight: 650;
-  fill: var(--ink-2);
+html[data-intro="play"] .hero-intro [data-beat="act"] {
+  animation: quiet-in 0.5s var(--motion-out) 2.35s both;
 }
-.jj-intro-item.is-price {
-  font-weight: 780;
-  fill: var(--ink);
-}
-.jj-intro-left-label {
-  font-family: "Pretendard Variable", Pretendard, sans-serif;
-  font-size: 13px;
-  font-weight: 780;
-  fill: var(--gold-ink);
-}
-.jj-intro-left {
-  font-family: "Pretendard Variable", Pretendard, sans-serif;
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  fill: var(--gold-ink);
-}
-.jj-intro-jjani {
-  position: absolute;
-  opacity: 0;
-  animation: jj-jjani 0.5s var(--motion-spring) 2.62s both;
-}
-.jj-intro-copy {
-  text-align: center;
-  font-size: clamp(24px, 3.4vw, 42px);
-  font-weight: 700;
-  line-height: 1.32;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  opacity: 0;
-  animation: jj-rise 0.6s var(--motion-out) 2.4s both;
-}
-@keyframes jj-intro-out {
-  to {
+@keyframes quiet-in {
+  from {
     opacity: 0;
-    visibility: hidden;
+    transform: translateY(8px);
   }
 }
-@keyframes jj-draw {
-  to {
-    stroke-dashoffset: 0;
+@keyframes stop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
   }
 }
-@keyframes jj-coin-life {
-  0% { opacity: 0; }
-  6% { opacity: 1; }
-  92% { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes draw-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
 }
-@keyframes jj-pop {
-  from { opacity: 0; transform: scale(0); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes draw-across {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
 }
-@keyframes jj-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* 종이가 위에서 아래로 나온다: 잘린 채로 조금 내려오며 펼쳐진다 */
+@keyframes print-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-6px);
+  }
 }
-@keyframes jj-rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes jj-jjani {
-  from { opacity: 0; transform: translateY(10px) scale(0.6); }
-  to { opacity: 1; transform: none; }
+@keyframes node-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 25, 46, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(16, 25, 46, 0);
+  }
 }
 
 /* 모션 최소화: CSS 애니메이션은 여기서, JS(GSAP/Motion)는 usePrefersReducedMotion 으로 끈다 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    /* 지연도 없앤다: 순서대로 놓이는 장면(경로 · 랜딩)이 지연 동안 투명하게 남지 않게 */
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
