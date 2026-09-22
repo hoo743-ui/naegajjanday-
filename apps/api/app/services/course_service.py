@@ -86,7 +86,7 @@ from app.infra.db.models import Course, CourseFeedback, CourseStop, Purpose, Rec
 from app.infra.tagging import get_tag_rules
 from app.repositories.config_repo import SqlConfigRepository
 from app.repositories.course_repo import OWNED_STATUSES, REPLACED, SqlCourseRepository
-from app.repositories.place_repo import SqlPlaceRepository
+from app.repositories.place_repo import CandidateReads, SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.repositories.user_repo import SqlUserRepository
 from app.schemas import course as dto
@@ -129,6 +129,7 @@ class CourseService:
         self._regions = SqlRegionRepository(session)
         self._config = SqlConfigRepository(session)
         self._places = SqlPlaceRepository(session)
+        self._reads: CandidateReads | None = None  # the candidate reads of the plan under way (see `_plan`)
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -140,10 +141,16 @@ class CourseService:
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
         days = await self._city_days(req)
-        if req.nights > 0:
-            planned = await self._plan_trip(req, user, days)
-        else:
-            planned = await self._plan_day(req, user, days[0] if days else None)
+        # one plan asks for the same candidates again and again (rescale passes, the v2 structure
+        # alternative, each day of a trip): read once, per plan only
+        self._reads = CandidateReads(self._places)
+        try:
+            if req.nights > 0:
+                planned = await self._plan_trip(req, user, days)
+            else:
+                planned = await self._plan_day(req, user, days[0] if days else None)
+        finally:
+            self._reads = None
         await self._note_missing_extras(req, planned[3], planned[5])
         return planned
 
@@ -467,7 +474,7 @@ class CourseService:
                 templates = with_role(templates, entry)
                 if entry.get("category"):
                     ctx.wanted_categories = (*ctx.wanted_categories, str(entry["category"]))
-        engine = RecommendationEngine(self._places, self._travel)
+        engine = RecommendationEngine(self._reads or self._places, self._travel)
         try:
             out = await engine.generate(ctx, templates, profile)
         except BudgetTooLowError as exc:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
+from copy import copy
 from datetime import date, time
 from typing import Any
 
@@ -136,13 +137,14 @@ class SqlPlaceRepository:
         self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
     ) -> list[PlaceCandidate]:
         rules = get_tag_rules()
+        # the three reads pick rows by id only; the chosen places are then loaded once, with everything
+        # the engine needs (the reads overlap, and each eager load was a handful of queries of its own)
         base = (
-            select(Place, PlaceStats.recommend_count)
+            select(Place.id, Place.lat, Place.lng, Place.name, PlaceStats.recommend_count)
             .join(Category, Category.id == Place.category_id)
             .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
             .where(Place.status == "approved", Category.course_role == role)
             .where(within(Place, origin, radius_m, self._dialect))
-            .options(*FULL_LOAD)
         )
         near = nearest_first(Place, origin)
         vouched = select(PlaceTag.place_id).join(Tag, Tag.id == PlaceTag.tag_id)
@@ -158,24 +160,30 @@ class SqlPlaceRepository:
             base.order_by(near, Place.id).limit(CORE_LIMIT),
             base.order_by(shuffled, Place.id).limit(SPREAD_LIMIT),
         )
-        seen: set[int] = set()
-        rows = []
+        picked: dict[int, int] = {}  # place id → recommend count, in the order the reads found them
         for stmt in reads:
-            for row in (await self._s.execute(stmt)).all():
-                if row[0].id not in seen:
-                    seen.add(row[0].id)
-                    rows.append(row)
+            for place_id, lat, lng, name, recommend_count in (await self._s.execute(stmt)).all():
+                if place_id in picked or haversine_m(origin, GeoPoint(lat, lng)) > radius_m:
+                    continue
+                if rules.is_unlisted(name):  # a company name, not a sign anyone can find
+                    continue
+                picked[place_id] = recommend_count or 0
+        loaded = (
+            {
+                p.id: p
+                for p in (
+                    await self._s.scalars(select(Place).where(Place.id.in_(list(picked))).options(*FULL_LOAD))
+                ).all()
+            }
+            if picked
+            else {}
+        )
         out: list[PlaceCandidate] = []
         exposure: list[tuple[int, PlaceCandidate]] = []
-        rules = get_tag_rules()
-        for place, recommend_count in rows:
-            if haversine_m(origin, GeoPoint(place.lat, place.lng)) > radius_m:
-                continue
-            if rules.is_unlisted(place.name):  # a company name, not a sign anyone can find
-                continue
-            cand = to_candidate(place)
+        for place_id, recommend_count in picked.items():
+            cand = to_candidate(loaded[place_id])
             out.append(cand)
-            exposure.append((recommend_count or 0, cand))
+            exposure.append((recommend_count, cand))
         if len(exposure) >= OVEREXPOSED_MIN_POOL:  # exploration: damp the most-exposed 5 %
             exposure.sort(key=lambda t: -t[0])
             for count, cand in exposure[: max(1, int(len(exposure) * OVEREXPOSED_TOP_RATIO))]:
@@ -416,6 +424,56 @@ class SqlPlaceRepository:
 
     async def place_tags(self, place_id: int) -> list[PlaceTag]:
         return list((await self._s.scalars(select(PlaceTag).where(PlaceTag.place_id == place_id))).all())
+
+
+class CandidateReads:
+    """The candidate reads of one plan, each done once (docs/29 "남은 것" · latency).
+
+    Planning one request asks the same questions many times: every rescale pass and the v2 structure
+    alternative re-collect the pools, and each day of a trip around the same neighbourhood asks again.
+    Loading and converting the rows was most of a request. A plan's reads are remembered here, keyed on
+    everything that shapes the answer; the date only where it matters (events on ATTRACTION/CULTURE).
+
+    Every call hands out copies: the engine marks candidates per pass (buzz, local_score, local_word), and
+    a copy keeps each pass exactly as it was when every read was fresh. Live only for one plan: nothing is
+    written in between, so the answers cannot go stale."""
+
+    def __init__(self, repo: SqlPlaceRepository) -> None:
+        self._repo = repo
+        self._seen: dict[tuple[Any, ...], list[PlaceCandidate]] = {}
+
+    async def fetch(
+        self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
+    ) -> list[PlaceCandidate]:
+        day = on_date if role in EVENT_ROLES else None
+        key = ("fetch", role, origin, radius_m, day, tuple(name_words))
+        found = self._seen.get(key)
+        if found is None:
+            found = self._seen[key] = await self._repo.fetch(role, origin, radius_m, on_date, name_words)
+        return [copy(c) for c in found]
+
+    async def fetch_standouts(
+        self,
+        role: str,
+        origin: GeoPoint,
+        radius_m: float,
+        *,
+        min_popularity: float,
+        name_words: Sequence[str] = (),
+        place_ids: Sequence[int] = (),
+    ) -> list[PlaceCandidate]:
+        key = ("standouts", role, origin, radius_m, min_popularity, tuple(name_words), tuple(place_ids))
+        found = self._seen.get(key)
+        if found is None:
+            found = self._seen[key] = await self._repo.fetch_standouts(
+                role,
+                origin,
+                radius_m,
+                min_popularity=min_popularity,
+                name_words=name_words,
+                place_ids=place_ids,
+            )
+        return [copy(c) for c in found]
 
 
 def _escape_like(q: str) -> str:
