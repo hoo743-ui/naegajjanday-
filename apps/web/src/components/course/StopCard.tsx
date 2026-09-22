@@ -84,24 +84,24 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         <div className="photo-edge relative -mx-4 -mt-4 mb-4 aspect-[16/9] overflow-hidden sm:-mx-5 sm:-mt-5">
           <Image src={place.thumbnail_url} alt="" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
-          {credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95">{credit}</span> : null}
+          {credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span> : null}
         </div>
       ) : null}
 
       <div className="flex items-start gap-3.5">
-        <span aria-hidden className={cn("tabular mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-sm font-extrabold text-white transition-colors duration-300", active ? "bg-blue-deep" : "bg-ink")}>
+        <span aria-hidden className={cn("tabular mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-body-sm font-extrabold text-white transition-colors duration-300", active ? "bg-blue-deep" : "bg-ink")}>
           {stop.position}
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="tabular flex flex-wrap items-center gap-x-2 text-xs font-extrabold text-blue-deep">
+          <p className="tabular flex flex-wrap items-center gap-x-2 text-caption font-extrabold text-blue-deep">
             <span>{roleLabel(stop.role)}</span>
             <span className="inline-flex items-center gap-1 text-muted-foreground">
               <Clock aria-hidden className="size-3" />
               {clock(stop.arrive_at)} – {clock(stop.leave_at)}
             </span>
           </p>
-          <h3 className="truncate text-[17px] font-extrabold tracking-tight sm:text-lg">
+          <h3 className="truncate text-body-lg font-semibold">
             {/* 이름을 누르면 우리가 가진 그 가게의 정보(조사된 메뉴 가격 · 사진 · 영업시간 · 개업 연도)를 연다 */}
             {stop.place.kind === "event" ? (
               place.name
@@ -111,24 +111,24 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               </button>
             )}
           </h3>
-          <p className="truncate text-[13px] text-muted-foreground">
+          <p className="truncate text-body-sm text-muted-foreground">
             {place.category_name ?? place.category}
             {place.address ? ` · ${place.address}` : ""}
           </p>
         </div>
 
         {/* 금액: 카드에서 가장 큰 글자 */}
-        <p className="tabular shrink-0 text-right text-xl leading-tight font-extrabold tracking-tight">
+        <p className="money shrink-0 text-right text-price-sm">
           {priceUnknown ? (
-            <span className="text-[13px] font-bold text-muted-foreground">가격 정보 없음</span>
+            <span className="text-body-sm font-semibold text-muted-foreground">가격 정보 없음</span>
           ) : (
             <>
               {free ? "0원" : won(stop.est_price)}
-              <small className="mt-0.5 block text-[11.5px] font-bold tracking-normal text-muted-foreground">
+              <small className="mt-0.5 block text-caption font-semibold tracking-normal text-muted-foreground">
                 {free ? "무료" : partySize > 1 ? (place.price_per_person !== null ? `1인 ${won(place.price_per_person)}` : `${partySize}명 합계`) : "1인"}
               </small>
               {!free && place.price_is_estimated ? (
-                <span className="mt-1 inline-block rounded-md bg-gold-soft px-1.5 py-0.5 text-[11px] font-bold tracking-normal text-gold-ink" title="이 가게의 메뉴판 가격이 아니라, 같은 지역·같은 업종의 1인 평균가로 계산한 금액이에요">
+                <span className="mt-1 inline-block rounded-md bg-gold-soft px-1.5 py-0.5 text-caption font-semibold tracking-normal text-gold-ink" title="이 가게의 메뉴판 가격이 아니라, 같은 지역·같은 업종의 1인 평균가로 계산한 금액이에요">
                   평균가
                 </span>
               ) : null}
@@ -138,7 +138,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       </div>
 
       {place.rating !== null || stop.congestion || place.tags.length > 0 || (!place.thumbnail_url && example) ? (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-bold">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-caption font-semibold">
           {!place.thumbnail_url && example ? (
             // 그 가게의 실제 사진이 아니라 업종 대표 이미지임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
             <a
@@ -151,7 +151,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               <span className="relative size-7 shrink-0 overflow-hidden rounded-full">
                 <Image src={example.url} alt="" fill sizes="28px" className="object-cover" unoptimized={!canOptimize(example.url)} />
               </span>
-              <span className="max-w-[210px] truncate text-[11px]">
+              <span className="max-w-[210px] truncate text-caption">
                 예시 사진 · © {example.author} · {example.license}
               </span>
             </a>
@@ -180,7 +180,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       ) : null}
 
       {/* 이유는 상자가 아니라 본문이다: 왼쪽의 가는 선 하나로 "짠이의 말"임을 표시한다 */}
-      {stop.reason ? <p className="mt-3 border-l-2 border-line pl-3 text-[13.5px] leading-relaxed font-medium text-ink-2">{stop.reason}</p> : null}
+      {stop.reason ? <p className="mt-3 border-l-2 border-line pl-3 text-body-sm font-medium text-ink-2">{stop.reason}</p> : null}
 
       {/* 도구는 한 줄: 왼쪽은 읽을 것(왜 여기 · 거리뷰 · 지도 앱), 오른쪽은 바꿀 것(순서 · 바꾸기) */}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-2.5">
@@ -193,7 +193,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
               setOpen((v) => !v);
             }}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] font-extrabold text-blue-deep hover:bg-blue-soft"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft"
           >
             왜 여기?
             <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
@@ -230,7 +230,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               href={KBO_SCHEDULE}
               target="_blank"
               rel="noreferrer"
-              className="ml-1 inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1.5 text-[13px] font-extrabold text-blue-deep hover:brightness-95"
+              className="ml-1 inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1.5 text-body-sm font-semibold text-blue-deep hover:brightness-95"
             >
               오늘 경기 있는지 확인
               <ExternalLink aria-hidden className="size-3.5" />

@@ -63,7 +63,7 @@ function NavList({ pathname }: { pathname: string }) {
     <nav aria-label="관리자 메뉴" className="grid gap-5">
       {NAV.map((group) => (
         <div key={group.title}>
-          <p className="mb-1.5 px-3 text-xs font-extrabold tracking-wide text-muted-foreground">{group.title}</p>
+          <p className="mb-1.5 px-3 text-caption font-semibold tracking-wide text-muted-foreground">{group.title}</p>
           <ul className="grid gap-0.5">
             {group.items.map(({ href, label, icon: Icon }) => {
               const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
@@ -73,7 +73,7 @@ function NavList({ pathname }: { pathname: string }) {
                     href={href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[15px] font-bold transition-colors",
+                      "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-body font-bold transition-colors",
                       active ? "bg-blue-soft text-blue-deep" : "text-ink-2 hover:bg-soft",
                     )}
                   >
@@ -92,10 +92,10 @@ function NavList({ pathname }: { pathname: string }) {
 
 function Brand() {
   return (
-    <Link href="/admin" className="flex items-center gap-2 font-round text-xl leading-none" aria-label="내가짠데이 관리자 홈">
+    <Link href="/admin" className="flex items-center gap-2 font-round text-h3 leading-none" aria-label="내가짠데이 관리자 홈">
       <Jjani mood="hi" size={32} animated={false} decorative />
       내가짠데이
-      <span className="rounded-md bg-ink px-1.5 py-0.5 font-sans text-[10px] font-extrabold tracking-wider text-white">ADMIN</span>
+      <span className="rounded-md bg-ink px-1.5 py-0.5 font-sans text-caption font-semibold tracking-wider text-white">ADMIN</span>
     </Link>
   );
 }
@@ -147,8 +147,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const account = (
     <div className="flex items-center justify-between gap-2 rounded-2xl bg-soft px-3 py-2.5">
       <div className="min-w-0">
-        <p className="truncate text-sm font-extrabold text-ink">{me?.nickname}</p>
-        <p className="text-xs font-bold text-muted-foreground">{me?.role === "admin" ? "관리자" : "운영자"}</p>
+        <p className="truncate text-body-sm font-semibold text-ink">{me?.nickname}</p>
+        <p className="text-caption font-semibold text-muted-foreground">{me?.role === "admin" ? "관리자" : "운영자"}</p>
       </div>
       <Button variant="ghost" size="icon-sm" aria-label="로그아웃" onClick={() => void logout()}>
         <LogOut aria-hidden />
@@ -166,7 +166,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <NavList pathname={pathname} />
         <div className="mt-auto grid gap-2">
           {account}
-          <Link href="/" className="px-3 text-xs font-bold text-muted-foreground hover:text-ink">
+          <Link href="/" className="px-3 text-caption font-semibold text-muted-foreground hover:text-ink">
             서비스 화면으로 돌아가기
           </Link>
         </div>
@@ -184,7 +184,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] gap-5 overflow-y-auto px-4 py-5">
               <SheetHeader className="p-0 px-2">
-                <SheetTitle className="font-round text-xl font-normal">관리자 메뉴</SheetTitle>
+                <SheetTitle className="text-h3 font-bold">관리자 메뉴</SheetTitle>
                 <SheetDescription className="sr-only">관리자 화면 사이를 이동합니다</SheetDescription>
               </SheetHeader>
               <NavList pathname={pathname} />
@@ -211,8 +211,8 @@ export function AdminPageHeader({ title, description, actions }: AdminPageHeader
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-extrabold text-ink sm:text-[28px]">{title}</h1>
-        {description ? <p className="mt-1 max-w-2xl text-[15px] text-muted-foreground">{description}</p> : null}
+        <h1 className="text-h2 font-extrabold text-ink sm:text-h1">{title}</h1>
+        {description ? <p className="mt-1 max-w-2xl text-body text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -237,8 +237,8 @@ export function Panel({
       {title || actions ? (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
           <div>
-            {title ? <h2 className="text-lg font-extrabold text-ink">{title}</h2> : null}
-            {description ? <p className="mt-0.5 text-sm text-muted-foreground">{description}</p> : null}
+            {title ? <h2 className="text-body-lg font-extrabold text-ink">{title}</h2> : null}
+            {description ? <p className="mt-0.5 text-body-sm text-muted-foreground">{description}</p> : null}
           </div>
           {actions}
         </div>

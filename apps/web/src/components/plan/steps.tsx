@@ -26,7 +26,7 @@ function FieldError({ name }: { name: keyof PlanValues }) {
   const { formState } = useFormContext<PlanValues>();
   const message = formState.errors[name]?.message;
   return message ? (
-    <p role="alert" className="mt-3 text-sm font-bold text-danger">
+    <p role="alert" className="mt-3 text-body-sm font-semibold text-danger">
       {message}
     </p>
   ) : null;
@@ -57,10 +57,10 @@ export function RegionStep() {
     <div className="grid gap-4">
       {before.length > 0 ? (
         <section aria-label="들를 동네 순서" className="rounded-card bg-white p-5 shadow-soft">
-          <h3 className="text-sm font-extrabold text-muted-foreground">이 순서로 들러요</h3>
+          <h3 className="text-body-sm font-semibold text-muted-foreground">이 순서로 들러요</h3>
           <ol className="mt-2.5 flex flex-wrap items-center gap-2">
             {before.map((slug, i) => (
-              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-blue-deep bg-blue-soft py-1.5 pr-1.5 pl-3 text-[14px] font-bold text-blue-deep">
+              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-blue-deep bg-blue-soft py-1.5 pr-1.5 pl-3 text-body-sm font-semibold text-blue-deep">
                 <span className="tabular">{i + 1}.</span> <RegionName slug={slug} />
                 <button
                   type="button"
@@ -72,16 +72,16 @@ export function RegionStep() {
                 </button>
               </li>
             ))}
-            <li className="text-[14px] font-bold text-ink-2">
+            <li className="text-body-sm font-semibold text-ink-2">
               <span className="tabular">{before.length + 1}.</span> {selected ? selectedName : "아래에서 다음 동네를 골라 주세요"}
             </li>
           </ol>
-          <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted-foreground">예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네 사이는 대중교통(또는 고른 이동수단)으로 이어요.</p>
+          <p className="mt-2.5 text-caption text-muted-foreground">예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네 사이는 대중교통(또는 고른 이동수단)으로 이어요.</p>
         </section>
       ) : null}
       <RegionPicker value={selected} onChange={(next) => setValue("region", next, { shouldValidate: true, shouldDirty: true })} />
       {canAdd ? (
-        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-[15px] font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
+        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-body font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
           <Plus aria-hidden className="size-4" />
           {selectedName}에 이어 다른 동네도 들르기
         </button>
@@ -134,9 +134,9 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
                 <PurposeIcon icon={p.icon} className="size-6" />
               </span>
               <span className="min-w-0 flex-1">
-                <b className="block text-[17px] font-extrabold tracking-tight">{p.name}</b>
-                {p.description ? <span className="block text-[13.5px] text-muted-foreground">{p.description}</span> : null}
-                <span className="tabular mt-1 block text-xs font-extrabold text-blue-deep">
+                <b className="block text-body-lg font-extrabold">{p.name}</b>
+                {p.description ? <span className="block text-body-sm text-muted-foreground">{p.description}</span> : null}
+                <span className="tabular mt-1 block text-caption font-extrabold text-blue-deep">
                   1인 {wonCompact(p.budget_range.min)} ~ {wonCompact(p.budget_range.max)}
                 </span>
               </span>
@@ -147,8 +147,8 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
       <FieldError name="purpose" />
       {selected && purposes.data.items.length > 1 ? (
         <div className="mt-5 rounded-card bg-white p-5 shadow-soft" role="group" aria-label="함께 고를 목적">
-          <h3 className="text-sm font-extrabold text-muted-foreground">다른 목적도 겹치나요? (선택)</h3>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
+          <h3 className="text-body-sm font-semibold text-muted-foreground">다른 목적도 겹치나요? (선택)</h3>
+          <p className="mt-1 text-body-sm text-ink-2">
             위에서 고른 것이 하루의 틀이 되고, 여기서 더 고른 것까지 모두 맞는 곳을 찾아요. 예를 들어 가족이 함께면 술집은 빠져요.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -165,7 +165,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
                     disabled={full}
                     onClick={() => setValue("purposes_extra", on ? extra.filter((c) => c !== p.code) : [...extra, p.code], { shouldDirty: true })}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[14px] font-bold disabled:opacity-40",
+                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-body-sm font-semibold disabled:opacity-40",
                       on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep",
                     )}
                   >
@@ -195,7 +195,7 @@ function NightsCard() {
   const nights = useWatch<PlanValues, "nights">({ name: "nights" });
   return (
     <section aria-labelledby="nights-title" className="rounded-card bg-white p-6 shadow-soft">
-      <h3 id="nights-title" className="text-sm font-extrabold text-muted-foreground">며칠 일정인가요?</h3>
+      <h3 id="nights-title" className="text-body-sm font-semibold text-muted-foreground">며칠 일정인가요?</h3>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="일정 길이">
         {NIGHTS.map((o) => (
           <button
@@ -204,14 +204,14 @@ function NightsCard() {
             role="radio"
             aria-checked={nights === o.value}
             onClick={() => setValue("nights", o.value, { shouldDirty: true })}
-            className={cn("rounded-2xl border-2 px-3 py-3 text-[15px] font-extrabold", nights === o.value ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line bg-white text-ink-2 hover:border-blue-deep")}
+            className={cn("rounded-2xl border-2 px-3 py-3 text-body font-extrabold", nights === o.value ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line bg-white text-ink-2 hover:border-blue-deep")}
           >
             {o.label}
           </button>
         ))}
       </div>
       {nights > 0 ? (
-        <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
+        <p className="mt-3 text-body-sm text-ink-2">
           위 예산을 <b>{nights + 1}일</b>에 나눠 써요(첫날은 만나는 시각부터). 남은 돈은 다음 날로 넘기고, 갔던 곳은 다시 넣지 않아요. 숙박비는 예산에 들어 있지 않아요 — 코스 화면에서 그날 동선 끝 근처의 숙소를 보여 드릴게요.
         </p>
       ) : null}
@@ -253,21 +253,21 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
   return (
     <div className="grid gap-5">
       <section aria-labelledby="party-label" className="rounded-card bg-white p-6 shadow-soft">
-        <h3 id="party-label" className="mb-3 text-sm font-extrabold text-muted-foreground">
+        <h3 id="party-label" className="mb-3 text-body-sm font-semibold text-muted-foreground">
           몇 명이서?
         </h3>
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => setParty(party - 1)} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
             <Minus aria-hidden className="size-5" />
           </button>
-          <output aria-live="polite" className="tabular min-w-[64px] text-center text-2xl font-extrabold">
+          <output aria-live="polite" className="tabular min-w-[64px] text-center text-h2 font-extrabold">
             {party}명
           </output>
           <button type="button" onClick={() => setParty(party + 1)} disabled={party >= maxParty} aria-label="인원 늘리기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
             <Plus aria-hidden className="size-5" />
           </button>
           {purpose?.max_party_size && party >= maxParty ? (
-            <span className="text-[13px] font-bold text-muted-foreground">
+            <span className="text-body-sm font-semibold text-muted-foreground">
               {purpose.name}은(는) {maxParty}명까지예요
             </span>
           ) : null}
@@ -276,9 +276,9 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       </section>
 
       <section className="rounded-card bg-white p-6 shadow-soft">
-        <label htmlFor={sliderId} className="mb-4 flex items-baseline justify-between text-sm font-extrabold text-muted-foreground">
+        <label htmlFor={sliderId} className="mb-4 flex items-baseline justify-between text-body-sm font-semibold text-muted-foreground">
           총 예산
-          <b className="tabular text-[28px] leading-none font-extrabold tracking-tight text-ink">{won(budget)}</b>
+          <b className="money text-price text-ink">{won(budget)}</b>
         </label>
         <input
           id={sliderId}
@@ -291,7 +291,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           onChange={(e) => setBudget(Number(e.target.value))}
           aria-valuetext={`${won(budget)}, 1인당 ${won(perPerson)}`}
         />
-        <div className="tabular mt-2 flex justify-between text-xs font-bold text-muted-foreground">
+        <div className="tabular mt-2 flex justify-between text-caption font-bold text-muted-foreground">
           <span>{wonCompact(sliderMin)}</span>
           <span>{wonCompact(sliderMax)}</span>
         </div>
@@ -308,7 +308,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
                   aria-pressed={on}
                   onClick={() => setBudget(amount)}
                   className={cn(
-                    "tabular rounded-full px-4 py-2.5 text-sm font-extrabold transition-colors",
+                    "tabular rounded-full px-4 py-2.5 text-body-sm font-extrabold transition-colors",
                     on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
                   )}
                 >
@@ -319,9 +319,9 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           </div>
         ) : null}
 
-        <p className="tabular mt-5 flex items-baseline justify-between rounded-2xl bg-soft px-4 py-3 text-sm font-bold text-ink-2" aria-live="polite">
+        <p className="tabular mt-5 flex items-baseline justify-between rounded-2xl bg-soft px-4 py-3 text-body-sm font-bold text-ink-2" aria-live="polite">
           1인당
-          <b className="text-xl font-extrabold tracking-tight text-blue-deep">{won(perPerson)}</b>
+          <b className="money text-price-sm text-blue-deep">{won(perPerson)}</b>
         </p>
         <FieldError name="budget_total" />
       </section>
@@ -329,9 +329,9 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       {/* 돈을 움직이면 하루가 어떻게 달라지는지 그 자리에서 보여 준다 (docs/19 — 영수증은 서비스의 시그니처) */}
       {/* 데스크톱은 옆의 진행 영수증이 이 예시를 이어서 찍는다 */}
       <details className="group rounded-card bg-white p-5 shadow-soft lg:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold text-ink-2 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink-2 [&::-webkit-details-marker]:hidden">
           이 예산이면 이런 하루예요
-          <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-xs text-gold-ink">예시 · 열어 보기</span>
+          <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-caption text-gold-ink">예시 · 열어 보기</span>
         </summary>
         <Receipt
           className="mx-auto mt-4 max-w-[380px]"
@@ -409,7 +409,7 @@ export function TasteStep() {
   return (
     <div className="grid gap-5">
       <fieldset className="rounded-card bg-white p-6 shadow-soft">
-        <legend className="float-left mb-3 w-full text-sm font-extrabold text-muted-foreground">어떤 코스가 좋아요?</legend>
+        <legend className="float-left mb-3 w-full text-body-sm font-semibold text-muted-foreground">어떤 코스가 좋아요?</legend>
         <div className="clear-both grid gap-2.5 sm:grid-cols-2">
           {STYLES.map((s) => (
             <label key={s.value} className="relative block">
@@ -417,8 +417,8 @@ export function TasteStep() {
               <span className={cn(optionCard, "bg-soft shadow-none")}>
                 <s.icon aria-hidden className="size-7 shrink-0 text-blue-deep" />
                 <span className="min-w-0">
-                  <b className="block text-[15px] font-extrabold">{s.label}</b>
-                  <span className="block text-[12.5px] text-muted-foreground">{s.hint}</span>
+                  <b className="block text-body font-extrabold">{s.label}</b>
+                  <span className="block text-caption text-muted-foreground">{s.hint}</span>
                 </span>
               </span>
             </label>
@@ -428,44 +428,44 @@ export function TasteStep() {
 
       <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
         <input type="checkbox" className="peer sr-only" checked={rainy} onChange={(e) => setValue("rainy", e.target.checked, { shouldDirty: true })} />
-        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", rainy ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", rainy ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
         </span>
         <CloudRain aria-hidden className="size-6 shrink-0 text-blue-deep" />
         <span className="min-w-0">
-          <b className="block text-[15px] font-extrabold">비 오는 날이에요</b>
-          <span className="block text-[12.5px] text-muted-foreground">실내 위주로 짜요. 골목 산책 대신 전시 · 실내 놀거리를 넣고, 야외 자리는 빼요. (덥거나 추운 날에도 좋아요)</span>
+          <b className="block text-body font-extrabold">비 오는 날이에요</b>
+          <span className="block text-caption text-muted-foreground">실내 위주로 짜요. 골목 산책 대신 전시 · 실내 놀거리를 넣고, 야외 자리는 빼요. (덥거나 추운 날에도 좋아요)</span>
         </span>
       </label>
 
       <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
         <input type="checkbox" className="peer sr-only" checked={withBar} onChange={(e) => setValue("with_bar", e.target.checked, { shouldDirty: true })} />
-        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBar ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBar ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
         </span>
         <Wine aria-hidden className="size-6 shrink-0 text-blue-deep" />
         <span className="min-w-0">
-          <b className="block text-[15px] font-extrabold">술 한잔 포함</b>
-          <span className="block text-[12.5px] text-muted-foreground">저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 그만큼 떼어 둘게요.</span>
+          <b className="block text-body font-extrabold">술 한잔 포함</b>
+          <span className="block text-caption text-muted-foreground">저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 그만큼 떼어 둘게요.</span>
         </span>
       </label>
 
       <label className="flex cursor-pointer items-center gap-3.5 rounded-card bg-white p-5 shadow-soft">
         <input type="checkbox" className="peer sr-only" checked={withBaseball} onChange={(e) => setValue("with_baseball", e.target.checked, { shouldDirty: true })} />
-        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-[13px] font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBaseball ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+        <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border-2 text-body-sm font-black peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", withBaseball ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
           ✓
         </span>
         <Trophy aria-hidden className="size-6 shrink-0 text-blue-deep" />
         <span className="min-w-0">
-          <b className="block text-[15px] font-extrabold">야구 보러 가요</b>
-          <span className="block text-[12.5px] text-muted-foreground">고른 동네에 프로야구 1군 구장이 있으면 코스에 넣어요. 경기 일정은 코스 화면의 링크로 직접 확인해 주세요.</span>
+          <b className="block text-body font-extrabold">야구 보러 가요</b>
+          <span className="block text-caption text-muted-foreground">고른 동네에 프로야구 1군 구장이 있으면 코스에 넣어요. 경기 일정은 코스 화면의 링크로 직접 확인해 주세요.</span>
         </span>
       </label>
 
       {specialties.length > 0 ? (
         <fieldset className="rounded-card bg-white p-6 shadow-soft">
-          <legend className="float-left mb-1 w-full text-sm font-extrabold text-muted-foreground">{local.data?.region}에 왔다면</legend>
-          <p className="clear-both mb-3 text-[13px] leading-relaxed text-ink-2">이 동네 간판에 유독 많이 걸린 말이에요. 하나 고르면 예산 안에서 그 집을 꼭 넣어 드려요.</p>
+          <legend className="float-left mb-1 w-full text-body-sm font-semibold text-muted-foreground">{local.data?.region}에 왔다면</legend>
+          <p className="clear-both mb-3 text-body-sm text-ink-2">이 동네 간판에 유독 많이 걸린 말이에요. 하나 고르면 예산 안에서 그 집을 꼭 넣어 드려요.</p>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="꼭 넣을 동네 명물">
             {[{ value: "", label: "짠이가 알아서", hint: "" }, ...specialties.map((s) => ({ value: s.word, label: s.word, hint: `${s.count}곳 · 전국의 ${Math.round(s.lift)}배` })), { value: FOCUS_OFF, label: "상관없어요", hint: "" }].map((o) => {
               const on = focus === o.value;
@@ -476,10 +476,10 @@ export function TasteStep() {
                   role="radio"
                   aria-checked={on}
                   onClick={() => setValue("focus", o.value, { shouldDirty: true })}
-                  className={cn("inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[14px] font-bold", on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep")}
+                  className={cn("inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-body-sm font-semibold", on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep")}
                 >
                   {o.label}
-                  {o.hint ? <span className={cn("tabular text-[12px] font-semibold", on ? "text-white/85" : "text-muted-foreground")}>{o.hint}</span> : null}
+                  {o.hint ? <span className={cn("tabular text-caption font-semibold", on ? "text-white/85" : "text-muted-foreground")}>{o.hint}</span> : null}
                 </button>
               );
             })}
@@ -488,8 +488,8 @@ export function TasteStep() {
       ) : null}
 
       <section className="rounded-card bg-white p-6 shadow-soft">
-        <h3 className="text-sm font-extrabold text-muted-foreground">끌리는 분위기 (선택)</h3>
-        <p className="mt-1 mb-4 text-[13px] text-muted-foreground">
+        <h3 className="text-body-sm font-semibold text-muted-foreground">끌리는 분위기 (선택)</h3>
+        <p className="mt-1 mb-4 text-body-sm text-muted-foreground">
           한 번 누르면 <b className="text-blue-deep">좋아요</b>, 한 번 더 누르면 <b className="text-pink-deep">피할래요</b>, 또 누르면 해제돼요.
         </p>
         {tags.isPending ? (
@@ -506,7 +506,7 @@ export function TasteStep() {
           <div className="grid gap-4">
             {groups.map(([group, items]) => (
               <div key={group} role="group" aria-label={group}>
-                <p className="mb-2 text-xs font-extrabold text-ink-2">{group}</p>
+                <p className="mb-2 text-caption font-semibold text-ink-2">{group}</p>
                 <div className="flex flex-wrap gap-2">
                   {items.map((tag) => {
                     const state = stateOf(tag.name);
@@ -517,7 +517,7 @@ export function TasteStep() {
                         onClick={() => cycle(tag.name)}
                         aria-label={`${tag.name}: ${state === "like" ? "좋아요" : state === "avoid" ? "피할래요" : "선택 안 함"}`}
                         className={cn(
-                          "rounded-full border-2 px-4 py-2 text-sm font-extrabold transition-all duration-150 active:scale-95",
+                          "rounded-full border-2 px-4 py-2 text-body-sm font-semibold transition-all duration-150 active:scale-95",
                           state === "like" && "border-blue-deep bg-blue-deep text-white",
                           state === "avoid" && "border-pink-deep bg-pink-soft text-pink-deep line-through",
                           state === "none" && "border-transparent bg-soft text-ink-2 hover:bg-line",
@@ -537,15 +537,15 @@ export function TasteStep() {
       </section>
 
       <fieldset className="rounded-card bg-white p-6 shadow-soft">
-        <legend className="float-left mb-3 w-full text-sm font-extrabold text-muted-foreground">어떻게 이동해요?</legend>
+        <legend className="float-left mb-3 w-full text-body-sm font-semibold text-muted-foreground">어떻게 이동해요?</legend>
         <div className="clear-both grid grid-cols-3 gap-2.5">
           {TRANSPORTS.map((t) => (
             <label key={t.value} className="relative block">
               <input type="radio" value={t.value} className="peer sr-only" {...register("transport")} checked={transport === t.value} onChange={() => setValue("transport", t.value, { shouldDirty: true })} />
               <span className={cn(optionCard, "flex-col gap-1 bg-soft p-3.5 text-center shadow-none")}>
                 <t.icon aria-hidden className="size-6 text-blue-deep" />
-                <b className="text-[15px] font-extrabold">{t.label}</b>
-                <span className="text-[11.5px] text-muted-foreground">{t.hint}</span>
+                <b className="text-body font-extrabold">{t.label}</b>
+                <span className="text-caption text-muted-foreground">{t.hint}</span>
               </span>
             </label>
           ))}

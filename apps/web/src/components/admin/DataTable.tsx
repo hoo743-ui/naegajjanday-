@@ -119,7 +119,7 @@ export function DataTable<T>({
                 key={col.key}
                 scope="col"
                 className={cn(
-                  "h-11 text-xs font-extrabold whitespace-nowrap text-ink-2",
+                  "h-11 text-caption font-semibold whitespace-nowrap text-ink-2",
                   ALIGN[col.align ?? "left"],
                   col.hideBelow && HIDE[col.hideBelow],
                   col.className,
@@ -155,7 +155,7 @@ export function DataTable<T>({
                 {columns.map((col, ci) => (
                   <TableCell
                     key={col.key}
-                    className={cn("py-3 text-sm text-ink", ALIGN[col.align ?? "left"], col.hideBelow && HIDE[col.hideBelow], col.className)}
+                    className={cn("py-3 text-body-sm text-ink", ALIGN[col.align ?? "left"], col.hideBelow && HIDE[col.hideBelow], col.className)}
                   >
                     {ci === 0 && onRowClick ? (
                       // 키보드 사용자를 위해 첫 열은 실제 버튼으로 연다

@@ -39,10 +39,10 @@ export function HotPlaces({ regionSlug, partySize }: { regionSlug: string; party
 
   return (
     <section aria-labelledby="hot-places" className="rounded-card bg-white p-5 shadow-soft">
-      <h3 id="hot-places" className="text-[15px] font-extrabold text-ink">
+      <h3 id="hot-places" className="text-body font-extrabold text-ink">
         {hot.data?.scope}에서 사람들이 많이 가는 곳
       </h3>
-      <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">
+      <p className="mt-0.5 text-caption text-muted-foreground">
         {widened ? `${hot.data?.region}만의 자료는 적어서 ${hot.data?.scope} 전체에서 골랐어요. ` : ""}
         후기가 아니라 내비게이션으로 실제 찾아간 순위예요. 누르면 자세히 볼 수 있어요.
       </p>
@@ -63,8 +63,8 @@ export function HotPlaces({ regionSlug, partySize }: { regionSlug: string; party
                 {p.thumbnail_url ? <Image src={p.thumbnail_url} alt="" fill sizes="48px" unoptimized className="object-cover" /> : <Navigation aria-hidden className="size-5" />}
               </span>
               <span className="min-w-0 flex-1">
-                <b className="block truncate text-[14.5px] font-extrabold text-ink">{p.name}</b>
-                <span className="tabular block truncate text-[12px] text-muted-foreground">
+                <b className="block truncate text-body font-extrabold text-ink">{p.name}</b>
+                <span className="tabular block truncate text-caption text-muted-foreground">
                   {[p.category_name, `찾아간 순위 ${p.rank}위`, p.is_free ? "무료" : null].filter(Boolean).join(" · ")}
                 </span>
               </span>
@@ -73,7 +73,7 @@ export function HotPlaces({ regionSlug, partySize }: { regionSlug: string; party
           </li>
         ))}
       </ol>
-      <p className="mt-2.5 text-[11.5px] text-muted-foreground">자료: {hot.data?.source}</p>
+      <p className="mt-2.5 text-caption text-muted-foreground">자료: {hot.data?.source}</p>
       <PlaceSheet place={open ? asSummary(open) : null} partySize={partySize} onClose={() => setOpen(null)} />
     </section>
   );

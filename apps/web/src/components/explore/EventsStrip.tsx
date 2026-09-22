@@ -22,21 +22,21 @@ function EventCard({ event }: { event: EventItem }) {
       {event.thumbnail_url ? (
         <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/9] overflow-hidden rounded-t-[20px]">
           <Image src={event.thumbnail_url} alt="" fill unoptimized={!canOptimize(event.thumbnail_url)} sizes="280px" className="object-cover" />
-          {credit ? <span className="absolute right-2 bottom-1.5 rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] font-medium text-white/95">{credit}</span> : null}
+          {credit ? <span className="absolute right-2 bottom-1.5 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span> : null}
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-2">
-        <span className={event.is_free ? "text-xs font-extrabold text-success" : "tabular text-xs font-extrabold text-gold-ink"}>
+        <span className={event.is_free ? "text-caption font-semibold text-success" : "tabular text-caption font-extrabold text-gold-ink"}>
           {event.is_free ? "무료" : event.price !== null ? won(event.price) : "유료"}
         </span>
         <DdayBadge startsOn={event.starts_on} endsOn={event.ends_on} />
       </div>
-      <h3 className="mt-2 line-clamp-2 text-base leading-snug font-extrabold tracking-tight text-ink">{event.title}</h3>
-      <p className="tabular mt-2 flex items-center gap-1.5 text-[13px] font-bold text-ink-2">
+      <h3 className="mt-2 line-clamp-2 text-body leading-snug font-extrabold text-ink">{event.title}</h3>
+      <p className="tabular mt-2 flex items-center gap-1.5 text-body-sm font-bold text-ink-2">
         <CalendarDays aria-hidden className="size-3.5 shrink-0 text-blue-deep" />
         {dateRange(event.starts_on, event.ends_on)}
       </p>
-      <p className="mt-0.5 flex items-center gap-1.5 text-[13px] font-bold text-muted-foreground">
+      <p className="mt-0.5 flex items-center gap-1.5 text-body-sm font-semibold text-muted-foreground">
         <MapPin aria-hidden className="size-3.5 shrink-0" />
         <span className="truncate">{[event.region?.name, event.venue].filter(Boolean).join(" · ")}</span>
       </p>
@@ -123,10 +123,10 @@ export function EventsStrip({ region }: { region?: string }) {
     <section aria-labelledby="events-heading" className="bg-grad-soft rounded-[32px] p-5 sm:p-7">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 id="events-heading" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl font-serif">
+          <h2 id="events-heading" className="font-serif text-h2 text-ink">
             이번 주 이벤트
           </h2>
-          <p className="text-sm font-bold text-muted-foreground">오늘부터 7일 안에 열리는 축제·전시·공연이에요.</p>
+          <p className="text-body-sm font-semibold text-muted-foreground">오늘부터 7일 안에 열리는 축제·전시·공연이에요.</p>
         </div>
         {scroller.canScroll ? (
           <div className="flex shrink-0 gap-1.5">

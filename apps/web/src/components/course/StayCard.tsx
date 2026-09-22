@@ -25,7 +25,7 @@ export function StayCard({ at, day }: StayCardProps) {
 
   return (
     <section aria-labelledby="stay-card" className="rule-section gap-3.5">
-      <h2 id="stay-card" className="flex items-center gap-2 text-[15px] font-extrabold text-ink">
+      <h2 id="stay-card" className="flex items-center gap-2 text-body font-extrabold text-ink">
         <BedDouble aria-hidden className="size-4 text-blue-deep" />
         {day}일차 밤, 이 근처에서 묵는다면
       </h2>
@@ -37,17 +37,17 @@ export function StayCard({ at, day }: StayCardProps) {
                 {stay.thumbnail_url ? <Image src={stay.thumbnail_url} alt="" fill sizes="64px" unoptimized className="object-cover" /> : null}
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-[14.5px] font-extrabold text-ink">{stay.name}</b>
-                <span className="tabular block text-[12.5px] text-muted-foreground">
+                <b className="block truncate text-body font-extrabold text-ink">{stay.name}</b>
+                <span className="tabular block text-caption text-muted-foreground">
                   {stay.category_label} · 코스 끝에서 {distance(stay.distance_m)}
                 </span>
-                {stay.photo_credit ? <span className="block text-[11px] text-muted-foreground">사진 ⓒ한국관광공사</span> : null}
+                {stay.photo_credit ? <span className="block text-caption text-muted-foreground">사진 ⓒ한국관광공사</span> : null}
               </span>
             </a>
           </li>
         ))}
       </ul>
-      <p className="text-[12.5px] leading-relaxed text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         {stays.data.price_note} <span className="whitespace-nowrap">출처: {stays.data.source}</span>
       </p>
     </section>

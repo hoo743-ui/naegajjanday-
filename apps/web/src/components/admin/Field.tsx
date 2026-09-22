@@ -16,7 +16,7 @@ interface FieldProps {
 export function Field({ id, label, hint, error, required, className, children }: FieldProps) {
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <Label htmlFor={id} className="text-sm font-extrabold text-ink-2">
+      <Label htmlFor={id} className="text-body-sm font-semibold text-ink-2">
         {label}
         {required ? (
           <span className="text-pink-deep" aria-hidden>
@@ -26,11 +26,11 @@ export function Field({ id, label, hint, error, required, className, children }:
       </Label>
       {children}
       {error ? (
-        <p id={`${id}-desc`} role="alert" className="text-[13px] font-bold text-danger">
+        <p id={`${id}-desc`} role="alert" className="text-body-sm font-semibold text-danger">
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-desc`} className="text-[13px] text-muted-foreground">
+        <p id={`${id}-desc`} className="text-body-sm text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -40,14 +40,14 @@ export function Field({ id, label, hint, error, required, className, children }:
 
 /** 네이티브 select — 모바일에서 OS 피커가 뜨고 react-hook-form register 와 바로 붙는다 */
 export const nativeSelectClass =
-  "h-9 w-full rounded-md border border-input bg-white px-3 text-sm text-ink shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50";
+  "h-9 w-full rounded-md border border-input bg-white px-3 text-body-sm text-ink shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50";
 
 export function FormMessage({ tone, children }: { tone: "success" | "error"; children: ReactNode }) {
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "rounded-xl px-3.5 py-2.5 text-sm font-bold",
+        "rounded-xl px-3.5 py-2.5 text-body-sm font-semibold",
         tone === "success" ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep",
       )}
     >

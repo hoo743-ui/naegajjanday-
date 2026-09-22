@@ -69,12 +69,12 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
   return (
     <section aria-label="예산 도구" className="rule-section gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-auto text-[15px] font-extrabold text-ink">예산을 바꾸면?</h2>
+        <h2 className="mr-auto text-body font-extrabold text-ink">예산을 바꾸면?</h2>
         <button
           type="button"
           disabled={whatIf.isPending || budget - step < 10_000}
           onClick={() => tryBudget(budget - step)}
-          className="tabular inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-[13.5px] font-bold text-ink-2 hover:border-blue-deep disabled:opacity-40"
+          className="tabular inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-body-sm font-bold text-ink-2 hover:border-blue-deep disabled:opacity-40"
         >
           <Minus aria-hidden className="size-3.5" /> {won(step)} 덜
         </button>
@@ -82,7 +82,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
           type="button"
           disabled={whatIf.isPending}
           onClick={() => tryBudget(budget + step)}
-          className="tabular inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-[13.5px] font-bold text-ink-2 hover:border-blue-deep disabled:opacity-40"
+          className="tabular inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-body-sm font-bold text-ink-2 hover:border-blue-deep disabled:opacity-40"
         >
           <Plus aria-hidden className="size-3.5" /> {won(step)} 더
         </button>
@@ -90,16 +90,16 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
 
       <div aria-live="polite">
         {whatIf.isPending ? <p className="skeleton-shimmer h-16 rounded-2xl" aria-label="그 예산으로 짜 보는 중" /> : null}
-        {whatIf.isError ? <p className="rounded-2xl bg-paper-2 text-ink-2 px-4 py-3 text-[13.5px] font-bold">{whatIf.error.detail ?? "그 예산으로는 코스를 짜지 못했어요."}</p> : null}
+        {whatIf.isError ? <p className="rounded-2xl bg-paper-2 text-ink-2 px-4 py-3 text-body-sm font-semibold">{whatIf.error.detail ?? "그 예산으로는 코스를 짜지 못했어요."}</p> : null}
         {tried ? (
           <div className="grid gap-2 rounded-2xl bg-white p-4 shadow-soft">
-            <p className="tabular text-[14px] font-extrabold text-ink">
+            <p className="tabular text-body-sm font-extrabold text-ink">
               예산 {won(tried.budget)}이면 <span className="text-blue-deep">{tried.course.stops.length}곳</span>, 합계 <span className="text-gold-ink">{won(tried.course.totals.price)}</span>
               <span className="font-semibold text-ink-2"> (지금 {stops.length}곳 · {won(total)})</span>
             </p>
-            <p className="text-[13px] leading-relaxed text-ink-2">{tried.course.stops.map((s) => `${roleLabel(s.role)} ${s.place.name}`).join(" → ")}</p>
-            {added.length > 0 ? <p className="text-[12.5px] text-muted-foreground">달라지는 곳: {added.map((s) => s.place.name).join(", ")}</p> : null}
-            <Link href={`/course/${encodeURIComponent(tried.course.id)}`} onClick={() => track("budget_whatif_opened", { course_id: tried.course.id, budget_total: tried.budget })} className="inline-flex items-center gap-1 text-[13.5px] font-extrabold text-blue-deep hover:underline">
+            <p className="text-body-sm text-ink-2">{tried.course.stops.map((s) => `${roleLabel(s.role)} ${s.place.name}`).join(" → ")}</p>
+            {added.length > 0 ? <p className="text-caption text-muted-foreground">달라지는 곳: {added.map((s) => s.place.name).join(", ")}</p> : null}
+            <Link href={`/course/${encodeURIComponent(tried.course.id)}`} onClick={() => track("budget_whatif_opened", { course_id: tried.course.id, budget_total: tried.budget })} className="inline-flex items-center gap-1 text-body-sm font-semibold text-blue-deep hover:underline">
               이 코스 열어 보기 <ArrowRight aria-hidden className="size-4" />
             </Link>
           </div>
@@ -109,7 +109,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
       <button
         type="button"
         onClick={() => void copySettlement()}
-        className={cn("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[14.5px] font-bold", copied ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line text-ink hover:border-blue-deep")}
+        className={cn("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-body font-bold", copied ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line text-ink hover:border-blue-deep")}
       >
         {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
         {copied ? "복사했어요. 단톡방에 붙여 넣으세요" : partySize > 1 ? `${partySize}명 정산 문구 복사` : "영수증 문구 복사"}

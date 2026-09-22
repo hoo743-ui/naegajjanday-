@@ -30,7 +30,7 @@ export function DdayBadge({ endsOn, startsOn }: { endsOn: string; startsOn?: str
   return (
     <span
       className={cn(
-        "tabular rounded-full px-2.5 py-1 text-xs font-extrabold",
+        "tabular rounded-full px-2.5 py-1 text-caption font-extrabold",
         urgent ? "bg-pink-soft text-pink-deep" : "bg-white/90 text-ink-2",
       )}
     >
@@ -71,7 +71,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             />
             {credit ? (
-              <span className="absolute right-2 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95">{credit}</span>
+              <span className="absolute right-2 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span>
             ) : null}
             {!item.thumbnail_url && example ? (
               // 그 장소의 실제 사진이 아니라 같은 종류의 예시 사진임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
@@ -79,7 +79,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
                 href={example.page_url ?? example.url}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute right-2 bottom-2 z-10 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95 hover:bg-black/65"
+                className="absolute right-2 bottom-2 z-10 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95 hover:bg-black/65"
                 title="이 장소의 사진이 아니라 같은 종류의 예시 사진이에요"
               >
                 예시 사진 · © {example.author}
@@ -94,15 +94,15 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
           </div>
         )}
         <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
-          <span className="rounded-full bg-ink/85 px-2.5 py-1 text-xs font-extrabold text-white">{meta.label}</span>
+          <span className="rounded-full bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">{meta.label}</span>
           {item.period ? <DdayBadge startsOn={item.period.starts_on} endsOn={item.period.ends_on} /> : null}
         </div>
       </div>
 
       <div className={cn("flex flex-1 flex-col gap-2.5 pt-4", feature && "lg:pt-0")}>
-        {feature ? <p className="text-[13px] font-extrabold text-blue-deep">맨 먼저 볼 곳</p> : null}
+        {feature ? <p className="text-body-sm font-semibold text-blue-deep">맨 먼저 볼 곳</p> : null}
         <div className="flex items-start justify-between gap-3">
-          <h3 className={cn("leading-snug font-extrabold tracking-tight text-ink", feature ? "font-serif text-[clamp(24px,2.6vw,34px)] font-bold" : "text-[18px]")}>
+          <h3 className={cn("text-ink", feature ? "font-serif text-h1" : "text-body-lg font-semibold")}>
             {/* 카드 전체가 눌리도록 버튼의 클릭 영역을 카드까지 넓힌다(after:inset-0). 출처·코스 짜기 링크는 그 위(z-10)에 둔다. */}
             <button type="button" onClick={openDetail} aria-haspopup="dialog" className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-[20px] focus-visible:after:outline-[3px] focus-visible:after:outline-blue">
               {item.name}
@@ -112,7 +112,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
           {item.is_free || item.price_per_person > 0 ? (
             <span
               className={cn(
-                "tabular shrink-0 rounded-lg px-2 py-1 text-xs font-extrabold",
+                "tabular shrink-0 rounded-lg px-2 py-1 text-caption font-extrabold",
                 item.is_free ? "bg-success-soft text-success" : "bg-gold-soft text-gold-ink",
               )}
             >
@@ -121,9 +121,9 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
           ) : null}
         </div>
 
-        {item.summary ? <p className={cn("text-muted-foreground", feature ? "line-clamp-4 text-[15.5px] leading-[1.75]" : "line-clamp-2 text-sm")}>{item.summary}</p> : null}
+        {item.summary ? <p className={cn("text-muted-foreground", feature ? "line-clamp-4 text-body" : "line-clamp-2 text-body-sm")}>{item.summary}</p> : null}
 
-        <ul className="grid gap-1 text-[13px] font-bold text-ink-2">
+        <ul className="grid gap-1 text-body-sm font-semibold text-ink-2">
           <li className="flex items-center gap-1.5">
             <MapPin aria-hidden className="size-3.5 shrink-0 text-blue-deep" />
             <span className="truncate">{item.region ? `${item.region.name} · ${item.address}` : item.address}</span>
@@ -148,7 +148,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
         {item.tags.length > 0 ? (
           <ul aria-label="태그" className="flex flex-wrap gap-1.5">
             {item.tags.map((tag) => (
-              <li key={tag} className="rounded-full border border-line px-2.5 py-1 text-xs font-bold text-ink-2">
+              <li key={tag} className="rounded-full border border-line px-2.5 py-1 text-caption font-semibold text-ink-2">
                 {tag}
               </li>
             ))}
@@ -157,7 +157,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
 
         <Link
           href={planHref}
-          className="relative z-10 mt-auto inline-flex items-center gap-1 self-start pt-2 text-sm font-extrabold text-blue-deep"
+          className="relative z-10 mt-auto inline-flex items-center gap-1 self-start pt-2 text-body-sm font-semibold text-blue-deep"
           aria-label={`${item.name} 근처로 코스 짜기`}
         >
           이 근처로 코스 짜기

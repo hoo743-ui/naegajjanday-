@@ -43,19 +43,19 @@ export function KoreaDay() {
           </Reveal>
 
           <Reveal delay={0.08}>
-            <h2 className="font-serif text-[clamp(30px,3.8vw,50px)] leading-[1.22] font-bold tracking-[-0.03em]">
+            <h2 className="font-serif text-display">
               성문 앞에서 시작해도,
               <br />
               한강에서 끝나도,
               <br />
               하루는 한 장이에요.
             </h2>
-            <p className="mt-6 max-w-[460px] text-[16.5px] leading-[1.8] text-ink-2">
+            <p className="mt-6 max-w-[460px] text-body-lg text-ink-2">
               궁궐 옆 카페, 시장 골목의 저녁, 바닷가의 산책. 짠이는 한국관광공사와 공공데이터에 있는 실제 장소로 하루를 잇고, 그 하루를 영수증 한 장으로 정리해요.
             </p>
 
             {/* 영수증 문법: 공간 ···· 하루 */}
-            <ul className="mt-9 grid max-w-[420px] gap-3 text-[15.5px]">
+            <ul className="mt-9 grid max-w-[420px] gap-3 text-body">
               {LINES.map((line) => (
                 <li key={line.place} className="flex items-baseline gap-2">
                   <span className="font-bold text-ink">{line.place}</span>

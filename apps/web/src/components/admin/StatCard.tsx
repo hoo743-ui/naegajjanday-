@@ -25,7 +25,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "default", loa
   return (
     <div className={cn("rounded-card border bg-white p-5 shadow-soft", className)}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-extrabold text-muted-foreground">{label}</p>
+        <p className="text-body-sm font-semibold text-muted-foreground">{label}</p>
         {Icon ? (
           <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", TONE[tone])}>
             <Icon className="size-[18px]" aria-hidden />
@@ -35,9 +35,9 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "default", loa
       {loading ? (
         <Skeleton className="mt-2 h-9 w-28 rounded-lg" />
       ) : (
-        <p className="tabular mt-1 text-[28px] leading-tight font-extrabold tracking-tight text-ink">{value}</p>
+        <p className="money mt-1 text-price text-ink">{value}</p>
       )}
-      {hint ? <p className="mt-1 text-[13px] font-bold text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-body-sm font-semibold text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

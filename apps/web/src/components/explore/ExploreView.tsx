@@ -92,16 +92,16 @@ export function ExploreView() {
   return (
     <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-8 pt-8 pb-16 sm:pt-12">
       <header className="grid gap-4">
-        <p className="flex items-center gap-2.5 text-[13px] font-extrabold tracking-[0.02em] text-ink-2">
+        <p className="flex items-center gap-2.5 text-body-sm font-semibold tracking-[0.02em] text-ink-2">
           <span aria-hidden className="size-2 rounded-full bg-gold" />
           둘러보기
         </p>
-        <h1 className="text-[clamp(32px,4.6vw,56px)] leading-[1.16] font-bold tracking-[-0.03em] text-ink">
+        <h1 className="font-serif text-display text-ink">
           돈 안 들이고도
           <br />
           갈 곳은 많아요
         </h1>
-        <p className="max-w-xl text-base leading-[1.75] text-ink-2 sm:text-[17px]">
+        <p className="max-w-xl text-body text-ink-2 sm:text-body-lg">
           관광지, 공원, 전시, 축제, 문화공간까지. 마음에 드는 곳을 찾으면 그 근처로 예산 코스를 짜 드려요.
         </p>
       </header>
@@ -123,7 +123,7 @@ export function ExploreView() {
                 aria-pressed={type === option.value}
                 onClick={() => changeType(option.value)}
                 className={cn(
-                  "h-10 shrink-0 rounded-full px-4 text-[14.5px] font-extrabold transition-colors",
+                  "h-10 shrink-0 rounded-full px-4 text-body font-extrabold transition-colors",
                   type === option.value ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
                 )}
               >
@@ -134,7 +134,7 @@ export function ExploreView() {
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[220px_190px_minmax(0,1fr)_auto]">
             <div className="grid gap-1.5">
-              <Label htmlFor={ids.region} className="text-xs font-extrabold text-muted-foreground">
+              <Label htmlFor={ids.region} className="text-caption font-semibold text-muted-foreground">
                 지역
               </Label>
               <Select value={region} onValueChange={changeRegion} disabled={regions.isPending}>
@@ -152,7 +152,7 @@ export function ExploreView() {
                 </SelectContent>
               </Select>
               {regions.isError ? (
-                <p role="alert" className="text-xs font-bold text-danger">
+                <p role="alert" className="text-caption font-semibold text-danger">
                   지역 목록을 불러오지 못했어요.{" "}
                   <button type="button" className="underline" onClick={() => void regions.refetch()}>
                     다시 시도
@@ -162,7 +162,7 @@ export function ExploreView() {
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor={ids.date} className="text-xs font-extrabold text-muted-foreground">
+              <Label htmlFor={ids.date} className="text-caption font-semibold text-muted-foreground">
                 가는 날 (선택)
               </Label>
               <Input
@@ -175,7 +175,7 @@ export function ExploreView() {
             </div>
 
             <div className="grid gap-1.5 sm:col-span-2 lg:col-span-1">
-              <Label htmlFor={ids.q} className="text-xs font-extrabold text-muted-foreground">
+              <Label htmlFor={ids.q} className="text-caption font-semibold text-muted-foreground">
                 검색
               </Label>
               <div className="relative">

@@ -50,7 +50,7 @@ export function AlternativeTabs({ items, currentId, onSelect, label = "다른 �
             tabIndex={selected ? 0 : -1}
             onClick={() => onSelect(item.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
-            className={cn("relative flex-1 rounded-full px-4 py-2.5 text-sm font-extrabold whitespace-nowrap transition-colors", selected ? "text-ink" : "text-ink-2 hover:text-ink")}
+            className={cn("relative flex-1 rounded-full px-4 py-2.5 text-body-sm font-semibold whitespace-nowrap transition-colors", selected ? "text-ink" : "text-ink-2 hover:text-ink")}
           >
             {selected ? <motion.span layoutId="alt-tab" className="absolute inset-0 rounded-full bg-white shadow-soft" transition={{ type: "spring", stiffness: 400, damping: 32 }} /> : null}
             <span className="relative">{item.label.replace(/\s*코스$/, "")}</span>

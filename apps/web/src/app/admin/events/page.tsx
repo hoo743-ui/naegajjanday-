@@ -65,7 +65,7 @@ export default function AdminEventsPage() {
       cell: (e) => (
         <span>
           <b className="block font-extrabold">{e.title}</b>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-caption text-muted-foreground">
             {typeLabel(e.type)}
             {e.venue ? ` · ${e.venue}` : ""}
             {e.provider && e.provider !== "admin" ? ` · ${providerLabel(e.provider)} 수집` : ""}
@@ -232,7 +232,7 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex items-center gap-2 self-end pb-2 text-sm font-bold text-ink-2">
+        <label className="flex items-center gap-2 self-end pb-2 text-body-sm font-semibold text-ink-2">
           <input type="checkbox" className="size-4 accent-[#2F6BEA]" {...form.register("is_free")} /> 무료 행사
         </label>
         <Field id="e-price" label="요금 (원)" error={errors.price?.message}>

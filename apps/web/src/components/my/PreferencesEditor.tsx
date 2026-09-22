@@ -58,7 +58,7 @@ export function PreferencesEditor() {
 
   return (
     <div className="grid gap-5 rounded-card border border-line bg-white p-6 shadow-soft">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body-sm text-muted-foreground">
         한 번 누르면 <b className="text-blue-deep">좋아요</b>, 한 번 더 누르면 <b className="text-pink-deep">피할래요</b>. 코스를 짤 때마다 자동으로 반영돼요.
       </p>
       {groups.length === 0 ? (
@@ -66,7 +66,7 @@ export function PreferencesEditor() {
       ) : (
         groups.map(([group, items]) => (
           <div key={group} role="group" aria-label={group}>
-            <p className="mb-2 text-xs font-extrabold text-ink-2">{group}</p>
+            <p className="mb-2 text-caption font-semibold text-ink-2">{group}</p>
             <div className="flex flex-wrap gap-2">
               {items.map((tag) => {
                 const like = draft.liked_tags.includes(tag.name);
@@ -78,7 +78,7 @@ export function PreferencesEditor() {
                     onClick={() => cycle(tag.name)}
                     aria-label={`${tag.name}: ${like ? "좋아요" : avoid ? "피할래요" : "선택 안 함"}`}
                     className={cn(
-                      "rounded-full border-2 px-4 py-2 text-sm font-extrabold transition-all duration-150 active:scale-95",
+                      "rounded-full border-2 px-4 py-2 text-body-sm font-semibold transition-all duration-150 active:scale-95",
                       like && "border-blue-deep bg-blue-deep text-white",
                       avoid && "border-pink-deep bg-pink-soft text-pink-deep line-through",
                       !like && !avoid && "border-transparent bg-soft text-ink-2 hover:bg-line",
@@ -96,7 +96,7 @@ export function PreferencesEditor() {
       )}
 
       <fieldset>
-        <legend className="mb-2 text-xs font-extrabold text-ink-2">주로 이렇게 다녀요</legend>
+        <legend className="mb-2 text-caption font-semibold text-ink-2">주로 이렇게 다녀요</legend>
         <div className="flex flex-wrap gap-2">
           {TRANSPORTS.map((mode) => (
             <label key={mode} className="relative">
@@ -110,7 +110,7 @@ export function PreferencesEditor() {
                   setDraft((d) => (d ? { ...d, transport: mode } : d));
                 }}
               />
-              <span className="block cursor-pointer rounded-full bg-soft px-4 py-2 text-sm font-extrabold text-ink-2 peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+              <span className="block cursor-pointer rounded-full bg-soft px-4 py-2 text-body-sm font-semibold text-ink-2 peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
                 {transportLabel(mode)}
               </span>
             </label>
@@ -123,11 +123,11 @@ export function PreferencesEditor() {
           {update.isPending ? "저장하는 중…" : "취향 저장"}
         </Button>
         {update.isSuccess && !dirty ? (
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-success">
+          <span className="inline-flex items-center gap-1 text-body-sm font-semibold text-success">
             <Check aria-hidden className="size-4" /> 저장했어요
           </span>
         ) : null}
-        {update.error ? <span className="text-sm font-bold text-danger">{mascotCopyForError(update.error).description}</span> : null}
+        {update.error ? <span className="text-body-sm font-semibold text-danger">{mascotCopyForError(update.error).description}</span> : null}
       </div>
     </div>
   );

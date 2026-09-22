@@ -27,12 +27,12 @@ export function SiteFooter() {
   const chatOff = useFeatures().data?.chat !== true; // 헤더와 같은 규칙: 확인된 뒤에만 보인다
   const signedIn = useAuth().status === "authenticated"; // 로그인한 사람에게 "로그인"을 권하지 않는다
   return (
-    <footer className="mt-16 border-t bg-soft/60 text-sm text-muted-foreground">
+    <footer className="mt-16 border-t bg-soft/60 text-body-sm text-muted-foreground">
       <div className="wrap grid gap-10 py-12 md:grid-cols-[1.6fr_1fr_1fr]">
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 font-round text-xl leading-none text-ink"
+            className="inline-flex items-center gap-2 font-round text-h3 leading-none text-ink"
             aria-label="내가짠데이 홈"
           >
             <Jjani mood="hi" size={28} animated={false} decorative />
@@ -46,7 +46,7 @@ export function SiteFooter() {
         </div>
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h2 className="text-[13px] font-semibold tracking-normal text-ink">
+            <h2 className="text-body-sm font-semibold tracking-normal text-ink">
               {col.title}
             </h2>
             <ul className="mt-3 grid gap-2.5">
@@ -64,7 +64,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t">
-        <div className="wrap flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-5 text-[13px]">
+        <div className="wrap flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-5 text-body-sm">
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span>© 2026 내가짠데이</span>
             <Link href="/terms" className="hover:text-ink">

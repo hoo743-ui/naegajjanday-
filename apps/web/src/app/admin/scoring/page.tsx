@@ -47,7 +47,7 @@ export default function AdminScoringPage() {
         description="장소 점수의 피처 가중치와 코스 템플릿을 목적별로 조정해요. 코드 배포 없이 다음 추천부터 바로 반영됩니다."
         actions={
           purposes.data && purposes.data.items.length > 0 ? (
-            <label className="flex items-center gap-2 text-sm font-extrabold text-ink-2">
+            <label className="flex items-center gap-2 text-body-sm font-semibold text-ink-2">
               목적
               <select value={purpose} onChange={(e) => setPurpose(e.target.value)} className={cn(nativeSelectClass, "w-40")}>
                 {purposes.data.items.map((p) => (
@@ -121,7 +121,7 @@ function WeightsEditor({ purpose }: { purpose: string }) {
       title="피처 가중치"
       description={meta.join(" · ")}
     >
-      <p className="mb-4 rounded-xl bg-soft px-3.5 py-2.5 text-[13px] text-ink-2">
+      <p className="mb-4 rounded-xl bg-soft px-3.5 py-2.5 text-body-sm text-ink-2">
         장소 점수 S = Σ w × f. 모든 가중치의 <b>합이 1.00</b>이어야 저장할 수 있어요.
       </p>
       <ul className="grid gap-4">
@@ -131,8 +131,8 @@ function WeightsEditor({ purpose }: { purpose: string }) {
           return (
             <li key={key}>
               <div className="flex items-baseline justify-between gap-3">
-                <label id={`${id}-label`} htmlFor={`${id}-num`} className="text-sm font-extrabold text-ink">
-                  {info.label} <code className="ml-1 text-xs font-medium text-muted-foreground">{key}</code>
+                <label id={`${id}-label`} htmlFor={`${id}-num`} className="text-body-sm font-semibold text-ink">
+                  {info.label} <code className="ml-1 text-caption font-medium text-muted-foreground">{key}</code>
                 </label>
                 <Input
                   id={`${id}-num`}
@@ -160,14 +160,14 @@ function WeightsEditor({ purpose }: { purpose: string }) {
                 }}
                 className="mt-2"
               />
-              <p className="mt-1 text-xs text-muted-foreground">{info.hint}</p>
+              <p className="mt-1 text-caption text-muted-foreground">{info.hint}</p>
             </li>
           );
         })}
       </ul>
 
       <div className="sticky bottom-3 mt-5 flex flex-wrap items-center gap-2 rounded-2xl border bg-white/95 p-3 shadow-card backdrop-blur" aria-live="polite">
-        <p className={cn("tabular mr-auto flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-extrabold", valid ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep")}>
+        <p className={cn("tabular mr-auto flex items-center gap-2 rounded-xl px-3 py-1.5 text-body-sm font-extrabold", valid ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep")}>
           <Scale aria-hidden className="size-4" />
           합계 {total.toFixed(2)}
           {valid ? "" : total > 1 ? ` (${(total - 1).toFixed(2)} 초과)` : ` (${(1 - total).toFixed(2)} 부족)`}
@@ -234,17 +234,17 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
   return (
     <article className="rounded-2xl border p-4" aria-label={`템플릿 ${template.name}`}>
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-base font-extrabold">{template.name}</h3>
-        <p className="tabular text-xs font-bold text-muted-foreground">
+        <h3 className="text-body font-extrabold">{template.name}</h3>
+        <p className="tabular text-caption font-bold text-muted-foreground">
           {TIME_BAND_LABEL[template.time_band] ?? template.time_band} · {template.party_size_min}~{template.party_size_max}명 · 1인 {won(template.min_budget_per_person)}부터{template.is_active ? "" : " · 비활성"}
         </p>
       </header>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-sm">
+        <table className="w-full min-w-[560px] text-body-sm">
           <caption className="sr-only">{template.name} 슬롯 편집</caption>
           <thead>
-            <tr className="text-left text-xs font-extrabold text-muted-foreground">
+            <tr className="text-left text-caption font-semibold text-muted-foreground">
               <th scope="col" className="w-8 pb-2">#</th>
               <th scope="col" className="pb-2">역할</th>
               <th scope="col" className="pb-2">예산 배분</th>
@@ -296,9 +296,9 @@ function TemplateCard({ template }: { template: CourseTemplate }) {
         <Button type="button" variant="outline" size="sm" disabled={roles.length === 0} onClick={() => (save.reset(), setSlots((prev) => [...prev, { role: roles[0] ?? "", budget_share: 0, ...(hasStay ? { stay_min: 50 } : {}), is_optional: true, is_order_flexible: false }]))}>
           <Plus aria-hidden /> 슬롯 추가
         </Button>
-        <p className={cn("tabular mr-auto rounded-lg px-2.5 py-1 text-[13px] font-extrabold", valid ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep")}>배분 합계 {total.toFixed(2)}</p>
+        <p className={cn("tabular mr-auto rounded-lg px-2.5 py-1 text-body-sm font-extrabold", valid ? "bg-success-soft text-success" : "bg-pink-soft text-pink-deep")}>배분 합계 {total.toFixed(2)}</p>
         {save.isSuccess && !dirty ? (
-          <span className="inline-flex items-center gap-1 text-[13px] font-bold text-success">
+          <span className="inline-flex items-center gap-1 text-body-sm font-semibold text-success">
             <Check aria-hidden className="size-4" /> 저장했어요
           </span>
         ) : null}

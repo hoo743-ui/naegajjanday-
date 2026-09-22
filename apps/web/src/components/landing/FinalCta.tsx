@@ -28,24 +28,24 @@ export function FinalCta() {
             <div className="grid gap-10 px-7 pt-16 pb-14 sm:px-12 sm:pt-20 sm:pb-16 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:px-16 lg:pt-24 lg:pb-20">
               <div>
                 <ChapterMark n="05" label="나의 하루" tone="light" className="max-w-[420px]" />
-                <h2 className="mt-8 font-serif text-[clamp(32px,4.4vw,58px)] leading-[1.18] font-bold tracking-[-0.03em] text-white">
+                <h2 className="mt-8 font-serif text-display text-white">
                   얼마 쓸 거예요?
                   <br />
                   코스는 짠이가 짤게요
                 </h2>
-                <p className="mt-5 text-[17px] text-white/75">지역 · 인원 · 예산, 세 가지면 충분합니다.</p>
+                <p className="mt-5 text-body-lg text-white/75">지역 · 인원 · 예산, 세 가지면 충분합니다.</p>
                 <div className="mt-9 flex flex-wrap gap-3">
-                  <Button asChild variant="white" size="xl" className="group h-[60px] px-8 text-[17px]">
+                  <Button asChild variant="white" size="xl" className="group h-[60px] px-8 text-body-lg">
                     <Link href="/plan" onClick={() => track("plan_started", { entry: "landing_cta" })}>
                       무료로 추천받기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
                     </Link>
                   </Button>
                   {chatOff ? (
-                    <Button asChild size="xl" className="h-[60px] border border-white/35 bg-transparent px-7 text-[17px] font-extrabold text-white hover:bg-white/10">
+                    <Button asChild size="xl" className="h-[60px] border border-white/35 bg-transparent px-7 text-body-lg font-extrabold text-white hover:bg-white/10">
                       <Link href="/explore">갈 만한 곳 먼저 둘러보기</Link>
                     </Button>
                   ) : (
-                    <Button asChild size="xl" className="h-[60px] border border-white/35 bg-transparent px-7 text-[17px] font-extrabold text-white hover:bg-white/10">
+                    <Button asChild size="xl" className="h-[60px] border border-white/35 bg-transparent px-7 text-body-lg font-extrabold text-white hover:bg-white/10">
                       <Link href="/chat">짠이에게 말로 부탁하기</Link>
                     </Button>
                   )}
@@ -53,7 +53,7 @@ export function FinalCta() {
               </div>
               <div className="flex items-end justify-between gap-4 lg:flex-col lg:items-end">
                 <Jjani mood="cheers" size={96} className="drop-shadow-[0_14px_24px_rgba(0,0,0,.3)]" />
-                <p className="text-[11px] font-medium text-white/50">사진 ©한국관광공사 · 한강의 밤</p>
+                <p className="text-caption font-medium text-white/50">사진 ©한국관광공사 · 한강의 밤</p>
               </div>
             </div>
           </div>

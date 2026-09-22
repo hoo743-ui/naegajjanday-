@@ -70,7 +70,7 @@ export default function AdminBannersPage() {
       cell: (b) => (
         <span>
           <b className="block font-extrabold">{b.title}</b>
-          <span className="line-clamp-1 text-xs text-muted-foreground">{b.subtitle ?? b.link_url}</span>
+          <span className="line-clamp-1 text-caption text-muted-foreground">{b.subtitle ?? b.link_url}</span>
         </span>
       ),
     },
@@ -203,9 +203,9 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
       </DialogHeader>
 
       <div aria-hidden className="bg-grad-soft relative overflow-hidden rounded-2xl bg-cover bg-center p-5" style={preview.image_url && !errors.image_url ? { backgroundImage: `linear-gradient(90deg,rgba(255,255,255,.92),rgba(255,255,255,.35)),url("${encodeURI(preview.image_url)}")` } : undefined}>
-        <p className="text-xs font-extrabold text-blue-deep">미리보기 · {placementLabel(preview.placement)}</p>
-        <p className="mt-1 text-lg font-extrabold tracking-tight">{preview.title || "배너 제목"}</p>
-        {SUBTITLE_SUPPORTED ? <p className="text-sm text-ink-2">{preview.subtitle || "부제목"}</p> : null}
+        <p className="text-caption font-semibold text-blue-deep">미리보기 · {placementLabel(preview.placement)}</p>
+        <p className="mt-1 text-body-lg font-extrabold">{preview.title || "배너 제목"}</p>
+        {SUBTITLE_SUPPORTED ? <p className="text-body-sm text-ink-2">{preview.subtitle || "부제목"}</p> : null}
       </div>
 
       <Field id="b-title" label="제목" required error={errors.title?.message}>
@@ -248,7 +248,7 @@ function BannerForm({ banner, onDone }: { banner: AdminBanner | null; onDone: ()
           <Input id="b-end" type="date" aria-invalid={Boolean(errors.ends_at)} aria-describedby="b-end-desc" {...form.register("ends_at")} />
         </Field>
       </div>
-      <label className="flex items-center gap-2 text-sm font-bold text-ink-2">
+      <label className="flex items-center gap-2 text-body-sm font-semibold text-ink-2">
         <input type="checkbox" className="size-4 accent-[#2F6BEA]" {...form.register("is_active")} /> 저장하면 바로 노출
       </label>
 

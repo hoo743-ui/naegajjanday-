@@ -22,8 +22,8 @@ export function BannerStrip({ placement }: { placement: string }) {
           const body = (
             <>
               <span className="min-w-0">
-                <b className="block truncate text-[14.5px] font-extrabold text-ink">{b.title}</b>
-                {b.subtitle ? <span className="block truncate text-[12.5px] text-muted-foreground">{b.subtitle}</span> : null}
+                <b className="block truncate text-body font-extrabold text-ink">{b.title}</b>
+                {b.subtitle ? <span className="block truncate text-caption text-muted-foreground">{b.subtitle}</span> : null}
               </span>
               <ArrowRight aria-hidden className="size-4 shrink-0 text-blue-deep" />
             </>

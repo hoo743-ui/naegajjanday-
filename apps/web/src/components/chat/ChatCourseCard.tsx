@@ -16,34 +16,34 @@ export function ChatCourseCard({ course }: { course: Course }) {
   return (
     <article aria-label={`${course.label}: ${course.summary}`} className="bg-grad-soft w-full rounded-[22px] p-3.5 sm:p-4">
       <header className="mb-3 px-1">
-        <span className="text-xs font-extrabold text-blue-deep">{course.label}</span>
-        <h3 className="text-base leading-snug font-extrabold tracking-tight text-ink">{course.summary}</h3>
+        <span className="text-caption font-semibold text-blue-deep">{course.label}</span>
+        <h3 className="text-body leading-snug font-extrabold text-ink">{course.summary}</h3>
       </header>
 
       <ol className="grid gap-2">
         {course.stops.map((stop) => (
           <li key={stop.position} className="flex items-center gap-3 rounded-2xl border border-white/90 bg-white/75 px-3.5 py-2.5">
-            <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-blue-deep text-[13px] font-extrabold text-white">
+            <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-blue-deep text-body-sm font-semibold text-white">
               {stop.position}
             </span>
             <span className="min-w-0 flex-1">
-              <small className="block text-[11.5px] font-extrabold text-blue-deep">{roleLabel(stop.role)}</small>
-              <b className="block truncate text-[15px] font-extrabold tracking-tight text-ink">{stop.place.name}</b>
+              <small className="block text-caption font-semibold text-blue-deep">{roleLabel(stop.role)}</small>
+              <b className="block truncate text-body font-extrabold text-ink">{stop.place.name}</b>
             </span>
-            <b className="tabular shrink-0 text-[15px] font-extrabold text-ink">{stop.est_price === 0 ? "무료" : won(stop.est_price)}</b>
+            <b className="tabular shrink-0 text-body font-extrabold text-ink">{stop.est_price === 0 ? "무료" : won(stop.est_price)}</b>
           </li>
         ))}
       </ol>
 
       <div className="mt-3 rounded-2xl bg-white p-3.5 shadow-soft">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[13px] font-extrabold text-muted-foreground">총 예상 지출</span>
-          <b className="tabular text-xl font-extrabold tracking-tight text-ink">{won(totals.price)}</b>
+          <span className="text-body-sm font-semibold text-muted-foreground">총 예상 지출</span>
+          <b className="money text-price-sm text-ink">{won(totals.price)}</b>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-paper-2" aria-hidden>
           <div className={cn("h-full rounded-full", over ? "bg-pink-deep" : "bg-blue-deep")} style={{ width: `${used}%` }} />
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12.5px] font-extrabold">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption font-semibold">
           <span className="flex items-center gap-1 text-muted-foreground">
             <Footprints aria-hidden className="size-3.5" />
             이동 {minutes(totals.travel_min)}

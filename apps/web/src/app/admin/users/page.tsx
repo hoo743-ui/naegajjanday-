@@ -77,10 +77,10 @@ export default function AdminUsersPage() {
           <EmptyState size="sm" title="코호트를 만들 만큼 데이터가 쌓이지 않았어요" />
         ) : (
           <div className="overflow-x-auto">
-            <table className="tabular w-full min-w-[640px] border-separate border-spacing-1 text-center text-[13px]">
+            <table className="tabular w-full min-w-[640px] border-separate border-spacing-1 text-center text-body-sm">
               <caption className="sr-only">주차별 리텐션 코호트 표</caption>
               <thead>
-                <tr className="text-xs font-extrabold text-muted-foreground">
+                <tr className="text-caption font-semibold text-muted-foreground">
                   <th scope="col" className="px-2 py-1.5 text-left">
                     가입 주
                   </th>

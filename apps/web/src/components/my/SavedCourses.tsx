@@ -46,21 +46,21 @@ export function SavedCourses() {
           // 한 장의 작은 영수증: 저장한 하루가 쌓인다 (docs/25 §5 내 코스)
           <li key={c.id} className="receipt-wrap group relative transition-transform duration-200 hover:-translate-y-0.5">
             <div className="receipt px-5 pt-6 pb-5">
-            <p className="tabular text-xs font-extrabold text-blue-deep">
+            <p className="tabular text-caption font-extrabold text-blue-deep">
               {[c.region_name, c.purpose_name, `${c.party_size}명`].filter(Boolean).join(" · ")}
               {c.day && c.days && c.days > 1 ? <span className="ml-2 rounded-full bg-blue-soft px-2 py-0.5">{`${c.days - 1}박 ${c.days}일 · ${c.day}일차`}</span> : null}
               {c.visited ? <span className="ml-2 rounded-full bg-success-soft px-2 py-0.5 text-success">다녀옴</span> : null}
             </p>
-            <h3 className="mt-1 text-[17px] font-extrabold tracking-tight">
+            <h3 className="mt-1 text-body-lg font-extrabold">
               <Link href={`/course/${encodeURIComponent(c.id)}`} className="after:absolute after:inset-0">
                 {c.summary}
               </Link>
             </h3>
             {/* useMyCourses 가 toSavedCourse 로 맞춰 준다: stop_names 는 항상 배열, totals 는 항상 있다 */}
-            {c.stop_names.length > 0 ? <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{c.stop_names.join(" → ")}</p> : null}
-            <p className="tabular mt-3 flex items-center justify-between border-t-[1.5px] border-dashed border-ink/15 pt-3 text-sm font-bold text-ink-2">
+            {c.stop_names.length > 0 ? <p className="mt-1 line-clamp-1 text-body-sm text-muted-foreground">{c.stop_names.join(" → ")}</p> : null}
+            <p className="tabular mt-3 flex items-center justify-between border-t-[1.5px] border-dashed border-ink/15 pt-3 text-body-sm font-bold text-ink-2">
               <span>
-                <b className="text-base font-extrabold text-ink">{won(c.totals.price)}</b>
+                <b className="text-body font-extrabold text-ink">{won(c.totals.price)}</b>
                 {c.totals.duration_min > 0 ? ` · ${minutes(c.totals.duration_min)}` : ""}
                 {c.saved_at ? ` · ${dateShort(c.saved_at)} 저장` : ""}
               </span>
@@ -97,7 +97,7 @@ export function SavedCourses() {
             <DialogDescription>{target?.summary}</DialogDescription>
           </DialogHeader>
           {remove.error ? (
-            <p role="alert" className="text-sm font-bold text-danger">
+            <p role="alert" className="text-body-sm font-semibold text-danger">
               {mascotCopyForError(remove.error).description}
             </p>
           ) : null}

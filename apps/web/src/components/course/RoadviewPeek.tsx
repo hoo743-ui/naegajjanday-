@@ -73,9 +73,9 @@ export function RoadviewPeek({ apiKey, lat, lng, name }: RoadviewPeekProps) {
         <div ref={boxRef} role="img" aria-label={`${name} 앞 거리뷰`} className="size-full" />
         {state === "loading" ? <span className="skeleton-shimmer pointer-events-none absolute inset-0" aria-hidden /> : null}
       </div>
-      {state === "none" ? <p className="p-4 text-[13px] text-muted-foreground">이 가게 앞에는 거리뷰가 없어요. 지도 앱에서 주변을 확인해 주세요.</p> : null}
-      {state === "error" ? <p className="p-4 text-[13px] text-muted-foreground">거리뷰를 불러오지 못했어요.</p> : null}
-      {state === "ready" ? <p className="px-3 py-1.5 text-[11.5px] text-muted-foreground">거리뷰 ⓒ Kakao · 촬영 시점의 모습이라 지금과 다를 수 있어요</p> : null}
+      {state === "none" ? <p className="p-4 text-body-sm text-muted-foreground">이 가게 앞에는 거리뷰가 없어요. 지도 앱에서 주변을 확인해 주세요.</p> : null}
+      {state === "error" ? <p className="p-4 text-body-sm text-muted-foreground">거리뷰를 불러오지 못했어요.</p> : null}
+      {state === "ready" ? <p className="px-3 py-1.5 text-caption text-muted-foreground">거리뷰 ⓒ Kakao · 촬영 시점의 모습이라 지금과 다를 수 있어요</p> : null}
     </div>
   );
 }

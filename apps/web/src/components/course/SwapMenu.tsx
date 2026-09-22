@@ -36,20 +36,20 @@ export function SwapMenu({ placeName, pending, onSwap }: SwapMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60 rounded-2xl p-1.5">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">여기만 바꿔요. 나머지는 그대로예요</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-caption text-muted-foreground">여기만 바꿔요. 나머지는 그대로예요</DropdownMenuLabel>
         {OPTIONS.map((o) => (
           <DropdownMenuItem key={o.strategy} onSelect={() => onSwap(o.strategy)} className="cursor-pointer gap-3 rounded-xl py-2.5">
             <o.icon aria-hidden className="size-4 text-blue-deep" />
             <span>
-              <b className="block text-sm font-extrabold text-ink">{o.label}</b>
-              <span className="block text-xs text-muted-foreground">{o.hint}</span>
+              <b className="block text-body-sm font-semibold text-ink">{o.label}</b>
+              <span className="block text-caption text-muted-foreground">{o.hint}</span>
             </span>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => onSwap("random_top")} className="cursor-pointer gap-3 rounded-xl py-2.5">
           <Shuffle aria-hidden className="size-4 text-blue-deep" />
-          <b className="text-sm font-extrabold text-ink">아무 데나 괜찮은 곳</b>
+          <b className="text-body-sm font-semibold text-ink">아무 데나 괜찮은 곳</b>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

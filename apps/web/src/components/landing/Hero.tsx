@@ -83,18 +83,18 @@ export function Hero() {
       {/* 모바일: 약속 → 영수증 → 예산 조절 (예산을 움직이면 바로 위의 영수증이 다시 찍힌다). 데스크톱: 왼쪽 두 칸 · 오른쪽 영수증 */}
       <div className="wrap grid items-center gap-x-20 gap-y-12 lg:grid-cols-[1.08fr_.92fr] lg:grid-rows-[auto_auto]">
         <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
-          <motion.p {...rise(0)} className="flex items-center gap-2.5 text-[13px] font-extrabold tracking-[0.02em] text-ink-2">
+          <motion.p {...rise(0)} className="flex items-center gap-2.5 text-body-sm font-semibold tracking-[0.02em] text-ink-2">
             <span aria-hidden className="size-2 rounded-full bg-gold" />
             내 예산에 맞게, 내가 짠 데이
           </motion.p>
-          <motion.h1 {...rise(0.06)} className="mt-6 text-[clamp(38px,4.9vw,68px)] leading-[1.14] font-bold tracking-[-0.035em]">
+          <motion.h1 {...rise(0.06)} className="mt-6 font-serif text-display-xl">
             예산만 말하면,
             <br />
             하루가 <span className="relative whitespace-nowrap">영수증<span aria-hidden className="absolute inset-x-0 bottom-[0.08em] -z-10 h-[0.22em] rounded-full bg-gold/45" /></span>으로
             <br />
             나온다.
           </motion.h1>
-          <motion.p {...rise(0.12)} className="mt-6 max-w-[500px] text-[clamp(16px,1.4vw,18px)] leading-[1.75] text-ink-2">
+          <motion.p {...rise(0.12)} className="mt-6 max-w-[500px] text-body text-ink-2 sm:text-body-lg">
             지역 · 인원 · 예산을 말하면, 짠이가 전국의 실제 장소로 식사부터 카페, 놀거리까지 한 코스로 이어요. 얼마를 쓰고 <b className="font-bold text-ink">얼마가 남는지</b>부터 영수증으로 보여 드려요.
           </motion.p>
         </div>
@@ -104,10 +104,10 @@ export function Hero() {
           {/* 바로 만져 보는 예산: 카드가 아니라 위아래 선 사이의 한 줄 */}
           <motion.div {...rise(0.18)} className="max-w-[520px] border-y border-ink/10 py-6">
             <div className="flex items-end justify-between gap-4">
-              <label htmlFor={sliderId} className="text-[13px] font-extrabold text-muted-foreground">
+              <label htmlFor={sliderId} className="text-body-sm font-semibold text-muted-foreground">
                 오늘 쓸 돈
               </label>
-              <Money value={budget} className="text-[clamp(30px,3.4vw,40px)] leading-none font-extrabold tracking-[-0.035em] text-ink" />
+              <Money value={budget} className="money text-price-lg text-ink" />
             </div>
             <input
               id={sliderId}
@@ -125,13 +125,13 @@ export function Hero() {
                 <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-11 place-items-center rounded-full border border-line bg-white/70 hover:border-ink-2 disabled:opacity-40">
                   <Minus aria-hidden className="size-4" />
                 </button>
-                <output aria-live="polite" className="tabular min-w-12 text-center text-[17px] font-extrabold">
+                <output aria-live="polite" className="tabular min-w-12 text-center text-body-lg font-extrabold">
                   {party}명
                 </output>
                 <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-11 place-items-center rounded-full border border-line bg-white/70 hover:border-ink-2 disabled:opacity-40">
                   <Plus aria-hidden className="size-4" />
                 </button>
-                <span className="tabular ml-1.5 text-[13px] font-bold text-muted-foreground">1인 {Math.floor(budget / party).toLocaleString("ko-KR")}원</span>
+                <span className="tabular ml-1.5 text-body-sm font-bold text-muted-foreground">1인 {Math.floor(budget / party).toLocaleString("ko-KR")}원</span>
               </div>
               <Button asChild variant="brand" size="lg" className="group max-sm:w-full">
                 <Link href="/plan" onClick={() => track("plan_started", { entry: "landing_hero" })}>
@@ -142,7 +142,7 @@ export function Hero() {
           </motion.div>
 
           {proof ? (
-            <motion.dl {...rise(0.24)} className="tabular mt-6 flex max-w-[520px] flex-wrap gap-x-7 gap-y-2 text-[13.5px]">
+            <motion.dl {...rise(0.24)} className="tabular mt-6 flex max-w-[520px] flex-wrap gap-x-7 gap-y-2 text-body-sm">
               {[
                 { k: "전국 장소", v: `${proof.places.toLocaleString("ko-KR")}곳` },
                 { k: "코스를 짜는 동네", v: `${proof.regions}곳` },
@@ -169,7 +169,7 @@ export function Hero() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduced ? undefined : { opacity: 0, y: -5 }}
                   transition={{ duration: 0.18 }}
-                  className="tabular block text-[13.5px] leading-snug font-extrabold text-ink"
+                  className="tabular block text-body-sm leading-snug font-extrabold text-ink"
                 >
                   {say}
                 </motion.b>

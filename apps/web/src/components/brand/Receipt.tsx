@@ -34,17 +34,17 @@ export function Receipt({ heading, caption, items, budget, footer, size = "md", 
   return (
     <div className={cn("receipt-wrap", className)}>
       <div className={cn("receipt receipt-print", lg ? "px-6 pt-8 pb-7 sm:px-9 sm:pt-9" : "px-6 pt-7 pb-6 sm:px-7")}>
-        <p className="text-center font-round text-[19px] tracking-tight text-ink">내가짠데이</p>
-        <p className="tabular mt-1 text-center text-[12.5px] font-bold text-muted-foreground">{heading}</p>
-        {caption ? <p className="mt-0.5 text-center text-[11.5px] text-muted-foreground">{caption}</p> : null}
+        <p className="text-center font-round text-h3 text-ink">내가짠데이</p>
+        <p className="tabular mt-1 text-center text-caption font-semibold text-muted-foreground">{heading}</p>
+        {caption ? <p className="mt-0.5 text-center text-caption text-muted-foreground">{caption}</p> : null}
 
         <hr className="receipt-rule my-4" />
 
         <ol className="grid gap-2.5">
           {items.map((item, i) => (
-            <li key={`${item.label}-${item.name}`} style={{ "--i": i } as CSSProperties} className={cn("receipt-line flex items-baseline gap-2", lg ? "text-[15px]" : "text-[14.5px]")}>
-              <span className="tabular w-5 shrink-0 text-[12px] font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
-              <span className="min-w-0 shrink truncate font-bold text-ink">
+            <li key={`${item.label}-${item.name}`} style={{ "--i": i } as CSSProperties} className="receipt-line flex items-baseline gap-2 text-body">
+              <span className="tabular w-5 shrink-0 text-caption font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+              <span className="min-w-0 shrink truncate font-semibold text-ink">
                 <span className="text-muted-foreground">{item.label}</span> {item.name}
               </span>
               <span aria-hidden className="receipt-leader" />
@@ -57,14 +57,14 @@ export function Receipt({ heading, caption, items, budget, footer, size = "md", 
 
         <hr className="receipt-rule my-4" />
 
-        <dl style={{ "--i": items.length + 1 } as CSSProperties} className="receipt-line grid gap-1.5 text-[14px]">
+        <dl style={{ "--i": items.length + 1 } as CSSProperties} className="receipt-line grid gap-1.5 text-body-sm">
           <div className="flex items-baseline justify-between">
-            <dt className="font-bold text-muted-foreground">예산</dt>
-            <dd className="tabular font-bold text-ink-2">{budget.toLocaleString("ko-KR")}원</dd>
+            <dt className="font-medium text-muted-foreground">예산</dt>
+            <dd className="tabular font-semibold text-ink-2">{budget.toLocaleString("ko-KR")}원</dd>
           </div>
           <div className="flex items-baseline justify-between">
-            <dt className="font-bold text-muted-foreground">합계</dt>
-            <dd className="text-[17px] font-extrabold text-ink">
+            <dt className="font-medium text-muted-foreground">합계</dt>
+            <dd className="money text-body-lg text-ink">
               <Money value={total} />
             </dd>
           </div>
@@ -77,20 +77,20 @@ export function Receipt({ heading, caption, items, budget, footer, size = "md", 
             style={{ "--i": items.length + 3 } as CSSProperties}
             className={cn("receipt-line mt-5 grid gap-1 rounded-2xl px-5 pt-4 pb-5", left >= 0 ? "coin-gleam bg-gold-soft text-gold-ink" : "bg-pink-soft text-pink-deep")}
           >
-            <span className="text-[13px] font-extrabold tracking-wide">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
-            <Money value={Math.abs(left)} className="text-[clamp(34px,9vw,44px)] leading-[1.02] font-extrabold tracking-[-0.035em]" />
+            <span className="text-body-sm font-semibold">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
+            <Money value={Math.abs(left)} className="money text-price-lg" />
           </div>
         ) : (
           <div
             style={{ "--i": items.length + 3 } as CSSProperties}
             className={cn("receipt-line mt-4 flex items-center justify-between rounded-2xl px-4 py-3", left >= 0 ? "coin-gleam bg-gold-soft text-gold-ink" : "bg-pink-soft text-pink-deep")}
           >
-            <span className="text-[13.5px] font-extrabold">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
-            <Money value={Math.abs(left)} className="text-[22px] leading-none font-extrabold tracking-tight" />
+            <span className="text-body-sm font-semibold">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
+            <Money value={Math.abs(left)} className="money text-price-sm" />
           </div>
         )}
 
-        {footer ? <div className="mt-4 text-center text-[11.5px] leading-relaxed text-muted-foreground">{footer}</div> : null}
+        {footer ? <div className="mt-4 text-center text-caption text-muted-foreground">{footer}</div> : null}
       </div>
     </div>
   );

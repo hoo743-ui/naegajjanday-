@@ -38,8 +38,8 @@ export function PurposeCards() {
       <div className="wrap">
         <ChapterMark n="04" label="어떤 약속이든" />
         <div className="mt-12 flex flex-wrap items-end justify-between gap-x-12 gap-y-5">
-          <h2 className="font-serif text-[clamp(30px,3.8vw,50px)] leading-[1.22] font-bold tracking-[-0.03em]">오늘은 어떤 약속인가요?</h2>
-          <p className="max-w-[440px] text-[16px] leading-[1.75] text-ink-2">
+          <h2 className="font-serif text-display">오늘은 어떤 약속인가요?</h2>
+          <p className="max-w-[440px] text-body text-ink-2">
             같은 예산이어도 목적이 다르면 코스가 달라져요. 데이트는 분위기를, 혼밥은 웨이팅 없는 곳을 먼저 봅니다.
           </p>
         </div>
@@ -80,14 +80,14 @@ export function PurposeCards() {
                         )}
                       </span>
                       <span className="mt-4 flex items-baseline justify-between gap-3">
-                        <b className={cn("font-extrabold tracking-tight", lead ? "text-[24px]" : "text-[18px]")}>{p.name}</b>
-                        <span className="tabular flex shrink-0 items-center gap-1 text-[13px] font-extrabold text-blue-deep">
+                        <b className={cn("font-bold", lead ? "text-h2" : "text-body-lg")}>{p.name}</b>
+                        <span className="tabular flex shrink-0 items-center gap-1 text-body-sm font-extrabold text-blue-deep">
                           1인 {wonCompact(p.budget_range.min)}부터
                           <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-1" />
                         </span>
                       </span>
-                      {p.description ? <span className={cn("mt-1 text-muted-foreground", lead ? "text-[15px]" : "text-[13.5px]")}>{p.description}</span> : null}
-                      {photo ? <span className="mt-1.5 text-[11px] font-medium text-muted-foreground/80">사진 ©한국관광공사 · {photo.place}</span> : null}
+                      {p.description ? <span className={cn("mt-1 text-muted-foreground", lead ? "text-body" : "text-body-sm")}>{p.description}</span> : null}
+                      {photo ? <span className="mt-1.5 text-caption font-medium text-muted-foreground/80">사진 ©한국관광공사 · {photo.place}</span> : null}
                     </Link>
                   </motion.li>
                 );

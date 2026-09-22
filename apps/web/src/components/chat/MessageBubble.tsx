@@ -45,13 +45,13 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
         <span className="sr-only">짠이: </span>
 
         {message.content || waiting ? (
-          <div className="max-w-full rounded-[20px] rounded-tl-md bg-white px-4 py-2.5 shadow-soft text-[15px] leading-relaxed font-medium whitespace-pre-wrap text-ink sm:max-w-[88%]">
+          <div className="max-w-full rounded-[20px] rounded-tl-md bg-white px-4 py-2.5 shadow-soft text-body font-medium whitespace-pre-wrap text-ink sm:max-w-[88%]">
             {message.content || <TypingDots />}
           </div>
         ) : null}
 
         {message.tool ? (
-          <span role="status" className="inline-flex items-center gap-2 rounded-full bg-blue-soft px-3 py-1.5 text-[13px] font-extrabold text-blue-deep">
+          <span role="status" className="inline-flex items-center gap-2 rounded-full bg-blue-soft px-3 py-1.5 text-body-sm font-semibold text-blue-deep">
             <span aria-hidden className="size-3 animate-spin rounded-full border-2 border-blue-deep border-t-transparent" />
             {TOOL_STATUS[message.tool] ?? "짠이가 알아보는 중…"}
           </span>
@@ -63,12 +63,12 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
           </div>
         ) : null}
 
-        {message.status === "stopped" ? <span className="text-xs font-bold text-muted-foreground">답변을 멈췄어요.</span> : null}
+        {message.status === "stopped" ? <span className="text-caption font-semibold text-muted-foreground">답변을 멈췄어요.</span> : null}
 
         {errorCopy ? (
           <div role="alert" className="max-w-full rounded-[20px] rounded-tl-md border border-pink/40 bg-pink-soft px-4 py-3 sm:max-w-[88%]">
-            <b className="block text-[15px] font-extrabold text-ink">{errorCopy.title}</b>
-            <p className="mt-0.5 text-sm text-ink-2">{errorCopy.description}</p>
+            <b className="block text-body font-extrabold text-ink">{errorCopy.title}</b>
+            <p className="mt-0.5 text-body-sm text-ink-2">{errorCopy.description}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               {errorCopy.retry && canRetry ? (
                 <Button type="button" variant="outline" size="sm" className="rounded-lg font-bold" onClick={onRetry}>
@@ -80,7 +80,7 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
                   <Link href={errorCopy.action.href}>{errorCopy.action.label}</Link>
                 </Button>
               ) : null}
-              <span className="text-[11px] text-muted-foreground">오류 코드 {errorCopy.code}</span>
+              <span className="text-caption text-muted-foreground">오류 코드 {errorCopy.code}</span>
             </div>
           </div>
         ) : null}
@@ -107,7 +107,7 @@ export function MessageBubble({ message, isLast, onRetry }: MessageBubbleProps) 
     >
       {message.role === "user" ? (
         <div className="flex justify-end">
-          <p className="max-w-[85%] rounded-[20px] rounded-br-md bg-[image:linear-gradient(120deg,#2F6BEA,#5B7FF5)] px-4 py-2.5 text-[15px] leading-relaxed font-medium whitespace-pre-wrap text-white">
+          <p className="max-w-[85%] rounded-[20px] rounded-br-md bg-[image:linear-gradient(120deg,#2F6BEA,#5B7FF5)] px-4 py-2.5 text-body font-medium whitespace-pre-wrap text-white">
             <span className="sr-only">나: </span>
             {message.content}
           </p>

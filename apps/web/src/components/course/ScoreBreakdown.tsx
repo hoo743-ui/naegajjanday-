@@ -26,9 +26,9 @@ export function ScoreBreakdown({ scores, total, hidden = [], className }: ScoreB
   return (
     <div className={cn("rounded-2xl bg-soft p-4", className)}>
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <p className="text-[13px] font-extrabold text-ink-2">짠이가 본 {shown.length}가지</p>
-        <p className="tabular text-[13px] font-bold text-muted-foreground">
-          종합 <b className="text-base font-extrabold text-blue-deep">{Math.round(total * 100)}</b>점
+        <p className="text-body-sm font-semibold text-ink-2">짠이가 본 {shown.length}가지</p>
+        <p className="tabular text-body-sm font-bold text-muted-foreground">
+          종합 <b className="text-body font-extrabold text-blue-deep">{Math.round(total * 100)}</b>점
         </p>
       </div>
       <dl className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
@@ -38,10 +38,10 @@ export function ScoreBreakdown({ scores, total, hidden = [], className }: ScoreB
           const info = FEATURE_INFO[key];
           return (
             <div key={key} title={info.hint}>
-              <div className="flex items-baseline justify-between text-[13px]">
+              <div className="flex items-baseline justify-between text-body-sm">
                 <dt className={cn("font-bold", strong ? "text-ink" : "text-ink-2")}>
                   {info.label}
-                  {strong ? <span className="ml-1.5 rounded-md bg-blue-soft px-1.5 py-0.5 text-[10.5px] font-extrabold text-blue-deep">강점</span> : null}
+                  {strong ? <span className="ml-1.5 rounded-md bg-blue-soft px-1.5 py-0.5 text-caption font-semibold text-blue-deep">강점</span> : null}
                 </dt>
                 <dd className="tabular font-extrabold text-ink">
                   {Math.round(value * 100)}
@@ -61,7 +61,7 @@ export function ScoreBreakdown({ scores, total, hidden = [], className }: ScoreB
           );
         })}
       </dl>
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className="mt-3 text-caption text-muted-foreground">
         막대는 항목별 적합도예요. 종합 점수는 목적에 따라 항목마다 다른 비중을 곱해 더한 값이라 막대의 평균과는 달라요. 점수는 AI가 아니라 정해진 계산식으로 매겨요.
       </p>
     </div>

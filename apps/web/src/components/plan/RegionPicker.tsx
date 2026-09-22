@@ -125,8 +125,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           <MapPin aria-hidden className="size-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <b className="block truncate text-[17px] font-extrabold tracking-tight">{label}</b>
-          <span className="tabular block truncate text-[13px] text-muted-foreground">{sub ?? `${r.parent ? `${r.parent.name} · ` : ""}장소 ${num(r.place_count)}곳`}</span>
+          <b className="block truncate text-body-lg font-extrabold">{label}</b>
+          <span className="tabular block truncate text-body-sm text-muted-foreground">{sub ?? `${r.parent ? `${r.parent.name} · ` : ""}장소 ${num(r.place_count)}곳`}</span>
         </span>
         {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
       </button>
@@ -147,7 +147,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"
           autoComplete="off"
-          className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-base font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-blue-deep"
+          className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-body font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-blue-deep"
         />
       </div>
 
@@ -158,10 +158,10 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
             <MapPin aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <b className="block truncate text-[17px] font-extrabold tracking-tight">{pickedStation.name} 주변</b>
-            <span className="block truncate text-[13px] text-ink-2">여기서 걸어서 다닐 거리로 짜요</span>
+            <b className="block truncate text-body-lg font-extrabold">{pickedStation.name} 주변</b>
+            <span className="block truncate text-body-sm text-ink-2">여기서 걸어서 다닐 거리로 짜요</span>
           </span>
-          <button type="button" onClick={() => onChange("")} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-[13px] font-extrabold text-ink-2 shadow-soft hover:text-ink" aria-label={`${pickedStation.name} 주변 선택 취소하고 다른 곳 고르기`}>
+          <button type="button" onClick={() => onChange("")} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-body-sm font-semibold text-ink-2 shadow-soft hover:text-ink" aria-label={`${pickedStation.name} 주변 선택 취소하고 다른 곳 고르기`}>
             다른 곳 고르기
           </button>
         </div>
@@ -171,7 +171,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         {query ? (
           matches.length === 0 && (stations.data?.items.length ?? 0) === 0 && !stations.isFetching ? (
             <EmptyState size="sm" mood="think" title={`‘${query}’ 은(는) 찾지 못했어요`} description="가까운 지하철역이나 구 이름으로 다시 찾아볼까요?">
-              <button type="button" onClick={() => setQ("")} className="rounded-full bg-soft px-4 py-2 text-sm font-extrabold text-ink-2 hover:bg-line">
+              <button type="button" onClick={() => setQ("")} className="rounded-full bg-soft px-4 py-2 text-body-sm font-semibold text-ink-2 hover:bg-line">
                 전체 지역 보기
               </button>
             </EmptyState>
@@ -194,8 +194,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       <TrainFront aria-hidden className="size-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <b className="block truncate text-[17px] font-extrabold tracking-tight">{s.name} 주변</b>
-                      <span className="block truncate text-[13px] text-muted-foreground">지하철역 · 걸어서 다닐 거리로 짜요</span>
+                      <b className="block truncate text-body-lg font-extrabold">{s.name} 주변</b>
+                      <span className="block truncate text-body-sm text-muted-foreground">지하철역 · 걸어서 다닐 거리로 짜요</span>
                     </span>
                     {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
                   </button>
@@ -206,7 +206,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         ) : (
           <>
             {/* 어디까지 들어왔는지 — 누르면 그 단계로 돌아간다 */}
-            <nav aria-label="지역 단계" className="mb-3 flex flex-wrap items-center gap-1 text-sm font-semibold text-muted-foreground">
+            <nav aria-label="지역 단계" className="mb-3 flex flex-wrap items-center gap-1 text-body-sm font-semibold text-muted-foreground">
               <button type="button" aria-current={path.length === 0 ? "location" : undefined} onClick={() => setPath([])} className={cn("rounded-lg px-2 py-1 hover:bg-ink/[0.05] hover:text-ink", path.length === 0 && "text-ink")}>
                 전국
               </button>
@@ -227,7 +227,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
 
             {path.length === 0 && hotspots.length > 0 ? (
               <div className="mb-4">
-                <p className="mb-2 text-[13px] font-bold text-ink-2">많이 찾는 동네</p>
+                <p className="mb-2 text-body-sm font-semibold text-ink-2">많이 찾는 동네</p>
                 <div className="flex flex-wrap gap-2">
                   {hotspots.map((r) => (
                     <button
@@ -237,7 +237,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       aria-checked={value === r.slug}
                       onClick={() => onChange(r.slug)}
                       className={cn(
-                        "rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition-colors",
+                        "rounded-full border-2 px-3.5 py-1.5 text-body-sm font-semibold transition-colors",
                         value === r.slug ? "border-blue-deep bg-blue-deep text-white" : "border-transparent bg-white text-ink-2 shadow-soft hover:bg-blue-soft",
                       )}
                     >
@@ -265,8 +265,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                         <MapPin aria-hidden className="size-5" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <b className="block truncate text-[17px] font-extrabold tracking-tight">{node.name}</b>
-                        <span className="tabular block truncate text-[13px] text-muted-foreground">
+                        <b className="block truncate text-body-lg font-extrabold">{node.name}</b>
+                        <span className="tabular block truncate text-body-sm text-muted-foreground">
                           {node.children.length > 0 ? `${node.children.length}곳으로 나뉘어요` : "동네까지 고를 수 있어요"} · 장소 {num(node.placeCount)}곳
                         </span>
                       </span>
@@ -287,7 +287,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                 </div>
               ) : dongs.length > 0 ? (
                 <div className="mt-5">
-                  <p className="mb-2 text-[13px] font-bold text-ink-2">동네까지 좁히기 · {district.name}의 동 {dongs.length}곳</p>
+                  <p className="mb-2 text-body-sm font-semibold text-ink-2">동네까지 좁히기 · {district.name}의 동 {dongs.length}곳</p>
                   <div className="grid gap-3 sm:grid-cols-2">{dongs.map((r) => regionButton(r, r.name, `걸어서 다닐 범위 · 장소 ${num(r.place_count)}곳`))}</div>
                 </div>
               ) : null

@@ -238,7 +238,7 @@ export function PlanWizard() {
                 headingRef.current?.focus();
               }}
             >
-              <h1 ref={headingRef} tabIndex={-1} className="mb-6 text-[clamp(26px,4vw,36px)] font-extrabold outline-none">
+              <h1 ref={headingRef} tabIndex={-1} className="mb-6 text-h1 font-bold outline-none">
                 {current?.question}
               </h1>
 
@@ -295,7 +295,7 @@ export function PlanWizard() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[max(14px,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 px-5 pt-3.5 lg:max-w-[1120px]">
             {/* 데스크톱은 옆의 영수증이 같은 것을 보여 준다 → 자리만 지킨다 */}
-            <p className="tabular hidden min-w-0 flex-1 truncate text-sm font-bold text-ink-2 sm:block lg:invisible" aria-live="polite">
+            <p className="tabular hidden min-w-0 flex-1 truncate text-body-sm font-bold text-ink-2 sm:block lg:invisible" aria-live="polite">
               {[placeLabel, purpose?.name, step >= 2 ? `${values.party_size}명` : null, step >= 2 ? won(values.budget_total) : null].filter(Boolean).join(" · ") || "세 가지만 알려 주세요"}
             </p>
             {step > 0 ? (

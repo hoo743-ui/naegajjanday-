@@ -115,7 +115,7 @@ export default function AdminAttractionsPage() {
               <Field id="a-lng" label="경도" required error={errors.lng?.message}>
                 <Input id="a-lng" type="number" step="0.0001" inputMode="decimal" aria-invalid={Boolean(errors.lng)} aria-describedby="a-lng-desc" {...form.register("lng", numeric)} />
               </Field>
-              <label className="flex items-center gap-2 self-end pb-2 text-sm font-bold text-ink-2">
+              <label className="flex items-center gap-2 self-end pb-2 text-body-sm font-semibold text-ink-2">
                 <input type="checkbox" className="size-4 accent-[#2F6BEA]" {...form.register("is_free")} /> 무료 입장
               </label>
               <Field id="a-price" label="1인 가격 (원)" error={errors.price_per_person?.message}>
@@ -170,7 +170,7 @@ function ImportPanel({ regions }: { regions: { slug: string; name: string }[] })
               upload.reset();
               setFile(e.target.files?.[0] ?? null);
             }}
-            className="block w-full rounded-md border border-dashed border-input bg-soft p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-extrabold file:text-blue-deep"
+            className="block w-full rounded-md border border-dashed border-input bg-soft p-3 text-body-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-body-sm file:font-extrabold file:text-blue-deep"
           />
         </Field>
         <Field id="i-region" label="지역" required hint="파일의 장소가 모두 이 지역으로 들어가요. 지역마다 파일을 나눠 올려 주세요.">

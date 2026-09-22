@@ -48,11 +48,11 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
           return (
             <li key={s.key} aria-current={i === step ? "step" : undefined} className="min-w-0 border-l border-dashed border-ink/15 first:border-l-0">
               <button type="button" disabled={!done} onClick={() => onJump(i)} aria-label={label(i, step)} className="block w-full min-w-0 px-2.5 py-1.5 text-left disabled:cursor-default">
-                <span className={cn("tabular flex items-center gap-1 text-[11px] font-extrabold", i === step ? "text-blue-deep" : done ? "text-ink-2" : "text-muted-foreground")}>
+                <span className={cn("tabular flex items-center gap-1 text-caption font-extrabold", i === step ? "text-blue-deep" : done ? "text-ink-2" : "text-muted-foreground")}>
                   {done ? <Check aria-hidden className="size-3" /> : null}
                   {String(i + 1).padStart(2, "0")} {s.title.split(" · ")[0]}
                 </span>
-                <span className={cn("mt-0.5 block truncate text-[12.5px] font-bold", value && i <= step ? "text-ink" : "text-ink/25")}>{value && i <= step ? value : "· · ·"}</span>
+                <span className={cn("mt-0.5 block truncate text-caption font-semibold", value && i <= step ? "text-ink" : "text-ink/25")}>{value && i <= step ? value : "· · ·"}</span>
               </button>
             </li>
           );
@@ -64,8 +64,8 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
       <aside aria-label="오늘의 영수증" className="hidden lg:sticky lg:top-[calc(var(--header-h)+32px)] lg:col-start-2 lg:row-start-1 lg:block lg:self-start">
         <div className="receipt-wrap">
           <div className="receipt px-6 pt-7 pb-6">
-            <p className="text-center font-round text-[19px] tracking-tight text-ink">내가짠데이</p>
-            <p className="mt-1 text-center text-[12px] font-bold text-muted-foreground">오늘의 영수증 · 출력 중</p>
+            <p className="text-center font-round text-h3 text-ink">내가짠데이</p>
+            <p className="mt-1 text-center text-caption font-semibold text-muted-foreground">오늘의 영수증 · 출력 중</p>
             <hr className="receipt-rule my-4" />
 
             <ol aria-label="진행 단계" className="grid gap-1">
@@ -81,9 +81,9 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
                       disabled={!done}
                       onClick={() => onJump(i)}
                       aria-label={label(i, step)}
-                      className={cn("-mx-2 flex w-[calc(100%+16px)] items-baseline gap-2 rounded-lg px-2 py-1.5 text-left text-[14px] disabled:cursor-default", done && "hover:bg-paper-2")}
+                      className={cn("-mx-2 flex w-[calc(100%+16px)] items-baseline gap-2 rounded-lg px-2 py-1.5 text-left text-body-sm disabled:cursor-default", done && "hover:bg-paper-2")}
                     >
-                      <span className={cn("tabular w-5 shrink-0 text-[11.5px] font-extrabold", current ? "text-blue-deep" : "text-muted-foreground")}>{String(i + 1).padStart(2, "0")}</span>
+                      <span className={cn("tabular w-5 shrink-0 text-caption font-extrabold", current ? "text-blue-deep" : "text-muted-foreground")}>{String(i + 1).padStart(2, "0")}</span>
                       <span className={cn("shrink-0 font-bold", current ? "text-blue-deep" : "text-muted-foreground")}>{s.title.split(" · ")[0] === "인원" ? "인원 · 예산" : s.title}</span>
                       <span aria-hidden className="receipt-leader" />
                       {printed ? (
@@ -102,10 +102,10 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
             {budget ? (
               <>
                 <hr className="receipt-rule my-4" />
-                <p className="mb-2 text-[12px] font-extrabold text-muted-foreground">이 예산이면 이런 하루 · 예시</p>
+                <p className="mb-2 text-caption font-semibold text-muted-foreground">이 예산이면 이런 하루 · 예시</p>
                 <ol className="grid gap-1.5">
                   {items.map((item, i) => (
-                    <li key={`${item.label}-${item.name}`} className="receipt-line flex items-baseline gap-2 text-[13px]" style={{ "--i": i } as CSSProperties}>
+                    <li key={`${item.label}-${item.name}`} className="receipt-line flex items-baseline gap-2 text-body-sm" style={{ "--i": i } as CSSProperties}>
                       <span className="min-w-0 shrink truncate font-semibold text-ink-2">
                         <span className="text-muted-foreground">{item.label}</span> {item.name}
                       </span>
@@ -115,13 +115,13 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
                   ))}
                 </ol>
                 <div className="mt-4 flex items-baseline justify-between rounded-2xl bg-gold-soft px-4 py-3 text-gold-ink">
-                  <span className="text-[13px] font-extrabold">남은 돈</span>
-                  <Money value={Math.max(0, budget.total - spent)} className="text-[22px] leading-none font-extrabold tracking-tight" />
+                  <span className="text-body-sm font-semibold">남은 돈</span>
+                  <Money value={Math.max(0, budget.total - spent)} className="money text-price-sm" />
                 </div>
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">업종 평균가로 만든 예시예요. 실제 코스는 진짜 가게로 짜요.</p>
+                <p className="mt-2 text-center text-caption text-muted-foreground">업종 평균가로 만든 예시예요. 실제 코스는 진짜 가게로 짜요.</p>
               </>
             ) : (
-              <p className="mt-5 text-center text-[12px] leading-relaxed text-muted-foreground">
+              <p className="mt-5 text-center text-caption text-muted-foreground">
                 고를 때마다 한 줄씩 찍혀요.
                 <br />
                 예산을 정하면 남은 돈이 나와요.
@@ -131,7 +131,7 @@ export function ReceiptProgress({ step, lines, budget, jjani, onJump }: ReceiptP
         </div>
 
         {/* 짠이: 고른 것에 한 줄로 반응한다 */}
-        <p className="mt-5 flex items-center gap-2.5 text-[14px] font-extrabold text-ink" aria-live="polite">
+        <p className="mt-5 flex items-center gap-2.5 text-body-sm font-semibold text-ink" aria-live="polite">
           <Jjani mood={jjani.mood} size={40} animated={false} decorative />
           <span key={jjani.line} className="animate-page">
             {jjani.line}

@@ -67,17 +67,17 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
               </span>
             </div>
           )}
-          {photo && credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-[10.5px] font-medium text-white/95">{credit}</span> : null}
-          <span className="absolute top-3 left-3 rounded-full bg-ink/85 px-2.5 py-1 text-xs font-extrabold text-white">{meta.label}</span>
+          {photo && credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span> : null}
+          <span className="absolute top-3 left-3 rounded-full bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">{meta.label}</span>
         </div>
 
         <SheetHeader className="gap-1.5 px-5 pt-5 pb-0 text-left">
-          <SheetTitle className="text-xl leading-snug font-extrabold tracking-tight">{item.name}</SheetTitle>
-          <SheetDescription className="text-sm text-muted-foreground">{item.summary || `${item.region?.name ?? ""} ${meta.label}`.trim()}</SheetDescription>
+          <SheetTitle className="text-h3 leading-snug font-extrabold">{item.name}</SheetTitle>
+          <SheetDescription className="text-body-sm text-muted-foreground">{item.summary || `${item.region?.name ?? ""} ${meta.label}`.trim()}</SheetDescription>
         </SheetHeader>
 
         <div className="grid gap-5 px-5 pt-4 pb-6">
-          <ul className="grid gap-2 rounded-2xl bg-soft p-4 text-sm font-bold text-ink-2">
+          <ul className="grid gap-2 rounded-2xl bg-soft p-4 text-body-sm font-semibold text-ink-2">
             <li className="flex items-start gap-2">
               <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-blue-deep" />
               <span>{item.address || item.region?.name || "주소 정보 없음"}</span>
@@ -90,7 +90,7 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
             ) : null}
             {item.is_free || item.price_per_person > 0 ? (
               <li className="tabular flex items-center gap-2">
-                <span aria-hidden className="grid size-4 shrink-0 place-items-center text-[13px] text-blue-deep">₩</span>
+                <span aria-hidden className="grid size-4 shrink-0 place-items-center text-body-sm text-blue-deep">₩</span>
                 {item.is_free ? "무료" : `1인 ${won(item.price_per_person)}`}
               </li>
             ) : null}
@@ -99,7 +99,7 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
           {item.tags.length > 0 ? (
             <ul aria-label="태그" className="flex flex-wrap gap-1.5">
               {item.tags.map((tag) => (
-                <li key={tag} className="rounded-full bg-soft px-2.5 py-1 text-xs font-bold text-ink-2">
+                <li key={tag} className="rounded-full bg-soft px-2.5 py-1 text-caption font-semibold text-ink-2">
                   {tag}
                 </li>
               ))}
@@ -114,7 +114,7 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => track("attraction_link_clicked", { attraction_id: item.id, to: l.key })}
-                className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-sm font-extrabold text-ink transition-colors hover:border-blue/50 hover:bg-blue-soft"
+                className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-body-sm font-semibold text-ink transition-colors hover:border-blue/50 hover:bg-blue-soft"
               >
                 <l.icon aria-hidden className="size-4.5 shrink-0 text-blue-deep" />
                 <span className="min-w-0 flex-1">{l.label}</span>
@@ -125,7 +125,7 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
 
           <Link
             href={planHref}
-            className="bg-grad inline-flex h-13 items-center justify-center gap-1.5 rounded-full px-6 text-[15px] font-extrabold text-white shadow-card"
+            className="bg-grad inline-flex h-13 items-center justify-center gap-1.5 rounded-full px-6 text-body font-extrabold text-white shadow-card"
           >
             이 근처로 코스 짜기 <ArrowRight aria-hidden className="size-4" />
           </Link>

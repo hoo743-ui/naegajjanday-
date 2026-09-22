@@ -53,7 +53,7 @@ export default function AdminRegionsPage() {
       cell: (r) => (
         <span>
           <b className="block font-extrabold">{r.name}</b>
-          <code className="text-xs text-muted-foreground">{r.slug}</code>
+          <code className="text-caption text-muted-foreground">{r.slug}</code>
         </span>
       ),
     },
@@ -68,24 +68,24 @@ export default function AdminRegionsPage() {
             <span role="progressbar" aria-label={`${r.name} 수집 진행률`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.last_job.progress * 100)} className="block h-2 overflow-hidden rounded-full bg-[#E3E9F4]">
               <span className="block h-full rounded-full bg-blue-deep transition-[width] duration-700" style={{ width: `${Math.round(r.last_job.progress * 100)}%` }} />
             </span>
-            <span className="tabular text-xs font-bold text-ink-2">{Math.round(r.last_job.progress * 100)}%</span>
+            <span className="tabular text-caption font-bold text-ink-2">{Math.round(r.last_job.progress * 100)}%</span>
           </span>
         ) : job ? (
           <span className="flex flex-wrap items-center gap-1.5">
             <StatusBadge status={job.status} />
-            <span className="tabular text-xs text-muted-foreground" title={job.error ?? undefined}>
+            <span className="tabular text-caption text-muted-foreground" title={job.error ?? undefined}>
               {providerLabel(job.provider)} · {job.status === "succeeded" || job.status === "failed" ? `${dateShort(job.finished_at ?? job.started_at ?? "")} · ${num(job.collected)}건` : "순서를 기다리고 있어요"}
             </span>
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">{r.last_collected_at ? `${dateShort(r.last_collected_at)} 수집` : "수집 전"}</span>
+          <span className="text-caption text-muted-foreground">{r.last_collected_at ? `${dateShort(r.last_collected_at)} 수집` : "수집 전"}</span>
         );
       },
     },
     { key: "places", header: "장소", align: "right", cell: (r) => <span className="tabular">{num(r.place_count)}</span> },
     { key: "pending", header: "승인 대기", align: "right", hideBelow: "md", cell: (r) => <span className="tabular">{num(r.pending_count)}</span> },
     { key: "radius", header: "반경", align: "right", hideBelow: "lg", cell: (r) => <span className="tabular">{num(r.radius_m)}m</span> },
-    { key: "keywords", header: "키워드", hideBelow: "lg", cell: (r) => <span className="line-clamp-1 text-xs text-ink-2">{r.keywords.join(", ") || "-"}</span> },
+    { key: "keywords", header: "키워드", hideBelow: "lg", cell: (r) => <span className="line-clamp-1 text-caption text-ink-2">{r.keywords.join(", ") || "-"}</span> },
     {
       key: "actions",
       header: <span className="sr-only">작업</span>,
@@ -125,7 +125,7 @@ export default function AdminRegionsPage() {
         <DatabaseZap aria-hidden className="mt-0.5 size-6 shrink-0 text-blue-deep" />
         <div>
           <p className="font-extrabold text-ink">새 지역 = 데이터만 추가. 코드 수정·배포 없음.</p>
-          <p className="mt-1 text-sm text-ink-2">
+          <p className="mt-1 text-body-sm text-ink-2">
             지역은 전부 DB 에서 읽어요. 여기서 <b>중심 좌표·반경·키워드</b>를 등록하고 <b>수집 시작</b>을 누르면 수집 잡이 장소를 모아 승인 큐에 넣어요(수집 중). 장소를 검토해 한 곳 이상 승인한 뒤 <b>활성화</b>하면 그 순간부터 코스 짜기 화면의 지역 목록에 나타나요.
           </p>
         </div>
@@ -142,14 +142,14 @@ export default function AdminRegionsPage() {
       <Panel title="등록된 지역" description="수집 중인 지역이 있으면 자동으로 새로 고쳐요. 활성화는 승인된 장소가 한 곳 이상일 때 할 수 있어요.">
         <fieldset className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-soft px-4 py-3">
           <legend className="sr-only">수집에 쓸 출처</legend>
-          <span aria-hidden className="text-sm font-extrabold text-ink-2">수집 출처</span>
+          <span aria-hidden className="text-body-sm font-semibold text-ink-2">수집 출처</span>
           {COLLECT_PROVIDERS.map((p) => (
-            <label key={p.value} className="flex items-center gap-1.5 text-sm font-bold text-ink-2">
+            <label key={p.value} className="flex items-center gap-1.5 text-body-sm font-semibold text-ink-2">
               <input type="checkbox" className="size-4 accent-[#2F6BEA]" checked={providers.includes(p.value)} onChange={(e) => setProviders((prev) => (e.target.checked ? [...prev, p.value] : prev.filter((v) => v !== p.value)))} />
               {p.label}
             </label>
           ))}
-          <span className="basis-full text-xs text-muted-foreground">{providers.length === 0 ? "출처를 하나 이상 골라야 수집을 시작할 수 있어요." : "출처마다 수집 잡이 1건씩 만들어져요. API 키를 설정하지 않은 출처의 잡은 실패로 끝나요."}</span>
+          <span className="basis-full text-caption text-muted-foreground">{providers.length === 0 ? "출처를 하나 이상 골라야 수집을 시작할 수 있어요." : "출처마다 수집 잡이 1건씩 만들어져요. API 키를 설정하지 않은 출처의 잡은 실패로 끝나요."}</span>
         </fieldset>
         <DataTable
           caption="등록된 지역 목록"
@@ -270,14 +270,14 @@ function KeywordInput({ id, value, onChange, invalid }: { id: string; value: str
   return (
     <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-white px-2 py-1.5 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
       {value.map((kw) => (
-        <span key={kw} className="inline-flex items-center gap-1 rounded-full bg-blue-soft py-1 pr-1 pl-3 text-[13px] font-extrabold text-blue-deep">
+        <span key={kw} className="inline-flex items-center gap-1 rounded-full bg-blue-soft py-1 pr-1 pl-3 text-body-sm font-semibold text-blue-deep">
           {kw}
           <button type="button" onClick={() => onChange(value.filter((k) => k !== kw))} aria-label={`${kw} 키워드 삭제`} className="grid size-5 place-items-center rounded-full hover:bg-white">
             <X aria-hidden className="size-3" />
           </button>
         </span>
       ))}
-      <input id={id} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} onBlur={() => text && add(text)} aria-invalid={invalid} aria-describedby={`${id}-desc`} placeholder={value.length ? "" : "망원, 망원동, 망리단길"} className="min-w-[140px] flex-1 bg-transparent px-1 py-1 text-sm outline-none" />
+      <input id={id} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} onBlur={() => text && add(text)} aria-invalid={invalid} aria-describedby={`${id}-desc`} placeholder={value.length ? "" : "망원, 망원동, 망리단길"} className="min-w-[140px] flex-1 bg-transparent px-1 py-1 text-body-sm outline-none" />
     </div>
   );
 }

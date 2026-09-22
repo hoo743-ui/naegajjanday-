@@ -54,12 +54,12 @@ export function EmptyState({ mood = "think", title, description, children, footn
       ) : (
         <Jjani mood={mood} size={SIZE[size]} />
       )}
-      <h3 className={cn("font-extrabold tracking-tight text-ink", size === "sm" ? "text-base" : size === "lg" ? "mt-1 font-serif text-[clamp(24px,3vw,32px)] font-bold" : "text-xl")}>{title}</h3>
+      <h3 className={cn("text-ink", size === "sm" ? "text-body font-bold" : size === "lg" ? "mt-1 font-serif text-h1" : "text-h3 font-bold")}>{title}</h3>
       {description ? (
-        <p className={cn("max-w-md text-muted-foreground", size === "sm" ? "text-sm" : "text-[15px]")}>{description}</p>
+        <p className={cn("max-w-md text-muted-foreground", size === "sm" ? "text-body-sm" : "text-body")}>{description}</p>
       ) : null}
       {children ? <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">{children}</div> : null}
-      {footnote ? <p className="mt-2 text-xs text-muted-foreground/80">{footnote}</p> : null}
+      {footnote ? <p className="mt-2 text-caption text-muted-foreground/80">{footnote}</p> : null}
     </div>
   );
 }

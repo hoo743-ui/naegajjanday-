@@ -20,12 +20,12 @@ export function HowItWorks() {
         <ChapterMark n="02" label="예산 → 영수증 → 코스" />
         <div className="mt-12 grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-20">
           <div className="lg:sticky lg:top-[calc(var(--header-h)+48px)] lg:self-start">
-            <h2 className="font-serif text-[clamp(30px,3.8vw,50px)] leading-[1.22] font-bold tracking-[-0.03em]">
+            <h2 className="font-serif text-display">
               네 단계의 약속 준비를
               <br />
               <span className="text-blue-deep">한 번의 입력으로</span>
             </h2>
-            <p className="mt-6 max-w-[440px] text-[16.5px] leading-[1.8] text-ink-2">
+            <p className="mt-6 max-w-[440px] text-body-lg text-ink-2">
               지도 앱에서 검색하고, 가격 확인하고, 직접 더해 보고, 넘으면 다시 검색하던 일. 이제 순서를 뒤집습니다.
             </p>
           </div>
@@ -33,12 +33,12 @@ export function HowItWorks() {
           <ol className="grid">
             {STEPS.map((step, i) => (
               <Reveal as="li" key={step.n} delay={i * 0.06} className="grid grid-cols-[auto_1fr] gap-x-6 border-t-[1.5px] border-dashed border-ink/20 py-9 first:border-t-0 first:pt-0 sm:gap-x-9">
-                <span className="tabular font-serif text-[clamp(34px,4vw,52px)] leading-none font-bold text-ink/85">{step.n}</span>
+                <span className="tabular text-h1 leading-none font-semibold text-ink/35">{step.n}</span>
                 <div>
-                  <h3 className="text-[clamp(20px,2vw,24px)] font-extrabold tracking-tight">{step.title}</h3>
-                  <p className="mt-2.5 max-w-[520px] text-[15.5px] leading-[1.75] text-ink-2">{step.body}</p>
+                  <h3 className="text-h2 font-bold">{step.title}</h3>
+                  <p className="mt-2.5 max-w-[520px] text-body text-ink-2">{step.body}</p>
                   {/* 짠이는 한 줄로만 끼어든다 */}
-                  <p className="mt-5 inline-flex items-center gap-2 text-[14px] font-extrabold text-ink">
+                  <p className="mt-5 inline-flex items-center gap-2 text-body-sm font-semibold text-ink">
                     <Jjani mood={step.mood} size={30} animated={false} decorative />“{step.quote}”
                   </p>
                 </div>

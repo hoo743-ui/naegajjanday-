@@ -40,15 +40,15 @@ export function ResultHeader({ title, subtitle, changeHref, onShare, shared = fa
         </Link>
 
         <div className="min-w-0 flex-1 px-1">
-          {title ? <p className="truncate text-[15px] leading-tight font-extrabold tracking-tight text-ink sm:text-base">{title}</p> : null}
-          {subtitle ? <p className="tabular truncate text-[12px] leading-tight font-semibold text-muted-foreground">{subtitle}</p> : null}
+          {title ? <p className="truncate text-body leading-tight font-bold text-ink">{title}</p> : null}
+          {subtitle ? <p className="tabular truncate text-caption leading-tight font-semibold text-muted-foreground">{subtitle}</p> : null}
         </div>
 
         {changeHref ? (
           <Link
             href={changeHref}
             aria-label="조건 바꾸기"
-            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13.5px] font-extrabold text-blue-deep hover:bg-blue-soft"
+            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft"
           >
             <SlidersHorizontal aria-hidden className="size-4" />
             <span className="max-sm:sr-only">조건 바꾸기</span>
@@ -59,7 +59,7 @@ export function ResultHeader({ title, subtitle, changeHref, onShare, shared = fa
             type="button"
             onClick={onShare}
             aria-label="코스 공유하기"
-            className="hidden h-11 shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-[13.5px] font-extrabold text-ink hover:border-ink-2 lg:inline-flex"
+            className="hidden h-11 shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-body-sm font-semibold text-ink hover:border-ink-2 lg:inline-flex"
           >
             {shared ? <Check aria-hidden className="size-4" /> : <Share2 aria-hidden className="size-4" />}
             {shared ? "링크 복사됨" : "공유"}

@@ -61,7 +61,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
       <div className="wrap flex h-(--header-h) items-center justify-between gap-4">
         <Link
           href="/"
-          className="-ml-1 flex items-center gap-2 rounded-xl px-1 font-round text-[22px] leading-none hover:opacity-80"
+          className="-ml-1 flex items-center gap-2 rounded-xl px-1 font-round text-h2 leading-none hover:opacity-80"
           aria-label="내가짠데이 홈"
           aria-current={pathname === "/" ? "page" : undefined}
         >
@@ -71,7 +71,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
 
         <nav
           aria-label="주요 메뉴"
-          className="hidden items-center gap-1 text-[15px] font-semibold md:flex"
+          className="hidden items-center gap-1 text-body font-semibold md:flex"
         >
           {[
             ...LINKS,
@@ -92,14 +92,14 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
           {status === "authenticated" && me ? (
             <Link
               href="/my"
-              className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
+              className="hidden rounded-lg px-3 py-2 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
             >
               {me.nickname} 님
             </Link>
           ) : status === "anonymous" ? (
             <Link
               href="/login"
-              className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
+              className="hidden rounded-lg px-3 py-2 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
             >
               로그인
             </Link>
@@ -141,7 +141,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
               key={link.href}
               href={link.href}
               aria-current={pathname.startsWith(link.href) ? "page" : undefined}
-              className="rounded-xl px-3 py-3 text-base font-semibold text-ink-2 hover:bg-soft aria-[current=page]:bg-blue-soft aria-[current=page]:text-blue-deep"
+              className="rounded-xl px-3 py-3 text-body font-semibold text-ink-2 hover:bg-soft aria-[current=page]:bg-blue-soft aria-[current=page]:text-blue-deep"
             >
               {link.label}
             </Link>

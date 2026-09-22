@@ -24,14 +24,14 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
   if (local.specialties.length === 0 && local.sights.length === 0) return null;
   return (
     <section aria-labelledby="local-card" className="rule-section gap-3.5">
-      <h2 id="local-card" className="flex items-center gap-2 text-[15px] font-extrabold text-ink">
+      <h2 id="local-card" className="flex items-center gap-2 text-body font-extrabold text-ink">
         <Sparkles aria-hidden className="size-4 text-blue-deep" />
         {local.region}, 이런 동네예요
       </h2>
 
       {local.specialties.length > 0 ? (
         <div className="grid gap-2">
-          <p className="text-[13px] leading-relaxed text-ink-2">
+          <p className="text-body-sm text-ink-2">
             간판에 유독 많이 걸린 말이에요. {onPick ? "누르면 같은 예산으로 그걸 넣어 다시 짜 드려요." : ""}
           </p>
           <ul className="flex flex-wrap gap-2">
@@ -40,13 +40,13 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
               const label = (
                 <>
                   <b className="font-extrabold">{s.word}</b>
-                  <span className={cn("tabular text-[12px]", on ? "text-white/85" : "text-muted-foreground")}>
+                  <span className={cn("tabular text-caption", on ? "text-white/85" : "text-muted-foreground")}>
                     {s.count}곳 · 전국의 {Math.round(s.lift)}배
                   </span>
                 </>
               );
               const shape = cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13.5px]",
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-body-sm",
                 on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-ink",
               );
               return (
@@ -63,7 +63,7 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
             })}
           </ul>
           {focus ? (
-            <p className="text-[13px] font-bold text-blue-deep">
+            <p className="text-body-sm font-semibold text-blue-deep">
               이 코스에는 &lsquo;{focus}&rsquo; 집을 한 곳 넣었어요.
               {onPick ? (
                 <button type="button" disabled={busy} onClick={() => onPick(FOCUS_OFF)} className="ml-2 font-semibold text-muted-foreground underline underline-offset-2 hover:text-ink">
@@ -77,11 +77,11 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
 
       {local.sights.length > 0 ? (
         <div className="grid gap-2">
-          <p className="text-[13px] text-ink-2">사람들이 보러 오는 곳</p>
+          <p className="text-body-sm text-ink-2">사람들이 보러 오는 곳</p>
           <ul className="flex flex-wrap gap-x-3 gap-y-1.5">
             {local.sights.map((s) => (
               <li key={s.name}>
-                <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep">
+                <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-body-sm font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep">
                   <MapPin aria-hidden className="size-3.5 text-blue-deep" />
                   {s.name}
                 </a>

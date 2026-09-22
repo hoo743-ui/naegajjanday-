@@ -58,7 +58,7 @@ export function JjaniLoader({ stages = DEFAULT_STAGES, interval = 1500, fullscre
             animate={{ y: 0, opacity: 1 }}
             exit={reduced ? undefined : { y: -18, opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
-            className="text-lg font-extrabold tracking-tight text-ink"
+            className="text-body-lg font-extrabold text-ink"
           >
             {stage}
           </motion.p>

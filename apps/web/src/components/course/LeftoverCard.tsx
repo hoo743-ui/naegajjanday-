@@ -32,7 +32,7 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
   if (items.length === 0) {
     if (!suggestions.isSuccess || budget <= 0 || budgetLeft / budget < WORTH_SAYING) return null;
     return (
-      <p role="note" className="tabular border-l-2 border-line pl-3 text-[13.5px] leading-relaxed text-ink-2">
+      <p role="note" className="tabular border-l-2 border-line pl-3 text-body-sm text-ink-2">
         남은 돈으로 <b className="font-extrabold text-gold-ink">{won(budgetLeft)}</b>이 있어요. 이 시간에 마지막 장소에서 걸어갈 수 있는 거리에는 더 권할 만한 곳을 찾지 못했어요.
       </p>
     );
@@ -41,10 +41,10 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
   return (
     <section aria-labelledby="leftover-card" className="rule-section gap-3">
       <div>
-        <h2 id="leftover-card" className="text-[15px] font-extrabold text-ink">
+        <h2 id="leftover-card" className="text-body font-extrabold text-ink">
           이런 건 어때요?
         </h2>
-        <p className="tabular mt-0.5 text-[13px] text-ink-2">
+        <p className="tabular mt-0.5 text-body-sm text-ink-2">
           남은 돈으로 <b className="font-extrabold text-gold-ink">{won(budgetLeft)}</b>, 마지막 장소에서 걸어갈 수 있는 곳이에요.
         </p>
       </div>
@@ -52,16 +52,16 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
         {items.map((item) => (
           <li key={item.place.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-line bg-white/70 p-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14.5px] font-extrabold text-ink">
+              <p className="truncate text-body font-extrabold text-ink">
                 <span className="text-muted-foreground">{roleLabel(item.role)}</span> {item.place.name}
               </p>
-              <p className="tabular text-[12.5px] text-muted-foreground">
+              <p className="tabular text-caption text-muted-foreground">
                 도보 {minutes(item.walk_min)} · {distance(item.distance_m)} · {item.line}
               </p>
             </div>
-            <p className="tabular shrink-0 text-right text-[14.5px] font-extrabold text-ink">
+            <p className="tabular shrink-0 text-right text-body font-extrabold text-ink">
               {item.est_price === 0 ? "무료" : won(item.est_price)}
-              {item.place.price_is_estimated && item.est_price > 0 ? <span className="block text-[11px] font-bold text-gold-ink">평균가</span> : null}
+              {item.place.price_is_estimated && item.est_price > 0 ? <span className="block text-caption font-semibold text-gold-ink">평균가</span> : null}
             </p>
             {editable ? (
               <Button
@@ -89,7 +89,7 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded }
         ))}
       </ul>
       {add.error ? (
-        <p role="alert" className="text-[13px] font-bold text-pink-deep">
+        <p role="alert" className="text-body-sm font-semibold text-pink-deep">
           {add.error.detail ?? mascotCopyForError(add.error).description}
         </p>
       ) : null}

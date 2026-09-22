@@ -233,7 +233,7 @@ export function SvgRouteMap({ stops, activeStop, onSelect }: SvgRouteMapProps) {
           );
         })}
       </svg>
-      <p className="glass pointer-events-none absolute right-3 bottom-3 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink-2">약도예요 · 실제 길과는 다를 수 있어요</p>
+      <p className="glass pointer-events-none absolute right-3 bottom-3 rounded-full px-3 py-1.5 text-caption font-semibold text-ink-2">약도예요 · 실제 길과는 다를 수 있어요</p>
     </div>
   );
 }

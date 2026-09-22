@@ -20,7 +20,7 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
 
   if (visited || feedback.isSuccess) {
     return (
-      <p role="status" className="rounded-card bg-success-soft px-5 py-4 text-sm font-bold text-success">
+      <p role="status" className="rounded-card bg-success-soft px-5 py-4 text-body-sm font-semibold text-success">
         다녀온 코스로 기록했어요. 다음 코스를 짤 때 참고할게요.
       </p>
     );
@@ -28,10 +28,10 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
 
   return (
     <section aria-labelledby="visited-card" className="rule-section gap-3">
-      <h2 id="visited-card" className="text-[15px] font-extrabold text-ink">
+      <h2 id="visited-card" className="text-body font-extrabold text-ink">
         다녀오셨나요?
       </h2>
-      <p className="text-[13px] leading-relaxed text-ink-2">별점을 남기면 ‘내 코스’에 다녀옴으로 표시하고, 다음 추천에 반영해요.</p>
+      <p className="text-body-sm text-ink-2">별점을 남기면 ‘내 코스’에 다녀옴으로 표시하고, 다음 추천에 반영해요.</p>
       <div className="flex flex-wrap items-center gap-3">
         <div role="radiogroup" aria-label="이 코스 별점" className="flex gap-1">
           {STARS.map((n) => (
@@ -50,7 +50,7 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
         </Button>
       </div>
       {feedback.error ? (
-        <p role="alert" className="text-[13px] font-bold text-pink-deep">
+        <p role="alert" className="text-body-sm font-semibold text-pink-deep">
           {mascotCopyForError(feedback.error).description}
         </p>
       ) : null}

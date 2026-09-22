@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  */
 export function ChapterMark({ n, label, tone = "ink", className }: { n: string; label: string; tone?: "ink" | "light"; className?: string }) {
   return (
-    <p className={cn("tabular flex items-center gap-3 text-[13px] font-extrabold tracking-[0.04em]", tone === "light" ? "text-white/70" : "text-ink-2", className)}>
+    <p className={cn("tabular flex items-center gap-3 text-body-sm font-extrabold tracking-[0.04em]", tone === "light" ? "text-white/70" : "text-ink-2", className)}>
       <span>{n}</span>
       <span aria-hidden className={cn("h-0 flex-1 border-t-[1.5px] border-dashed", tone === "light" ? "border-white/25" : "border-ink/20")} />
       <span>{label}</span>
@@ -16,5 +16,5 @@ export function ChapterMark({ n, label, tone = "ink", className }: { n: string; 
 
 /** 사진 출처: 한국관광공사 사진은 출처를 단다 (공공누리 조건) */
 export function PhotoCredit({ place, className }: { place: string; className?: string }) {
-  return <span className={cn("text-[11px] font-medium text-muted-foreground", className)}>사진 ©한국관광공사 · {place}</span>;
+  return <span className={cn("text-caption font-medium text-muted-foreground", className)}>사진 ©한국관광공사 · {place}</span>;
 }

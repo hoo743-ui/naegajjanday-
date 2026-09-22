@@ -95,8 +95,8 @@ export default function AdminDashboardPage() {
             {health.data.services.map((s) => (
               <li key={s.name} className="flex items-center justify-between gap-2 rounded-2xl bg-soft px-4 py-3">
                 <span className="min-w-0">
-                  <b className="block truncate text-sm font-extrabold">{s.name}</b>
-                  <span className="tabular text-xs text-muted-foreground">{s.latency_ms !== null ? `${s.latency_ms}ms` : (s.backend ?? (s.status === "down" ? "응답 없음" : "-"))}</span>
+                  <b className="block truncate text-body-sm font-semibold">{s.name}</b>
+                  <span className="tabular text-caption text-muted-foreground">{s.latency_ms !== null ? `${s.latency_ms}ms` : (s.backend ?? (s.status === "down" ? "응답 없음" : "-"))}</span>
                 </span>
                 <StatusBadge status={s.status} />
               </li>

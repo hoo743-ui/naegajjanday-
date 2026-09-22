@@ -66,7 +66,7 @@ export function Composer({ streaming, onSend, onStop }: ComposerProps) {
           disabled={streaming}
           placeholder={streaming ? "짠이가 답하는 중이에요…" : "어디서, 몇 명이, 얼마로 놀 건가요?"}
           aria-describedby="chat-input-hint"
-          className="max-h-[140px] min-h-10 flex-1 resize-none bg-transparent py-2 text-[15px] leading-relaxed text-ink outline-none placeholder:text-muted-foreground disabled:opacity-60"
+          className="max-h-[140px] min-h-10 flex-1 resize-none bg-transparent py-2 text-body text-ink outline-none placeholder:text-muted-foreground disabled:opacity-60"
         />
         {streaming ? (
           <button
@@ -91,7 +91,7 @@ export function Composer({ streaming, onSend, onStop }: ComposerProps) {
           </button>
         )}
       </div>
-      <p id="chat-input-hint" className="px-2 text-[11.5px] text-muted-foreground">
+      <p id="chat-input-hint" className="px-2 text-caption text-muted-foreground">
         Enter 로 보내고, Shift + Enter 로 줄을 바꿔요. 짠이는 등록된 장소 안에서만 추천해요.
       </p>
     </form>

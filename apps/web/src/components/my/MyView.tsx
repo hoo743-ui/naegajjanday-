@@ -57,8 +57,8 @@ export function MyView() {
       <section aria-label="내 프로필" className="flex flex-wrap items-center gap-4 border-b border-ink/10 pb-8">
         <Jjani mood="wink" size={84} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[clamp(26px,3.4vw,34px)] font-bold tracking-[-0.03em]">{me.nickname} 님의 하루들</h1>
-          {accountLine ? <p className="truncate text-sm font-bold text-ink-2">{accountLine}</p> : null}
+          <h1 className="truncate text-h1 font-bold">{me.nickname} 님의 하루들</h1>
+          {accountLine ? <p className="truncate text-body-sm font-semibold text-ink-2">{accountLine}</p> : null}
         </div>
         <div className="flex gap-2">
           <NicknameDialog me={me} />
@@ -82,7 +82,7 @@ export function MyView() {
 
       <section aria-labelledby="saved-title">
         <div className="mb-3 flex items-end justify-between">
-          <h2 id="saved-title" className="text-xl font-extrabold tracking-tight font-serif">
+          <h2 id="saved-title" className="text-h3 font-bold">
             저장한 코스
           </h2>
           <Button asChild variant="link" className="px-0 font-extrabold">
@@ -93,17 +93,17 @@ export function MyView() {
       </section>
 
       <section aria-labelledby="pref-title">
-        <h2 id="pref-title" className="mb-3 text-xl font-extrabold tracking-tight font-serif">
+        <h2 id="pref-title" className="mb-3 text-h3 font-bold">
           내 취향
         </h2>
         <PreferencesEditor />
       </section>
 
       <section aria-labelledby="leave-title" className="rounded-card border border-line bg-white p-6">
-        <h2 id="leave-title" className="text-base font-extrabold">
+        <h2 id="leave-title" className="text-body font-extrabold">
           회원 탈퇴
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">탈퇴를 신청하면 30일 동안 보관한 뒤 모든 개인정보와 저장한 코스를 완전히 지워요. 그 안에 다시 로그인하면 취소돼요.</p>
+        <p className="mt-1 text-body-sm text-muted-foreground">탈퇴를 신청하면 30일 동안 보관한 뒤 모든 개인정보와 저장한 코스를 완전히 지워요. 그 안에 다시 로그인하면 취소돼요.</p>
         <LeaveDialog
           onLeaving={() => {
             leaving.current = true;
@@ -150,7 +150,7 @@ function NicknameDialog({ me }: { me: Me }) {
             <Label htmlFor="nickname">닉네임</Label>
             <Input id="nickname" autoComplete="nickname" aria-invalid={Boolean(error)} aria-describedby={error ? "nickname-error" : undefined} {...form.register("nickname")} />
             {error ? (
-              <p id="nickname-error" role="alert" className="text-sm font-bold text-danger">
+              <p id="nickname-error" role="alert" className="text-body-sm font-semibold text-danger">
                 {error}
               </p>
             ) : null}
@@ -182,7 +182,7 @@ function LeaveDialog({ onLeaving }: { onLeaving: () => void }) {
           <DialogDescription>30일 안에 다시 로그인하면 탈퇴가 취소돼요. 30일이 지나면 저장한 코스와 취향 정보는 되돌릴 수 없어요.</DialogDescription>
         </DialogHeader>
         {remove.error ? (
-          <p role="alert" className="text-sm font-bold text-danger">
+          <p role="alert" className="text-body-sm font-semibold text-danger">
             {mascotCopyForError(remove.error).description}
           </p>
         ) : null}

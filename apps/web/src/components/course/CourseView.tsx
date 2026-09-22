@@ -362,7 +362,7 @@ export function CourseView({ id }: { id: string }) {
                 {[request.conditions?.includes("rain") ? "비 오는 날" : null, request.days && request.days > 1 ? `${request.day}일차 / ${request.days}일` : null, dateLabel(request.start_at), meetWindow(request.start_at, request.duration_min), tripDay && request.trip_budget_total ? `여행 전체 ${won(request.trip_budget_total)}` : null, request.style === "fun" ? "재미 우선" : null]
                   .filter((c): c is string => Boolean(c))
                   .map((c) => (
-                    <li key={c} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-[12.5px] font-bold text-ink-2">
+                    <li key={c} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-caption font-semibold text-ink-2">
                       {c}
                     </li>
                   ))}
@@ -376,7 +376,7 @@ export function CourseView({ id }: { id: string }) {
             </header>
 
             {readOnly && viewerKnown ? (
-              <p role="note" className="flex items-center gap-2 rounded-2xl bg-blue-soft px-4 py-3 text-sm font-bold text-blue-deep">
+              <p role="note" className="flex items-center gap-2 rounded-2xl bg-blue-soft px-4 py-3 text-body-sm font-semibold text-blue-deep">
                 <Users aria-hidden className="size-4 shrink-0" />
                 친구가 짠 코스예요. 아래 버튼으로 같은 조건의 내 코스를 만들면 바꾸고 저장할 수 있어요.
               </p>
@@ -414,8 +414,8 @@ export function CourseView({ id }: { id: string }) {
                   { k: "이동 거리", v: distance(data.totals.distance_m) },
                 ].map((item) => (
                   <div key={item.k} className="px-2">
-                    <dt className="text-xs font-bold text-muted-foreground">{item.k}</dt>
-                    <dd className="text-base font-extrabold tracking-tight">{item.v}</dd>
+                    <dt className="text-caption font-semibold text-muted-foreground">{item.k}</dt>
+                    <dd className="text-body font-extrabold">{item.v}</dd>
                   </div>
                 ))}
               </dl>
@@ -424,7 +424,7 @@ export function CourseView({ id }: { id: string }) {
                 <p
                   key={`${w.code}-${w.role ?? ""}-${i}`}
                   role="status"
-                  className={cn("flex gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold", w.code === "DURATION_FIT" ? "bg-blue-soft text-blue-deep" : w.code === "BUDGET_OVER" ? "bg-pink-soft text-pink-deep" : "bg-paper-2 text-ink-2")}
+                  className={cn("flex gap-2.5 rounded-2xl px-4 py-3 text-body-sm font-semibold", w.code === "DURATION_FIT" ? "bg-blue-soft text-blue-deep" : w.code === "BUDGET_OVER" ? "bg-pink-soft text-pink-deep" : "bg-paper-2 text-ink-2")}
                 >
                   {/* DURATION_FIT 은 경고가 아니라 "시간에 맞췄다"는 안내다 */}
                   {w.code === "DURATION_FIT" ? <Clock aria-hidden className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />}
@@ -470,12 +470,12 @@ export function CourseView({ id }: { id: string }) {
               {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글. 길면 네 줄만 보이고 펼친다 */}
               {narrative.text ? (
                 <section aria-label="짠이의 코스 이야기" className="grid justify-items-start gap-1.5 border-l-2 border-gold pl-4">
-                  <p className={cn("text-[15px] leading-[1.8] whitespace-pre-line text-ink-2", longStory && !storyOpen && "line-clamp-4")} aria-live="polite" aria-busy={narrative.status === "streaming"}>
+                  <p className={cn("text-body whitespace-pre-line text-ink-2", longStory && !storyOpen && "line-clamp-4")} aria-live="polite" aria-busy={narrative.status === "streaming"}>
                     {narrative.text}
                     {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
                   </p>
                   {longStory ? (
-                    <button type="button" aria-expanded={storyOpen} onClick={() => setStoryOpen((v) => !v)} className="-ml-2 rounded-full px-2 py-1.5 text-[13px] font-extrabold text-blue-deep hover:bg-blue-soft">
+                    <button type="button" aria-expanded={storyOpen} onClick={() => setStoryOpen((v) => !v)} className="-ml-2 rounded-full px-2 py-1.5 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft">
                       {storyOpen ? "접기" : "이야기 더 읽기"}
                     </button>
                   ) : null}
@@ -497,7 +497,7 @@ export function CourseView({ id }: { id: string }) {
               <NearbyEvents events={data.nearby_events} region={request.region?.slug} startAt={request.start_at} />
 
               {data.meta ? (
-                <p className="tabular text-center text-xs text-muted-foreground">
+                <p className="tabular text-center text-caption text-muted-foreground">
                   후보 {data.meta.candidates}곳 중에서 골랐어요 · 동선 {data.route.optimizer} · 엔진 {data.meta.engine_version}
                 </p>
               ) : null}

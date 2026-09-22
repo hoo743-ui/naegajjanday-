@@ -52,7 +52,7 @@ export function Differentiators() {
     <section id="different" className="scroll-mt-20 py-[clamp(72px,10vw,140px)]">
       <div className="wrap">
         <ChapterMark n="03" label="무엇이 다른가요" />
-        <h2 className="mt-12 max-w-[760px] font-serif text-[clamp(30px,3.8vw,50px)] leading-[1.22] font-bold tracking-[-0.03em]">
+        <h2 className="mt-12 max-w-[760px] font-serif text-display">
           아끼는 것이 아니라,
           <br />
           예산 안에서 <span className="relative whitespace-nowrap">더 잘 즐기게<span aria-hidden className="absolute inset-x-0 bottom-[0.06em] -z-10 h-[0.2em] rounded-full bg-gold/40" /></span> 합니다
@@ -60,24 +60,24 @@ export function Differentiators() {
 
         <Reveal className="mt-14 grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
           <div>
-            <p className="text-[13px] font-extrabold text-muted-foreground">늘 하던 방식</p>
+            <p className="text-body-sm font-semibold text-muted-foreground">늘 하던 방식</p>
             <ol className="mt-4 grid border-l-2 border-line pl-6">
               {OLD_WAY.map((step, i) => (
-                <li key={step} className="flex items-baseline gap-3 py-2 text-[17px] font-bold text-ink-2/70">
-                  <span className="tabular text-[12px] font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                <li key={step} className="flex items-baseline gap-3 py-2 text-body-lg font-bold text-ink-2/70">
+                  <span className="tabular text-caption font-extrabold text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
                   <span className="line-through decoration-ink/25 decoration-[1.5px]">{step}</span>
                 </li>
               ))}
             </ol>
             <p className="mt-5 flex items-baseline justify-between gap-3 border-t border-pink/40 pt-4 text-pink-deep">
-              <span className="text-[15px] font-extrabold">더해 보니 예산 초과</span>
-              <b className="tabular text-[22px] font-extrabold tracking-tight">+12,000원</b>
+              <span className="text-body font-extrabold">더해 보니 예산 초과</span>
+              <b className="money text-price-sm">+12,000원</b>
             </p>
-            <p className="mt-2 text-[14px] font-bold text-muted-foreground">…그래서 처음부터 다시 검색</p>
+            <p className="mt-2 text-body-sm font-semibold text-muted-foreground">…그래서 처음부터 다시 검색</p>
           </div>
 
           <div>
-            <p className="mb-4 text-[13px] font-extrabold text-blue-deep">내가짠데이: 예산부터 말하면</p>
+            <p className="mb-4 text-body-sm font-semibold text-blue-deep">내가짠데이: 예산부터 말하면</p>
             <Receipt className="w-full max-w-[380px]" heading={`${DEMO.party}명 · 40,000원 · 예시`} items={sampleCourse(DEMO.budget / DEMO.party, DEMO.party)} budget={DEMO.budget} />
           </div>
         </Reveal>
@@ -85,13 +85,13 @@ export function Differentiators() {
         <div className="mt-20 grid gap-x-16 md:grid-cols-2">
           {ITEMS.map((item, i) => (
             <Reveal as="article" key={item.tag} delay={(i % 2) * 0.06} className="grid content-start gap-3 border-t border-ink/12 py-9">
-              <p className="flex items-center gap-2 text-[13px] font-extrabold text-blue-deep">
+              <p className="flex items-center gap-2 text-body-sm font-semibold text-blue-deep">
                 <item.icon aria-hidden className="size-4" />
                 {item.tag}
               </p>
-              <h3 className="text-[clamp(20px,2vw,24px)] font-extrabold tracking-tight">{item.title}</h3>
-              <p className="max-w-[500px] text-[15.5px] leading-[1.75] text-ink-2">{item.body}</p>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-[13.5px] font-extrabold">
+              <h3 className="text-h2 font-bold">{item.title}</h3>
+              <p className="max-w-[500px] text-body text-ink-2">{item.body}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-body-sm font-semibold">
                 <span className="text-muted-foreground line-through">{item.from}</span>
                 <span aria-hidden className="text-muted-foreground">→</span>
                 <span className="sr-only">대신</span>

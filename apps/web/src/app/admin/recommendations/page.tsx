@@ -86,10 +86,10 @@ export default function AdminRecommendationsPage() {
           <EmptyState size="sm" title="히트맵을 그릴 데이터가 없어요" />
         ) : (
           <div className="overflow-x-auto">
-            <table className="tabular w-full min-w-[560px] border-separate border-spacing-1 text-center text-[13px]">
+            <table className="tabular w-full min-w-[560px] border-separate border-spacing-1 text-center text-body-sm">
               <caption className="sr-only">지역과 목적 조합별 코스 생성 수</caption>
               <thead>
-                <tr className="text-xs font-extrabold text-muted-foreground">
+                <tr className="text-caption font-semibold text-muted-foreground">
                   <td />
                   {heat.purposes.map(([code, name]) => (
                     <th key={code} scope="col" className="px-2 py-1.5">

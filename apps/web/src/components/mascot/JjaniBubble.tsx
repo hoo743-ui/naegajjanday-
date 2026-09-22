@@ -56,8 +56,8 @@ export function JjaniBubble({
                 tone === "gold" ? "bg-gold-soft" : "bg-white",
               )}
             />
-            <b className="block text-[17px] leading-snug font-extrabold tracking-tight text-ink">{title}</b>
-            {children ? <span className="mt-0.5 block text-sm font-bold">{children}</span> : null}
+            <b className="block text-body-lg leading-snug font-extrabold text-ink">{title}</b>
+            {children ? <span className="mt-0.5 block text-body-sm font-semibold">{children}</span> : null}
           </motion.div>
         </AnimatePresence>
       </div>

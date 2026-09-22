@@ -36,7 +36,7 @@ export function ChatWindow() {
   if (features.data?.chat === false) {
     return (
       <div className="mx-auto flex min-h-[calc(100dvh-68px)] w-full max-w-3xl flex-col px-4 sm:px-6">
-        <h1 className="pt-6 pb-2 text-xl font-extrabold tracking-tight sm:text-2xl">짠이와 대화</h1>
+        <h1 className="pt-6 pb-2 text-h3 font-extrabold sm:text-h2">짠이와 대화</h1>
         <EmptyState mood="hi" size="lg" title="짠이와 대화는 준비 중이에요" description="코스는 지금도 바로 짤 수 있어요. 지역 · 목적 · 예산만 골라 주세요." className="flex-1">
           <Button asChild variant="brand" size="xl">
             <Link href="/plan">
@@ -54,9 +54,9 @@ export function ChatWindow() {
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-68px)] w-full max-w-3xl flex-col px-4 sm:px-6">
       <div className="flex items-center justify-between pt-6 pb-2">
-        <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">짠이와 대화</h1>
+        <h1 className="text-h3 font-extrabold sm:text-h2">짠이와 대화</h1>
         {!empty ? (
-          <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-ink-2 hover:bg-white">
+          <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-body-sm font-semibold text-ink-2 hover:bg-white">
             <RotateCcw aria-hidden className="size-4" /> 새 대화
           </button>
         ) : null}
@@ -69,14 +69,14 @@ export function ChatWindow() {
               지역이랑 예산, 인원만 말해 주세요. 장소는 제가 지어내지 않고, 등록된 곳 중에서만 골라 드려요.
             </JjaniBubble>
             <div>
-              <p className="mb-2.5 text-[13px] font-extrabold text-ink-2">이렇게 말해 보세요</p>
+              <p className="mb-2.5 text-body-sm font-semibold text-ink-2">이렇게 말해 보세요</p>
               <ul className="grid gap-2">
                 {SUGGESTIONS.map((text) => (
                   <li key={text}>
                     <button
                       type="button"
                       onClick={() => send(text, true)}
-                      className="w-full rounded-2xl bg-white px-4 py-3.5 text-left text-[15px] font-bold text-ink shadow-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card"
+                      className="w-full rounded-2xl bg-white px-4 py-3.5 text-left text-body font-bold text-ink shadow-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-card"
                     >
                       “{text}”
                     </button>
@@ -97,7 +97,7 @@ export function ChatWindow() {
 
       <div className="sticky bottom-0 -mx-4 bg-[linear-gradient(180deg,transparent,var(--soft)_28%)] px-4 pt-6 pb-[max(14px,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6">
         <Composer streaming={streaming} onSend={(content) => send(content)} onStop={stop} />
-        <p className="mt-2 text-center text-xs text-muted-foreground">짠이는 가격과 영업시간을 틀릴 수 있어요. 가기 전에 한 번 확인해 주세요.</p>
+        <p className="mt-2 text-center text-caption text-muted-foreground">짠이는 가격과 영업시간을 틀릴 수 있어요. 가기 전에 한 번 확인해 주세요.</p>
       </div>
     </div>
   );

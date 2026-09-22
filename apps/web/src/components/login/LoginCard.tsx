@@ -96,19 +96,19 @@ export function LoginCard() {
   return (
     <div className="mx-auto w-full max-w-[400px] text-center">
       <Jjani mood="hi" size={88} className="mx-auto" />
-      <p className="mt-4 font-round text-[20px] leading-none text-ink">내가짠데이</p>
-      <h1 className="mt-4 text-[clamp(26px,4vw,32px)] font-bold tracking-[-0.03em]">다시 만나서 반가워요</h1>
-      <p className="mt-1.5 text-[15px] text-muted-foreground">로그인하면 짠 코스를 저장하고, 다녀온 곳으로 취향을 맞춰 드려요.</p>
+      <p className="mt-4 font-round text-h3 leading-none text-ink">내가짠데이</p>
+      <h1 className="mt-4 font-serif text-h1">다시 만나서 반가워요</h1>
+      <p className="mt-1.5 text-body text-muted-foreground">로그인하면 짠 코스를 저장하고, 다녀온 곳으로 취향을 맞춰 드려요.</p>
 
       {errorMessage ? (
-        <p role="alert" className="mt-5 rounded-xl bg-pink-soft px-3 py-2.5 text-sm font-bold text-pink-deep">
+        <p role="alert" className="mt-5 rounded-xl bg-pink-soft px-3 py-2.5 text-body-sm font-semibold text-pink-deep">
           {errorMessage}
         </p>
       ) : null}
 
       <ul className={cn("grid gap-2.5", errorMessage ? "mt-4" : "mt-7")}>
         {PROVIDERS.map((p) => {
-          const base = "flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl text-base font-extrabold tracking-tight transition-[filter,background]";
+          const base = "flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl text-body font-extrabold transition-[filter,background]";
           return (
             <li key={p.id}>
               {isEnabled(p.id) ? (
@@ -126,7 +126,7 @@ export function LoginCard() {
                 <button type="button" disabled className={cn(base, p.className, "cursor-not-allowed opacity-45 grayscale hover:brightness-100")}>
                   {p.glyph}
                   {p.label}
-                  <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-extrabold">준비 중이에요</span>
+                  <span className="rounded-full bg-black/10 px-2 py-0.5 text-caption font-semibold">준비 중이에요</span>
                 </button>
               )}
             </li>
@@ -135,25 +135,25 @@ export function LoginCard() {
       </ul>
 
       {providers.data && PROVIDERS.every((p) => !isEnabled(p.id)) ? (
-        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-xs font-bold">
+        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-caption font-semibold">
           소셜 로그인을 준비하고 있어요. 그동안은 가입 없이 코스를 짤 수 있어요.
         </p>
       ) : null}
 
       {IS_MOCKING ? (
-        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-xs font-bold">
+        <p role="note" className="mt-4 rounded-xl bg-paper-2 text-ink-2 px-3 py-2 text-caption font-semibold">
           목(MOCK) 모드예요. 어떤 버튼을 눌러도 개발용 관리자 계정으로 들어가요.
         </p>
       ) : null}
 
-      <p className="mt-6 text-[13px] text-muted-foreground">
+      <p className="mt-6 text-body-sm text-muted-foreground">
         가입 없이도 코스는 짤 수 있어요.{" "}
         <Link href="/plan" className="font-extrabold text-blue-deep underline-offset-4 hover:underline">
           바로 코스 짜기
         </Link>
       </p>
       {/* 로그인 = 계정 생성이다 → 무엇에 동의하는지 누르기 전에 보여 준다 */}
-      <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-caption text-muted-foreground">
         로그인하면{" "}
         <Link href="/terms" className="font-bold underline underline-offset-2 hover:text-ink">
           이용약관

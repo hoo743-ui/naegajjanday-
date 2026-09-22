@@ -102,7 +102,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
         return (
           <Fragment key={stop.place.id}>
             {leg ? (
-              <li className="py-2 pl-7 text-[13px] text-muted-foreground" aria-label={`${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${minutes(travelMin)}, ${distance(distanceM)}`}>
+              <li className="py-2 pl-7 text-body-sm text-muted-foreground" aria-label={`${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${minutes(travelMin)}, ${distance(distanceM)}`}>
                 <div className="flex gap-2.5">
                   <span aria-hidden className="w-0 self-stretch border-l-2 border-dashed border-line" />
                   <div className="grid gap-1 py-1">
@@ -117,14 +117,14 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                         href={kakaoDirections(mode, stop, course.stops[i - 1])}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-semibold text-blue-deep hover:bg-blue-soft"
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
                       >
                         길찾기
                         <ExternalLink aria-hidden className="size-3" />
                       </a>
                     </div>
                     {hint?.subway || hint?.bus ? (
-                      <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12.5px]">
+                      <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-caption">
                         {hint.subway ? (
                           <span className="inline-flex items-center gap-1">
                             <TramFront aria-hidden className="size-3.5 text-success" />

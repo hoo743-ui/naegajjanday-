@@ -9,12 +9,12 @@ import type { PlanValues } from "./schema";
 
 const chip = (on: boolean, disabled = false) =>
   cn(
-    "tabular rounded-full px-4 py-2.5 text-sm font-extrabold transition-colors",
+    "tabular rounded-full px-4 py-2.5 text-body-sm font-extrabold transition-colors",
     on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
     disabled && "cursor-not-allowed opacity-40 hover:bg-soft",
   );
 
-const rowLabel = "mb-2 flex items-center gap-1.5 text-xs font-extrabold text-ink-2";
+const rowLabel = "mb-2 flex items-center gap-1.5 text-caption font-semibold text-ink-2";
 
 /** 만나는 날 · 시작 시각 · 얼마나 — 세 줄짜리 카드. 고른 값은 start_at / duration_min 으로 코스 엔진에 그대로 들어간다. */
 export function MeetTimeCard() {
@@ -41,7 +41,7 @@ export function MeetTimeCard() {
 
   return (
     <section aria-labelledby="meet-label" className="rounded-card bg-white p-6 shadow-soft">
-      <h3 id="meet-label" className="mb-4 text-sm font-extrabold text-muted-foreground">
+      <h3 id="meet-label" className="mb-4 text-body-sm font-semibold text-muted-foreground">
         언제 만나요?
       </h3>
 
@@ -68,7 +68,7 @@ export function MeetTimeCard() {
               min={toDayString(now)}
               value={day || toDayString(now)}
               onChange={(e) => pickDay(e.target.value)}
-              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-sm font-extrabold", day && !days.some((d) => d.value === day) ? "border-blue-deep" : "border-input")}
+              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body-sm font-extrabold", day && !days.some((d) => d.value === day) ? "border-blue-deep" : "border-input")}
             />
           </div>
         </div>
@@ -100,7 +100,7 @@ export function MeetTimeCard() {
               step={600}
               value={startTime}
               onChange={(e) => setValue("start_time", e.target.value, opts)}
-              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-base font-extrabold", startTime && !START_PRESETS.some((p) => p.time === startTime) ? "border-blue-deep" : "border-input")}
+              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body font-extrabold", startTime && !START_PRESETS.some((p) => p.time === startTime) ? "border-blue-deep" : "border-input")}
             />
           </div>
         </div>
@@ -122,11 +122,11 @@ export function MeetTimeCard() {
         </div>
       </div>
 
-      <p className="tabular mt-5 rounded-2xl bg-soft px-4 py-3 text-sm font-bold text-ink-2" aria-live="polite">
+      <p className="tabular mt-5 rounded-2xl bg-soft px-4 py-3 text-body-sm font-bold text-ink-2" aria-live="polite">
         {describeWindow({ meet_day: day, start_time: startTime, duration_min: duration }, now)}
       </p>
       {error ? (
-        <p role="alert" className="mt-3 text-sm font-bold text-danger">
+        <p role="alert" className="mt-3 text-body-sm font-semibold text-danger">
           {error}
         </p>
       ) : null}

@@ -54,14 +54,14 @@ export default function AdminPlacesPage() {
       cell: (p) => (
         <span>
           <b className="block font-extrabold">{p.name}</b>
-          <span className="text-xs text-muted-foreground">{p.category_name}</span>
-          {p.duplicate_of ? <span className="ml-1.5 rounded-md bg-pink-soft px-1.5 py-0.5 text-[11px] font-extrabold text-pink-deep">중복 의심</span> : null}
+          <span className="text-caption text-muted-foreground">{p.category_name}</span>
+          {p.duplicate_of ? <span className="ml-1.5 rounded-md bg-pink-soft px-1.5 py-0.5 text-caption font-semibold text-pink-deep">중복 의심</span> : null}
         </span>
       ),
     },
     { key: "region", header: "지역", cell: (p) => p.region?.name ?? "-", hideBelow: "sm" },
     { key: "price", header: "1인 가격", align: "right", cell: (p) => <span className="tabular">{p.is_free ? "무료" : won(p.price_per_person)}</span> },
-    { key: "source", header: "출처", cell: (p) => <span className="text-xs">{p.source}</span>, hideBelow: "md" },
+    { key: "source", header: "출처", cell: (p) => <span className="text-caption">{p.source}</span>, hideBelow: "md" },
     { key: "created", header: "수집일", cell: (p) => <span className="tabular">{dateShort(p.created_at)}</span>, hideBelow: "lg" },
     { key: "status", header: "상태", cell: (p) => <StatusBadge status={p.status} /> },
   ];
@@ -74,7 +74,7 @@ export default function AdminPlacesPage() {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div role="tablist" aria-label="상태 필터" className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-soft p-1">
             {STATUS_TABS.map((t) => (
-              <button key={t.value} type="button" role="tab" aria-selected={status === t.value} onClick={() => setStatus(t.value)} className={cn("rounded-full px-3.5 py-1.5 text-sm font-extrabold whitespace-nowrap", status === t.value ? "bg-white text-ink shadow-soft" : "text-ink-2 hover:text-ink")}>
+              <button key={t.value} type="button" role="tab" aria-selected={status === t.value} onClick={() => setStatus(t.value)} className={cn("rounded-full px-3.5 py-1.5 text-body-sm font-semibold whitespace-nowrap", status === t.value ? "bg-white text-ink shadow-soft" : "text-ink-2 hover:text-ink")}>
                 {t.label}
               </button>
             ))}
@@ -88,7 +88,7 @@ export default function AdminPlacesPage() {
 
         {selected.size > 0 ? (
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl bg-blue-soft px-4 py-2.5" role="region" aria-label="선택한 장소 일괄 작업">
-            <p className="tabular text-sm font-extrabold text-blue-deep">{selected.size}곳 선택됨</p>
+            <p className="tabular text-body-sm font-extrabold text-blue-deep">{selected.size}곳 선택됨</p>
             <Button type="button" size="sm" disabled={bulk.isPending} onClick={() => bulk.mutate([...selected], { onSuccess: () => setSelected(new Set()) })}>
               <CheckCheck aria-hidden /> {bulk.isPending ? "승인하는 중…" : "일괄 승인"}
             </Button>
@@ -120,7 +120,7 @@ export default function AdminPlacesPage() {
               : { title: "조건에 맞는 장소가 없어요", description: "검색어나 상태 필터를 바꿔 보세요.", mood: "think" }
           }
         />
-        {places.data?.next_cursor ? <p className="mt-3 text-center text-xs text-muted-foreground">처음 50곳만 보여 줘요. 검색으로 좁혀 보세요.</p> : null}
+        {places.data?.next_cursor ? <p className="mt-3 text-center text-caption text-muted-foreground">처음 50곳만 보여 줘요. 검색으로 좁혀 보세요.</p> : null}
       </Panel>
 
       <Sheet open={open !== null} onOpenChange={(v) => !v && setOpenId(null)}>
@@ -140,7 +140,7 @@ function PlaceDetail({ place, onClose }: { place: AdminPlace; onClose: () => voi
   return (
     <>
       <SheetHeader className="border-b">
-        <SheetTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold">
+        <SheetTitle className="flex flex-wrap items-center gap-2 text-h3 font-extrabold">
           {place.name} <StatusBadge status={place.status} />
         </SheetTitle>
         <SheetDescription>
@@ -203,13 +203,13 @@ function RawDiff({ raw, normalized }: { raw?: Record<string, unknown>; normalize
 
   return (
     <div>
-      <p className="mb-2 text-[13px] text-ink-2">
+      <p className="mb-2 text-body-sm text-ink-2">
         {keys.length}개 항목 중 <b className="text-gold-ink">{changed}개</b>가 정규화 과정에서 달라졌어요.
       </p>
       <div className="overflow-x-auto rounded-xl border">
-        <table className="w-full min-w-[520px] text-[13px]">
+        <table className="w-full min-w-[520px] text-body-sm">
           <caption className="sr-only">수집 원본과 정규화 결과 비교</caption>
-          <thead className="bg-soft text-left text-xs font-extrabold text-ink-2">
+          <thead className="bg-soft text-left text-caption font-semibold text-ink-2">
             <tr>
               <th scope="col" className="px-3 py-2">항목</th>
               <th scope="col" className="px-3 py-2">수집 원본</th>
@@ -223,7 +223,7 @@ function RawDiff({ raw, normalized }: { raw?: Record<string, unknown>; normalize
               const diff = a !== b;
               return (
                 <tr key={k} className={cn("border-t align-top", diff && "bg-gold-soft/60")}>
-                  <th scope="row" className="px-3 py-2 text-left font-mono text-xs font-bold whitespace-nowrap">
+                  <th scope="row" className="px-3 py-2 text-left font-mono text-caption font-semibold whitespace-nowrap">
                     {k}
                     {diff ? <span className="sr-only"> (변경됨)</span> : null}
                   </th>
@@ -267,7 +267,7 @@ function Revisions({ id }: { id: string }) {
   return (
     <ol className="grid gap-2.5">
       {revisions.data.items.map((r) => (
-        <li key={r.id} className="rounded-xl border p-3 text-[13px]">
+        <li key={r.id} className="rounded-xl border p-3 text-body-sm">
           <p className="font-extrabold">
             {r.action ? `${ACTION_LABEL[r.action] ?? r.action} · ` : ""}
             {r.actor} <span className="tabular font-medium text-muted-foreground">· {dateShort(r.created_at)}</span>
@@ -276,7 +276,7 @@ function Revisions({ id }: { id: string }) {
           <ul className="mt-1 grid gap-0.5 text-ink-2">
             {Object.entries(r.changes).map(([field, c]) => (
               <li key={field} className="break-all">
-                <span className="text-xs font-bold">{FIELD_LABEL[field] ?? field}</span>: <span className="line-through">{showField(field, c.from)}</span> → <b className="text-ink">{showField(field, c.to)}</b>
+                <span className="text-caption font-semibold">{FIELD_LABEL[field] ?? field}</span>: <span className="line-through">{showField(field, c.from)}</span> → <b className="text-ink">{showField(field, c.to)}</b>
               </li>
             ))}
           </ul>
@@ -304,19 +304,19 @@ function PlacePhotos({ id, name }: { id: string; name: string }) {
   return (
     <div className="grid gap-4">
       <section aria-labelledby="photos-now">
-        <h3 id="photos-now" className="mb-2 text-[13px] font-extrabold text-ink-2">
+        <h3 id="photos-now" className="mb-2 text-body-sm font-semibold text-ink-2">
           지금 보이는 사진
         </h3>
         {detail.isPending ? (
           <Skeleton className="h-24 rounded-xl" />
         ) : photos.length === 0 ? (
-          <p className="rounded-xl bg-soft p-3 text-[13px] text-ink-2">실제 사진이 아직 없어요. 코스 화면에서는 업종별 “예시 사진”으로 보여요.</p>
+          <p className="rounded-xl bg-soft p-3 text-body-sm text-ink-2">실제 사진이 아직 없어요. 코스 화면에서는 업종별 “예시 사진”으로 보여요.</p>
         ) : (
           <ul className="grid grid-cols-3 gap-2">
             {photos.map((url, i) => (
               <li key={url} className="relative aspect-[4/3] overflow-hidden rounded-xl border bg-soft">
                 <Image src={url} alt={`${name} 사진 ${i + 1}`} fill sizes="200px" unoptimized className="object-cover" />
-                {i === 0 ? <span className="absolute top-1.5 left-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-extrabold text-white">대표</span> : null}
+                {i === 0 ? <span className="absolute top-1.5 left-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-caption font-semibold text-white">대표</span> : null}
               </li>
             ))}
           </ul>
@@ -339,7 +339,7 @@ function PlacePhotos({ id, name }: { id: string; name: string }) {
             <Image src={preview} alt="올릴 사진 미리보기" fill sizes="160px" unoptimized className="object-cover" />
           </div>
         ) : null}
-        <label className="flex items-center gap-2 text-sm font-bold text-ink-2">
+        <label className="flex items-center gap-2 text-body-sm font-semibold text-ink-2">
           <input type="checkbox" className="size-4 accent-[#2F6BEA]" checked={makeCover} onChange={(e) => setMakeCover(e.target.checked)} /> 대표 사진으로 쓰기
         </label>
         <div aria-live="polite" className="grid gap-2">
@@ -431,7 +431,7 @@ function PlaceEditForm({ place }: { place: AdminPlace }) {
           </select>
         </Field>
       </div>
-      <label className="flex items-center gap-2 text-sm font-bold text-ink-2">
+      <label className="flex items-center gap-2 text-body-sm font-semibold text-ink-2">
         <input type="checkbox" className="size-4 accent-[#2F6BEA]" {...form.register("is_free")} /> 무료 장소 (공원·산책로 등)
       </label>
       <Field id="p-tags" label="태그" hint="쉼표로 구분. 태그 목록에 등록된 이름만 쓸 수 있어요.">
