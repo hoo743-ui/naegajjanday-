@@ -67,7 +67,7 @@ function AssistantBubble({ message, onRetry, canRetry }: { message: AssistantMes
 
         {errorCopy ? (
           <div role="alert" className="max-w-full rounded-[20px] rounded-tl-md border border-pink/40 bg-pink-soft px-4 py-3 sm:max-w-[88%]">
-            <b className="block text-body font-extrabold text-ink">{errorCopy.title}</b>
+            <b className="block text-body font-bold text-ink">{errorCopy.title}</b>
             <p className="mt-0.5 text-body-sm text-ink-2">{errorCopy.description}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               {errorCopy.retry && canRetry ? (
@@ -107,7 +107,7 @@ export function MessageBubble({ message, isLast, onRetry }: MessageBubbleProps) 
     >
       {message.role === "user" ? (
         <div className="flex justify-end">
-          <p className="max-w-[85%] rounded-[20px] rounded-br-md bg-[image:linear-gradient(120deg,#2F6BEA,#5B7FF5)] px-4 py-2.5 text-body font-medium whitespace-pre-wrap text-white">
+          <p className="max-w-[85%] rounded-[20px] rounded-br-md bg-blue-deep px-4 py-2.5 text-body font-medium whitespace-pre-wrap text-white">
             <span className="sr-only">나: </span>
             {message.content}
           </p>

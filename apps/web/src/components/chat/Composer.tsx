@@ -84,7 +84,7 @@ export function Composer({ streaming, onSend, onStop }: ComposerProps) {
             aria-label="보내기"
             className={cn(
               "grid size-11 shrink-0 place-items-center rounded-2xl text-white transition-[transform,opacity]",
-              "bg-[image:var(--grad-btn)] hover:scale-105 disabled:opacity-40 disabled:hover:scale-100",
+              "bg-blue-deep hover:brightness-110 disabled:opacity-40",
             )}
           >
             <Send aria-hidden className="size-[18px]" />

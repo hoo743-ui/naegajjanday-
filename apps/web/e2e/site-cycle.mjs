@@ -112,7 +112,8 @@ async function main() {
     { key: "course-hop-rain", url: `/course/${hop.id}`, dynamic: DATA, ready: "[aria-label='코스 일정'] article" },
     { key: "course-trip", url: `/course/${trip.id}`, dynamic: DATA, ready: "[aria-label='코스 일정'] article" },
     { key: "course-404", url: "/course/00000000-0000-4000-8000-000000000000", dynamic: [] },
-    { key: "explore", ready: "main h1, main h2", url: "/explore", dynamic: ["article", "[aria-label*='이벤트']", "ul"] },
+    // 제목만 기다리면 장소 목록(과 '더 보기')이 뜨기 전에 읽는다 → 목록의 첫 장소까지 기다린다
+    { key: "explore", ready: "section[aria-labelledby='explore-list-heading'] li article", url: "/explore", dynamic: ["article", "[aria-label*='이벤트']", "ul"] },
     { key: "login", url: "/login", dynamic: [], ready: "main h1, main h2" },
     { key: "my", url: "/my", dynamic: [], ready: "main h1, main h2" },
     { key: "chat", url: "/chat", dynamic: [], ready: "main h1, main h2" },

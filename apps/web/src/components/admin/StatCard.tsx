@@ -35,7 +35,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "default", loa
       {loading ? (
         <Skeleton className="mt-2 h-9 w-28 rounded-lg" />
       ) : (
-        <p className="money mt-1 text-price text-ink">{value}</p>
+        <p className="money mt-1 text-price-sm whitespace-nowrap text-ink">{value}</p>
       )}
       {hint ? <p className="mt-1 text-body-sm font-semibold text-muted-foreground">{hint}</p> : null}
     </div>

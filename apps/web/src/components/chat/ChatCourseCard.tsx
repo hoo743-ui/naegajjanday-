@@ -7,50 +7,48 @@ import type { Course } from "@/lib/api/types";
 import { minutes, roleLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** 챗봇의 `course` 이벤트 payload 를 대화 안에 카드로 보여준다 */
+/**
+ * 챗봇의 `course` 이벤트 payload = 대화 안의 작은 영수증 (docs/25 — 코스는 어디서든 영수증 모양이다).
+ * 품목(순번 · 역할 · 장소 · 가격) → 합계 → 남은 돈. 카드 안의 카드를 쌓지 않는다.
+ */
 export function ChatCourseCard({ course }: { course: Course }) {
   const { totals } = course;
   const over = totals.budget_left < 0;
-  const used = Math.min(100, Math.max(0, Math.round(totals.budget_utilization * 100)));
 
   return (
-    <article aria-label={`${course.label}: ${course.summary}`} className="bg-grad-soft w-full rounded-[22px] p-3.5 sm:p-4">
-      <header className="mb-3 px-1">
-        <span className="text-caption font-semibold text-blue-deep">{course.label}</span>
-        <h3 className="text-body leading-snug font-extrabold text-ink">{course.summary}</h3>
-      </header>
+    <article aria-label={`${course.label}: ${course.summary}`} className="w-full">
+      <div className="receipt-wrap">
+        <div className="receipt px-5 pt-6 pb-5">
+          <p className="text-caption font-semibold text-blue-deep">{course.label}</p>
+          <h3 className="mt-0.5 text-body font-bold text-ink">{course.summary}</h3>
+          <hr className="receipt-rule my-3.5" />
 
-      <ol className="grid gap-2">
-        {course.stops.map((stop) => (
-          <li key={stop.position} className="flex items-center gap-3 rounded-2xl border border-white/90 bg-white/75 px-3.5 py-2.5">
-            <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-blue-deep text-body-sm font-semibold text-white">
-              {stop.position}
-            </span>
-            <span className="min-w-0 flex-1">
-              <small className="block text-caption font-semibold text-blue-deep">{roleLabel(stop.role)}</small>
-              <b className="block truncate text-body font-extrabold text-ink">{stop.place.name}</b>
-            </span>
-            <b className="tabular shrink-0 text-body font-extrabold text-ink">{stop.est_price === 0 ? "무료" : won(stop.est_price)}</b>
-          </li>
-        ))}
-      </ol>
+          <ol className="grid gap-2">
+            {course.stops.map((stop) => (
+              <li key={stop.position} className="flex items-baseline gap-2 text-body-sm">
+                <span className="tabular w-5 shrink-0 text-caption font-semibold text-muted-foreground">{String(stop.position).padStart(2, "0")}</span>
+                <span className="min-w-0 shrink truncate font-semibold text-ink">
+                  <span className="font-medium text-muted-foreground">{roleLabel(stop.role)}</span> {stop.place.name}
+                </span>
+                <span aria-hidden className="receipt-leader" />
+                <span className="tabular shrink-0 font-bold text-ink">{stop.est_price === 0 ? "무료" : won(stop.est_price)}</span>
+              </li>
+            ))}
+          </ol>
 
-      <div className="mt-3 rounded-2xl bg-white p-3.5 shadow-soft">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-body-sm font-semibold text-muted-foreground">총 예상 지출</span>
-          <b className="money text-price-sm text-ink">{won(totals.price)}</b>
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-paper-2" aria-hidden>
-          <div className={cn("h-full rounded-full", over ? "bg-pink-deep" : "bg-blue-deep")} style={{ width: `${used}%` }} />
-        </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption font-semibold">
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <hr className="receipt-rule my-3.5" />
+          <div className="flex items-baseline justify-between gap-3 text-body-sm">
+            <span className="font-medium text-muted-foreground">합계</span>
+            <b className="money text-body-lg text-ink">{won(totals.price)}</b>
+          </div>
+          <div className={cn("mt-3 flex items-baseline justify-between rounded-2xl px-4 py-3", over ? "bg-pink-soft text-pink-deep" : "bg-gold-soft text-gold-ink")}>
+            <span className="text-body-sm font-semibold">{over ? "예산 초과" : "남은 돈"}</span>
+            <b className="money text-price-sm">{won(Math.abs(totals.budget_left))}</b>
+          </div>
+          <p className="mt-2.5 flex items-center justify-center gap-1 text-caption text-muted-foreground">
             <Footprints aria-hidden className="size-3.5" />
             이동 {minutes(totals.travel_min)}
-          </span>
-          <span className={cn("tabular", over ? "text-pink-deep" : "text-blue-deep")}>
-            {over ? `${won(-totals.budget_left)} 넘어요` : `${won(totals.budget_left)} 남음`}
-          </span>
+          </p>
         </div>
       </div>
 
