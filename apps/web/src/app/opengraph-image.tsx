@@ -17,7 +17,7 @@ export default async function Image() {
           justifyContent: "space-between",
           padding: "0 96px",
           ...OG_BACKGROUND,
-          fontFamily: "Pretendard",
+          fontFamily: "SUIT",
           color: "#14213d",
         }}
       >

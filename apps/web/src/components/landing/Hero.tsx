@@ -129,12 +129,13 @@ export function Hero() {
         {/* 왼쪽: 약속 한 줄 → 오늘 쓸 돈 → 오늘의 하루 → 행동 하나. 작은 이름표 · 캡션은 두지 않는다 (docs/33) */}
         <div className="min-w-0">
           <div data-beat="type">
+            {/* 줄바꿈이 리듬을 만든다 (docs/35 §5): 조건 한 줄 → 쉼 → 결과. 강조는 금색이 아니라 크기와 굵기로 */}
             <h1 className="font-serif text-display-xl">
               예산만 말하면,
               <br />
-              하루가 영수증으로
+              하루가
               <br />
-              나온다.
+              <span className="hero-em">영수증</span>으로 나온다.
             </h1>
             <p className="mt-5 max-w-[440px] text-body-lg text-ink-2">짠이가 실제 장소로 하루를 짜고, 얼마가 남는지까지 영수증 한 장으로 보여 드려요.</p>
           </div>

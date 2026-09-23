@@ -1,27 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Jua, Noto_Serif_KR } from "next/font/google";
+import { Hahmlet } from "next/font/google";
+import localFont from "next/font/local";
 import { MockBadge } from "@/components/MockBadge";
 import { Providers } from "./providers";
-// 본문 서체: Pretendard Variable 셀프호스팅. 한글은 unicode-range 조각(dynamic subset)으로 필요한 글자만 받는다.
-// 빌드 시점에 외부 폰트 서버에 의존하지 않는다 → 오프라인·CI 에서도 같은 화면이 나온다.
-import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
-/** 짠이 말풍선 등 브랜드 강조에만 쓰는 둥근 서체. 받지 못하면 본문 서체로 떨어진다. */
-const jua = Jua({
-  weight: "400",
-  subsets: ["latin"],
+/*
+ * 서체는 둘뿐이다 (docs/35 · 최종 폰트 체계):
+ *   SUIT Variable — 정보 · 기능 · 신뢰: 메뉴 · 버튼 · 입력 · 칩 · 본문 · 장소 정보 · 가격 · 예산 · 영수증 숫자
+ *   Hahmlet       — 감성 · 브랜드 · 기억: 히어로 · 섹션 제목 · 브랜드 한 줄 · 로고 · 영수증 머리
+ * SUIT 는 저장소 안에서 셀프호스팅(빌드가 외부 폰트 서버에 기대지 않는다). OFL-1.1, @sun-typeface/suit.
+ */
+const suit = localFont({
+  src: "../../node_modules/@sun-typeface/suit/fonts/variable/woff2/SUIT-Variable.woff2",
+  weight: "100 900",
   display: "swap",
-  variable: "--font-jua",
-  preload: false,
+  variable: "--font-suit",
 });
 
-/** 제목에만 쓰는 세리프. 필요한 굵기 둘만 싣고, 한글은 unicode-range 조각으로 쓰는 글자만 받는다. */
-const serif = Noto_Serif_KR({
-  weight: ["600", "700"],
+/** 제목에만 쓰는 세리프. 가변 굵기 하나로 600 · 700 을 쓰고, 한글은 unicode-range 조각으로 쓰는 글자만 받는다. */
+const serif = Hahmlet({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-serif-kr",
+  variable: "--font-hahmlet",
   preload: false,
 });
 
@@ -52,7 +53,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: 랜딩의 인트로 게이트 스크립트가 첫 페인트 전에 data-intro 를 단다 (이 요소의 속성만 해당)
-    <html lang="ko" className={`${jua.variable} ${serif.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="ko" className={`${suit.variable} ${serif.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <body>
         <a
           href="#main"

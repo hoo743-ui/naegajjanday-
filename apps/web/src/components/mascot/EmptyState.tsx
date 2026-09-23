@@ -31,7 +31,7 @@ function LostRoute() {
     <svg aria-hidden viewBox="0 0 220 70" className="h-auto w-[180px] text-ink/30">
       <path d="M4 52 C 40 52 48 18 86 18 S 132 56 160 40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 7" />
       <circle cx="4" cy="52" r="4" fill="currentColor" />
-      <text x="176" y="48" fontSize="30" fontWeight="800" fill="var(--blue-deep)" fontFamily="Pretendard Variable, sans-serif">?</text>
+      <text x="176" y="48" fontSize="30" fontWeight="800" fill="var(--blue-deep)" fontFamily="SUIT Variable, sans-serif">?</text>
     </svg>
   );
 }

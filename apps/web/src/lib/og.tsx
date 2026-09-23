@@ -1,23 +1,23 @@
 /**
  * OG 이미지 공용 조각 (next/og · satori).
  * satori 는 자식이 둘 이상인 요소에 display:flex 를 요구하고, 한글을 그리려면 글꼴 파일을 직접 넘겨야 한다.
- * 글꼴은 이미 의존성인 pretendard 패키지의 정적 OTF 를 읽는다 → 외부 네트워크 없이 빌드·렌더된다.
+ * 글꼴은 서비스와 같은 SUIT(@sun-typeface/suit)의 정적 OTF 를 읽는다 → 외부 네트워크 없이 빌드·렌더된다 (docs/35).
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-const FONT_DIR = join(process.cwd(), "node_modules", "pretendard", "dist", "public", "static");
+const FONT_DIR = join(process.cwd(), "node_modules", "@sun-typeface", "suit", "fonts", "static", "otf");
 
 export async function loadOgFonts() {
   const [bold, regular] = await Promise.all([
-    readFile(join(FONT_DIR, "Pretendard-ExtraBold.otf")),
-    readFile(join(FONT_DIR, "Pretendard-Medium.otf")),
+    readFile(join(FONT_DIR, "SUIT-ExtraBold.otf")),
+    readFile(join(FONT_DIR, "SUIT-Medium.otf")),
   ]);
   return [
-    { name: "Pretendard", data: bold, weight: 800 as const, style: "normal" as const },
-    { name: "Pretendard", data: regular, weight: 500 as const, style: "normal" as const },
+    { name: "SUIT", data: bold, weight: 800 as const, style: "normal" as const },
+    { name: "SUIT", data: regular, weight: 500 as const, style: "normal" as const },
   ];
 }
 

@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import { useFeatures } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
+import { TAB_DOCK_AT } from "./TabBar";
 
 const ALL_LINKS = [
   { href: "/plan", label: "코스 짜기" },
@@ -34,10 +35,15 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
   const pathname = usePathname();
   const { status, me, isStaff } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  // 아래 탭(넓은 화면의 알약)이 떠오르는 지점 — TabBar 와 같은 값. 거기서부터 헤더의 메뉴는 알약에 자리를 넘긴다
+  const [handedOff, setHandedOff] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 12);
+      setHandedOff(window.scrollY > TAB_DOCK_AT);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -69,9 +75,13 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
           내가짠데이
         </Link>
 
+        {/* 넓은 화면의 메뉴는 여기. 아래 탭(알약)은 이 헤더가 화면 밖으로 나갔을 때만 떠오른다 */}
         <nav
           aria-label="주요 메뉴"
-          className="hidden items-center gap-1 text-body font-semibold md:flex"
+          className={cn(
+            "hidden items-center gap-1 text-body font-semibold transition-opacity duration-300 md:flex",
+            tabBar && handedOff && "md:invisible md:opacity-0",
+          )}
         >
           {[
             ...LINKS,
@@ -94,7 +104,7 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
           {status === "authenticated" && me ? (
             <Link
               href="/my"
-              className={cn("min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink", tabBar ? "hidden sm:flex" : "hidden sm:flex")}
+              className="hidden min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:flex"
             >
               {me.nickname} 님
             </Link>

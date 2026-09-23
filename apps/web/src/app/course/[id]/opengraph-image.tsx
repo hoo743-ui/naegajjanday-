@@ -51,7 +51,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   return new ImageResponse(
     (
-      <div style={{ display: "flex", width: "100%", height: "100%", padding: "56px 72px", gap: 56, ...OG_BACKGROUND, fontFamily: "Pretendard", color: "#14213d" }}>
+      <div style={{ display: "flex", width: "100%", height: "100%", padding: "56px 72px", gap: 56, ...OG_BACKGROUND, fontFamily: "SUIT", color: "#14213d" }}>
         {/* 왼쪽: 한 줄 요약 */}
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
           <OgBrand />
