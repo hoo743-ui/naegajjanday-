@@ -9,6 +9,7 @@ import type { Attraction } from "@/lib/api/types";
 import { dateRange, daysUntil, won } from "@/lib/format";
 import { canOptimize, photoCredit } from "@/lib/photo-credit";
 import { cn } from "@/lib/utils";
+import { PlacePlaceholder } from "@/components/brand/PlacePlaceholder";
 import { track } from "@/lib/analytics";
 import { ATTRACTION_TYPE_META } from "./attraction-meta";
 import { AttractionSheet } from "./AttractionSheet";
@@ -46,7 +47,6 @@ export function DdayBadge({ endsOn, startsOn }: { endsOn: string; startsOn?: str
  */
 export function AttractionCard({ item, feature = false, kicker }: { item: Attraction; feature?: boolean; kicker?: string }) {
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
-  const Icon = meta.icon;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
   const planHref = planHrefNear({ name: item.name, lat: item.lat, lng: item.lng });
   // 실사진이 없으면 검수한 업종 대표 사진을 쓴다. API 의 category 코드가 없으면 유형으로 대신 찾는다.
@@ -92,11 +92,8 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
             ) : null}
           </>
         ) : (
-          <div aria-hidden className="absolute inset-0 grid place-items-center">
-            <span className="grid size-16 place-items-center rounded-[22px] bg-white/70 text-blue-deep shadow-soft">
-              <Icon className="size-8" />
-            </span>
-          </div>
+          // 사진도 예시 사진도 없으면 우리 종이 위의 그림 (빈 상자처럼 보이지 않게, 사진인 척하지 않게)
+          <PlacePlaceholder kind={item.type} size="lg" className="absolute inset-0" />
         )}
         <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
           <span className="rounded-full bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">{meta.label}</span>

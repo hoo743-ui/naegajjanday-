@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/lib/analytics";
 import { useEvents } from "@/lib/api/hooks";
@@ -142,7 +144,15 @@ export function EventsStrip({ region }: { region?: string }) {
       ) : events.isError ? (
         <ErrorState error={events.error} onRetry={() => void events.refetch()} size="sm" />
       ) : events.data.items.length === 0 ? (
-        <EmptyState size="sm" mood="think" title="이번 주에는 열리는 이벤트가 없어요" description="다른 지역을 골라 보거나 다음 주에 다시 확인해 주세요." />
+        // 비어 있으면 막다른 길이 아니라 다음 행동 둘: 언제 가도 되는 곳(공원 · 산책) 또는 이 예산으로 하루 짜기
+        <EmptyState size="sm" mood="think" title="이번 주에는 열리는 이벤트가 없어요" description="축제가 없어도 언제 가도 좋은 곳은 많아요. 다른 지역을 골라 보셔도 돼요.">
+          <Button asChild variant="soft" size="md">
+            <Link href={`/explore?type=park${region ? `&region=${encodeURIComponent(region)}` : ""}`}>공원 · 산책 먼저 보기</Link>
+          </Button>
+          <Button asChild variant="brand" size="md">
+            <Link href="/plan">이 예산으로 하루 짜기</Link>
+          </Button>
+        </EmptyState>
       ) : (
         <>
           {/* tabIndex: 키보드만으로도 가로 스크롤 영역을 방향키로 넘길 수 있게 */}

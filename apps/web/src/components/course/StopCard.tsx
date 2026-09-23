@@ -9,6 +9,7 @@ import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
 import type { ScoreFeature, Stop, SwapStrategy } from "@/lib/api/types";
 import { clock, num, roleLabel, won } from "@/lib/format";
 import { canOptimize } from "@/lib/photo-credit";
+import { PlacePlaceholder } from "@/components/brand/PlacePlaceholder";
 import { ReasonList } from "./ReasonList";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
@@ -118,7 +119,10 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             <Image src={example.url} alt="" fill sizes="80px" className="object-cover opacity-80 saturate-[.7]" unoptimized={!canOptimize(example.url)} />
             <span className="absolute inset-x-0 bottom-0 bg-ink/65 py-0.5 text-center text-caption font-semibold text-white">예시</span>
           </span>
-        ) : null}
+        ) : (
+          // 마지막 단계: 역할(식사 · 카페 · 산책 …)의 브랜드 그림 — 카드 높이가 고르게 남는다
+          <PlacePlaceholder kind={stop.role} className="photo-edge size-[72px] shrink-0 rounded-md sm:size-20" />
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="tabular text-caption font-bold text-blue-deep">

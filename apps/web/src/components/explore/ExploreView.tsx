@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,11 @@ export function ExploreView() {
     [regionSlug, type, date, debouncedQ],
   );
   const attractions = useAttractions(params);
-  const items = useMemo(() => attractions.data?.pages.flatMap((p) => p.items) ?? [], [attractions.data]);
+  // 실제 사진이 있는 곳을 먼저 (docs/39): 페이지 안에서만 옮긴다 — "더 보기"로 받은 다음 페이지가 앞의 카드를 밀어내지 않게
+  const items = useMemo(
+    () => attractions.data?.pages.flatMap((p) => [...p.items.filter((i) => i.thumbnail_url), ...p.items.filter((i) => !i.thumbnail_url)]) ?? [],
+    [attractions.data],
+  );
 
   const syncUrl = useCallback(
     (next: { type?: string; region?: string; date?: string }) => {
@@ -123,10 +127,12 @@ export function ExploreView() {
                 aria-pressed={type === option.value}
                 onClick={() => changeType(option.value)}
                 className={cn(
-                  "h-10 shrink-0 rounded-full px-4 text-body font-extrabold transition-colors",
-                  type === option.value ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
+                  "inline-flex h-10 shrink-0 items-center gap-1 rounded-full border px-4 text-body transition-colors",
+                  // 선택 = 토마토 · 굵게 · 체크 (색 없이도 구분된다, docs/38)
+                  type === option.value ? "border-tomato bg-tomato font-extrabold text-white" : "border-ink/20 bg-paper font-semibold text-ink-2 hover:border-tomato hover:bg-tomato-soft",
                 )}
               >
+                {type === option.value ? <Check aria-hidden strokeWidth={3} className="size-4" /> : null}
                 {option.label}
               </button>
             ))}
