@@ -60,7 +60,7 @@ const wonToNum = (s) => Number(String(s).replace(/[^0-9]/g, ""));
 async function wizard(page, flow) {
   const t0 = Date.now();
   await page.goto(`${WEB}/`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("link", { name: /이 예산으로 짜기/ }).first().click();
+  await page.getByRole("link", { name: /이 조건으로 코스 짜기/ }).first().click();
   await page.waitForURL(/\/plan/);
   await page.getByRole("heading", { level: 1 }).waitFor();
   // 1. 지역: 많이 찾는 동네에서 홍대입구
@@ -154,7 +154,7 @@ if (courseId) {
     // 바꾸기 → 더 저렴하게
     const card = page.locator("article[data-position='2']");
     await card.getByRole("button", { name: /바꾸기/ }).click();
-    const cheaper = page.getByRole("menuitem").first();
+    const cheaper = page.getByRole("button", { name: /^더 저렴하게$/ });
     await cheaper.click();
     const result = page.getByText(/바꿨어요|바꿀 만한 곳을 찾지 못했어요/).first();
     const told = await result.waitFor({ timeout: 20_000 }).then(() => true).catch(() => false);

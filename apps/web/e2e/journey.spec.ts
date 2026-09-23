@@ -1,29 +1,32 @@
 import { createCourse, expect, expectHealthyLayout, firstPopulatedRegion, test } from "./fixtures";
 
 test.describe("핵심 여정 (실제 API)", () => {
-  test("홈: 히어로·목적 카드가 실제 데이터로 뜨고 CTA 가 위저드로 간다", async ({ page }) => {
+  test("홈: 두 갈래 · 빠른 코스 만들기가 실제 데이터로 뜨고, 소개에 목적 카드가 있고, CTA 가 위저드로 간다", async ({ page }) => {
+    // 자동화 브라우저는 첫 방문 인트로(/intro)로 보내지 않는다 (docs/40)
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("예산만 말하면");
-    // 히어로 = 제품: 기본 장면은 "둘이서 4만원", 합계는 예산을 넘지 않고, 예산을 올리면 영수증이 바뀐다
-    const hero = page.locator("section").first();
-    await expect(hero.getByText("남은 돈")).toBeVisible();
-    const items = hero.locator("ol > li");
-    const before = await items.allTextContents();
-    await hero.getByRole("slider").fill("90000");
-    await expect.poll(async () => (await items.allTextContents()).join("|")).not.toBe(before.join("|"));
-    await expect(hero.getByText("예산 초과")).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("오늘 어떤 하루를");
+    // 첫 화면의 핵심은 둘: 예산부터 짜기 · 갈 곳부터 둘러보기
+    const paths = page.getByRole("navigation", { name: "시작하는 두 갈래" });
+    await expect(paths.getByRole("link")).toHaveCount(2);
+    // 빠른 코스 만들기: 예산을 바꾸면 한 줄 요약(예시 금액 · 남는 돈)이 바뀌고, 예산을 넘지 않는다
+    const quick = page.getByRole("region", { name: "빠른 코스 만들기" });
+    const summary = quick.getByText(/남아요/);
+    const before = await summary.innerText();
+    await quick.getByRole("button", { name: /10만 원/ }).click();
+    await expect.poll(async () => summary.innerText()).not.toBe(before);
     // 증거 숫자는 API(/meta/regions)에서 온 실제 값이다
-    await expect(hero.getByText(/전국 장소/)).toBeVisible();
+    await expect(quick.getByText(/전국 실제 장소/)).toBeVisible();
     // 채팅을 쓸 수 없는 환경이면 메뉴에 올리지 않는다
     const features = await (await page.request.get(`${process.env.E2E_API_URL ?? "http://localhost:8000/v1"}/meta/features`)).json();
     if (features.chat === false) await expect(page.getByRole("banner").getByRole("link", { name: "짠이와 대화" })).toHaveCount(0);
-    // 목적 카드는 GET /meta/purposes 에서 온다 — 계약이 어긋나면 여기서 에러 바운더리가 뜬다
+    // 목적 카드는 소개(/about)로 옮겼다. GET /meta/purposes 에서 온다 — 계약이 어긋나면 여기서 에러 바운더리가 뜬다
+    await page.goto("/about");
     await page.locator("#purposes").scrollIntoViewIfNeeded();
     await expect(page.locator("#purposes").getByText("데이트").first()).toBeVisible();
     await expectHealthyLayout(page);
 
-    // 행동은 히어로의 예산 자리에만 있다 (docs/31 §10): 헤더의 "무료로 추천받기"는 없앴다
-    await page.getByRole("link", { name: /이 예산으로 짜기/ }).click();
+    await page.goto("/");
+    await page.getByRole("link", { name: /이 조건으로 코스 짜기/ }).click();
     await expect(page).toHaveURL(/\/plan/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("어디서");
   });
@@ -98,10 +101,13 @@ test.describe("핵심 여정 (실제 API)", () => {
     if (await page.locator(".jj-map").count()) {
       await expect(page.locator(".jj-pin")).toHaveCount(count);
     }
-    // 구간마다 외부 길찾기 링크가 있고, 네이버 지도 길찾기 주소 형식을 따른다 (docs/27 §6)
-    const links = page.getByLabel("코스 일정").getByRole("link", { name: /네이버 지도 길찾기/ });
-    expect(await links.count()).toBeGreaterThanOrEqual(count - 1);
-    await expect(links.first()).toHaveAttribute("href", /^https:\/\/map\.naver\.com\/p\/directions\/[\d.]+,[\d.]+,[^/]+,,\/[\d.]+,[\d.]+,[^/]+,,\/-\/(walk|car|transit)$/);
+    // 장소마다 길찾기 버튼 하나 → "어디서 출발할까요?" 시트 → 네이버지도 열기 (docs/42)
+    const second = page.getByLabel("코스 일정").getByRole("article").nth(1);
+    await second.getByRole("button", { name: /길찾기$/ }).click();
+    await expect(page.getByRole("dialog", { name: "어디서 출발할까요?" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: /이전 장소/ })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("button", { name: /네이버지도 열기/ })).toBeVisible();
+    await page.getByRole("button", { name: "닫기" }).click();
     // 코스 전체: 오늘의 이동 · 전체 코스 보기 · 네이버 지도에서 길찾기
     await expect(page.getByRole("heading", { name: "오늘의 이동" })).toBeVisible();
     await expect(page.getByRole("link", { name: /네이버 지도에서 길찾기/ })).toHaveAttribute("href", /^https:\/\/map\.naver\.com\/p\/directions\//);

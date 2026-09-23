@@ -134,8 +134,9 @@ for (const w of WIDTHS) {
   await step("swap", async () => {
     if (!courseUrl) return;
     const before = await page.locator("[aria-label='오늘의 요약']").innerText();
+    // 바꾸기 시트 → 짠이에게 맡기기 · 더 저렴하게 (docs/42)
     await page.getByRole("button", { name: /다른 곳으로 바꾸기/ }).first().click();
-    await page.getByRole("menuitem", { name: /더 저렴하게/ }).click();
+    await page.getByRole("button", { name: /^더 저렴하게$/ }).click();
     await page.waitForFunction((b) => document.querySelector("[aria-label='오늘의 요약']")?.textContent !== b || document.body.textContent?.includes("찾지 못했어요"), before.slice(0, 200), { timeout: 30000 }).catch(() => {});
     // 바뀐 장소 줄은 제자리로 미끄러져 들어간다(layout 애니메이션) → 다 끝난 뒤에 찍는다
     await page.waitForTimeout(2500);

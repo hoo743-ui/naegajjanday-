@@ -108,7 +108,10 @@ async function main() {
     "[aria-label='경로 점검']",
   ];
   const SCENES = [
-    { key: "landing", url: "/", dynamic: [], ready: "h1" },
+    { key: "landing", url: "/", dynamic: ["[aria-label='많이 찾는 동네']"], ready: "h1" },
+    // 소개 · 브랜드 인트로 (docs/40): 예전 랜딩의 설명 섹션은 소개로 옮겼다
+    { key: "about", url: "/about", dynamic: [], ready: "h1" },
+    { key: "intro", url: "/intro", dynamic: [], ready: "h1" },
     { key: "plan", url: "/plan", dynamic: ["[role=radiogroup]", "[role=navigation]"] },
     { key: "plan-filled", url: "/plan?region=seoul-hongdae&purpose=date", dynamic: ["[role=radiogroup]", "[role=navigation]"], steps: 3 },
     { key: "course", url: `/course/${plain.id}`, dynamic: DATA, open: true, ready: "[aria-label='코스 일정'] article" },
@@ -158,7 +161,9 @@ async function main() {
       if (scene.open) {
         // 눌러야 나오는 것들도 실제로 열어 본다: 장소 시트 · 추천 이유 · 거리뷰
         const card = page.getByLabel("코스 일정").getByRole("article").first();
-        await card.getByRole("button", { name: /자세히/ }).click().catch(() => note("동작", "'자세히'를 열 수 없음"));
+        // 자세히는 카드의 ⋯ 메뉴 안에 있다 (docs/42)
+        await card.getByRole("button", { name: /더보기$/ }).click().catch(() => note("동작", "'⋯' 메뉴를 열 수 없음"));
+        await page.getByRole("menuitem", { name: /자세히 보기/ }).click().catch(() => note("동작", "'자세히 보기'를 열 수 없음"));
         const name = card.locator("h3 button");
         if (await name.count()) {
           await name.click();

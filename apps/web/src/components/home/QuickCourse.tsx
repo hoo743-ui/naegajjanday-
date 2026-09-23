@@ -56,6 +56,12 @@ export function QuickCourse() {
       .slice(0, 5);
   }, [query, placeText, picked, regions.data, asked, found.data]);
 
+  // 증거는 지어내지 않는다: 지금 DB 에 실제로 있는 숫자만
+  const proof = useMemo(() => {
+    const all = regions.data?.items ?? [];
+    const places = all.filter((r) => r.level === 1).reduce((sum, r) => sum + r.place_count, 0);
+    return all.length && places ? places : null;
+  }, [regions.data]);
   const items = useMemo(() => sampleCourse(Math.floor(budget / party), party), [budget, party]);
   const total = items.reduce((sum, i) => sum + i.price, 0);
   const left = budget - total;
@@ -183,9 +189,12 @@ export function QuickCourse() {
 
       {/* 영수증은 한 줄로: 자세한 것은 위저드 · 결과가 크게 */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-ink/20 pt-4">
-        <p className="tabular text-body-sm text-ink-2" aria-live="polite">
-          예시로 <b className="font-bold text-ink">{won(total)}</b> · <b className="font-bold text-tomato-deep">{won(left)} 남아요</b> · {items.length}곳 코스
-        </p>
+        <div className="grid gap-0.5">
+          <p className="tabular text-body-sm text-ink-2" aria-live="polite">
+            예시로 <b className="font-bold text-ink">{won(total)}</b> · <b className="font-bold text-tomato-deep">{won(left)} 남아요</b> · {items.length}곳 코스
+          </p>
+          {proof ? <p className="tabular text-caption text-muted-foreground">전국 실제 장소 {proof.toLocaleString("ko-KR")}곳 · 가입 없이 바로</p> : null}
+        </div>
         <Button asChild variant="brand" size="xl" className="group max-sm:w-full">
           <Link href={href} onClick={() => track("plan_started", { entry: "landing_hero" })}>
             이 조건으로 코스 짜기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
