@@ -79,6 +79,10 @@
   --radius: 1rem;
 }
 
+/* 넓지만 낮은 화면(노트북 · 배율 125~150%): 첫 화면 안에 행동(CTA)과 영수증이 들어와야 한다.
+   1440×900 기준으로 짠 히어로가 1280×680 에서는 CTA · 남은 돈이 화면 아래로 잘렸다 */
+@custom-variant short (@media (min-width: 64rem) and (max-height: 820px));
+
 @theme inline {
   /* 결과 화면의 세 칸(지도 | 하루 | 영수증)이 시작되는 폭 (docs/33 §4) */
   --breakpoint-wide: 85rem;
@@ -759,6 +763,46 @@
   color: var(--leg);
   flex: none;
 }
+/* 주변 장소(docs/36): 코스의 번호 핀과 헷갈리지 않게 번호 없는 흰 원 + 파란 테두리. 이름표는 늘 보인다 */
+.jj-peek {
+  position: absolute;
+  left: -13px;
+  top: -13px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--blue-deep);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 3px 10px rgba(20, 33, 61, 0.3);
+  cursor: pointer;
+}
+.jj-peek::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue-deep);
+}
+.jj-peek-label {
+  position: absolute;
+  top: 18px;
+  left: 0;
+  max-width: 180px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: var(--blue-deep);
+  padding: 3px 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(20, 33, 61, 0.25);
+  cursor: pointer;
+}
 .jj-exit {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -994,5 +1038,12 @@ html[data-intro="play"] .hero-intro [data-beat="act"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* 낮은 화면의 히어로 제목: 글자 계단(text-display-xl)을 화면 높이로도 묶는다 — 세 줄이 첫 화면의 절반을 넘지 않게 */
+@media (min-width: 64rem) and (max-height: 820px) {
+  .hero-title {
+    font-size: clamp(38px, 7.2svh, 64px);
   }
 }

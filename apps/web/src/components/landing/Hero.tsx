@@ -109,7 +109,7 @@ export function Hero() {
   }, [regions.data]);
 
   return (
-    <section className="hero-intro paper-grain relative isolate overflow-hidden bg-paper pt-[calc(var(--header-h)+28px)] pb-10 lg:min-h-[min(920px,100svh)] lg:pt-[calc(var(--header-h)+56px)] lg:pb-20">
+    <section className="hero-intro paper-grain relative isolate overflow-hidden bg-paper pt-[calc(var(--header-h)+28px)] pb-10 lg:min-h-[min(920px,100svh)] lg:pt-[calc(var(--header-h)+56px)] lg:pb-20 short:pt-[calc(var(--header-h)+24px)] short:pb-10">
       {/* 장면 (docs/33 §Hero 배경): 서울이 카드나 액자가 아니라 이 하루가 놓이는 공간이다. 종이(바탕) → 서울 → 종이로 번지는 가장자리 →
           오늘의 정거장 → 글 → 예산 → 영수증 → 짠이. 넓은 화면은 그림의 원래 비율(3:2)로 오른쪽에 붙여, 정거장 점이 그림 속 지도 핀에 정확히 앉는다.
           그림 왼쪽에 인쇄된 글귀는 종이로 번지는 가장자리 밑에 가려진다 */}
@@ -130,18 +130,18 @@ export function Hero() {
         <div className="min-w-0">
           <div data-beat="type">
             {/* 줄바꿈이 리듬을 만든다 (docs/35 §5): 조건 한 줄 → 쉼 → 결과. 강조는 금색이 아니라 크기와 굵기로 */}
-            <h1 className="font-serif text-display-xl">
+            <h1 className="hero-title font-serif text-display-xl">
               예산만 말하면,
               <br />
               하루가
               <br />
               <span className="hero-em">영수증</span>으로 나온다.
             </h1>
-            <p className="mt-5 max-w-[440px] text-body-lg text-ink-2">짠이가 실제 장소로 하루를 짜고, 얼마가 남는지까지 영수증 한 장으로 보여 드려요.</p>
+            <p className="mt-5 max-w-[440px] text-body-lg text-ink-2 short:mt-3">짠이가 실제 장소로 하루를 짜고, 얼마가 남는지까지 영수증 한 장으로 보여 드려요.</p>
           </div>
 
           {/* 오늘 쓸 돈: 떠 있는 카드가 아니라 종이 위의 입력 줄 — 숫자 → 슬라이더 → 빠른 선택 */}
-          <div data-beat="money" className="mt-8 max-w-[520px] border-y border-ink/15 py-5">
+          <div data-beat="money" className="mt-8 max-w-[520px] border-y border-ink/15 py-5 short:mt-5 short:py-4">
             <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
               <div className="grid">
                 <label htmlFor={sliderId} className="text-body-sm font-semibold text-ink-2">
@@ -164,7 +164,7 @@ export function Hero() {
             <input
               id={sliderId}
               type="range"
-              className="jj-range mt-4"
+              className="jj-range mt-4 short:mt-3"
               min={MIN}
               max={MAX}
               step={STEP}
@@ -172,7 +172,7 @@ export function Hero() {
               onChange={(e) => setBudget(Number(e.target.value))}
               aria-valuetext={`${budget.toLocaleString("ko-KR")}원, ${party}명`}
             />
-            <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="자주 쓰는 예산">
+            <div className="mt-4 flex flex-wrap gap-2 short:mt-3" role="group" aria-label="자주 쓰는 예산">
               {PRESETS.map((value) => (
                 <button
                   key={value}
@@ -187,12 +187,12 @@ export function Hero() {
             </div>
           </div>
 
-          {/* 오늘의 하루: 그 돈으로 짜인 순서. 좁은 화면에서는 영수증이 하루를 말한다 */}
-          <div className="mt-7 hidden max-w-[520px] sm:block">
+          {/* 오늘의 하루: 그 돈으로 짜인 순서. 좁은 화면 · 낮은 화면에서는 영수증이 하루를 말한다 */}
+          <div className="mt-7 hidden max-w-[520px] sm:block short:hidden!">
             <DayRoute stops={day} />
           </div>
 
-          <div data-beat="act" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div data-beat="act" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 short:mt-6">
             <Button asChild variant="brand" size="xl" className="group max-sm:w-full">
               <Link href="/plan" onClick={() => track("plan_started", { entry: "landing_hero" })}>
                 이 예산으로 짜기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
