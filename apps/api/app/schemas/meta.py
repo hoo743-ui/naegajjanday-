@@ -114,6 +114,10 @@ class LocalSpecialty(BaseModel):
 class LocalSight(BaseModel):
     name: str
     mentions: int = Field(default=0, description="주변 가게가 이 이름을 간판에 빌려 쓴 횟수")
+    # 코스 지도 위에 띄우고 장소 상세를 열 수 있게 (지도 앱으로 내보내지 않는다). 장소가 사라졌으면 None
+    id: str | None = Field(default=None, description="장소 public id (GET /places/{id})")
+    lat: float | None = None
+    lng: float | None = None
 
 
 class HotPlace(BaseModel):

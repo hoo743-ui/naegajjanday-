@@ -5,11 +5,14 @@ import { BedDouble } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useStays } from "@/lib/api/hooks";
 import { distance } from "@/lib/format";
+import type { NearbyPin } from "./map-shared";
 
 interface StayCardProps {
   /** 그날 코스가 끝나는 지점: 숙소는 여기서 가까운 순으로 찾는다 */
   at: { lat: number; lng: number };
   day: number;
+  /** 숙소를 누르면 코스 지도에 띄운다 (지도 앱으로 내보내지 않는다). 없으면 지도 앱 검색으로 */
+  onShow?: (pin: Omit<NearbyPin, "n">) => void;
 }
 
 const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${encodeURIComponent(query)}`;
@@ -18,7 +21,7 @@ const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${enco
  * "오늘 밤 묵을 곳": 여행 일정에서 마지막 날이 아닌 날의 코스 아래에 붙는다.
  * 요금은 말하지 않는다 — 숙박 요금의 공식 데이터가 없다(API 의 price_note 를 그대로 보여 준다). 예산에도 넣지 않는다.
  */
-export function StayCard({ at, day }: StayCardProps) {
+export function StayCard({ at, day, onShow }: StayCardProps) {
   const stays = useStays(at);
   if (stays.isPending) return <p className="skeleton-shimmer h-[120px] rounded-card" aria-label="근처 숙소를 찾는 중" />;
   if (stays.isError || stays.data.items.length === 0) return null; // 등재 숙소가 없는 동네: 아무 말도 하지 않는다
@@ -30,9 +33,10 @@ export function StayCard({ at, day }: StayCardProps) {
         {day}일차 밤, 이 근처에서 묵는다면
       </h2>
       <ul className="grid gap-2.5 sm:grid-cols-2">
-        {stays.data.items.map((stay) => (
-          <li key={stay.id}>
-            <a href={kakaoSearch(stay.name)} target="_blank" rel="noreferrer" onClick={() => track("stay_clicked", { day })} className="flex items-center gap-3 rounded-2xl border border-line p-2.5 hover:border-blue-deep">
+        {stays.data.items.map((stay) => {
+          const shape = "flex w-full items-center gap-3 rounded-2xl border border-line p-2.5 text-left hover:border-blue-deep";
+          const body = (
+            <>
               <span className="relative block size-16 shrink-0 overflow-hidden rounded-xl bg-paper-2">
                 {stay.thumbnail_url ? <Image src={stay.thumbnail_url} alt="" fill sizes="64px" unoptimized className="object-cover" /> : null}
               </span>
@@ -43,9 +47,29 @@ export function StayCard({ at, day }: StayCardProps) {
                 </span>
                 {stay.photo_credit ? <span className="block text-caption text-muted-foreground">사진 ⓒ한국관광공사</span> : null}
               </span>
-            </a>
-          </li>
-        ))}
+            </>
+          );
+          return (
+            <li key={stay.id}>
+              {onShow ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    track("stay_clicked", { day });
+                    onShow({ id: stay.id, name: stay.name, lat: stay.lat, lng: stay.lng, kind: `${day}일차 밤 숙소 · 코스 끝에서 ${distance(stay.distance_m)}` });
+                  }}
+                  className={shape}
+                >
+                  {body}
+                </button>
+              ) : (
+                <a href={kakaoSearch(stay.name)} target="_blank" rel="noreferrer" onClick={() => track("stay_clicked", { day })} className={shape}>
+                  {body}
+                </a>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <p className="text-caption text-muted-foreground">
         {stays.data.price_note} <span className="whitespace-nowrap">출처: {stays.data.source}</span>

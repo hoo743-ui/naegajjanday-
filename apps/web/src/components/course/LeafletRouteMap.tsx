@@ -8,7 +8,7 @@ import type { AccessHint } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
 
 interface LeafletRouteMapProps {
   stops: Stop[];
@@ -21,6 +21,10 @@ interface LeafletRouteMapProps {
   focus?: { position: number; n: number } | null;
   /** 바뀔 때마다 코스 전체가 보이게 다시 맞춘다 ("전체 코스 지도에서 보기") */
   fitKey?: number;
+  /** 코스 밖의 주변 장소 하나: 번호 없는 핀으로 띄우고, 코스와 함께 보이게 맞춘다 */
+  nearby?: NearbyPin | null;
+  /** 주변 장소 핀을 눌렀을 때 (장소 상세 열기) */
+  onNearby?: () => void;
   /** 타일을 하나도 받지 못하면 호출 → 부모가 SVG 약도로 되돌린다 */
   onError: () => void;
 }
@@ -42,7 +46,7 @@ const MAX_FIT_ZOOM = 18;
  * OpenStreetMap 타일 + Leaflet. API 키가 필요 없어 어디서든 바로 뜬다.
  * Leaflet 은 window 를 만지므로 effect 안에서 동적으로 불러온다.
  */
-export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, onError }: LeafletRouteMapProps) {
+export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, onError }: LeafletRouteMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const landingRef = useRef(landingClock());
@@ -53,8 +57,13 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
   const onSelectRef = useRef(onSelect);
   const onErrorRef = useRef(onError);
   const fitRef = useRef<() => void>(() => undefined);
+  const onNearbyRef = useRef(onNearby);
   onSelectRef.current = onSelect;
   onErrorRef.current = onError;
+  onNearbyRef.current = onNearby;
+  // 화면 맞춤(바텀시트 크기 변화 등)이 띄워 둔 주변 장소를 화면 밖으로 밀어내지 않게, 맞춤에 함께 넣는다
+  const nearbyRef = useRef(nearby);
+  nearbyRef.current = nearby;
 
   // 지도는 한 번만 만든다
   useEffect(() => {
@@ -185,11 +194,18 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
       const pins = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       const bounds = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       if (route?.routed) route.coordinates.forEach((at) => bounds.extend(at));
+      const extra = nearbyRef.current;
+      if (extra) {
+        pins.extend([extra.lat, extra.lng]);
+        bounds.extend([extra.lat, extra.lng]);
+      }
       map.invalidateSize();
-      // 위쪽 여백은 핀 높이(56) + 이름표, 아래는 저작권 표기
-      const target = map.getBoundsZoom(bounds, false, L.point(140, 170));
+      // 위쪽 여백은 핀 높이(56) + 이름표, 아래는 저작권 표기. 지도 칸에 비례해 줄인다(모바일 절반 지도는 약 250px)
+      const size = map.getSize();
+      const pad = L.point(Math.min(140, size.x * 0.25), Math.min(170, size.y * 0.4));
+      const target = map.getBoundsZoom(bounds, false, pad);
       // 핀은 무엇보다 먼저다: 확대 제한은 길이 돌아가서 넓어진 만큼에만 건다. 모든 번호 핀은 언제나 화면 안에 있다
-      const pinsZoom = map.getBoundsZoom(pins, false, L.point(140, 170));
+      const pinsZoom = map.getBoundsZoom(pins, false, pad);
       const clamped = Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, target));
       const zoom = Math.min(clamped, Math.max(pinsZoom, 1));
       const fitsRoute = zoom <= target;
@@ -234,6 +250,33 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
   useEffect(() => {
     if (fitKey) fitRef.current();
   }, [fitKey]);
+
+  // 주변 장소: 번호 없는 핀 하나. 코스 핀과 그 장소가 한 화면에 들어오게 맞춘다 → 코스에서 얼마나 떨어졌는지가 보인다
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map || !nearby) return;
+    const marker = L.marker([nearby.lat, nearby.lng], {
+      icon: L.divIcon({ className: "", html: nearbyHtml(nearby.name), iconSize: [0, 0] }),
+      zIndexOffset: 200_000,
+      title: `${nearby.name} 자세히 보기`,
+    });
+    marker.on("click", (e) => {
+      L.DomEvent.stopPropagation(e);
+      onNearbyRef.current?.();
+    });
+    marker.addTo(map);
+    const bounds = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
+    bounds.extend([nearby.lat, nearby.lng]);
+    map.invalidateSize();
+    const size = map.getSize();
+    const side = Math.min(70, size.x * 0.12);
+    map.fitBounds(bounds, { paddingTopLeft: L.point(side, Math.min(130, size.y * 0.3)), paddingBottomRight: L.point(side, Math.min(60, size.y * 0.1)), maxZoom: 17, animate: true });
+    return () => {
+      marker.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 다른 곳을 고르거나 같은 곳을 다시 누를 때만 (n)
+  }, [ready, nearby?.n, nearby?.lat, nearby?.lng]);
 
   useEffect(() => {
     const map = mapRef.current;

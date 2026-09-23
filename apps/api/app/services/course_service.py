@@ -589,7 +589,7 @@ class CourseService:
         signature = (await signature_service.load(self._s, region.id)).strong(floor)
         if not signature.specialties and not signature.sights:
             return None
-        return local_signature_out(region.name, signature)
+        return await local_signature_out(self._s, region.name, signature)
 
     async def _with_anchor(self, req: dto.CourseGenerateRequest) -> dto.CourseGenerateRequest:
         """docs/34: a campus as the anchor of the day becomes the existing "around a point" request —

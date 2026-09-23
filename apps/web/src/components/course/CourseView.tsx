@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, Tent, TrainFront, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -30,7 +30,8 @@ import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
 import { NearbyEvents } from "./NearbyEvents";
 import { ResultHeader } from "./ResultHeader";
-import { toMapRoute } from "./map-shared";
+import { toMapRoute, type NearbyPin } from "./map-shared";
+import { PlaceSheet } from "./PlaceSheet";
 import { RouteIssues } from "./RouteIssues";
 import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
@@ -85,6 +86,9 @@ export function CourseView({ id }: { id: string }) {
   // 카드 → 지도: 그 장소로 옮겨 가 확대 (n 이 바뀔 때마다) · "전체 코스 지도에서 보기": 코스 전체로 다시 맞춤
   const [focus, setFocus] = useState<{ position: number; n: number } | null>(null);
   const [fitKey, setFitKey] = useState(0);
+  // 주변 장소(동네 명소 · 숙소 · 남은 돈으로 갈 곳)를 지도 앱으로 내보내지 않고 이 지도에 띄운다. 정보는 "자세히"로 따로 연다 (docs/36)
+  const [nearby, setNearby] = useState<NearbyPin | null>(null);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
   // 핀을 눌러 카드로 스크롤하는 동안은, 스크롤이 지나가는 다른 카드가 선택을 빼앗지 않게 한다
   const viewLock = useRef(0);
   const [shared, setShared] = useState(false);
@@ -341,9 +345,17 @@ export function CourseView({ id }: { id: string }) {
     if (Date.now() < viewLock.current) return;
     setActiveStop(position);
   };
+  /** 주변 장소 → 지도: 코스 지도에 번호 없는 핀으로 띄운다. 모바일에서 목록만 보던 중이면 지도가 보이게 절반으로 */
+  const showNearby = (pin: Omit<NearbyPin, "n">) => {
+    setActiveStop(null);
+    setNearby((prev) => ({ ...pin, n: (prev?.n ?? 0) + 1 }));
+    track("nearby_shown", { kind: pin.kind });
+    if (!desktop() && sheet === "full") moveSheet("half");
+  };
   /** 전체 코스: 핀 · 경로 · 순서 · 이동 시간이 모두 보이게. 모바일은 지도를 크게 */
   const showWholeCourse = () => {
     setActiveStop(null);
+    setNearby(null);
     setFitKey((k) => k + 1);
     if (!desktop()) {
       moveSheet("map");
@@ -409,9 +421,36 @@ export function CourseView({ id }: { id: string }) {
           <div
             ref={mapBoxRef}
             style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "30dvh" : "0px" } as React.CSSProperties}
-            className={cn("h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
+            className={cn("relative h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
           >
-            <RouteMap stops={data.stops} activeStop={activeStop} onSelect={selectFromMap} route={mapRoute} focus={focus} fitKey={fitKey} access={accessHints.data?.items} />
+            <RouteMap
+              stops={data.stops}
+              activeStop={activeStop}
+              onSelect={selectFromMap}
+              route={mapRoute}
+              focus={focus}
+              fitKey={fitKey}
+              access={accessHints.data?.items}
+              nearby={nearby}
+              onNearby={nearby?.id ? () => setNearbyOpen(true) : undefined}
+            />
+            {/* 띄운 주변 장소의 이름표: 무엇을 보고 있는지 · 정보는 따로 열기 · 지우기 */}
+            {nearby ? (
+              <div role="status" className="absolute top-3 left-3 z-[500] flex max-w-[calc(100%-11rem)] items-center gap-1 rounded-xl bg-white py-1 pr-1 pl-3 shadow-soft">
+                <span className="min-w-0">
+                  <span className="block text-caption text-muted-foreground">{nearby.kind}</span>
+                  <b className="block truncate text-body-sm font-semibold text-ink">{nearby.name}</b>
+                </span>
+                {nearby.id ? (
+                  <button type="button" aria-label={`${nearby.name} 자세히 보기`} onClick={() => setNearbyOpen(true)} className="min-h-11 shrink-0 rounded-lg px-2.5 text-body-sm font-semibold text-blue-deep hover:bg-blue-soft">
+                    자세히
+                  </button>
+                ) : null}
+                <button type="button" aria-label="지도에서 지우기" onClick={() => setNearby(null)} className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-soft hover:text-ink">
+                  <X aria-hidden className="size-4" />
+                </button>
+              </div>
+            ) : null}
           </div>
           {/* 바텀시트 손잡이: 누르면 절반 ↔ 전체, 위아래로 끌면 한 단계씩. 오른쪽 버튼은 지도를 크게 ↔ 절반 */}
           <div className={cn("relative flex h-9 items-center justify-center rounded-t-[24px] bg-soft shadow-[0_-8px_24px_rgba(72,54,24,.10)] lg:hidden", sheet !== "full" && "-mt-5")}>
@@ -601,7 +640,7 @@ export function CourseView({ id }: { id: string }) {
                 />
               ) : null}
 
-              {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} /> : null}
+              {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} onShow={showNearby} /> : null}
 
               {/* 늦게 도착하는 것은 장소 목록 뒤에 둔다: 추천(조회 뒤에 뜬다)과 이야기(스켈레톤 68px → 본문 250px)가 목록 위에
                   있을 때는, 화면이 뜬 뒤 1초 동안 첫 장소 카드가 613px 아래로 밀렸다(누르려던 버튼이 달아난다). 추천은 "마지막
@@ -611,6 +650,7 @@ export function CourseView({ id }: { id: string }) {
                 budgetLeft={data.totals.budget_left}
                 budget={request.budget_total}
                 editable={!readOnly}
+                onShow={showNearby}
                 onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
               />
 
@@ -636,7 +676,7 @@ export function CourseView({ id }: { id: string }) {
 
               {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 */}
               {lastStop && request.day && request.days && request.day < request.days ? (
-                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} />
+                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} onShow={showNearby} />
               ) : null}
               {firstStop ? (
                 <PerformanceCard at={{ lat: firstStop.place.lat, lng: firstStop.place.lng }} startAt={request.start_at} durationMin={request.duration_min ?? Math.max(120, data.totals.duration_min ?? 240)} />
@@ -658,6 +698,15 @@ export function CourseView({ id }: { id: string }) {
           </div>
         </div>
       </div>
+
+      {/* 주변 장소의 정보: 지도에 띄운 뒤, 원할 때만 따로 연다 */}
+      {nearby?.id && nearbyOpen ? (
+        <PlaceSheet
+          place={{ id: nearby.id, name: nearby.name, category: "", lat: nearby.lat, lng: nearby.lng, address: "", thumbnail_url: null, rating: null, review_count: 0, price_per_person: null, tags: [] }}
+          partySize={request.party_size}
+          onClose={() => setNearbyOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

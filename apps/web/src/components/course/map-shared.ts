@@ -56,6 +56,23 @@ export function pinHtml(position: number, name: string, color: string, active: b
     </div>`;
 }
 
+/** 코스 밖의 주변 장소(동네 명소 · 숙소 · 남은 돈으로 갈 곳)를 코스 지도에 잠깐 띄운다 (docs/36) */
+export interface NearbyPin {
+  /** 장소 public id — 있으면 "자세히"로 장소 상세를 연다 */
+  id?: string | null;
+  name: string;
+  lat: number;
+  lng: number;
+  /** 카드에 붙는 한 줄: "사람들이 보러 오는 곳" · "숙소" … */
+  kind: string;
+  /** 같은 곳을 다시 눌러도 다시 옮겨 가도록 */
+  n: number;
+}
+
+export function nearbyHtml(name: string) {
+  return `<span class="jj-peek"></span><span class="jj-peek-label">${escapeHtml(name)}</span>`;
+}
+
 // 핀이 화면에서 차지하는 상자(선택된 핀 58px 기준 + 여유). 두 핀의 상자가 겹치면 "묻힌다".
 const PIN_BOX_W = 64;
 const PIN_BOX_H = 74;

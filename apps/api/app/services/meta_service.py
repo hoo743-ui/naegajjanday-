@@ -11,9 +11,9 @@ from app.core import errors
 from app.core.cache import Cache
 from app.domain.anchors import context_purposes, university_rules
 from app.domain.models import GeoPoint
-from app.domain.signature import Signature, get_signature_rules
+from app.domain.signature import Sight, Signature, get_signature_rules
 from app.infra.db.base import utcnow
-from app.infra.db.models import Banner, Region
+from app.infra.db.models import Banner, Place, Region
 from app.repositories.config_repo import SqlConfigRepository
 from app.repositories.place_repo import SqlPlaceRepository
 from app.repositories.region_repo import NEIGHBOURHOOD_LEVEL, SqlRegionRepository
@@ -53,7 +53,8 @@ class MetaService:
         if region is None:
             raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
         signature = await signature_service.load(self._s, region.id)
-        return local_signature_out(
+        return await local_signature_out(
+            self._s,
             region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
         )
 
@@ -237,12 +238,30 @@ def _per_person(total_min: int | None, total_max: int | None, party: int) -> dto
     return dto.PerPersonBudget(min=r(lo), max=r(hi), typical=r(math.sqrt(lo * hi)))
 
 
-def local_signature_out(region_name: str, signature: Signature) -> dto.LocalSignature:
+async def local_signature_out(
+    session: AsyncSession, region_name: str, signature: Signature
+) -> dto.LocalSignature:
+    """The sights carry their place id and point, so the page can show them on its own map
+    instead of sending people out to a map app."""
+    ids = [s.place_id for s in signature.sights]
+    points: dict[int, tuple[str, float, float]] = {}
+    if ids:
+        rows = await session.execute(
+            select(Place.id, Place.public_id, Place.lat, Place.lng).where(Place.id.in_(ids))
+        )
+        points = {pid: (public_id, lat, lng) for pid, public_id, lat, lng in rows.all()}
+
+    def sight(s: Sight) -> dto.LocalSight:
+        found = points.get(s.place_id)
+        if found is None:
+            return dto.LocalSight(name=s.name, mentions=s.mentions)
+        return dto.LocalSight(name=s.name, mentions=s.mentions, id=found[0], lat=found[1], lng=found[2])
+
     return dto.LocalSignature(
         region=region_name,
         shops=signature.shops,
         specialties=[
             dto.LocalSpecialty(word=s.word, count=s.count, lift=s.lift) for s in signature.specialties
         ],
-        sights=[dto.LocalSight(name=s.name, mentions=s.mentions) for s in signature.sights],
+        sights=[sight(s) for s in signature.sights],
     )

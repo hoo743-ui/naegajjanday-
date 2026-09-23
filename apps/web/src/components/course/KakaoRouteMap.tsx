@@ -6,7 +6,7 @@ import type { AccessHint } from "@/lib/api/hooks";
 import type { Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type Pt } from "./map-shared";
+import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
 
 // ── Kakao Maps JS SDK (쓰는 만큼만 타입 선언) ─────────────────
 interface KLatLng {
@@ -55,6 +55,17 @@ const MAX_FIT_LEVEL = 4;
 
 let sdkPromise: Promise<KakaoMaps> | null = null;
 
+/**
+ * 화면 맞춤의 여백(위 · 오른쪽 · 아래 · 왼쪽). 위쪽은 핀 높이 + 이름표만큼 넉넉히 두되, 지도 칸에 비례해 줄인다 —
+ * 모바일 절반 지도(약 250px)에 고정 여백 170 + 70 을 주면 남는 칸이 10px 뿐이라 서울 전체까지 물러났다.
+ */
+function fitPadding(box: HTMLElement | null): [number, number, number, number] {
+  const h = box?.clientHeight ?? 600;
+  const w = box?.clientWidth ?? 600;
+  const side = Math.round(Math.min(80, w * 0.12));
+  return [Math.round(Math.min(170, h * 0.3)), side, Math.round(Math.min(70, h * 0.1)), side];
+}
+
 /** 지도와 로드뷰(RoadviewPeek)가 같은 SDK 를 한 번만 받는다 */
 export function loadKakao(key: string): Promise<KakaoMaps> {
   sdkPromise ??= new Promise<KakaoMaps>((resolve, reject) => {
@@ -89,6 +100,10 @@ interface KakaoRouteMapProps {
   focus?: { position: number; n: number } | null;
   /** 바뀔 때마다 코스 전체가 보이게 다시 맞춘다 ("전체 코스 지도에서 보기") */
   fitKey?: number;
+  /** 코스 밖의 주변 장소 하나: 번호 없는 핀으로 띄우고, 코스와 함께 보이게 맞춘다 */
+  nearby?: NearbyPin | null;
+  /** 주변 장소 핀을 눌렀을 때 (장소 상세 열기) */
+  onNearby?: () => void;
   onError: () => void;
 }
 
@@ -96,17 +111,20 @@ interface KakaoRouteMapProps {
  * 카카오 지도. Leaflet 지도와 **같은 것**을 그린다: 실제 보행 경로(구간별 색) · 가까운 지하철 출구 ·
  * 겹치면 부채꼴로 펼쳐지는 번호 핀(`map-shared.ts`). 키를 넣어 지도가 바뀌어도 코스는 똑같이 읽혀야 한다.
  */
-export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, focus, fitKey, onError }: KakaoRouteMapProps) {
+export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, onError }: KakaoRouteMapProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KMap | null>(null);
   const landingRef = useRef(landingClock());
   const [maps, setMaps] = useState<KakaoMaps | null>(null);
   const [zoomTick, setZoomTick] = useState(0); // 줌이 바뀌면 핀 펼침을 다시 계산한다
-  const handlers = useRef({ onSelect, onError });
+  const handlers = useRef({ onSelect, onError, onNearby });
   const fitRef = useRef<() => void>(() => undefined);
+  // 화면 맞춤(바텀시트 크기 변화 등)이 띄워 둔 주변 장소를 화면 밖으로 밀어내지 않게, 맞춤에 함께 넣는다
+  const nearbyRef = useRef(nearby);
+  nearbyRef.current = nearby;
   useEffect(() => {
-    handlers.current = { onSelect, onError };
-  }, [onSelect, onError]);
+    handlers.current = { onSelect, onError, onNearby };
+  }, [onSelect, onError, onNearby]);
 
   useEffect(() => {
     let alive = true;
@@ -148,15 +166,21 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       stops.forEach((s) => pins.extend(new maps.LatLng(s.place.lat, s.place.lng)));
       const bounds = new maps.LatLngBounds();
       stops.forEach((s) => bounds.extend(new maps.LatLng(s.place.lat, s.place.lng)));
+      const extra = nearbyRef.current;
+      if (extra) {
+        pins.extend(new maps.LatLng(extra.lat, extra.lng));
+        bounds.extend(new maps.LatLng(extra.lat, extra.lng));
+      }
       if (route?.routed) route.coordinates.forEach(([lat, lng]) => bounds.extend(new maps.LatLng(lat, lng)));
       map.relayout();
       // 핀은 무엇보다 먼저다: 차로 야경을 보러 가는 코스 · 여러 동네를 잇는 코스는 동네 하나보다 넓다.
       // 확대 제한(MAX_FIT_LEVEL)은 "길이 돌아가서 넓어진 만큼"에만 건다 → 모든 번호 핀은 언제나 화면 안에 있다.
-      map.setBounds(pins, 170, 80, 70, 80); // 위쪽은 핀 높이 + 이름표만큼 넉넉히
+      const pad = fitPadding(boxRef.current);
+      map.setBounds(pins, ...pad);
       const pinsLevel = map.getLevel();
-      map.setBounds(bounds, 170, 80, 70, 80);
+      map.setBounds(bounds, ...pad);
       if (map.getLevel() > Math.max(MAX_FIT_LEVEL, pinsLevel)) {
-        map.setBounds(pins, 170, 80, 70, 80);
+        map.setBounds(pins, ...pad);
         if (pinsLevel < MAX_FIT_LEVEL) map.setLevel(MAX_FIT_LEVEL);
       }
       setZoomTick((n) => n + 1);
@@ -280,6 +304,32 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
   useEffect(() => {
     if (fitKey) fitRef.current();
   }, [fitKey]);
+
+  // 주변 장소: 번호 없는 핀 하나. 코스 핀과 그 장소가 한 화면에 들어오게 맞춘다 → 코스에서 얼마나 떨어졌는지가 보인다
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!maps || !map || !nearby) return;
+    const el = document.createElement("div");
+    el.style.cssText = "position:relative;width:0;height:0";
+    el.innerHTML = nearbyHtml(nearby.name);
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", `${nearby.name} 자세히 보기`);
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handlers.current.onNearby?.();
+    });
+    const at = new maps.LatLng(nearby.lat, nearby.lng);
+    const overlay = new maps.CustomOverlay({ position: at, content: el, xAnchor: 0, yAnchor: 0, zIndex: 2000, clickable: true });
+    overlay.setMap(map);
+    const bounds = new maps.LatLngBounds();
+    stops.forEach((s) => bounds.extend(new maps.LatLng(s.place.lat, s.place.lng)));
+    bounds.extend(at);
+    map.relayout();
+    map.setBounds(bounds, ...fitPadding(boxRef.current));
+    setZoomTick((n) => n + 1);
+    return () => overlay.setMap(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 다른 곳을 고르거나 같은 곳을 다시 누를 때만 (n)
+  }, [maps, nearby?.n, nearby?.lat, nearby?.lng]);
 
   // 타임라인에서 고른 스톱이 화면 밖이면 데려온다
   useEffect(() => {

@@ -27,8 +27,11 @@ export function PlaceSheet({ place, partySize, onClose }: PlaceSheetProps) {
   const detail = usePlaceDetail(place?.id ?? null);
   if (!place) return null;
   const d = detail.data;
+  // 코스 밖의 주변 장소는 이름 · 좌표만 들고 온다 → 주소 · 업종 · 대표 사진은 상세에서 채운다
+  const address = place.address || d?.address || "";
+  const categoryName = place.category_name ?? d?.category_name;
   // 크기만 다른 같은 사진은 한 장으로 (docs/29 §20)
-  const photos = distinctPhotos([place.thumbnail_url, ...(d?.images ?? [])]).slice(0, MAX_PHOTOS);
+  const photos = distinctPhotos([place.thumbnail_url ?? d?.thumbnail_url ?? null, ...(d?.images ?? [])]).slice(0, MAX_PHOTOS);
   const years = d?.since_year ? new Date().getFullYear() - d.since_year : 0;
   const hours = (d?.opening_hours ?? []).filter((h) => h.is_closed || (h.open && h.close));
 
@@ -49,7 +52,7 @@ export function PlaceSheet({ place, partySize, onClose }: PlaceSheetProps) {
         <SheetHeader className="gap-1 px-5 pt-5 pb-0 text-left">
           <SheetTitle className="text-h3 leading-tight font-extrabold">{place.name}</SheetTitle>
           <SheetDescription className="text-body-sm text-muted-foreground">
-            {[place.category_name, d?.licensed_as && d.licensed_as !== place.category_name ? d.licensed_as : null, place.address].filter(Boolean).join(" · ")}
+            {[categoryName, d?.licensed_as && d.licensed_as !== categoryName ? d.licensed_as : null, address].filter(Boolean).join(" · ")}
           </SheetDescription>
         </SheetHeader>
 
@@ -91,7 +94,8 @@ export function PlaceSheet({ place, partySize, onClose }: PlaceSheetProps) {
                 행정안전부 착한가격업소 조사 가격이에요. {partySize}명이면 가장 싼 메뉴로 {won(Math.min(...d.menus.map((m) => m.price)) * partySize)}부터예요. 가격은 바뀔 수 있어요.
               </p>
             </section>
-          ) : d ? (
+          ) : d && !d.is_free && d.kind !== "event" ? (
+            // 무료로 보는 곳(명소 · 공원)에는 메뉴판이 없다 — 주변 명소를 열었을 때 "가게의 메뉴판"이라고 말하지 않는다
             <p className="rounded-2xl bg-soft px-4 py-3 text-body-sm text-ink-2">
               이 가게의 메뉴판 가격은 아직 조사된 것이 없어요. 코스의 금액은 같은 지역 · 같은 업종의 평균가예요.
             </p>
@@ -122,7 +126,7 @@ export function PlaceSheet({ place, partySize, onClose }: PlaceSheetProps) {
               </a>
             ) : null}
             <a
-              href={`https://map.kakao.com/link/search/${encodeURIComponent(`${place.address?.split(" ").slice(0, 2).join(" ") ?? ""} ${place.name}`.trim())}`}
+              href={`https://map.kakao.com/link/search/${encodeURIComponent(`${address.split(" ").slice(0, 2).join(" ")} ${place.name}`.trim())}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-ink px-4 py-3 text-body font-bold text-white hover:opacity-90"

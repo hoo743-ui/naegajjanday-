@@ -214,7 +214,8 @@ export interface LocalSignature {
   shops: number;
   /** count = 이 동네에서 간판에 그 말이 들어간 가게 수, lift = 전국 평균 대비 몇 배 */
   specialties: { word: string; count: number; lift: number }[];
-  sights: { name: string; mentions: number }[];
+  /** id · lat · lng: 코스 지도에 띄우고 장소 상세를 연다. 예전 코스(또는 장소가 사라진 경우)에는 없다 */
+  sights: { name: string; mentions: number; id?: string | null; lat?: number | null; lng?: number | null }[];
 }
 
 /** focus 값: 동네 명물을 코스에 넣지 않는다 */

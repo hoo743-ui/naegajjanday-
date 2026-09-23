@@ -48,6 +48,8 @@ export interface AnalyticsEvents {
   hot_place_opened: { region: string; place_id: string; rank: number };
   suggestion_added: { course_id: string; role: string; price: number };
   stay_clicked: { day: number };
+  // 주변 장소를 코스 지도에 띄움 (docs/36): kind = 카드에 붙은 한 줄
+  nearby_shown: { kind: string };
   performance_clicked: { performance_id: string };
   course_feedback_sent: { course_id: string; rating: number };
   banner_clicked: { banner_id: string; placement: string };

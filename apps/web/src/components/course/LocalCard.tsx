@@ -3,6 +3,7 @@
 import { MapPin } from "lucide-react";
 import { FOCUS_OFF, type LocalSignature } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import type { NearbyPin } from "./map-shared";
 
 interface LocalCardProps {
   local: LocalSignature;
@@ -11,6 +12,8 @@ interface LocalCardProps {
   /** 명물을 누르면 그 명물을 넣어 다시 짠다. 없으면(남의 코스 등) 읽기 전용 */
   onPick?: (focus: string) => void;
   busy?: boolean;
+  /** 명소를 누르면 코스 지도에 띄운다 (지도 앱으로 내보내지 않는다). 좌표가 없는 예전 코스만 지도 앱 검색으로 */
+  onShow?: (pin: Omit<NearbyPin, "n">) => void;
 }
 
 const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${encodeURIComponent(query)}`;
@@ -20,7 +23,7 @@ const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${enco
  * 사람이 쓴 소개글이 아니라 간판 통계다 → 문구도 "유명하대요"가 아니라 셀 수 있는 사실("간판 N곳 · 전국의 M배")로 쓴다.
  * 명물을 누르면 같은 예산으로 그 명물을 넣은 코스를 다시 짠다 — 추천을 받기만 하는 게 아니라 고를 수 있어야 한다.
  */
-export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
+export function LocalCard({ local, focus, onPick, busy, onShow }: LocalCardProps) {
   if (local.specialties.length === 0 && local.sights.length === 0) return null;
   return (
     <section aria-labelledby="local-card" className="rule-section gap-3.5">
@@ -77,16 +80,30 @@ export function LocalCard({ local, focus, onPick, busy }: LocalCardProps) {
 
       {local.sights.length > 0 ? (
         <div className="grid gap-2">
-          <p className="text-body-sm text-ink-2">사람들이 보러 오는 곳</p>
+          <p className="text-body-sm text-ink-2">사람들이 보러 오는 곳{onShow ? " · 누르면 지도에 띄워요" : ""}</p>
           <ul className="flex flex-wrap gap-x-3 gap-y-1.5">
-            {local.sights.map((s) => (
-              <li key={s.name}>
-                <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1 text-body-sm font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep">
+            {local.sights.map((s) => {
+              const shape = "inline-flex min-h-11 items-center gap-1 text-body-sm font-semibold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep";
+              const label = (
+                <>
                   <MapPin aria-hidden className="size-3.5 text-blue-deep" />
                   {s.name}
-                </a>
-              </li>
-            ))}
+                </>
+              );
+              return (
+                <li key={s.name}>
+                  {onShow && s.lat != null && s.lng != null ? (
+                    <button type="button" onClick={() => onShow({ id: s.id, name: s.name, lat: s.lat!, lng: s.lng!, kind: "사람들이 보러 오는 곳" })} className={shape}>
+                      {label}
+                    </button>
+                  ) : (
+                    <a href={kakaoSearch(s.name)} target="_blank" rel="noreferrer" className={shape}>
+                      {label}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
