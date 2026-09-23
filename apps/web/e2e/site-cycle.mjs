@@ -158,7 +158,7 @@ async function main() {
       if (scene.open) {
         // 눌러야 나오는 것들도 실제로 열어 본다: 장소 시트 · 추천 이유 · 거리뷰
         const card = page.getByLabel("코스 일정").getByRole("article").first();
-        await card.getByRole("button", { name: /왜 여기/ }).click().catch(() => note("동작", "'왜 여기?'를 열 수 없음"));
+        await card.getByRole("button", { name: /자세히/ }).click().catch(() => note("동작", "'자세히'를 열 수 없음"));
         const name = card.locator("h3 button");
         if (await name.count()) {
           await name.click();

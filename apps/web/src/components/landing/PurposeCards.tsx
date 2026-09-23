@@ -40,9 +40,7 @@ export function PurposeCards() {
         <div className="mt-10 grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
           <div className="lg:sticky lg:top-[calc(var(--header-h)+48px)] lg:self-start">
             <h2 className="font-serif text-display">오늘은 어떤 약속인가요?</h2>
-            <p className="mt-5 max-w-[400px] text-body text-ink-2">
-              같은 예산이어도 목적이 다르면 코스가 달라져요. 데이트는 분위기를, 혼밥은 웨이팅 없는 곳을 먼저 봅니다.
-            </p>
+            <p className="mt-5 max-w-[400px] text-body-lg text-ink-2">같은 예산이어도 목적이 다르면 코스가 달라져요.</p>
           </div>
 
           <div>
@@ -86,7 +84,6 @@ export function PurposeCards() {
                         <span className="grid gap-0.5">
                           <b className="text-h3 font-bold group-hover:text-blue-deep">{p.name}</b>
                           {p.description ? <span className="text-body-sm text-ink-2">{p.description}</span> : null}
-                          {photo ? <span className="text-caption font-medium text-muted-foreground/80">사진 ©한국관광공사 · {photo.place}</span> : null}
                         </span>
                         {/* 메뉴판의 가격 칸: 오른쪽 끝, 같은 폭의 숫자 */}
                         <span className="tabular col-start-2 flex items-center gap-1 text-body font-bold text-ink sm:col-start-3 sm:justify-self-end">
@@ -99,6 +96,10 @@ export function PurposeCards() {
                 })}
               </ul>
             )}
+            {/* 사진 출처는 줄마다가 아니라 목록 끝에 한 번 (docs/33) — 공공누리 조건의 출처 표시 */}
+            {purposes.data?.items.some((p) => PHOTOS[p.code]) ? (
+              <p className="mt-3 text-caption text-muted-foreground">사진 ©한국관광공사 · {purposes.data.items.map((p) => PHOTOS[p.code]?.place).filter(Boolean).join(" · ")}</p>
+            ) : null}
           </div>
         </div>
       </div>

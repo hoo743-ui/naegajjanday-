@@ -32,6 +32,9 @@ let shot = false; // 거리뷰가 실제로 그려진 첫 카드를 찍는다
 for (let i = 0; i < count; i += 1) {
   const card = cards.nth(i);
   const name = (await card.getByRole("heading").first().innerText({ timeout: 3000 }).catch(() => "(이름 없음)")).trim();
+  // 거리뷰는 "자세히" 안에 있다 (docs/33 §6)
+  await card.getByRole("button", { name: /자세히/ }).click().catch(() => {});
+  await page.waitForTimeout(400);
   const button = card.getByRole("button", { name: "가게 앞 거리뷰" });
   if (!(await button.count())) {
     console.log(`${i + 1}. ${name}: 버튼 없음 (카카오 키 없음)`);

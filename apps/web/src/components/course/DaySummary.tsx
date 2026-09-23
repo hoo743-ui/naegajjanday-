@@ -1,10 +1,9 @@
 "use client";
 
-import { DayRoute } from "@/components/brand/DayRoute";
 import { Money } from "@/components/brand/Money";
 import { Jjani } from "@/components/mascot/Jjani";
-import type { CourseTotals, Stop, Transport } from "@/lib/api/types";
-import { clock, distance, minutes, roleLabel, transportLabel, won } from "@/lib/format";
+import type { CourseTotals, Transport } from "@/lib/api/types";
+import { distance, minutes, transportLabel, won } from "@/lib/format";
 import type { JjaniMood } from "@/lib/mascot-copy";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +11,6 @@ interface DaySummaryProps {
   totals: CourseTotals;
   budget: number;
   partySize: number;
-  stops: Stop[];
   transport: Transport;
   /** 실제 경로(docs/27)로 잰 이동. 없으면 엔진의 추정값 */
   travelMin: number;
@@ -26,14 +24,14 @@ interface DaySummaryProps {
 }
 
 /**
- * 결과 화면의 첫 화면 (docs/31 §11): "그래서 오늘 어디 가면 되는데?"의 답을 3초 안에.
- * 남은 돈(가장 큰 숫자) · 예산과 쓴 돈 → 오늘의 경로(시각 + 곳) → 전체 소요 · 이동. 상자가 아니라 종이 위의 서식이고,
- * 아래(일정)와는 구멍 줄로 나뉜다. 합계 · 남은 돈은 API 값 하나만 쓴다(영수증 · 짠이의 말과 같은 숫자).
+ * 결과 화면의 첫 화면 (docs/31 §11 · docs/33 §5): "그래서 오늘 어디 가면 되는데?"의 답을 3초 안에.
+ * 남은 돈(가장 큰 숫자) · 예산과 쓴 돈 → 짠이의 한 줄 → 소요 · 이동 한 줄. 바로 아래가 첫 장소다 —
+ * 경로 그림은 두지 않는다(일정이 하루의 흐름, 지도가 경로). 합계 · 남은 돈은 API 값 하나만 쓴다(영수증 · 짠이의 말과 같은 숫자).
  */
-export function DaySummary({ totals, budget, partySize, stops, transport, travelMin, distanceM, mood, line, summary, bubbleKey }: DaySummaryProps) {
+export function DaySummary({ totals, budget, partySize, transport, travelMin, distanceM, mood, line, summary, bubbleKey }: DaySummaryProps) {
   const over = totals.budget_left < 0;
   return (
-    <section aria-label="오늘의 요약" className="grid gap-5">
+    <section aria-label="오늘의 요약" className="grid gap-3 sm:gap-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-6 gap-y-3">
         <div className="grid">
           <span className={cn("text-body-sm font-semibold", over ? "text-pink-deep" : "text-gold-ink")}>{over ? "예산 초과" : "남은 돈"}</span>
@@ -57,39 +55,19 @@ export function DaySummary({ totals, budget, partySize, stops, transport, travel
         </dl>
       </div>
 
-      {/* 짠이는 여기서 한 번, 오늘의 하루를 한 문장으로 */}
-      <p key={bubbleKey} className="flex items-center gap-3 text-body font-semibold text-ink-2">
-        <Jjani mood={mood} size={40} className="shrink-0" />
-        <span className="min-w-0">
-          {line ? <b className="block font-bold text-ink">{line}</b> : null}
-          {summary}
-        </span>
-      </p>
-
-      {/* 오늘의 경로: 무엇을 하는지는 아래 일정이, 어디로 가는지는 지도가. 여기는 순서만 한눈에 */}
-      <DayRoute
-        dense
-        className="sm:gap-x-0"
-        stops={stops.map((s) => ({
-          key: s.position,
-          time: clock(s.arrive_at),
-          label: roleLabel(s.role),
-          name: <span className="line-clamp-2 break-all">{s.place.name}</span>,
-        }))}
-      />
-
-      <dl className="tabular flex flex-wrap gap-x-5 gap-y-1 text-body-sm">
-        {[
-          { k: "총 소요", v: minutes(totals.duration_min) },
-          { k: `${transportLabel(transport)} 이동`, v: minutes(travelMin) },
-          { k: "이동 거리", v: distance(distanceM) },
-        ].map((item) => (
-          <div key={item.k} className="flex items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{item.k}</dt>
-            <dd className="font-bold text-ink">{item.v}</dd>
-          </div>
-        ))}
-      </dl>
+      {/* 짠이는 여기서 한 번, 오늘의 하루를 한 문장으로. 그 아래 소요 · 이동은 한 줄 */}
+      <div key={bubbleKey} className="flex items-center gap-3">
+        <Jjani mood={mood} size={44} className="shrink-0" />
+        <div className="min-w-0">
+          <p className="text-body font-semibold text-ink">
+            {line ? <b className="block font-bold">{line}</b> : null}
+            {summary}
+          </p>
+          <p className="tabular text-body-sm text-muted-foreground">
+            총 {minutes(totals.duration_min)} · {transportLabel(transport)} {minutes(travelMin)} · {distance(distanceM)}
+          </p>
+        </div>
+      </div>
     </section>
   );
 }

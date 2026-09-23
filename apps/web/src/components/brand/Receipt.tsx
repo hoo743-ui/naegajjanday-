@@ -108,7 +108,8 @@ export function Receipt({ heading, caption, items, budget, footer, size = "md", 
             className={cn("receipt-line mt-4 flex items-center justify-between rounded-2xl px-4 py-3", left >= 0 ? "coin-gleam bg-gold-soft text-gold-ink" : "bg-pink-soft text-pink-deep")}
           >
             <span className="text-body-sm font-semibold">{left >= 0 ? "남은 돈" : "예산 초과"}</span>
-            <Money value={Math.abs(left)} className="money text-price-sm" />
+            {/* 남은 돈은 영수증에서도 분명하게 (docs/33 §7) */}
+            <Money value={Math.abs(left)} className="money text-price" />
           </div>
         )}
 

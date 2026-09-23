@@ -22,6 +22,8 @@ const unfinished = (page) =>
     const els = [...document.querySelectorAll(".hero-intro [data-beat], .hero-intro .route-dot, .hero-intro .route-seg, .hero-intro .route-text")];
     const open = (clip) => clip === "none" || (clip.match(/-?[\d.]+/g) ?? []).every((n) => Number(n) === 0);
     return els.filter((el) => {
+      // 그 폭에서 그려지지 않는 것(display:none — 좁은 화면 전용 장면 등)은 셀 대상이 아니다
+      if (el.getClientRects().length === 0) return false;
       const s = getComputedStyle(el);
       return Number(s.opacity) < 0.99 || !open(s.clipPath);
     }).length;
@@ -39,6 +41,10 @@ for (const reduced of [false, true]) {
   // 첫 페인트부터 잰다: 시간표는 CSS 라 스크립트(개발 서버에서는 몇 초 늦다)를 기다리지 않는다
   await page.goto(WEB, { timeout: 120000, waitUntil: "commit" });
   await page.locator(".hero-intro").first().waitFor({ state: "attached", timeout: 60000 });
+  // 개발 서버는 스타일을 스크립트로 넣는다 → 스타일이 붙기 전에 재면 아무것도 움직이지 않는 것처럼 보인다. 붙은 뒤에 첫 값을 잰다
+  await page.waitForFunction(() => { const el = document.querySelector(".hero-intro"); return el && getComputedStyle(el).position === "relative"; }, null, { timeout: 60000, polling: 16 });
+  // 스타일이 붙은 첫 프레임에는 애니메이션이 아직 만들어지지 않았다(0개) → 모션 환경에서는 히어로의 애니메이션이 생긴 뒤에 잰다
+  if (!reduced) await page.waitForFunction(() => document.getAnimations().some((a) => a.effect?.target?.closest?.(".hero-intro")), null, { timeout: 5000, polling: 16 }).catch(() => undefined);
   const playing = await page.evaluate(() => document.documentElement.getAttribute("data-intro") === "play");
   const early = await unfinished(page);
   const frames = [];
@@ -96,7 +102,9 @@ for (const reduced of [false, true]) {
   console.log("핀:", [...new Set(seen)].slice(0, 8).join(" → "));
   check(staggered, "핀이 순번대로 내려앉는다 (앞 번호가 먼저 보인다)");
   check(seen[seen.length - 1].split(",").every((v) => Number(v) === 0), "끝난 뒤 모든 핀이 제자리에 있다");
-  await page.locator(".jj-pin-drop").first().click();
+  // 이미 골라진 핀을 누르면 다시 그릴 일이 없어 검사가 되지 않는다 → 골라지지 않은 핀을 누른다
+  // (첫 장소 카드가 스크롤 띠에 들어와 있으면 1번 핀은 처음부터 골라져 있다)
+  await page.locator(".jj-pin:not(.is-active) .jj-pin-drop").first().click();
   await page.waitForTimeout(400);
   const replay = await page.evaluate(() => [...document.querySelectorAll(".jj-pin")].filter((el) => el.classList.contains("is-landing")).length);
   check(replay === 0, "핀을 골라도 내려앉는 연출이 다시 재생되지 않는다");

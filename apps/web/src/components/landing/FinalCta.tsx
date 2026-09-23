@@ -6,7 +6,6 @@ import { Jjani } from "@/components/mascot/Jjani";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { useFeatures } from "@/lib/api/hooks";
-import { ChapterMark } from "./ChapterMark";
 import { Reveal } from "./Reveal";
 
 /**
@@ -20,8 +19,8 @@ export function FinalCta() {
   return (
     <section id="start" className="pt-[clamp(48px,7vw,96px)] pb-16 lg:pb-24">
       <div className="wrap">
-        <ChapterMark label="나의 하루" />
-        <hr aria-hidden className="tear-line mt-8" />
+        {/* 이름표 없이 뜯는 자리 하나로 끝난다 (docs/33: 장면마다 같은 공식을 반복하지 않는다) */}
+        <hr aria-hidden className="tear-line" />
         <Reveal className="grid items-end gap-x-16 gap-y-10 pt-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:pt-16">
           <div>
             <h2 className="font-serif text-display">

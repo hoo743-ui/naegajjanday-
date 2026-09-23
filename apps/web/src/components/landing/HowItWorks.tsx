@@ -2,9 +2,9 @@ import { ChapterMark } from "./ChapterMark";
 import { Reveal } from "./Reveal";
 
 const STEPS: { title: string; body: string; quote: string }[] = [
-  { title: "예산부터 말해요", body: "어디서, 몇 명이, 얼마로. 가격을 찾아 헤매기 전에 쓸 돈부터 정합니다.", quote: "얼마 쓸 거예요?" },
-  { title: "짠이가 걸러내요", body: "예산을 넘는 곳, 그 시간에 문 닫은 곳은 처음부터 뺍니다. 남은 곳을 예산 적합도 · 거리 · 약속의 분위기 · 취향으로 점수 매겨요.", quote: "예산 안에서 찾는 중…" },
-  { title: "코스로 이어 줘요", body: "식사에서 카페, 놀거리까지 덜 걷는 순서로 잇고 총액을 계산해요. 마음에 안 드는 한 곳만 바꿔도 예산은 유지돼요.", quote: "짠! 코스 나왔어요" },
+  { title: "예산부터 말해요", body: "어디서, 몇 명이, 얼마로. 가격을 찾아 헤매기 전에 쓸 돈부터 정해요.", quote: "얼마 쓸 거예요?" },
+  { title: "짠이가 걸러내요", body: "예산을 넘는 곳, 그 시간에 문 닫은 곳은 처음부터 빼요.", quote: "예산 안에서 찾는 중…" },
+  { title: "코스로 이어 줘요", body: "덜 걷는 순서로 잇고 총액을 계산해요. 한 곳만 바꿔도 예산은 그대로예요.", quote: "짠! 코스 나왔어요" },
 ];
 
 /**
@@ -24,9 +24,6 @@ export function HowItWorks() {
               <br />
               <span className="text-blue-deep">한 번의 입력으로</span>
             </h2>
-            <p className="mt-6 max-w-[420px] text-body-lg text-ink-2">
-              지도 앱에서 검색하고, 가격 확인하고, 직접 더해 보고, 넘으면 다시 검색하던 일. 이제 순서를 뒤집습니다.
-            </p>
           </div>
 
           <ol className="grid">

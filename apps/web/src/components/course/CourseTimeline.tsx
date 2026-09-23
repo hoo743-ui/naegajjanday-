@@ -7,12 +7,15 @@ import type { AccessHint } from "@/lib/api/hooks";
 import type { Course, CourseRoute, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { clock, distance, minutes, transportLabel } from "@/lib/format";
 import { naverWebDirections, openInNaverMap, type MapPoint } from "@/lib/naver-map";
+import { cn } from "@/lib/utils";
 import { StopCard } from "./StopCard";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
 
 interface CourseTimelineProps {
   course: Course;
+  /** 이동 수단: 역 출구 · 정류장 안내는 대중교통 코스에서만 모든 구간에 (걷는 코스는 출발 구간만) */
+  transport?: Transport;
   /** 코스 스타일. "북적이는 거리" 점수는 재미 우선 코스에서만 쓰인다 */
   style?: CourseStyle;
   partySize: number;
@@ -51,7 +54,7 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onMove }: CourseTimelineProps) {
+export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onMove }: CourseTimelineProps) {
   const listRef = useRef<HTMLOListElement>(null);
   const onViewRef = useRef(onView);
   useEffect(() => {
@@ -85,8 +88,6 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
   }
 
   const noSignal = featuresWithoutSignal(course.stops, style);
-  // 오늘의 핵심 장소: 그 가게의 실제 사진이 있는 곳 중 돈을 가장 많이 쓰는 곳 하나만 사진을 크게 (docs/31 §6 · §14)
-  const featured = course.stops.filter((s) => s.place.thumbnail_url).reduce<Stop | undefined>((best, s) => (!best || s.est_price > best.est_price ? s : best), undefined)?.position;
 
   return (
     // 하루의 흐름 (docs/31 §2): 왼쪽 칸은 시각, 가운데 점선은 이동, 오른쪽은 할 일. 장소의 순번이 선 위의 점이다
@@ -103,6 +104,7 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
         const distanceM = measured?.distance_m ?? leg?.distance_m ?? 0;
         const prev = course.stops[i - 1];
         const hint = access?.[i];
+
         return (
           <Fragment key={stop.place.id}>
             {leg ? (
@@ -118,32 +120,29 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                       {unavailable ? (
                         <span aria-hidden>경로 정보를 불러오지 못했어요</span>
                       ) : (
-                        <span aria-hidden>
+                        // 실제 길을 재지 못한 구간은 "약"으로 밝힌다 (대중교통 · 자동차 키 없음 · 라우터 실패) — 배지는 두지 않는다 (docs/33)
+                        <span aria-hidden title={estimated && i > 0 ? "실제 길을 재지 못해 직선 거리로 어림한 값이에요. 정확한 시간은 네이버 지도에서 확인하세요." : undefined}>
                           {i === 0 ? "출발지에서 " : ""}
                           {leg.hop_to ? `${leg.hop_to}(으)로 ` : ""}
                           {transportLabel(mode)} {estimated && i > 0 ? "약 " : ""}
                           {minutes(travelMin)} · {distance(distanceM)}
                         </span>
                       )}
-                      {/* 실제 길을 재지 못한 구간은 추정이라고 밝힌다 (대중교통 · 자동차 키 없음 · 라우터 실패) */}
-                      {estimated && !unavailable && i > 0 ? (
-                        <span className="rounded bg-paper-2 px-1.5 py-0.5 text-caption font-semibold text-ink-2" title="실제 길을 재지 못해 직선 거리로 어림한 값이에요. 정확한 시간은 네이버 지도에서 확인하세요.">
-                          추정
-                        </span>
-                      ) : null}
                       <a
                         href={prev ? naverWebDirections(point(prev), point(stop), mode) : `https://map.naver.com/p/search/${encodeURIComponent(stop.place.name)}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => (prev ? openInNaverMap(e, point(prev), point(stop), mode) : undefined)}
+                        aria-label={prev ? "네이버 지도 길찾기" : "네이버 지도에서 보기"}
                         className="-my-2.5 inline-flex min-h-11 items-center gap-1 rounded-md px-1.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
                       >
-                        {prev ? "네이버 지도 길찾기" : "네이버 지도에서 보기"}
+                        {prev ? "길찾기" : "지도"}
                         <ExternalLink aria-hidden className="size-3" />
                       </a>
                     </div>
-                    {hint?.subway || hint?.bus ? (
-                      <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-caption">
+                    {(transport === "transit" || i === 0) && (hint?.subway || hint?.bus) ? (
+                      // 걷는 코스의 출발 구간 안내는 넓은 화면에서만: 모바일 첫 화면에 첫 장소가 들어오게
+                      <p className={cn("flex flex-wrap items-center gap-x-3 gap-y-0.5 text-caption", transport !== "transit" && "max-sm:hidden")}>
                         {hint.subway ? (
                           <span className="inline-flex items-center gap-1">
                             <TramFront aria-hidden className="size-3.5 text-success" />
@@ -193,7 +192,6 @@ export function CourseTimeline({ course, style, partySize, activeStop, swappingP
                 onFocusStop={onFocusStop}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
                 onMove={(delta) => onMove(stop.position, delta)}
-                featured={stop.position === featured}
               />
               </div>
             </li>

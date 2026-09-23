@@ -25,8 +25,8 @@ async function audit(page) {
     const visible = (el) => {
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
-      // 화면 낭독기 전용(sr-only: 1×1 · clip)은 눈에 보이는 것이 아니다
-      return r.width > 1 && r.height > 1 && s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) > 0.05 && s.clip !== "rect(0px, 0px, 0px, 0px)";
+      // 화면 낭독기 전용(sr-only: 1×1 · clip · clip-path inset(50%))은 눈에 보이는 것이 아니다 — 기울인 영수증 안에서는 1×1 이 1.03px 로 재진다
+      return r.width > 1 && r.height > 1 && s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) > 0.05 && s.clip !== "rect(0px, 0px, 0px, 0px)" && s.clipPath !== "inset(50%)";
     };
     // 지도 SDK 가 그리는 것(로고 · 확대 버튼)은 우리가 고칠 수 없다 → 세지 않는다
     const ours = (el) => !el.closest(".jj-map, .leaflet-container");
