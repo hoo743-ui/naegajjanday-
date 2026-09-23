@@ -1,12 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useRef } from "react";
-import { Bus, Car, ExternalLink, Footprints, TrainFront, TramFront, type LucideIcon } from "lucide-react";
+import { Bus, Car, Footprints, TrainFront, TramFront, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/mascot/EmptyState";
 import type { AccessHint } from "@/lib/api/hooks";
 import type { Course, CourseRoute, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { clock, distance, minutes, transportLabel } from "@/lib/format";
-import { naverWebDirections, openInNaverMap, type MapPoint } from "@/lib/naver-map";
 import { cn } from "@/lib/utils";
 import { StopCard } from "./StopCard";
 
@@ -34,10 +33,13 @@ interface CourseTimelineProps {
   /** 카드를 누르면: 지도가 그 장소로 옮겨 가 확대하고, 그 장소로 오는 구간을 강조한다 */
   onFocusStop?: (position: number) => void;
   onSwap: (position: number, strategy: SwapStrategy) => void;
+  onSwapTo: (position: number, placeId: string) => void;
   onMove: (position: number, delta: -1 | 1) => void;
+  /** 고정한 장소 id (다시 짜도 남는다) */
+  pins?: string[];
+  onTogglePin?: (placeId: string) => void;
 }
 
-const point = (s: Stop): MapPoint => ({ lat: s.place.lat, lng: s.place.lng, name: s.place.name });
 
 /**
  * 코스 전체에서 자료가 없는 점수 항목. 리뷰·혼잡도 자료가 없으면 엔진은 모든 장소에 같은 중립값을 넣는다
@@ -54,7 +56,7 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onMove }: CourseTimelineProps) {
+export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, pins = [], onTogglePin }: CourseTimelineProps) {
   const listRef = useRef<HTMLOListElement>(null);
   const onViewRef = useRef(onView);
   useEffect(() => {
@@ -102,7 +104,6 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
         const estimated = !measured || measured.source === "estimate";
         const travelMin = measured?.duration_min ?? leg?.travel_min ?? 0;
         const distanceM = measured?.distance_m ?? leg?.distance_m ?? 0;
-        const prev = course.stops[i - 1];
         const hint = access?.[i];
 
         return (
@@ -129,17 +130,6 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                           {minutes(travelMin)} · {distance(distanceM)}
                         </span>
                       )}
-                      <a
-                        href={prev ? naverWebDirections(point(prev), point(stop), mode) : `https://map.naver.com/p/search/${encodeURIComponent(stop.place.name)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => (prev ? openInNaverMap(e, point(prev), point(stop), mode) : undefined)}
-                        aria-label={prev ? "네이버 지도 길찾기" : "네이버 지도에서 보기"}
-                        className="-my-2.5 inline-flex min-h-11 items-center gap-1 rounded-md px-1.5 text-caption font-semibold text-blue-deep hover:bg-blue-soft"
-                      >
-                        {prev ? "길찾기" : "지도"}
-                        <ExternalLink aria-hidden className="size-3" />
-                      </a>
                     </div>
                     {(transport === "transit" || i === 0) && (hint?.subway || hint?.bus) ? (
                       // 걷는 코스의 출발 구간 안내는 넓은 화면에서만: 모바일 첫 화면에 첫 장소가 들어오게
@@ -192,6 +182,11 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                 onHover={onHover}
                 onFocusStop={onFocusStop}
                 onSwap={(strategy) => onSwap(stop.position, strategy)}
+                onSwapTo={(placeId) => onSwapTo(stop.position, placeId)}
+                stops={course.stops}
+                transport={transport ?? "walk"}
+                pinned={pins.includes(stop.place.id)}
+                onTogglePin={onTogglePin ? () => onTogglePin(stop.place.id) : undefined}
                 onMove={(delta) => onMove(stop.position, delta)}
               />
               </div>

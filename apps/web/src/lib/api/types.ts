@@ -260,7 +260,9 @@ export interface GenerateCourseRequest {
   /** docs/30 세 질문: 어떤 하루 · 얼마나 이동 · 꼭 원하는 것 (해석은 API 가 한다) */
   pace?: ("relaxed" | "packed" | "foodie" | "special")[];
   move_style?: MoveStyle;
-  wishes?: ("night" | "walk" | "exhibition" | "value" | "romantic")[];
+  wishes?: ("night" | "walk" | "exhibition" | "value" | "romantic" | "quiet" | "indoor" | "photo" | "free")[];
+  /** 고정한 장소(편집 가능한 초안, docs/42): 다시 짜도 코스에 남는다. 최대 6 */
+  keep_place_ids?: string[];
 }
 
 export type CourseStyle = "efficient" | "fun";
@@ -325,6 +327,8 @@ export interface Stop {
   score: number;
   score_breakdown: ScoreBreakdown;
   reason: string | null;
+  /** 카드에 쓰는 한 줄 이유(40자 이하). 예전 코스에는 없다 */
+  reason_short?: string | null;
   /** 왜 이 장소인지 (docs/29 §15). 예전 코스에는 없다 */
   reason_codes?: ReasonCode[];
   congestion: Congestion | null;
@@ -468,7 +472,23 @@ export interface CourseDetail extends Course {
 
 export interface SwapRequest {
   position: number;
-  strategy: SwapStrategy;
+  strategy?: SwapStrategy;
+  /** 후보 목록에서 고른 곳으로 바꾼다 (주면 strategy 는 무시) */
+  place_id?: string;
+}
+
+/** 한 자리의 대신 갈 후보 (GET /courses/{id}/stops/{position}/candidates) */
+export interface StopCandidate {
+  place: PlaceSummary;
+  role: CourseRole;
+  /** 인원 전체 금액 */
+  est_price: number;
+  /** 지금 장소보다 얼마나 더(+)/덜(-) 드는지, 인원 전체 */
+  price_delta: number;
+  /** 하루 전체 이동 시간의 변화(분). 걷는 코스가 아니면 null */
+  walk_min_delta: number | null;
+  /** 숫자로만 만든 한 줄: "5,000원 아끼고 2분 덜 걸어요" */
+  line: string;
 }
 
 export interface ReorderRequest {

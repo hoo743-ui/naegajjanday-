@@ -3,17 +3,19 @@
 import { useId, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronDown, ChevronUp, ExternalLink, Eye, Star, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Eye, MapPinned, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Star, Users } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
-import type { ScoreFeature, Stop, SwapStrategy } from "@/lib/api/types";
-import { clock, num, roleLabel, won } from "@/lib/format";
+import type { ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
+import { clock, minutes, num, roleLabel, transportLabel, won } from "@/lib/format";
 import { canOptimize } from "@/lib/photo-credit";
 import { PlacePlaceholder } from "@/components/brand/PlacePlaceholder";
 import { ReasonList } from "./ReasonList";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
-import { SwapMenu } from "./SwapMenu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DirectionsSheet } from "./DirectionsSheet";
+import { SwapSheet } from "./SwapSheet";
 import { PlaceSheet } from "./PlaceSheet";
 import { RoadviewPeek } from "./RoadviewPeek";
 
@@ -33,7 +35,15 @@ interface StopCardProps {
   /** 카드(버튼 · 링크가 아닌 곳)나 순번을 누르면: 지도가 이 장소로 옮겨 가 확대한다 (docs/27 §9) */
   onFocusStop?: (position: number) => void;
   onSwap: (strategy: SwapStrategy) => void;
+  /** 후보 목록에서 고른 곳으로 바꾸기 */
+  onSwapTo: (placeId: string) => void;
   onMove: (delta: -1 | 1) => void;
+  /** 길찾기의 출발지 고르기에 쓰는 코스 전체 · 이동 수단 */
+  stops: Stop[];
+  transport: Transport;
+  /** 고정한 곳(다시 짜도 남는다) */
+  pinned?: boolean;
+  onTogglePin?: () => void;
   /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
@@ -51,11 +61,13 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onMove, canMoveUp = true, canMoveDown = true }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onSwapTo, onMove, stops, transport, pinned = false, onTogglePin, canMoveUp = true, canMoveDown = true }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [directions, setDirections] = useState(false);
+  const [swapOpen, setSwapOpen] = useState(false);
   const panelId = useId();
   const { place } = stop;
   // 0원이라고 다 무료는 아니다: 요금 자료가 없는 곳도 0원으로 계산돼 온다 → "무료"는 무료라고 확인된 곳에만 쓴다
@@ -125,8 +137,13 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="tabular text-caption font-bold text-blue-deep">
+          <p className="tabular flex items-center gap-2 text-caption font-bold text-tomato-deep">
             {roleLabel(stop.role)}
+            {pinned ? (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-tomato-soft px-2 py-0.5 text-tomato-deep">
+                <Pin aria-hidden className="size-3" /> 고정됨
+              </span>
+            ) : null}
             {/* 시각은 일정 왼쪽 칸에 있다. 읽는 사람에게는 여기서도 한 번 */}
             <span className="sr-only">
               , {clock(stop.arrive_at)}부터 {clock(stop.leave_at)}까지
@@ -160,26 +177,74 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
                 ) : null}
               </>
             )}
+            {/* 여기까지 오는 이동: "22,000원 · 도보 8분" */}
+            {stop.from_prev && stop.position > 1 && stop.from_prev.travel_min > 0 ? (
+              <span className="text-caption font-semibold text-muted-foreground">
+                · {transportLabel(stop.from_prev.mode)} {minutes(stop.from_prev.travel_min)}
+              </span>
+            ) : null}
           </p>
+          {/* 한 줄 이유: 길게 설명하지 않는다 (자세한 이유는 ⋯ › 자세히 보기) */}
+          {stop.reason_short ? <p className="mt-1 line-clamp-1 text-body-sm text-ink-2">{stop.reason_short}</p> : null}
         </div>
       </div>
 
-      {/* 기본 행동은 둘: 자세히 · 바꾸기 */}
+      {/* 기본 행동은 둘뿐 (docs/42): 길찾기 · 바꾸기. 나머지(자세히 · 지도 · 고정)는 ⋯ 안에 */}
       <div className="mt-2 -mb-1.5 flex items-center justify-end gap-1.5">
         <button
           type="button"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => {
-            if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
-            setOpen((v) => !v);
-          }}
-          className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-body-sm font-semibold text-ink-2 hover:bg-white hover:text-ink"
+          onClick={() => setDirections(true)}
+          aria-label={`${place.name} 길찾기`}
+          className="inline-flex h-10 items-center gap-1.5 rounded-full border border-ink/20 bg-white px-3.5 text-body-sm font-semibold text-ink hover:border-ink"
         >
-          {open ? "접기" : "자세히"}
-          <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-300", open && "rotate-180")} />
+          <Navigation aria-hidden className="size-4" /> 길찾기
         </button>
-        {editable ? <SwapMenu placeName={place.name} pending={swapping} onSwap={onSwap} /> : null}
+        {editable ? (
+          <button
+            type="button"
+            onClick={() => setSwapOpen(true)}
+            disabled={swapping}
+            aria-label={`${place.name} 다른 곳으로 바꾸기`}
+            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-ink/20 bg-white px-3.5 text-body-sm font-semibold text-ink hover:border-tomato hover:bg-tomato-soft disabled:opacity-50"
+          >
+            <RefreshCw aria-hidden className={cn("size-4", swapping && "animate-spin")} /> {swapping ? "바꾸는 중…" : "바꾸기"}
+          </button>
+        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" aria-label={`${place.name} 더보기`} className="grid size-10 place-items-center rounded-full text-ink-2 hover:bg-white hover:text-ink">
+              <MoreHorizontal aria-hidden className="size-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 rounded-xl p-1.5">
+            <DropdownMenuItem
+              onSelect={() => {
+                if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
+                setOpen((v) => !v);
+              }}
+              aria-controls={panelId}
+              className="min-h-11 gap-2 rounded-lg text-body-sm"
+            >
+              <ChevronDown aria-hidden className={cn("size-4", open && "rotate-180")} /> {open ? "자세히 접기" : "자세히 보기"}
+            </DropdownMenuItem>
+            {onFocusStop ? (
+              <DropdownMenuItem onSelect={() => onFocusStop(stop.position)} className="min-h-11 gap-2 rounded-lg text-body-sm">
+                <MapPinned aria-hidden className="size-4" /> 지도에서 보기
+              </DropdownMenuItem>
+            ) : null}
+            {editable && onTogglePin ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  track("stop_pinned", { course_id: courseId, position: stop.position, pinned: !pinned });
+                  onTogglePin();
+                }}
+                className="min-h-11 gap-2 rounded-lg text-body-sm"
+              >
+                {pinned ? <PinOff aria-hidden className="size-4" /> : <Pin aria-hidden className="size-4" />} {pinned ? "고정 풀기" : "이 장소 고정"}
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <AnimatePresence initial={false}>
@@ -287,6 +352,23 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
       </AnimatePresence>
 
       {sheet ? <PlaceSheet place={stop.place} partySize={partySize} onClose={() => setSheet(false)} /> : null}
+      {directions ? <DirectionsSheet open onClose={() => setDirections(false)} courseId={courseId} stops={stops} to={stop} mode={transport} /> : null}
+      {swapOpen ? (
+        <SwapSheet
+          open
+          onClose={() => setSwapOpen(false)}
+          courseId={courseId}
+          stop={stop}
+          onPick={(placeId) => {
+            setSwapOpen(false);
+            onSwapTo(placeId);
+          }}
+          onStrategy={(strategy) => {
+            setSwapOpen(false);
+            onSwap(strategy);
+          }}
+        />
+      ) : null}
       {swapping ? <span aria-hidden className="skeleton-shimmer absolute inset-0 opacity-60" /> : null}
     </motion.article>
   );

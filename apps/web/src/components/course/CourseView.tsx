@@ -35,6 +35,8 @@ import { PlaceSheet } from "./PlaceSheet";
 import { RouteIssues } from "./RouteIssues";
 import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
+import { RerollSheet, tweaksToRequest, type Tweak } from "./RerollSheet";
+import { usePins } from "@/lib/pins";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
 const LOADING_STAGES = ["영수증을 꺼내는 중이에요", "지도에 핀을 꽂는 중"];
@@ -99,6 +101,9 @@ export function CourseView({ id }: { id: string }) {
   const reduced = useReducedMotion();
   const [sheet, setSheet] = useState<SheetStop>("half");
   const [storyOpen, setStoryOpen] = useState(false);
+  // 편집 가능한 초안 (docs/42): 고정한 곳은 다시 짜도 남는다 · 다시 짜기는 방향을 고르는 시트로
+  const { pins, toggle: togglePin } = usePins();
+  const [rerollOpen, setRerollOpen] = useState(false);
   const mapBoxRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; moved: boolean } | null>(null);
   // 목록을 읽던 중에 단계를 바꾸면 지도 칸의 높이만큼 내용이 밀린다 → 그만큼 되돌려 읽던 카드를 제자리에 둔다
@@ -143,8 +148,6 @@ export function CourseView({ id }: { id: string }) {
   const viewerKnown = auth.status !== "loading";
   const over = data.totals.budget_left < 0;
   const mood: JjaniMood = data.is_saved ? "cheers" : over ? "sorry" : data.totals.budget_left > 0 ? "wink" : "done";
-  // 짠이의 한마디는 돈으로 말한다: "짠! 12,000원 남아요"
-  const jjaniLine = over ? "괜찮아요, 조금만 더 맞춰 볼까요?" : data.totals.budget_left > 0 ? `짠! ${won(data.totals.budget_left)} 남아요` : "짠! 예산에 딱 맞췄어요";
 
   // 지역 중심이 아니라 역·장소 주변으로 짠 코스면 그 이름으로 부른다 ("영등포구"가 아니라 "신도림역 주변")
   const hopping = (request.regions?.length ?? 0) > 1;
@@ -173,27 +176,30 @@ export function CourseView({ id }: { id: string }) {
     requestAnimationFrame(() => noticeRef.current?.scrollIntoView({ block: "center" }));
   };
 
-  const onSwap = (position: number, strategy: SwapStrategy) => {
+  const onSwap = (position: number, strategy: SwapStrategy | { placeId: string }) => {
     setNotice(null);
     swap.mutate(
-      { position, strategy },
+      typeof strategy === "string" ? { position, strategy } : { position, place_id: strategy.placeId },
       {
         onSuccess: (next) => {
-          track("stop_swapped", { course_id: id, position, strategy });
+          track("stop_swapped", { course_id: id, position, strategy: typeof strategy === "string" ? strategy : "pick" });
           const changed = next.stops.find((s) => s.position === position);
           // 지키지 못한 예산을 지켰다고 말하지 않는다
           const within = next.totals.price <= request.budget_total;
           setNotice({
             mood: within ? "wink" : "sorry",
             title: changed ? `${changed.place.name}(으)로 바꿨어요` : "바꿨어요",
-            body: within ? `총액 ${won(next.totals.price)}, 예산 안이에요.` : `총액 ${won(next.totals.price)}, 예산보다 ${won(next.totals.price - request.budget_total)} 많아요.`,
+            // 한 곳만 바꿔도 남은 돈은 바로 다시 계산된다 — 그 숫자로 말한다
+            body: within ? `총액 ${won(next.totals.price)} · ${won(next.totals.budget_left)} 남아요.` : `총액 ${won(next.totals.price)}, 예산보다 ${won(next.totals.price - request.budget_total)} 많아요.`,
           });
         },
         // API 는 SWAP_NOT_POSSIBLE 을 낸다 (SLOT_EMPTY 는 예전 목 서버의 코드)
         onError: (error) =>
           error.code === "SWAP_NOT_POSSIBLE" || error.code === "SLOT_EMPTY"
             ? setNotice({ mood: "sorry", title: "바꿀 만한 곳을 찾지 못했어요", body: "이 기준으로는 예산 안에서 대신할 곳이 없어요. 다른 기준으로 바꿔 보세요." })
-            : fail(error),
+            : error.code === "CANDIDATE_NOT_ELIGIBLE"
+              ? setNotice({ mood: "sorry", title: "그곳은 지금 넣을 수 없어요", body: "그 시간에 문을 닫았거나 예산을 넘어요. 다른 후보를 골라 주세요." })
+              : fail(error),
       },
     );
   };
@@ -277,7 +283,9 @@ export function CourseView({ id }: { id: string }) {
         alternatives: 2,
   };
 
-  const onReroll = (fork = false, focus?: string) => {
+  // 이 코스에 들어 있는 고정한 곳만 (다른 코스에서 고정한 것은 보내지 않는다)
+  const keep = data.stops.map((s) => s.place.id).filter((pid) => pins.includes(pid));
+  const onReroll = (fork = false, focus?: string, tweaks: Tweak[] = []) => {
     setForking(fork);
     track("reroll_clicked", { course_id: id, ...(fork ? { from_shared: true } : {}), ...(focus ? { focus } : {}) });
     reroll.mutate(
@@ -285,6 +293,8 @@ export function CourseView({ id }: { id: string }) {
         ...baseRequest,
         ...(focus ? { focus } : {}),
         ...(tripDay && !fork ? { replaces: id } : {}),
+        ...tweaksToRequest(tweaks),
+        ...(!fork && keep.length ? { keep_place_ids: keep } : {}),
         // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
         preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },
       },
@@ -390,7 +400,7 @@ export function CourseView({ id }: { id: string }) {
         </Button>
       )}
       {readOnly ? null : (
-        <Button type="button" variant="soft" size="xl" onClick={() => onReroll()} disabled={reroll.isPending} className="-order-1 max-sm:px-4 wide:order-none" aria-label="다른 장소들로 코스 다시 짜기">
+        <Button type="button" variant="soft" size="xl" onClick={() => setRerollOpen(true)} disabled={reroll.isPending} className="-order-1 max-sm:px-4 wide:order-none" aria-label="다시 짜기">
           <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
         </Button>
       )}
@@ -407,7 +417,7 @@ export function CourseView({ id }: { id: string }) {
         title={[placeLabel, purposeLabel].filter(Boolean).join(" · ")}
         // 인원 · 예산 · 날짜는 아래 조건 칩과 요약이 말한다 — 머리에 한 줄로 몰아넣지 않는다 (docs/32 B §12)
         subtitle={data.label}
-        changeHref={readOnly ? undefined : changeHref}
+
         onShare={() => void onShare()}
         shared={shared}
       />
@@ -548,8 +558,10 @@ export function CourseView({ id }: { id: string }) {
                 travelMin={courseRoute.data?.totals.travel_min ?? data.totals.travel_min}
                 distanceM={courseRoute.data?.totals.distance_m ?? data.totals.distance_m}
                 mood={mood}
-                line={over ? jjaniLine : undefined}
+                line={over ? "조금 넘었어요. 한 곳만 바꿔 볼까요?" : undefined}
                 summary={data.summary}
+                stops={data.stops.length}
+                editable={!readOnly}
                 bubbleKey={`${id}-${data.totals.price}`}
               />
               {/* 좁은 화면에서는 첫 장소가 첫 화면에 들어오게 구멍 줄을 뺀다 */}
@@ -593,7 +605,10 @@ export function CourseView({ id }: { id: string }) {
                 onView={viewFromScroll}
                 onFocusStop={focusStop}
                 onSwap={onSwap}
+                onSwapTo={(position, placeId) => onSwap(position, { placeId })}
                 onMove={onMove}
+                pins={pins}
+                onTogglePin={readOnly ? undefined : togglePin}
               />
               </div>
 
@@ -698,6 +713,21 @@ export function CourseView({ id }: { id: string }) {
           </div>
         </div>
       </div>
+
+      {/* 다시 짜기: 고정한 곳은 두고, 원하면 방향(더 저렴하게 · 덜 걷게 …)을 골라서 */}
+      {!readOnly ? (
+        <RerollSheet
+          open={rerollOpen}
+          onClose={() => setRerollOpen(false)}
+          pinned={keep.length}
+          changeHref={changeHref}
+          onReroll={(tweaks) => {
+            setRerollOpen(false);
+            track("reroll_tweaked", { course_id: id, tweaks: tweaks.join(","), pinned: keep.length });
+            onReroll(false, undefined, tweaks);
+          }}
+        />
+      ) : null}
 
       {/* 주변 장소의 정보: 지도에 띄운 뒤, 원할 때만 따로 연다 */}
       {nearby?.id && nearbyOpen ? (

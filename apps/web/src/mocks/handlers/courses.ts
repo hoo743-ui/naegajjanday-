@@ -38,7 +38,7 @@ export const courseHandlers = [
   http.post(u("/courses/:id/swap"), async ({ params, request }) => {
     const body = (await request.json()) as SwapRequest;
     await latency(700);
-    return guard(() => swap(String(params.id), body.position, body.strategy));
+    return guard(() => swap(String(params.id), body.position, body.strategy ?? "random_top"));
   }),
 
   http.post(u("/courses/:id/reorder"), async ({ params, request }) => {

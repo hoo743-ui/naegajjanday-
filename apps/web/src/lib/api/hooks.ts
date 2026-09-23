@@ -47,6 +47,7 @@ import type {
   SavedCourse,
   SavedCoursePayload,
   StayList,
+  StopCandidate,
   SwapRequest,
   Tag,
 } from "./types";
@@ -239,6 +240,17 @@ export function useSwapStop(courseId: string) {
   return useMutation<Course, ApiError, SwapRequest>({
     mutationFn: (body) => api.post(`/courses/${encodeURIComponent(courseId)}/swap`, body),
     onSuccess: (course) => mergeCourse(client, courseId, course),
+  });
+}
+
+/** 한 자리의 대신 갈 후보 2~3곳 (바꾸기 시트를 열었을 때만 묻는다) */
+export function useStopCandidates(courseId: string, position: number, enabled: boolean) {
+  return useQuery<{ items: StopCandidate[] }, ApiError>({
+    queryKey: ["course", courseId, "candidates", position],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId)}/stops/${position}/candidates`, { query: { limit: 3 }, signal }),
+    enabled,
+    staleTime: 60_000,
+    retry: false,
   });
 }
 

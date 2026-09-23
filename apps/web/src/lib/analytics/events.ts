@@ -48,6 +48,10 @@ export interface AnalyticsEvents {
   hot_place_opened: { region: string; place_id: string; rank: number };
   suggestion_added: { course_id: string; role: string; price: number };
   stay_clicked: { day: number };
+  // 결과 화면 편집 (docs/42): 길찾기 시트에서 네이버지도 열기 · 장소 고정 · 방향을 골라 다시 짜기
+  directions_opened: { course_id: string; position: number; from: "here" | "prev" | "other" };
+  stop_pinned: { course_id: string; position: number; pinned: boolean };
+  reroll_tweaked: { course_id: string; tweaks: string; pinned: number };
   // 브랜드 인트로(/intro)를 떠남 (docs/40)
   intro_left: { via: "intro_enter" | "intro_plan" | "intro_skip" };
   // 주변 장소를 코스 지도에 띄움 (docs/36): kind = 카드에 붙은 한 줄
