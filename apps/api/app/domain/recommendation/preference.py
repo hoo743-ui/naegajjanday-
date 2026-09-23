@@ -8,8 +8,9 @@ answers into the knobs the engine already has, instead of handing raw chips to i
         → stop count (minutes a stop takes), stay length, travel tolerance, style, weights, meal share
     move style (local · balanced · explorer)
         → comfortable leg and reach rings (day_score.MOVE_STYLES) — a preference, never a distance filter
-    wishes (야경 · 산책 · 전시 · 가성비 · 로맨틱)
-        → tag affinities, structure hints, budget posture
+    wishes (야경 · 산책 · 전시 · 가성비 · 로맨틱 · 조용하게 · 실내 위주 · 사진 · 무료)
+        → tag affinities, structure hints, budget posture, pulls toward a kind of place (photo, free, quiet),
+          and for "실내 위주" the rainy-day condition itself (`WISH_CONDITIONS`)
     detailed tags → liked / disliked tags, as before
 
 Three layers are kept apart (docs/30 §13):
@@ -33,7 +34,7 @@ from app.domain.models import Template
 
 PACES = ("relaxed", "packed", "foodie", "special")
 MOVE_STYLES = ("local", "balanced", "explorer")
-WISHES = ("night", "walk", "exhibition", "value", "romantic")
+WISHES = ("night", "walk", "exhibition", "value", "romantic", "quiet", "indoor", "photo", "free")
 
 PACE_LABEL = {
     "relaxed": "여유로운 하루",
@@ -48,6 +49,10 @@ WISH_LABEL = {
     "exhibition": "전시 · 공연 넣기",
     "value": "가성비 있게",
     "romantic": "로맨틱한 분위기",
+    "quiet": "조용한 곳 위주",
+    "indoor": "실내 위주",
+    "photo": "사진이 있는 곳 위주",
+    "free": "무료로 들를 곳 더",
 }
 
 # what each wish means in the tag vocabulary the places already carry (tag_rules.json)
@@ -57,7 +62,22 @@ WISH_TAGS: dict[str, dict[str, float]] = {
     "exhibition": {"전시공연": 0.6},
     "value": {"가성비": 0.5, "착한가격업소": 0.4},
     "romantic": {"로맨틱": 0.5, "감성적인": 0.3, "활기찬": -0.1},
+    "quiet": {"조용한": 0.5, "아늑한": 0.3, "감성적인": 0.1, "활기찬": -0.6},
+    "indoor": {},  # the rainy-day condition does it (WISH_CONDITIONS)
+    "photo": {},  # a pull toward places with their own photo (WISH_PULL)
+    "free": {"산책하기좋은": 0.2},
 }
+# wishes about the kind of place rather than a tag: added to the place score (scorer.trait_pull)
+WISH_PULL: dict[str, dict[str, float]] = {
+    "quiet": {"buzz": -0.08},
+    "photo": {"photo": 0.1},
+    "free": {"free": 0.12},
+}
+# "실내 위주" is what a rainy day already is: the same condition (data/recommendation/conditions.json)
+WISH_CONDITIONS: dict[str, str] = {"indoor": "rain"}
+# "조용하게": no pub in the day and no karaoke room, unless the user asked for a drink by name
+WISH_AVOID_ROLES: dict[str, tuple[str, ...]] = {"quiet": ("BAR",)}
+WISH_BLOCKED_CATEGORIES: dict[str, tuple[str, ...]] = {"quiet": ("activity.karaoke",)}
 PACE_TAGS: dict[str, dict[str, float]] = {
     "relaxed": {"조용한": 0.2, "아늑한": 0.2},
     "packed": {},
@@ -86,6 +106,7 @@ class Interpreted:
     affinity_add: dict[str, float] = field(default_factory=dict)
     role_share: dict[str, float] = field(default_factory=dict)
     structure_fill: tuple[str, ...] = ()  # which kind a repeated slot should become, first choice first
+    trait_pull: dict[str, float] = field(default_factory=dict)  # see WISH_PULL
     liked_tags: list[str] = field(default_factory=list)
     disliked_tags: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)  # how conflicts were read (internal)
@@ -97,6 +118,19 @@ class Interpreted:
             "preference": [WISH_LABEL[w] for w in self.wishes] + self.liked_tags,
             "avoid": list(self.disliked_tags),
         }
+
+    @property
+    def conditions(self) -> tuple[str, ...]:
+        """Day conditions a wish stands for ("실내 위주" = the rainy-day plan)."""
+        return tuple(dict.fromkeys(WISH_CONDITIONS[w] for w in self.wishes if w in WISH_CONDITIONS))
+
+    @property
+    def avoid_roles(self) -> frozenset[str]:
+        return frozenset(r for w in self.wishes for r in WISH_AVOID_ROLES.get(w, ()))
+
+    @property
+    def blocked_categories(self) -> frozenset[str]:
+        return frozenset(c for w in self.wishes for c in WISH_BLOCKED_CATEGORIES.get(w, ()))
 
     def as_style(self) -> dict[str, Any]:
         """In the shape `style.styled_profile` / `styled_affinity` already understand."""
@@ -157,11 +191,22 @@ def interpret(
 
     for w in wanted:
         _add(out.affinity_add, WISH_TAGS[w])
+        for trait, pull in WISH_PULL.get(w, {}).items():
+            out.trait_pull[trait] = round(out.trait_pull.get(trait, 0.0) + pull, 3)
     if "exhibition" in wanted:
         out.structure_fill = ("CULTURE", *[r for r in out.structure_fill if r != "CULTURE"])
     if "value" in wanted:
         # spend less of the budget on purpose: the "가성비" variant's posture
         out.params.update({"budget_target_util": 0.7, "utilization_lo": 0.55, "utilization_hi": 0.85})
+    if "free" in wanted:
+        # more of the day costs nothing: an even lower posture, and a repeated slot becomes a free sight
+        out.params.update({"budget_target_util": 0.6, "utilization_lo": 0.4, "utilization_hi": 0.8})
+        out.structure_fill = (
+            *out.structure_fill,
+            *[r for r in ("ATTRACTION",) if r not in out.structure_fill],
+        )
+    if "quiet" in wanted:
+        out.weight_mult["congestion"] = max(out.weight_mult.get("congestion", 1.0), 1.5)
     if relaxed and "활기찬" in out.liked_tags:
         out.notes.append("relaxed+lively: both kept as soft weights")
 
@@ -196,7 +241,7 @@ def _summary(out: Interpreted, budget_total: int | None, party_size: int) -> lis
         )
     if budget_total:
         each = f" · 1인 {budget_total // max(1, party_size):,}원" if party_size > 1 else ""
-        posture = "아껴서" if "value" in out.wishes else "안에서 안정적으로"
+        posture = "아껴서" if {"value", "free"} & set(out.wishes) else "안에서 안정적으로"
         lines.append({"kind": "budget", "key": "budget", "text": f"{budget_total:,}원 {posture}{each}"})
     return lines
 

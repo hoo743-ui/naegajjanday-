@@ -158,15 +158,18 @@ class CourseComposer:
         self, partial: Partial, place: PlaceCandidate, sb: SlotBudget, *, strict: bool = True
     ) -> Partial | None:
         ctx, params = self._ctx, self._params
+        # a stop the user pinned was in their course already: two of one kind or a longer walk is their call,
+        # the budget and the hours are not
+        pinned = bool(ctx.kept_places) and (place.is_event, place.id) in ctx.kept_keys
         if strict:
             if (place.is_event, place.id) in partial.keys:
                 return None
-            if any(s.place.category_code == place.category_code for s in partial.stops):
+            if not pinned and any(s.place.category_code == place.category_code for s in partial.stops):
                 return None
             if partial.spent + place.price > params.budget_tolerance * ctx.budget_per_person:
                 return None
         leg = self._est.estimate(partial.last_point, place.point, ctx.transport)
-        if strict and partial.stops and leg.minutes > self.leg_limit():
+        if strict and partial.stops and not pinned and leg.minutes > self.leg_limit():
             return None
         arrive = partial.clock + timedelta(minutes=round(leg.minutes))
         windowed = slot_window_ok(sb, self._day0, arrive, params.max_wait_min)

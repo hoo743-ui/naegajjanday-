@@ -41,7 +41,13 @@ from app.domain.recommendation.diversify import (
     variant_profile,
 )
 from app.domain.recommendation.scorer import PlaceScorer
-from app.domain.recommendation.style import assign_buzz, wanted_events, wanted_places, wanted_pools
+from app.domain.recommendation.style import (
+    assign_buzz,
+    kept_pools,
+    wanted_events,
+    wanted_places,
+    wanted_pools,
+)
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import (
@@ -111,6 +117,7 @@ class RecommendationEngine:
             if (
                 other is not None
                 and _no_worse_filled(other, out)
+                and _kept_count(other, ctx) >= _kept_count(out, ctx)
                 and other.courses[0].objective > out.courses[0].objective
             ):
                 out = other
@@ -274,11 +281,14 @@ class RecommendationEngine:
                 role = sb.slot.course_role
                 rings[sb.slot.position] = await self._ring(ctx, role, fc, radius, params, cache)
         every = [p for group in (*pools.values(), *rings.values()) for p in group]
-        assign_buzz(every)
-        mark_local(every, ctx, get_signature_rules())
+        assign_buzz([*every, *ctx.kept_places])
+        mark_local([*every, *ctx.kept_places], ctx, get_signature_rules())
         if rings:
             pools = self._admit_rings(ctx, pools, rings, params)
         unfiltered = [p for found in cache.values() for p in found]
+        # the pinned stops first: whatever else is asked for by name goes into the other slots
+        positions = [(sb.slot.position, sb.slot.course_role) for sb in slot_budgets]
+        pools = kept_pools(pools, positions, ctx.kept_places)
         pools = wanted_pools(pools, ctx.wanted_categories)
         pools = wanted_places(pools, ctx.wanted_place_ids)
         pools = wanted_events(pools, ctx.wanted_event_ids)
@@ -382,6 +392,7 @@ class RecommendationEngine:
             or ctx.recentered
             or ctx.wanted_place_ids
             or ctx.anchored
+            or ctx.kept_places  # the pinned stops already say where the day is
         ):
             return
         d_lat = WALK_CELL_M / 111_000
@@ -591,6 +602,11 @@ def build_course(
         optimizer=solver,
         warnings=course_warnings,
     )
+
+
+def _kept_count(out: EngineOutput, ctx: RequestContext) -> int:
+    keys = ctx.kept_keys
+    return sum(1 for s in out.courses[0].stops if (s.place.is_event, s.place.id) in keys)
 
 
 def _empty_slots(out: EngineOutput) -> int:

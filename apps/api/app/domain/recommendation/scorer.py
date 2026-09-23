@@ -68,5 +68,23 @@ class PlaceScorer:
 
     def score(self, x: ScoreInput) -> Score:
         feats = self.features(x)
-        total = sum(self._weights[k] * v for k, v in feats.items())
+        total = sum(self._weights[k] * v for k, v in feats.items()) + trait_pull(
+            x.place, self._ctx.trait_pull
+        )
         return Score(total=round(total, 4), breakdown={k: round(v, 4) for k, v in feats.items()})
+
+
+def trait_pull(place: PlaceCandidate, pull: dict[str, float]) -> float:
+    """A wish about the kind of place, not a tag (docs/30): "photo" pulls toward places with a photo of their
+    own (only real photos of the place are stored, never a category stand-in), "free" toward places that cost
+    nothing, "buzz" (negative for "quiet") away from the packed streets. Not a feature of its own: the
+    breakdown the page explains stays the same."""
+    if not pull:
+        return 0.0
+    out = 0.0
+    if place.thumbnail_url:
+        out += pull.get("photo", 0.0)
+    if place.price == 0:
+        out += pull.get("free", 0.0)
+    out += pull.get("buzz", 0.0) * place.buzz
+    return out

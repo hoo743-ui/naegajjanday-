@@ -12,7 +12,7 @@ Transport = Literal["walk", "transit", "car"]
 Algorithm = Literal["v1", "v2"]
 MoveStyle = Literal["local", "balanced", "explorer"]
 Pace = Literal["relaxed", "packed", "foodie", "special"]
-Wish = Literal["night", "walk", "exhibition", "value", "romantic"]
+Wish = Literal["night", "walk", "exhibition", "value", "romantic", "quiet", "indoor", "photo", "free"]
 SwapStrategy = Literal["cheaper", "closer", "higher_rated", "random_top"]
 
 
@@ -102,7 +102,15 @@ class CourseGenerateRequest(BaseModel):
         default_factory=list,
         max_length=5,
         description="꼭 반영하고 싶은 것: night=야경 · walk=산책 · exhibition=전시 · "
-        "value=가성비 · romantic=로맨틱",
+        "value=가성비(더 저렴하게) · romantic=로맨틱 · quiet=조용하게(술집 · 노래방 빼고) · "
+        "indoor=실내 위주(비 오는 날과 같게) · photo=사진이 있는 곳 위주 · free=무료로 들를 곳 더",
+    )
+    keep_place_ids: list[str] = Field(
+        default_factory=list,
+        max_length=6,
+        description="다시 짤 때 그대로 둘 장소의 id(스톱의 place.id). 코스에 반드시 들어가고 "
+        "exclude_place_ids 보다 우선한다. 시간 · 예산 때문에 못 넣으면 KEPT_PLACE_DROPPED 경고, "
+        "모르는 id 도 같은 경고로 알리고 빼고 짠다",
     )
     alternatives: int = Field(default=2, ge=0, le=3)
     replaces: str | None = Field(
@@ -193,6 +201,11 @@ class StopOut(BaseModel):
     score: float
     score_breakdown: dict[str, float]
     reason: str | None = None
+    reason_short: str | None = Field(
+        default=None,
+        max_length=40,
+        description="카드 부제용 한 줄(40자 이내). reason_codes 중 가장 앞선 것을 말로 옮긴 것",
+    )
     reason_codes: list[str] = Field(
         default_factory=list,
         description="왜 여기인지 (PURPOSE_MATCH · LOCAL_SIGNIFICANCE · WORTH_THE_TRIP · UNIQUE_EXPERIENCE · "
@@ -289,6 +302,27 @@ class SwapRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     position: int = Field(ge=1)
     strategy: SwapStrategy = "random_top"
+    place_id: str | None = Field(
+        default=None,
+        max_length=64,
+        description="이 장소로 바꾼다(candidates 가 준 id). 주면 strategy 는 무시한다. "
+        "후보 조건을 통과하지 못하면 422 CANDIDATE_NOT_ELIGIBLE",
+    )
+
+
+class StopCandidate(BaseModel):
+    place: PlaceBrief
+    role: str
+    est_price: int = Field(description="일행 전체 금액")
+    price_delta: int = Field(description="지금 스톱보다 얼마 더(+) / 덜(-) 드는지, 일행 전체")
+    walk_min_delta: int | None = Field(
+        default=None, description="코스 전체 이동 시간이 몇 분 늘거나(+) 주는지(-). 걷는 코스가 아니면 null"
+    )
+    line: str = Field(max_length=40, description="화면에 그대로 나가는 짧은 이유 한 줄")
+
+
+class StopCandidateList(BaseModel):
+    items: list[StopCandidate] = Field(default_factory=list)
 
 
 class ReorderRequest(BaseModel):

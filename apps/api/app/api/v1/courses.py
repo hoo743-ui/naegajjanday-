@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.responses import PROBLEMS
@@ -81,6 +81,23 @@ async def swap(
     course_id: str, body: dto.SwapRequest, service: CourseServiceDep, user: OptionalUser
 ) -> dto.CourseOut:
     return await service.swap(course_id, body, user)
+
+
+@router.get(
+    "/{course_id}/stops/{position}/candidates",
+    response_model=dto.StopCandidateList,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(404, 422),
+    summary="한 스톱을 바꿀 후보 몇 곳 (swap 이 받아 주는 곳만, place_id 로 고르면 그대로 바뀐다)",
+)
+async def stop_candidates(
+    course_id: str,
+    position: int,
+    service: CourseServiceDep,
+    viewer: OptionalUser,
+    limit: Annotated[int, Query(ge=1, le=5)] = 3,
+) -> dto.StopCandidateList:
+    return await service.candidates(course_id, position, limit, viewer)
 
 
 @router.get(

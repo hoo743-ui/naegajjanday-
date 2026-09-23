@@ -215,6 +215,67 @@ def wanted_events(
     return out
 
 
+def kept_pools(
+    pools: Mapping[int, list[PlaceCandidate]],
+    positions: Sequence[tuple[int, str]],
+    kept: Sequence[PlaceCandidate],
+) -> dict[int, list[PlaceCandidate]]:
+    """The stops the user pinned: each takes the first free slot of its own role (slots in visiting order,
+    pinned places in the order given, so the old order holds where the template allows) and is the only
+    candidate there. No other slot offers a pinned place. A pinned place with no slot of its role left is
+    not placed here; the caller says so (KEPT_PLACE_DROPPED)."""
+    out = dict(pools)
+    if not kept:
+        return out
+    keys = {(p.is_event, p.id) for p in kept}
+    for position in out:
+        out[position] = [c for c in out[position] if (c.is_event, c.id) not in keys]
+    taken: set[int] = set()
+    for place in kept:
+        at = next((pos for pos, role in positions if role == place.course_role and pos not in taken), None)
+        if at is None:
+            continue
+        taken.add(at)
+        out[at] = [place]
+    return out
+
+
+KEPT_MIN_SHARE, KEPT_MAX_SHARE = 0.05, 0.6
+
+
+def with_kept(
+    templates: Sequence[Template], kept: Sequence[PlaceCandidate], budget_per_person: float
+) -> list[Template]:
+    """Every template gets a slot for each pinned place: a slot of that role that is already there stops being
+    "if it fits"; a role with fewer slots than pinned places gets one more, with the share the place's own
+    price takes of the budget (the other shares shrink to make room)."""
+    if not kept:
+        return list(templates)
+    need: dict[str, list[PlaceCandidate]] = {}
+    for place in kept:
+        need.setdefault(place.course_role, []).append(place)
+    out: list[Template] = []
+    for template in templates:
+        slots = list(template.slots)
+        for role, places in need.items():
+            have = [i for i, s in enumerate(slots) if s.course_role == role]
+            for i in have[: len(places)]:
+                slots[i] = replace(slots[i], is_optional=False)
+            for place in places[len(have) :]:
+                share = place.price / budget_per_person if budget_per_person > 0 else 0.0
+                share = min(KEPT_MAX_SHARE, max(KEPT_MIN_SHARE, share))
+                slots = [replace(s, budget_share=s.budget_share * (1.0 - share)) for s in slots]
+                slots.append(
+                    Slot(
+                        position=max((s.position for s in slots), default=0) + 1,
+                        course_role=role,
+                        budget_share=share,
+                    )
+                )
+        out.append(replace(template, slots=tuple(slots)))
+    return out
+
+
 def with_role(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[Template]:
     """The user asked for a role by name ("a drink, please"): every template gets that slot for certain.
 

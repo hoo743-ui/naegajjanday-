@@ -70,7 +70,13 @@ from app.domain.recommendation.itinerary import (
     merge_legs,
     regions_by_day,
 )
-from app.domain.recommendation.preference import Interpreted, interpret, reweight_templates
+from app.domain.recommendation.preference import (
+    WISH_AVOID_ROLES,
+    WISH_CONDITIONS,
+    Interpreted,
+    interpret,
+    reweight_templates,
+)
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
@@ -86,6 +92,7 @@ from app.domain.recommendation.style import (
     styled_profile,
     styled_templates,
     suggestion_rules,
+    with_kept,
     with_role,
 )
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
@@ -112,6 +119,7 @@ logger = get_logger(__name__)
 COURSE_CACHE_TTL_S = 300
 IDEMPOTENCY_TTL_S = 86_400
 RANDOM_TOP_N = 5
+CANDIDATE_LINE_MAX = 40  # the one line under a replacement option (and reason_short) fits a card subtitle
 RECOMPUTED_WARNINGS = frozenset({"BUDGET_OVER", "STOP_CLOSED"})  # read off the stops: redone on every replan
 PREFERENCE_EMA_ALPHA = 0.2
 
@@ -142,6 +150,8 @@ class CourseService:
         self._reads: CandidateReads | None = None  # the candidate reads of the plan under way (see `_plan`)
         # docs/34: the anchors resolved for this request (campus id → campus + that day's festival)
         self._anchors: dict[str, dict[str, Any]] = {}
+        # the stops pinned for this request (public id → place): read once, handed to every leg / day
+        self._kept: dict[str, PlaceCandidate] = {}
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -152,6 +162,7 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
+        req = await self._with_kept(req)
         days = await self._city_days(req)
         # one plan asks for the same candidates again and again (rescale passes, the v2 structure
         # alternative, each day of a trip): read once, per plan only
@@ -164,7 +175,77 @@ class CourseService:
         finally:
             self._reads = None
         await self._note_missing_extras(req, planned[3], planned[5])
+        self._note_kept(req, planned[3], planned[5])
         return planned
+
+    async def _with_kept(self, req: dto.CourseGenerateRequest) -> dto.CourseGenerateRequest:
+        """The stops the user pinned (the course is a draft they edit): read them once, and a pinned place is
+        never excluded — the web sends the whole old course as excluded and the pinned ones as kept."""
+        keep = list(dict.fromkeys(req.keep_place_ids))
+        self._kept = await self._places.candidates_by_public_ids(keep) if keep else {}
+        if not keep:
+            return req
+        excluded = [pid for pid in req.preferences.exclude_place_ids if pid not in set(keep)]
+        return req.model_copy(
+            update={
+                "keep_place_ids": keep,
+                "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
+            }
+        )
+
+    def _kept_for(self, req: dto.CourseGenerateRequest) -> list[PlaceCandidate]:
+        return [self._kept[pid] for pid in dict.fromkeys(req.keep_place_ids) if pid in self._kept]
+
+    def _split_kept(self, keep: Sequence[str], points: Sequence[GeoPoint | None]) -> list[list[str]]:
+        """A day across several neighbourhoods (or a trip of several days): each pinned stop goes to the leg
+        whose centre is nearest, so it is planned once and where it is."""
+        out: list[list[str]] = [[] for _ in points]
+        known = [(i, p) for i, p in enumerate(points) if p is not None]
+        if not known:
+            return out
+        for pid in keep:
+            place = self._kept.get(pid)
+            if place is None:
+                continue
+            nearest = min(known, key=lambda ip: haversine_m(ip[1], place.point))[0]
+            out[nearest].append(pid)
+        return out
+
+    async def _region_point(self, slug: str | None) -> GeoPoint | None:
+        region = await self._regions.get_by_slug(slug) if slug else None
+        return GeoPoint(region.center_lat, region.center_lng) if region else None
+
+    def _note_kept(self, req: dto.CourseGenerateRequest, ctx: RequestContext, out: EngineOutput) -> None:
+        """A pinned stop the course could not hold (closed at that hour, over the budget on its own, or gone
+        from our data): the page must say so, never drop it silently. On a trip one day holding it will do."""
+        if not req.keep_place_ids:
+            return
+        everywhere = {s.place.public_id for c in out.courses for s in c.stops}
+        for course in out.courses:
+            held = everywhere if ctx.days else {s.place.public_id for s in course.stops}
+            for pid in req.keep_place_ids:
+                if pid in held:
+                    continue
+                warning = self._kept_dropped(pid)
+                if warning not in course.warnings:
+                    course.warnings.append(warning)
+                if warning not in out.warnings:
+                    out.warnings.append(warning)
+
+    def _kept_dropped(self, pid: str) -> dict[str, Any]:
+        place = self._kept.get(pid)
+        if place is None:
+            return {
+                "code": "KEPT_PLACE_DROPPED",
+                "detail": "고정한 장소 중 한 곳을 찾을 수 없어 빼고 짰어요.",
+                "meta": {"place_id": pid, "name": None, "reason": "unknown"},
+            }
+        name = get_tag_rules().sign_name(place.name)
+        return {
+            "code": "KEPT_PLACE_DROPPED",
+            "detail": f"고정한 {name}은(는) 이 시간이나 예산에 맞지 않아 빼고 짰어요.",
+            "meta": {"place_id": pid, "name": name, "reason": "unfit"},
+        }
 
     async def _city_days(self, req: dto.CourseGenerateRequest) -> list[list[Area]]:
         """A province or a whole city as the destination: not the area around its centre point, but the
@@ -249,6 +330,20 @@ class CourseService:
         weights = day_weights(start.hour * 60 + start.minute, days, rules)
         chosen = list(dict.fromkeys(req.regions)) or ([req.region] if req.region else [])
         by_day = regions_by_day(chosen, days)
+        kept_by_day: list[list[str]] = [[] for _ in range(days)]
+        if req.keep_place_ids:
+            here = (
+                GeoPoint(req.origin.lat, req.origin.lng)
+                if req.origin
+                else await self._region_point(req.region)
+            )
+            points = [
+                city_days[d][0].point
+                if d < len(city_days) and city_days[d]
+                else (await self._region_point(by_day[d][0]) if by_day[d] else here)
+                for d in range(days)
+            ]
+            kept_by_day = self._split_kept(req.keep_place_ids, points)
         remaining = req.budget_total
         excluded = list(req.preferences.exclude_place_ids)
         first: tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput] | None = None
@@ -272,6 +367,7 @@ class CourseService:
                     "duration_min": req.duration_min if d == 0 else int(rules["full_day_min"]),
                     "alternatives": 0,
                     "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
+                    "keep_place_ids": kept_by_day[d],
                 }
             )
             planned = await self._plan_day(day_req, user, city_days[d] if d < len(city_days) else None)
@@ -333,6 +429,10 @@ class CourseService:
         minutes_left = req.duration_min
         start_at = self._local(req.start_at)
         excluded = list(req.preferences.exclude_place_ids)
+        kept_by_leg: list[list[str]] = [[] for _ in spots]
+        if req.keep_place_ids:
+            points = [a.point for a in areas] if areas else [await self._region_point(slug) for slug in slugs]
+            kept_by_leg = self._split_kept(req.keep_place_ids, points)
         legs: list[CourseResult] = []
         hops: list[Hop] = []
         segments: list[dict[str, Any]] = []
@@ -354,6 +454,7 @@ class CourseService:
                     "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
                     # two karaoke rooms in a row because the neighbourhood changed is not a plan
                     "skip_roles": [*req.skip_roles, *repeat],
+                    "keep_place_ids": kept_by_leg[k],
                 }
             )
             pinned = areas[k].place_ids[: int(city.get("pin_top", 3))] if areas else ()
@@ -418,6 +519,7 @@ class CourseService:
         vetoed |= frozenset(r.upper() for r in req.skip_roles)
         templates = without_roles(await self._config.templates_for(purpose.id, purpose.code), vetoed)
         conditions = self._conditions(req)
+        kept = self._kept_for(req)
         reach = max(
             [
                 float((day_conditions()[c].get("radius_mult") or {}).get(req.transport, 1.0))
@@ -471,11 +573,13 @@ class CourseService:
             ctx, profile, templates, understood.style if req.pace else req.style
         )
         profile, templates = self._apply_understood(ctx, profile, templates, understood)
+        # "조용하게": no pub and no karaoke room, unless a drink was asked for by name
+        asked_roles = {str(extra_roles()[r]["role"]) for r in req.extras if r in extra_roles()}
+        templates = without_roles(templates, understood.avoid_roles - asked_roles)
+        ctx.blocked_categories = ctx.blocked_categories | understood.blocked_categories
+        self._apply_conditions(ctx, conditions)
         for name in conditions:  # a rainy day: indoors, and a gallery instead of a walk
             condition = day_conditions()[name]
-            ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
-            for tag, roles in styled_avoidance(condition).items():
-                ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
             # a slot swap names a kind of place that must be open: at night the gallery that replaces a
             # rainy walk is closed, and the course lost the slot altogether (one-stop courses at 1:30 a.m.)
             if not (condition.get("swap_roles") and "night" in conditions and name != "night"):
@@ -489,9 +593,24 @@ class CourseService:
         festival_missing = False
         if req.anchor is not None:  # docs/34: a campus day — the same engine, a few knobs set by the anchor
             templates, festival_missing = await self._apply_anchor(req, purpose, ctx, list(templates))
+        plain_templates, plain_keep = list(templates), ctx.keep_roles
+        if kept:  # the stops the user pinned: a slot of its own role each, never trimmed, never excluded
+            templates = with_kept(templates, kept, ctx.budget_per_person)
+            ctx.kept_places = tuple(kept)
+            ctx.keep_roles = ctx.keep_roles | {p.course_role for p in kept}
+            ctx.exclude_place_ids -= {p.id for p in kept if not p.is_event}
         engine = RecommendationEngine(self._reads or self._places, self._travel)
         try:
-            out = await engine.generate(ctx, templates, profile)
+            try:
+                out = await engine.generate(ctx, templates, profile)
+            except BudgetTooLowError:
+                raise
+            except DomainError:
+                if not kept:
+                    raise
+                # nothing fits around the pinned stops: a course without them (the page says which) beats none
+                ctx.kept_places, ctx.keep_roles = (), plain_keep
+                out = await engine.generate(ctx, plain_templates, profile)
             self._note_festival(req, out, festival_missing)
         except BudgetTooLowError as exc:
             raise errors.BudgetTooLow(
@@ -556,10 +675,12 @@ class CourseService:
         ]
         return min(caps) if caps else 10**9
 
-    def _conditions(self, req: dto.CourseGenerateRequest) -> list[str]:
-        """What the user said about the day, plus what the clock says (`auto`: never from the request)."""
+    def _conditions(self, req: dto.CourseGenerateRequest, *, wishes: bool = True) -> list[str]:
+        """What the user said about the day, plus what the clock says (`auto`: never from the request).
+        `wishes`: a wish that stands for a condition counts too ("실내 위주" = the rainy-day plan)."""
         known = day_conditions()
-        chosen = [c for c in dict.fromkeys(req.conditions) if c in known and not known[c].get("auto")]
+        said = [*req.conditions, *(WISH_CONDITIONS[w] for w in req.wishes if wishes and w in WISH_CONDITIONS)]
+        chosen = [c for c in dict.fromkeys(said) if c in known and not known[c].get("auto")]
         if "night" in known and is_night(self._local(req.start_at)):
             chosen.append("night")
         return chosen
@@ -768,7 +889,10 @@ class CourseService:
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
             "extras": [r for r in req.extras if r in extra_roles()],
-            "conditions": [c for c in self._conditions(req) if not day_conditions()[c].get("auto")],
+            # what the user said about the day (a wish standing for a condition is echoed as the wish)
+            "conditions": [
+                c for c in self._conditions(req, wishes=False) if not day_conditions()[c].get("auto")
+            ],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
             # docs/34: the campus the day was planned around, and the festival that made it into the course
@@ -1039,6 +1163,7 @@ class CourseService:
                     score=s.score,
                     score_breakdown=s.score_breakdown,
                     reason=reasons.get(s.position),
+                    reason_short=short_reason(s.reason_codes or codes.get(s.position, []), s.place),
                     reason_codes=s.reason_codes or codes.get(s.position, []),
                     congestion=(
                         dto.Congestion(
@@ -1233,6 +1358,12 @@ class CourseService:
             disliked_tags=ctx.disliked_tags,
         )
         profile, _ = self._apply_understood(ctx, profile, [], understood)
+        # the day as it was said to be (rain, or "실내 위주"), and the night the clock says: a replacement
+        # must not bring back the walk the rainy day took out
+        said = [*((row.request or {}).get("conditions") or []), *understood.conditions]
+        if "night" in day_conditions() and is_night(start_at):
+            said.append("night")
+        self._apply_conditions(ctx, list(dict.fromkeys(said)))
         # the engine the course was made with; courses from before docs/29 were planned by v1
         ctx.algorithm = str((row.request or {}).get("algorithm") or "v1")
         ctx.move_style = str((row.request or {}).get("move_style") or "balanced")
@@ -1246,9 +1377,24 @@ class CourseService:
         # a swap must not bring in what the course was never asked to have (a ballpark on a day off)
         kept = (row.request or {}).get("extras") or []
         asked = {str(extra_roles()[r].get("category")) for r in kept if r in extra_roles()}
-        ctx.blocked_categories = (opt_in_categories() - asked) | {str(university_rules()["category"])}
+        ctx.blocked_categories = (
+            (opt_in_categories() - asked)
+            | {str(university_rules()["category"])}
+            | understood.blocked_categories
+        )
         stay_scale = float((row.request or {}).get("stay_scale", 1.0))
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
+
+    @staticmethod
+    def _apply_conditions(ctx: RequestContext, names: Sequence[str]) -> None:
+        """A condition's tag pull and its per-role avoidances (the template swap is generation's own)."""
+        for name in names:
+            condition = day_conditions().get(name)
+            if not condition:
+                continue
+            ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
+            for tag, roles in styled_avoidance(condition).items():
+                ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
 
     @staticmethod
     def _apply_understood(
@@ -1262,6 +1408,7 @@ class CourseService:
         ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, twist)
         ctx.slot_min_scale = understood.slot_scale
         ctx.structure_fill = understood.structure_fill
+        ctx.trait_pull = dict(understood.trait_pull)
         return styled_profile(profile, twist), reweight_templates(templates, understood.role_share)
 
     @staticmethod
@@ -1308,12 +1455,18 @@ class CourseService:
         await self._s.commit()
         return self._view(row, result.stops, ctx.origin)
 
-    async def swap(self, public_id: str, req: dto.SwapRequest, user: User | None) -> dto.CourseOut:
-        row, stops, origin = await self._load(public_id)
-        self._check_owner(row, user)
-        target = next((s for s in stops if s.position == req.position), None)
-        if target is None or target.slot is None:
-            raise errors.ValidationFailed(f"{req.position}번째 장소가 없어요.")
+    async def _swap_options(
+        self,
+        row: Course,
+        stops: Sequence[StopResult],
+        target: StopResult,
+        origin: GeoPoint,
+        user: User | None,
+    ) -> tuple[RequestContext, ScoringProfile, CourseComposer, list[tuple[PlaceCandidate, Partial]]]:
+        """Every place that could take `target`'s spot, each with the whole course re-timed around it: same
+        role, open when the course gets there, within what that stop may cost, not already in the course,
+        under the request's own conditions and wishes (the same checks for swap, candidates and a pick)."""
+        assert target.slot is not None
         ctx, profile, composer = await self._replan_tools(row, user)
         ctx.exclude_place_ids |= {s.place.id for s in stops if not s.place.is_event}
         sb = SlotBudget(target.slot, target.slot_share, target.slot_base_budget)
@@ -1334,7 +1487,7 @@ class CourseService:
         for cand in pool:
             sequence = [
                 (
-                    cand if s.position == req.position else s.place,
+                    cand if s.position == target.position else s.place,
                     SlotBudget(s.slot, s.slot_share, s.slot_base_budget),
                 )
                 for s in stops
@@ -1343,13 +1496,35 @@ class CourseService:
             partial = composer.replan(sequence, strict=True)
             if partial is not None:
                 options.append((cand, partial))
+        return ctx, profile, composer, options
+
+    @staticmethod
+    def _target(stops: Sequence[StopResult], position: int) -> StopResult | None:
+        target = next((s for s in stops if s.position == position), None)
+        return target if target is not None and target.slot is not None else None
+
+    async def swap(self, public_id: str, req: dto.SwapRequest, user: User | None) -> dto.CourseOut:
+        row, stops, origin = await self._load(public_id)
+        self._check_owner(row, user)
+        target = self._target(stops, req.position)
+        if target is None:
+            raise errors.ValidationFailed(f"{req.position}번째 장소가 없어요.")
+        ctx, profile, _composer, options = await self._swap_options(row, stops, target, origin, user)
         b = ctx.budget_per_person
 
         def j(item: tuple[PlaceCandidate, Partial]) -> float:
             return objective(item[1], b, profile.params, final=True, ctx=ctx)
 
         current = target.place
-        if req.strategy == "cheaper":
+        if req.place_id is not None:  # the user picked one of the offered places: that one, or a clear no
+            picked = [o for o in options if o[0].public_id == req.place_id]
+            if not picked:
+                raise errors.CandidateNotEligible(
+                    "이 곳은 지금 이 자리에 넣을 수 없어요. 후보를 새로 불러와 주세요.",
+                    meta={"place_id": req.place_id, "position": req.position},
+                )
+            options = picked
+        elif req.strategy == "cheaper":
             options = [o for o in options if o[0].price < current.price]
             options.sort(key=lambda o: -j(o))
         elif req.strategy == "closer":
@@ -1372,10 +1547,56 @@ class CourseService:
         out = await self._finish_replan(row, options[0][1], ctx, profile, [])
         await self._tracker.track(
             AnalyticsEvent(
-                "stop_swapped", user.public_id if user else row.public_id, {"strategy": req.strategy}
+                "stop_swapped",
+                user.public_id if user else row.public_id,
+                {"strategy": "pick" if req.place_id else req.strategy},
             )
         )
         return out
+
+    async def candidates(
+        self, public_id: str, position: int, limit: int, viewer: User | None
+    ) -> dto.StopCandidateList:
+        """A few places that could take one stop's spot, best for the whole day first, of different kinds
+        where possible — the same places a swap would accept, so any of them can be picked (`place_id`)."""
+        row, stops, origin = await self._load(public_id)
+        target = self._target(stops, position)
+        if target is None:
+            raise errors.StopNotFound(f"{position}번째 장소가 없어요.")
+        ctx, profile, composer, options = await self._swap_options(row, stops, target, origin, viewer)
+        b = ctx.budget_per_person
+        options.sort(key=lambda o: (-objective(o[1], b, profile.params, final=True, ctx=ctx), o[0].id))
+        picked: list[tuple[PlaceCandidate, Partial]] = []
+        for o in options:  # one of each kind first: three cafés of one chain are one choice, not three
+            if len(picked) < limit and all(o[0].category_code != p[0].category_code for p in picked):
+                picked.append(o)
+        picked += [o for o in options if all(o is not p for p in picked)][: limit - len(picked)]
+        # the course as it is, timed the same way, so the difference is the place and not the estimator
+        now = composer.replan(
+            [
+                (s.place, SlotBudget(s.slot, s.slot_share, s.slot_base_budget))
+                for s in stops
+                if s.slot is not None
+            ],
+            strict=False,
+        )
+        base_travel = now.travel_min if now is not None else float(row.total_travel_min)
+        items = []
+        for cand, partial in picked:
+            est_price = cand.price * row.party_size
+            price_delta = est_price - target.est_price
+            walk_delta = round(partial.travel_min - base_travel) if row.transport == "walk" else None
+            items.append(
+                dto.StopCandidate(
+                    place=place_brief(cand),
+                    role=cand.course_role,
+                    est_price=est_price,
+                    price_delta=price_delta,
+                    walk_min_delta=walk_delta,
+                    line=candidate_line(cand, price_delta, walk_delta),
+                )
+            )
+        return dto.StopCandidateList(items=items)
 
     async def _with_ring(
         self,
@@ -1426,6 +1647,11 @@ class CourseService:
         vetoed = vetoed_roles([str(code) for code in purposes]) | (
             set() if same_role else {s.role for s in stops}
         )
+        # "조용하게" offers no pub afterwards either, unless a drink was asked for by name
+        extras = (row.request or {}).get("extras") or []
+        asked_roles = {str(extra_roles()[r]["role"]) for r in extras if r in extra_roles()}
+        wishes = (row.request or {}).get("wishes") or []
+        vetoed |= {r for w in wishes for r in WISH_AVOID_ROLES.get(w, ())} - asked_roles
         reach_m = float(rules["max_walk_min"]) * float(rules["walk_m_per_min"])
         arrive_at = last.leave_at + timedelta(minutes=5)
         minute = evening_minute(self._local(arrive_at))  # 00:01 is the same evening, not a morning
@@ -1752,6 +1978,61 @@ def _slot_from_snapshot(raw: dict[str, Any], position: int, role: str) -> Slot:
         earliest_start_min=raw.get("earliest_start_min"),
         latest_start_min=raw.get("latest_start_min"),
     )
+
+
+def _fit(line: str) -> str:
+    return line if len(line) <= CANDIDATE_LINE_MAX else line[: CANDIDATE_LINE_MAX - 1] + "…"
+
+
+def candidate_line(place: PlaceCandidate, price_delta: int, walk_delta: int | None) -> str:
+    """One short line under a replacement option: what changes for the day, from the numbers only."""
+    cheaper, closer = price_delta < 0, walk_delta is not None and walk_delta < 0
+    if cheaper and closer:
+        assert walk_delta is not None
+        return _fit(f"{-price_delta:,}원 아끼고 {-walk_delta}분 덜 걸어요")
+    if cheaper:
+        return _fit(f"지금보다 {-price_delta:,}원 아껴요")
+    if closer:
+        assert walk_delta is not None
+        return _fit(f"이동이 {-walk_delta}분 줄어요")
+    if place.price == 0:
+        return "돈 들이지 않고 들를 수 있어요"
+    if place.local_word:
+        return _fit(f"이 동네 명물 {place.local_word} 집이에요")
+    if price_delta == 0:
+        return "같은 예산으로 다른 곳에 가 봐요"
+    return _fit(f"{price_delta:,}원 더 들지만 예산 안이에요")
+
+
+def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
+    """reason_codes (strongest first) as one card subtitle of at most 40 characters. Only what the code
+    itself says about the place — never a claim the data does not hold (no reviews, no "맛집" by guess)."""
+    for code in codes:
+        line: str | None = None
+        if code == "LOCAL_SIGNIFICANCE":
+            line = f"이 동네 명물 {place.local_word}" if place.local_word else "이 동네에서 이름난 곳"
+        elif code == "WORTH_THE_TRIP":
+            line = "조금 멀어도 들를 만한 곳"
+        elif code == "UNIQUE_EXPERIENCE":
+            line = "오늘 하루에 색다른 경험 하나"
+        elif code == "PURPOSE_MATCH":
+            line = "오늘 목적에 잘 맞는 곳"
+        elif code == "USER_PREFERENCE":
+            line = "고른 취향에 맞는 곳"
+        elif code == "HIGH_PLACE_QUALITY":
+            if place.is_curated:
+                line = "공공기관이 소개 · 지정한 곳"
+            elif place.popularity >= 0.6:
+                line = "사람들이 실제로 많이 찾는 곳"
+        elif code == "BUDGET_FIT":
+            line = "돈 들이지 않고 들르는 곳" if place.price == 0 else "예산에 잘 맞는 곳"
+        elif code == "DIVERSITY":
+            line = "코스에 변화를 주는 곳"
+        elif code == "ROUTE_BALANCE":
+            line = "앞 장소에서 가까워요"
+        if line:
+            return _fit(line)
+    return "돈 들이지 않고 들르는 곳" if place.price == 0 else None
 
 
 _KEEP = object()

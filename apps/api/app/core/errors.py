@@ -71,6 +71,10 @@ class PlaceNotFound(NotFound):
     code, title = "PLACE_NOT_FOUND", "장소를 찾을 수 없어요"
 
 
+class StopNotFound(NotFound):
+    code, title = "STOP_NOT_FOUND", "코스에 그 순서의 장소가 없어요"
+
+
 class Conflict(AppError):
     status, code, title = 409, "CONFLICT", "이미 처리된 요청이에요"
 
@@ -89,6 +93,10 @@ class NoCourseAvailable(AppError):
 
 class SwapNotPossible(AppError):
     status, code, title = 422, "SWAP_NOT_POSSIBLE", "바꿀 만한 장소를 찾지 못했어요"
+
+
+class CandidateNotEligible(AppError):
+    status, code, title = 422, "CANDIDATE_NOT_ELIGIBLE", "지금은 이 자리에 넣을 수 없는 곳이에요"
 
 
 class RateLimited(AppError):

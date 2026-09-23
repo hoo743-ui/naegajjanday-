@@ -309,6 +309,16 @@ class RequestContext:
     # repeated slot should become first ("전시 넣기" → CULTURE)
     slot_min_scale: float = 1.0
     structure_fill: tuple[str, ...] = ()
+    # wishes that pull toward a kind of place rather than a tag ("photo" → has its own photo, "free" → costs
+    # nothing, "buzz" < 0 → away from packed streets): added to the place score as it stands (docs/30)
+    trait_pull: dict[str, float] = field(default_factory=dict)
+    # the stops the user pinned when asking for the course again (the course is a draft they edit): each is
+    # the only candidate of a slot of its own role, in the order given, and never excluded
+    kept_places: tuple[PlaceCandidate, ...] = ()
+
+    @property
+    def kept_keys(self) -> frozenset[tuple[bool, int]]:
+        return frozenset((p.is_event, p.id) for p in self.kept_places)
 
     @property
     def is_v2(self) -> bool:

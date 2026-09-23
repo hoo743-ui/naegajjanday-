@@ -342,6 +342,23 @@ class SqlPlaceRepository:
         stmt = select(Event).where(Event.id.in_(event_ids)).options(selectinload(Event.category))
         return {e.id: event_to_candidate(e) for e in (await self._s.scalars(stmt)).all()}
 
+    async def candidates_by_public_ids(self, public_ids: Sequence[str]) -> dict[str, PlaceCandidate]:
+        """Approved places and events by their public id (a stop can be either), keyed by that id."""
+        if not public_ids:
+            return {}
+        ids = list(public_ids)
+        places = await self._s.scalars(
+            select(Place).where(Place.public_id.in_(ids), Place.status == "approved").options(*FULL_LOAD)
+        )
+        out = {p.public_id: to_candidate(p) for p in places.all()}
+        missing = [i for i in ids if i not in out]
+        if missing:
+            events = await self._s.scalars(
+                select(Event).where(Event.public_id.in_(missing)).options(selectinload(Event.category))
+            )
+            out.update({e.public_id: event_to_candidate(e) for e in events.all()})
+        return out
+
     async def category_rating_avg(self, region_id: int | None) -> dict[str, float]:
         stmt = (
             select(
