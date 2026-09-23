@@ -43,15 +43,6 @@ const WALK_MIN = 10;
 const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
-/** 한 세션에 한 번 (탭을 닫기 전까지) — 인트로(BrandIntro)가 이 표식으로 틀지 정한다 */
-const INTRO_KEY = "jj-brand-intro";
-/**
- * 인라인 스크립트: 첫 페인트 전에 브랜드 인트로(내가 → 짠 → 데이)를 틀지 정한다 → 틀지 않을 사람에게는 한 프레임도 흔들리지 않는다.
- * 건너뛰는 경우: 이번 세션에 이미 봤음 · 모션 최소화 · 자동화 브라우저(검증 · E2E · 캡처가 중간 프레임을 찍지 않게) · ?intro=0.
- * ?intro=1 이면 무엇이든 무시하고 튼다(확인용).
- */
-export const HERO_INTRO_GATE = `(function(){try{var d=document.documentElement,f=/[?&]intro=1/.test(location.search);if(!f&&(sessionStorage.getItem("${INTRO_KEY}")||navigator.webdriver||matchMedia("(prefers-reduced-motion: reduce)").matches||/[?&]intro=0/.test(location.search)))return;sessionStorage.setItem("${INTRO_KEY}","1");d.setAttribute("data-intro","play")}catch(e){}})();`;
-
 function status(region: string, left: number, preset: string | undefined): { mood: JjaniMood; say: string } {
   if (!region) return { mood: "hi", say: "어디서 만날지만 알려 주세요." };
   if (left < 0) return { mood: "sorry", say: "조금 넘었어요. 한 곳만 바꿔 볼까요?" };
@@ -59,7 +50,8 @@ function status(region: string, left: number, preset: string | undefined): { moo
   return { mood: "done", say: `짠! ${won(left)} 남아요.` };
 }
 
-export function Hero() {
+/** compact: 서비스 홈(대시보드) 안의 "빠른 코스 만들기" — 큰 제목 · 바탕 · 머리 여백은 홈이 맡는다 */
+export function Hero({ compact = false }: { compact?: boolean }) {
   const reduced = useReducedMotion();
   const sliderId = useId();
   const placeId = useId();
@@ -147,9 +139,15 @@ export function Hero() {
   );
 
   return (
-    <section className="hero-home paper-map relative isolate bg-paper pt-[calc(var(--header-h)+20px)] pb-12 lg:pt-[calc(var(--header-h)+32px)] lg:pb-16 short:pt-[calc(var(--header-h)+12px)] short:pb-10">
-      <div className="wrap">
-        <div className="max-w-[760px]">
+    <section
+      aria-label={compact ? "빠른 코스 만들기" : undefined}
+      className={cn(
+        "hero-home relative isolate",
+        compact ? "" : "paper-map bg-paper pt-[calc(var(--header-h)+20px)] pb-12 lg:pt-[calc(var(--header-h)+32px)] lg:pb-16 short:pt-[calc(var(--header-h)+12px)] short:pb-10",
+      )}
+    >
+      <div className={compact ? "" : "wrap"}>
+        <div className={cn("max-w-[760px]", compact && "hidden")}>
           {/* 이름이 곧 문장: 내가 정하면 → 짠! → 하루가 나온다 */}
           <h1 className="hero-title text-display font-extrabold tracking-[-0.03em] text-ink">
             내가 정하면, <span className="hero-jjan">짠!</span> <span className="hero-day">하루가 나와요.</span>
@@ -157,7 +155,7 @@ export function Hero() {
           <p className="mt-3 text-body-lg text-ink-2 short:mt-2">얼마 쓸지만 정하세요. 하루는 짠이가 짜 볼게요.</p>
         </div>
 
-        <div className="mt-7 grid gap-6 lg:grid-cols-12 lg:gap-8 short:mt-5">
+        <div className={cn("grid gap-6 lg:grid-cols-12 lg:gap-8", !compact && "mt-7 short:mt-5")}>
           {/* ① 내가 — 어디서 · 무엇 · 몇 명 */}
           <div className="lg:col-span-4">
             {zoneLabel("01", "내가", "정하고")}

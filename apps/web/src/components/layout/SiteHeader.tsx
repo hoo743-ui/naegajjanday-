@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, Menu, X } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Jjani } from "@/components/mascot/Jjani";
 import { track } from "@/lib/analytics";
@@ -16,6 +16,7 @@ const ALL_LINKS = [
   { href: "/plan", label: "코스 짜기" },
   { href: "/explore", label: "둘러보기" },
   { href: "/chat", label: "짠이와 대화" },
+  { href: "/about", label: "소개" },
   { href: "/my", label: "내 코스" },
 ];
 
@@ -34,7 +35,8 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
     ? ALL_LINKS.filter((l) => l.href !== "/chat")
     : ALL_LINKS;
   const pathname = usePathname();
-  const { status, me, isStaff } = useAuth();
+  const { status, me, isStaff, logout } = useAuth();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   // 아래 탭(넓은 화면의 알약)이 떠오르는 지점 — TabBar 와 같은 값. 거기서부터 헤더의 메뉴는 알약에 자리를 넘긴다
   const [handedOff, setHandedOff] = useState(false);
@@ -102,13 +104,32 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
         </nav>
 
         <div className="flex items-center gap-1.5">
-          {status === "authenticated" && me ? (
-            <Link
-              href="/my"
-              className="hidden min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:flex"
-            >
-              {me.nickname} 님
+          {/* 좁은 화면: 소개는 아래 탭이 아니라 여기(탭은 행동 넷만 — 홈 · 둘러보기 · 코스 짜기 · 내 코스) */}
+          {tabBar ? (
+            <Link href="/about" aria-current={pathname.startsWith("/about") ? "page" : undefined} className="flex min-h-11 items-center rounded-lg px-2.5 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink aria-[current=page]:text-ink md:hidden">
+              소개
             </Link>
+          ) : null}
+          {status === "authenticated" && me ? (
+            <>
+              <Link
+                href="/my"
+                className="hidden min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:flex"
+              >
+                {me.nickname} 님
+              </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  router.push("/");
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink"
+              >
+                <LogOut aria-hidden className="size-4" />
+                <span className="max-sm:sr-only">로그아웃</span>
+              </button>
+            </>
           ) : status === "anonymous" ? (
             <Link
               href="/login"

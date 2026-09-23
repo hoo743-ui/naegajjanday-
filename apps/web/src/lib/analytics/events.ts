@@ -1,6 +1,6 @@
 /** 이벤트 카탈로그 — 이름과 속성을 여기서만 정의한다. track() 은 이 타입으로만 호출할 수 있다. */
 export interface AnalyticsEvents {
-  plan_started: { entry: "landing_hero" | "landing_cta" | "nav" | "result_reroll" | "direct" | "chat" };
+  plan_started: { entry: "landing_hero" | "landing_cta" | "nav" | "result_reroll" | "direct" | "chat" | "home_ticket" | "home_budget" | "home_purpose" | "intro" };
   plan_step_completed: { step: 1 | 2 | 3 | 4; step_name: "region" | "purpose" | "budget" | "taste"; value?: string };
   /** docs/30 세 질문: 무엇을 고르고 무엇을 건너뛰는지. 개인정보 없이 고른 값의 코드만 */
   preference_style_selected: { pace: string };
@@ -48,6 +48,8 @@ export interface AnalyticsEvents {
   hot_place_opened: { region: string; place_id: string; rank: number };
   suggestion_added: { course_id: string; role: string; price: number };
   stay_clicked: { day: number };
+  // 브랜드 인트로(/intro)를 떠남 (docs/40)
+  intro_left: { via: "intro_enter" | "intro_plan" | "intro_skip" };
   // 주변 장소를 코스 지도에 띄움 (docs/36): kind = 카드에 붙은 한 줄
   nearby_shown: { kind: string };
   performance_clicked: { performance_id: string };
