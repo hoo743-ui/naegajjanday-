@@ -38,14 +38,23 @@ const FIX_STEP: Record<string, { step: number; label: string }> = {
   SLOT_EMPTY: { step: 2, label: "예산 · 시간 바꾸기" },
 };
 
+/** 랜딩에서 고른 값(?budget=50000&party=2): 범위 밖이거나 숫자가 아니면 없는 것으로 본다 */
+function intParam(raw: string | null, min: number, max: number): number | undefined {
+  const n = raw === null ? NaN : Number(raw);
+  return Number.isInteger(n) && n >= min && n <= max ? n : undefined;
+}
+
 export function PlanWizard() {
   const router = useRouter();
   const params = useSearchParams();
+  const fromBudget = intParam(params.get("budget"), 5000, 5_000_000);
+  const fromParty = intParam(params.get("party"), 1, 20);
   const reduced = useReducedMotion();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const budgetTouched = useRef(false);
+  // 랜딩에서 예산을 정하고 왔으면 목적의 기본 예산으로 덮어쓰지 않는다
+  const budgetTouched = useRef(fromBudget !== undefined);
   const focusPending = useRef(false);
   // 서버는 성공(200)했는데 코스가 비어 온 경우처럼, mutation 의 error 로는 잡히지 않는 실패
   const [emptyError, setEmptyError] = useState<ApiError | null>(null);
@@ -53,7 +62,13 @@ export function PlanWizard() {
   const form = useForm<PlanValues>({
     resolver: zodResolver(planSchema),
     mode: "onChange",
-    defaultValues: { ...PLAN_DEFAULTS, region: params.get("region") ?? "", purpose: params.get("purpose") ?? "" },
+    defaultValues: {
+      ...PLAN_DEFAULTS,
+      region: params.get("region") ?? "",
+      purpose: params.get("purpose") ?? "",
+      ...(fromBudget !== undefined ? { budget_total: fromBudget } : {}),
+      ...(fromParty !== undefined ? { party_size: fromParty } : {}),
+    },
   });
   const values = form.watch();
   const generate = useGenerateCourse();
@@ -76,14 +91,20 @@ export function PlanWizard() {
 
   useEffect(() => {
     // 헤더 · 랜딩의 버튼을 눌러서 왔으면 그 클릭이 이미 셌다 (entry 가 둘로 남지 않게)
-    if (!trackedWithin("plan_started", 5000)) track("plan_started", { entry: params.get("purpose") || params.get("region") ? "landing_cta" : "direct" });
+    if (!trackedWithin("plan_started", 5000)) track("plan_started", { entry: params.get("purpose") || params.get("region") || params.get("budget") ? "landing_cta" : "direct" });
     // 최초 1회만
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 목적이 정해지면(직접 고르든 URL 로 오든) 그 목적의 기본 인원·예산으로 맞춘다. 사용자가 예산을 만진 뒤에는 건드리지 않는다.
   useEffect(() => {
-    if (!purpose || budgetTouched.current) return;
+    if (!purpose) return;
+    if (budgetTouched.current) {
+      // 예산은 사용자가 정한 그대로. 인원만 그 목적이 받을 수 있는 만큼으로 (데이트는 2명까지)
+      const max = purpose.max_party_size;
+      if (max && form.getValues("party_size") > max) form.setValue("party_size", max);
+      return;
+    }
     const party = Math.min(purpose.max_party_size ?? 20, purpose.default_party_size ?? form.getValues("party_size"));
     const typical = purpose.budget_range.typical ?? (purpose.budget_range.min + purpose.budget_range.max) / 2;
     form.setValue("party_size", party);

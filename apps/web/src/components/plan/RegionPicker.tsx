@@ -71,6 +71,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const regions = useRegions();
   const [path, setPath] = useState<Node[]>([]);
   const [q, setQ] = useState("");
+  // 행정구역 목록은 보조 수단이다: 먼저 검색 · 많이 찾는 동네, 목록은 펼쳐야 보인다 (목록 안으로 들어간 뒤에는 계속 보인다)
+  const [browse, setBrowse] = useState(false);
   // docs/34: 하루의 중심 — 동네 · 역, 또는 대학교(캠퍼스와 학교 앞, 그날의 축제까지)
   const [mode, setMode] = useState<"area" | "campus">(() => (decodeCampus(value) ? "campus" : "area"));
   const query = useDebounced(q.trim(), 200);
@@ -277,28 +279,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           )
         ) : (
           <>
-            {/* 어디까지 들어왔는지 — 누르면 그 단계로 돌아간다 */}
-            <nav aria-label="지역 단계" className="mb-3 flex flex-wrap items-center gap-1 text-body-sm font-semibold text-muted-foreground">
-              <button type="button" aria-current={path.length === 0 ? "location" : undefined} onClick={() => setPath([])} className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", path.length === 0 && "text-ink")}>
-                전국
-              </button>
-              {path.map((node, i) => (
-                <span key={node.key} className="flex items-center gap-1">
-                  <ChevronRight aria-hidden className="size-3.5" />
-                  <button
-                    type="button"
-                    aria-current={i === path.length - 1 ? "location" : undefined}
-                    onClick={() => setPath(path.slice(0, i + 1))}
-                    className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", i === path.length - 1 && "text-ink")}
-                  >
-                    {node.name}
-                  </button>
-                </span>
-              ))}
-            </nav>
-
             {path.length === 0 && hotspots.length > 0 ? (
-              <div className="mb-4">
+              <div className="mb-5">
                 <p className="mb-2 text-body-sm font-semibold text-ink-2">많이 찾는 동네</p>
                 <div className="flex flex-wrap gap-2">
                   {hotspots.map((r) => (
@@ -320,47 +302,83 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
               </div>
             ) : null}
 
-            <div className="grid animate-page gap-x-8 sm:grid-cols-2" key={current?.key ?? "root"}>
-              {current?.region ? regionButton(current.region, `${current.name} 전체`, `이 안에서 어디든 · 장소 ${num(current.region.place_count)}곳`) : null}
-              {nodes
-                .filter((n) => n.placeCount > 0)
-                .map((node) =>
-                  node.children.length > 0 || node.region?.level === 2 ? (
-                    <button
-                      key={node.key}
-                      type="button"
-                      onClick={() => setPath([...path, node])}
-                      className={card}
-                      aria-label={`${node.name} 안으로 들어가기, 장소 ${num(node.placeCount)}곳`}
-                    >
-                      <span className="min-w-0 flex-1">
-                        <b className="block truncate text-body-lg font-semibold">{node.name}</b>
-                        <span className="tabular block truncate text-body-sm text-muted-foreground">
-                          {node.children.length > 0 ? `${node.children.length}곳으로 나뉘어요` : "동네까지 고를 수 있어요"} · 장소 {num(node.placeCount)}곳
-                        </span>
-                      </span>
-                      <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />
-                    </button>
-                  ) : node.region ? (
-                    regionButton(node.region, node.name)
-                  ) : null,
-                )}
-            </div>
-
-            {district ? (
-              inside.isFetching && dongs.length === 0 ? (
-                <div className="mt-5 grid gap-x-8 sm:grid-cols-2" aria-busy="true">
-                  {Array.from({ length: 4 }, (_, i) => (
-                    <Skeleton key={i} className="h-[56px] rounded-md" />
+            {path.length === 0 && !browse ? (
+              <button
+                type="button"
+                aria-expanded={false}
+                onClick={() => setBrowse(true)}
+                className="inline-flex min-h-11 w-full items-center justify-between gap-2 border-t border-dashed border-line pt-3 text-left text-body-sm font-semibold text-ink-2 hover:text-ink"
+              >
+                <span>
+                  지역에서 직접 고르기 <span className="font-normal text-muted-foreground">시 · 도 → 구 → 동네</span>
+                </span>
+                <ChevronRight aria-hidden className="size-4 shrink-0" />
+              </button>
+            ) : (
+              <>
+                {/* 어디까지 들어왔는지 — 누르면 그 단계로 돌아간다 */}
+                <nav aria-label="지역 단계" className="mb-3 flex flex-wrap items-center gap-1 text-body-sm font-semibold text-muted-foreground">
+                  <button type="button" aria-current={path.length === 0 ? "location" : undefined} onClick={() => setPath([])} className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", path.length === 0 && "text-ink")}>
+                    전국
+                  </button>
+                  {path.map((node, i) => (
+                    <span key={node.key} className="flex items-center gap-1">
+                      <ChevronRight aria-hidden className="size-3.5" />
+                      <button
+                        type="button"
+                        aria-current={i === path.length - 1 ? "location" : undefined}
+                        onClick={() => setPath(path.slice(0, i + 1))}
+                        className={cn("inline-flex min-h-11 items-center rounded-lg px-2 hover:bg-ink/[0.05] hover:text-ink", i === path.length - 1 && "text-ink")}
+                      >
+                        {node.name}
+                      </button>
+                    </span>
                   ))}
+                </nav>
+
+                <div className="grid animate-page gap-x-8 sm:grid-cols-2" key={current?.key ?? "root"}>
+                  {current?.region ? regionButton(current.region, `${current.name} 전체`, `이 안에서 어디든 · 장소 ${num(current.region.place_count)}곳`) : null}
+                  {nodes
+                    .filter((n) => n.placeCount > 0)
+                    .map((node) =>
+                      node.children.length > 0 || node.region?.level === 2 ? (
+                        <button
+                          key={node.key}
+                          type="button"
+                          onClick={() => setPath([...path, node])}
+                          className={card}
+                          aria-label={`${node.name} 안으로 들어가기, 장소 ${num(node.placeCount)}곳`}
+                        >
+                          <span className="min-w-0 flex-1">
+                            <b className="block truncate text-body-lg font-semibold">{node.name}</b>
+                            <span className="tabular block truncate text-body-sm text-muted-foreground">
+                              {node.children.length > 0 ? `${node.children.length}곳으로 나뉘어요` : "동네까지 고를 수 있어요"} · 장소 {num(node.placeCount)}곳
+                            </span>
+                          </span>
+                          <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+                        </button>
+                      ) : node.region ? (
+                        regionButton(node.region, node.name)
+                      ) : null,
+                    )}
                 </div>
-              ) : dongs.length > 0 ? (
-                <div className="mt-5">
-                  <p className="mb-2 text-body-sm font-semibold text-ink-2">동네까지 좁히기 · {district.name}의 동 {dongs.length}곳</p>
-                  <div className="grid gap-x-8 sm:grid-cols-2">{dongs.map((r) => regionButton(r, r.name, `걸어서 다닐 범위 · 장소 ${num(r.place_count)}곳`))}</div>
-                </div>
-              ) : null
-            ) : null}
+
+                {district ? (
+                  inside.isFetching && dongs.length === 0 ? (
+                    <div className="mt-5 grid gap-x-8 sm:grid-cols-2" aria-busy="true">
+                      {Array.from({ length: 4 }, (_, i) => (
+                        <Skeleton key={i} className="h-[56px] rounded-md" />
+                      ))}
+                    </div>
+                  ) : dongs.length > 0 ? (
+                    <div className="mt-5">
+                      <p className="mb-2 text-body-sm font-semibold text-ink-2">동네까지 좁히기 · {district.name}의 동 {dongs.length}곳</p>
+                      <div className="grid gap-x-8 sm:grid-cols-2">{dongs.map((r) => regionButton(r, r.name, `걸어서 다닐 범위 · 장소 ${num(r.place_count)}곳`))}</div>
+                    </div>
+                  ) : null
+                ) : null}
+              </>
+            )}
           </>
         )}
       </div>

@@ -194,7 +194,8 @@ export function Hero() {
 
           <div data-beat="act" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 short:mt-6">
             <Button asChild variant="brand" size="xl" className="group max-sm:w-full">
-              <Link href="/plan" onClick={() => track("plan_started", { entry: "landing_hero" })}>
+              {/* 고른 예산 · 인원을 그대로 들고 간다 (위저드가 ?budget · ?party 로 시작한다) */}
+              <Link href={`/plan?budget=${budget}&party=${party}`} onClick={() => track("plan_started", { entry: "landing_hero" })}>
                 이 예산으로 짜기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
