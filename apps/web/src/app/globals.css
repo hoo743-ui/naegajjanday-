@@ -53,6 +53,7 @@
 
   /* 레이아웃 규격 — 8pt 그리드. 헤더 높이는 앵커 스크롤·sticky 오프셋이 함께 쓴다. */
   --header-h: 68px;
+  --tabbar-h: 60px; /* 모바일 아래 탭 바 (TabBar) */
   --gutter: clamp(20px, 4vw, 32px);
   --section-y: clamp(72px, 9vw, 128px);
 

@@ -7,6 +7,7 @@ import { PurposeCards } from "@/components/landing/PurposeCards";
 import { BannerStrip } from "@/components/layout/BannerStrip";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { TabBar } from "@/components/layout/TabBar";
 
 /**
  * 랜딩 = 한 번 써 보는 하루 (docs/31 · docs/32): 히어로(오늘 쓸 돈 → 오늘의 하루 → 영수증, 첫 방문엔 그 순서로 놓인다) →
@@ -28,6 +29,7 @@ export default function LandingPage() {
         <FinalCta />
       </main>
       <SiteFooter />
+      <TabBar />
     </>
   );
 }

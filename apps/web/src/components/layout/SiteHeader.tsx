@@ -20,9 +20,11 @@ const ALL_LINKS = [
 interface SiteHeaderProps {
   /** 랜딩처럼 히어로 위에 투명하게 얹을 때 */
   overlay?: boolean;
+  /** 모바일 아래 탭 바가 있는 화면이면 햄버거 메뉴는 없다(탭 바가 메뉴다). 없는 화면(위저드 · 채팅)만 햄버거 */
+  tabBar?: boolean;
 }
 
-export function SiteHeader({ overlay = false }: SiteHeaderProps) {
+export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) {
   // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 보인다. 확인 전에 보여 주면, LLM 이 없는 환경(지금의 실제 환경)에서는
   // 입구가 떴다가 1~2초 뒤에 사라진다 — 누르려던 버튼이 손 밑에서 바뀐다(버튼 전수 검사가 잡았다).
   const chatOff = useFeatures().data?.chat !== true;
@@ -92,21 +94,21 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
           {status === "authenticated" && me ? (
             <Link
               href="/my"
-              className="hidden rounded-lg px-3 py-2 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
+              className={cn("min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink", tabBar ? "hidden sm:flex" : "hidden sm:flex")}
             >
               {me.nickname} 님
             </Link>
           ) : status === "anonymous" ? (
             <Link
               href="/login"
-              className="hidden rounded-lg px-3 py-2 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink sm:block"
+              className={cn("min-h-11 items-center rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink", tabBar ? "flex" : "hidden sm:flex")}
             >
               로그인
             </Link>
           ) : null}
           <button
             type="button"
-            className="grid size-11 place-items-center rounded-xl text-ink md:hidden"
+            className={cn("size-11 place-items-center rounded-xl text-ink md:hidden", tabBar ? "hidden" : "grid")}
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
@@ -117,7 +119,7 @@ export function SiteHeader({ overlay = false }: SiteHeaderProps) {
         </div>
       </div>
 
-      {open ? (
+      {open && !tabBar ? (
         <nav
           id="mobile-nav"
           aria-label="모바일 메뉴"

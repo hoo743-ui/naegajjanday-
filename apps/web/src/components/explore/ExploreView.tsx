@@ -241,7 +241,7 @@ export function ExploreView() {
             <ul className={cn("grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3", attractions.isPlaceholderData && "opacity-60 transition-opacity")}>
               {items.map((item, i) => (
                 <li key={item.id} className={cn(i === 0 && "sm:col-span-2 lg:col-span-3 lg:border-b lg:border-ink/10 lg:pb-12")}>
-                  <AttractionCard item={item} feature={i === 0} />
+                  <AttractionCard item={item} feature={i === 0} kicker={regionSlug ? "맨 먼저 볼 곳" : undefined} />
                 </li>
               ))}
             </ul>

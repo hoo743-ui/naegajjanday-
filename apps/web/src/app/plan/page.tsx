@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PlanPage() {
   return (
-    <PageShell tinted footer={false}>
+    <PageShell tinted footer={false} tabBar={false}>
       {/* useSearchParams 를 쓰는 클라이언트 컴포넌트는 Suspense 경계가 필요하다 */}
       <Suspense fallback={<JjaniLoader />}>
         <PlanWizard />

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, case, func, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -19,12 +20,14 @@ from app.infra.db.models import (
     PlaceRevision,
     PlaceSource,
     PlaceStats,
+    PlaceTag,
     Region,
+    Tag,
     User,
 )
 from app.infra.search.client import PlaceSearch, SearchQuery
 from app.infra.tagging import get_tag_rules
-from app.repositories.place_repo import SqlPlaceRepository
+from app.repositories.place_repo import CURATED_TAG, SqlPlaceRepository
 from app.repositories.region_repo import SqlRegionRepository
 from app.schemas import place as dto
 from app.services.course_service import place_brief
@@ -48,6 +51,29 @@ ATTRACTION_TYPES: dict[str, tuple[str, ...]] = {
 
 def _fmt(t: time | None) -> str | None:
     return t.strftime("%H:%M") if t else None
+
+
+# names of wholesale markets: logistics and bulk-shopping destinations, not sights (docs/33 explore)
+WHOLESALE_WORDS = ("도매시장", "공판장")
+
+
+def spread[T](items: list[T], key: Callable[[T], tuple[object, object]]) -> list[T]:
+    """Keep the ranking, but never two in a row from the same district or of the same type: the next item
+    is the best one that differs from the previous in both (or the best one left when none does)."""
+    rest = list(items)
+    out: list[T] = []
+    while rest:
+        prev = key(out[-1]) if out else None
+        at = next(
+            (
+                i
+                for i, it in enumerate(rest)
+                if prev is None or (key(it)[0] != prev[0] and key(it)[1] != prev[1])
+            ),
+            0,
+        )
+        out.append(rest.pop(at))
+    return out
 
 
 class PlaceService:
@@ -288,16 +314,27 @@ class PlaceService:
         # the asked-for types are filtered HERE, before the 300-row cap. Filtering afterwards meant that
         # "parks, everywhere" came back empty: the first 300 sights with a photo were all markets.
         sight_ids = [cid for cid, code in sights if type_of(code) is not None]
+        # listed by the Korea Tourism Organization ("관광공사 소개")
+        curated = Place.id.in_(
+            select(PlaceTag.place_id).join(Tag, Tag.id == PlaceTag.tag_id).where(Tag.name == CURATED_TAG)
+        )
+        # a wholesale market is a top navigation destination because of deliveries and bulk shopping, not
+        # because people go there to look around — unless the tourism organization lists it
+        wholesale = and_(or_(*[Place.name.contains(w) for w in WHOLESALE_WORDS]), not_(curated))
         stmt = (
             select(Place)
             .outerjoin(PlaceStats, PlaceStats.place_id == Place.id)
             .where(Place.category_id.in_(sight_ids), Place.status == "approved")
             .options(selectinload(Place.category), selectinload(Place.stats))
             # a card with the place's own photo is worth more than one with a stand-in → those first;
-            # then where people really go (measured navigation rank), then the newest
+            # wholesale markets to the back; then where people really go (measured navigation rank — per
+            # district, so every district's first place ties at 1.0), the tourism-organization listing
+            # breaking those ties, then the newest
             .order_by(
                 Place.thumbnail_url.is_(None),
+                case((wholesale, 1), else_=0),
                 func.coalesce(PlaceStats.popularity, 0.0).desc(),
+                case((curated, 0), else_=1),
                 Place.id.desc(),
             )
             .limit(300)
@@ -315,25 +352,29 @@ class PlaceService:
                     Place.address.ilike(like, escape="\\"),
                 )
             )
-        for p in (await self._s.scalars(stmt)).all():
-            if (kind := type_of(p.category.code)) is not None:
-                items.append(
-                    dto.AttractionItem(
-                        id=p.public_id,
-                        kind="place",
-                        type=kind,
-                        name=p.name,
-                        category=p.category.code,
-                        lat=p.lat,
-                        lng=p.lng,
-                        address=p.road_address or p.address,
-                        is_free=p.is_free,
-                        price=p.price_per_person,
-                        price_is_estimated=bool(p.price_is_estimated) and not p.is_free,
-                        rating=p.stats.rating_avg if p.stats else None,
-                        thumbnail_url=p.thumbnail_url,
-                    )
+        rows = [(p, kind) for p in (await self._s.scalars(stmt)).all() if (kind := type_of(p.category.code))]
+        if region is None and not needle:
+            # the whole country: popularity is a rank within each district, so the top is hundreds of
+            # districts' number ones. Spread them — no two in a row from one district or of one type
+            rows = spread(rows, lambda r: (r[0].region_id, r[1]))
+        for p, kind in rows:
+            items.append(
+                dto.AttractionItem(
+                    id=p.public_id,
+                    kind="place",
+                    type=kind,
+                    name=p.name,
+                    category=p.category.code,
+                    lat=p.lat,
+                    lng=p.lng,
+                    address=p.road_address or p.address,
+                    is_free=p.is_free,
+                    price=p.price_per_person,
+                    price_is_estimated=bool(p.price_is_estimated) and not p.is_free,
+                    rating=p.stats.rating_avg if p.stats else None,
+                    thumbnail_url=p.thumbnail_url,
                 )
+            )
         day = on_date or datetime.now(self._tz).date()
         folded = needle.casefold()
         for e in (await self.events(region_slug, day, day)).items:

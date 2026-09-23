@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <PageShell footer={false} className="bg-soft">
+    <PageShell footer={false} tabBar={false} className="bg-soft">
       <ChatWindow />
     </PageShell>
   );

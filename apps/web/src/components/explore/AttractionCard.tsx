@@ -39,8 +39,12 @@ export function DdayBadge({ endsOn, startsOn }: { endsOn: string; startsOn?: str
   );
 }
 
-/** feature: 목록 맨 위의 큰 한 장(둘러보기의 잡지 표지). 나머지는 3열 격자의 작은 칸 */
-export function AttractionCard({ item, feature = false }: { item: Attraction; feature?: boolean }) {
+/**
+ * feature: 목록 맨 위의 큰 한 장(둘러보기의 잡지 표지). 나머지는 3열 격자의 작은 칸.
+ * kicker: 그 큰 장 위의 한 줄. "맨 먼저 볼 곳"은 동네를 골랐을 때만 말이 된다(그 동네에서 가장 많이 찾는 곳) —
+ * 전국 목록의 첫 장은 수백 개 시군구 1위 중 하나일 뿐이라 이름을 붙이지 않는다.
+ */
+export function AttractionCard({ item, feature = false, kicker }: { item: Attraction; feature?: boolean; kicker?: string }) {
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
   const Icon = meta.icon;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
@@ -101,7 +105,7 @@ export function AttractionCard({ item, feature = false }: { item: Attraction; fe
       </div>
 
       <div className={cn("flex flex-1 flex-col gap-2.5 pt-4", feature && "lg:pt-0")}>
-        {feature ? <p className="text-body-sm font-semibold text-blue-deep">맨 먼저 볼 곳</p> : null}
+        {feature && kicker ? <p className="text-body-sm font-semibold text-blue-deep">{kicker}</p> : null}
         <div className="flex items-start justify-between gap-3">
           <h3 className={cn("text-ink", feature ? "font-serif text-h1" : "text-body-lg font-semibold")}>
             {/* 카드 전체가 눌리도록 버튼의 클릭 영역을 카드까지 넓힌다(after:inset-0). 출처·코스 짜기 링크는 그 위(z-10)에 둔다. */}
