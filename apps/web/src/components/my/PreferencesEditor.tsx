@@ -79,7 +79,7 @@ export function PreferencesEditor() {
                     aria-label={`${tag.name}: ${like ? "좋아요" : avoid ? "피할래요" : "선택 안 함"}`}
                     className={cn(
                       "rounded-full border-2 px-4 py-2 text-body-sm font-semibold transition-all duration-150 active:scale-95",
-                      like && "border-blue-deep bg-blue-deep text-white",
+                      like && "border-tomato bg-tomato text-white",
                       avoid && "border-pink-deep bg-pink-soft text-pink-deep line-through",
                       !like && !avoid && "border-transparent bg-soft text-ink-2 hover:bg-line",
                     )}

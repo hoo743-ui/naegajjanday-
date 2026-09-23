@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, ChevronRight, GraduationCap, MapPin, Search, TrainFront } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -70,7 +71,9 @@ function buildTree(regions: Region[]): Node[] {
 export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const regions = useRegions();
   const [path, setPath] = useState<Node[]>([]);
-  const [q, setQ] = useState("");
+  // 랜딩에서 동네 이름만 적고 왔으면(?q=성수) 그 글자로 찾기부터 시작한다
+  const params = useSearchParams();
+  const [q, setQ] = useState(() => params.get("q") ?? "");
   // 행정구역 목록은 보조 수단이다: 먼저 검색 · 많이 찾는 동네, 목록은 펼쳐야 보인다 (목록 안으로 들어간 뒤에는 계속 보인다)
   const [browse, setBrowse] = useState(false);
   // docs/34: 하루의 중심 — 동네 · 역, 또는 대학교(캠퍼스와 학교 앞, 그날의 축제까지)
@@ -122,7 +125,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const campusButton = (u: University) => {
     const selected = pickedCampus?.id === u.id;
     return (
-      <button key={u.id} type="button" role="radio" aria-checked={selected} onClick={() => onChange(encodeCampus(u))} className={cn(card, selected && "bg-blue-soft text-blue-deep")}>
+      <button key={u.id} type="button" role="radio" aria-checked={selected} onClick={() => onChange(encodeCampus(u))} className={cn(card, selected && "bg-tomato-soft text-tomato-deep")}>
         <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-paper-2 text-ink">
           <GraduationCap aria-hidden className="size-5" />
         </span>
@@ -130,7 +133,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           <b className="block truncate text-body-lg font-semibold">{u.name}</b>
           <span className="block truncate text-body-sm text-muted-foreground">{u.address ?? "대학교"}</span>
         </span>
-        {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
+        {selected ? <Check aria-hidden className="size-5 shrink-0 text-tomato-deep" /> : null}
       </button>
     );
   };
@@ -144,13 +147,13 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         role="radio"
         aria-checked={selected}
         onClick={() => onChange(r.slug)}
-        className={cn(card, selected && "bg-blue-soft text-blue-deep")}
+        className={cn(card, selected && "bg-tomato-soft text-tomato-deep")}
       >
         <span className="min-w-0 flex-1">
           <b className="block truncate text-body-lg font-semibold">{label}</b>
           <span className="tabular block truncate text-body-sm text-muted-foreground">{sub ?? `${r.parent ? `${r.parent.name} · ` : ""}장소 ${num(r.place_count)}곳`}</span>
         </span>
-        {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
+        {selected ? <Check aria-hidden className="size-5 shrink-0 text-tomato-deep" /> : null}
       </button>
     );
   };
@@ -193,14 +196,14 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           onChange={(e) => setQ(e.target.value)}
           placeholder={mode === "campus" ? "학교 이름으로 찾기 (예: 가천대, 홍익대, 부산대)" : "동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"}
           autoComplete="off"
-          className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-body font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-blue-deep"
+          className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-body font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-tomato"
         />
       </div>
 
       {/* 역·장소 주변은 아래 지역 트리에 없는 값이다(검색 결과나 둘러보기의 "이 근처로 코스 짜기"로 들어온다) → 골라 둔 것을 따로 보여 준다 */}
       {pickedStation && !query ? (
-        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-blue-deep bg-blue-soft p-4 shadow-soft">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-blue-deep">
+        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-tomato bg-tomato-soft p-4 shadow-soft">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-tomato-deep">
             <MapPin aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
@@ -214,8 +217,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
       ) : null}
 
       {pickedCampus && !query ? (
-        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-blue-deep bg-blue-soft p-4 shadow-soft">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-blue-deep">
+        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-tomato bg-tomato-soft p-4 shadow-soft">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-tomato-deep">
             <GraduationCap aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
@@ -261,7 +264,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                     role="radio"
                     aria-checked={selected}
                     onClick={() => onChange(encoded)}
-                    className={cn(card, selected && "bg-blue-soft text-blue-deep")}
+                    className={cn(card, selected && "bg-tomato-soft text-tomato-deep")}
                   >
                     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-success-soft text-success">
                       <TrainFront aria-hidden className="size-5" />
@@ -270,7 +273,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       <b className="block truncate text-body-lg font-semibold">{s.name} 주변</b>
                       <span className="block truncate text-body-sm text-muted-foreground">지하철역 · 걸어서 다닐 거리로 짜요</span>
                     </span>
-                    {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
+                    {selected ? <Check aria-hidden className="size-5 shrink-0 text-tomato-deep" /> : null}
                   </button>
                 );
               })}
@@ -292,7 +295,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       onClick={() => onChange(r.slug)}
                       className={cn(
                         "inline-flex min-h-11 items-center rounded-full border-2 px-3.5 text-body-sm font-semibold transition-colors",
-                        value === r.slug ? "border-blue-deep bg-blue-deep text-white" : "border-transparent bg-white text-ink-2 shadow-soft hover:bg-blue-soft",
+                        value === r.slug ? "border-tomato bg-tomato text-white" : "border-transparent bg-white text-ink-2 shadow-soft hover:bg-tomato-soft",
                       )}
                     >
                       {r.name}

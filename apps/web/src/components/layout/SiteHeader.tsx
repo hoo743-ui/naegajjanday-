@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { Jjani } from "@/components/mascot/Jjani";
 import { track } from "@/lib/analytics";
 import { useFeatures } from "@/lib/api/hooks";
@@ -67,12 +68,12 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
       <div className="wrap flex h-(--header-h) items-center justify-between gap-4">
         <Link
           href="/"
-          className="-ml-1 flex min-h-11 items-center gap-2 rounded-xl px-1 font-round text-h2 leading-none hover:opacity-80"
+          className="-ml-1 flex min-h-11 items-center gap-2 rounded-xl px-1 hover:opacity-80"
           aria-label="내가짠데이 홈"
           aria-current={pathname === "/" ? "page" : undefined}
         >
-          <Jjani mood="hi" size={32} animated={false} decorative />
-          내가짠데이
+          <Jjani mood="hi" size={30} animated={false} decorative />
+          <Wordmark size="sm" />
         </Link>
 
         {/* 넓은 화면의 메뉴는 여기. 아래 탭(알약)은 이 헤더가 화면 밖으로 나갔을 때만 떠오른다 */}

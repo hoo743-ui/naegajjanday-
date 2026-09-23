@@ -1,105 +1,98 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import Image from "next/image";
+import { useId, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Minus, Plus } from "lucide-react";
-import { DayRoute } from "@/components/brand/DayRoute";
+import { ArrowRight, Check, MapPin, Minus, Plus } from "lucide-react";
+import { BudgetChip } from "@/components/brand/BudgetChip";
 import { Money } from "@/components/brand/Money";
 import { Receipt } from "@/components/brand/Receipt";
 import { sampleCourse } from "@/components/brand/sample-course";
 import { Jjani } from "@/components/mascot/Jjani";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
-import { useRegions } from "@/lib/api/hooks";
+import { useDebounced, usePurposes, useRegions } from "@/lib/api/hooks";
+import type { Region } from "@/lib/api/types";
 import type { JjaniMood } from "@/lib/mascot-copy";
+import { cn } from "@/lib/utils";
 
 /**
- * 히어로 = 서울이라는 공간 위에서 하루를 한 번 짜 보는 장면 (docs/31 §4 · docs/33). 서울은 카드가 아니라 배경(공간)이고,
- * 그 위에 약속 한 줄 → **오늘 쓸 돈 → 오늘의 하루**, 전경에 **영수증 한 장**과 남은 돈을 말하는 짠이.
- * 돈을 움직이면 하루가 다시 짜이고 영수증이 다시 찍힌다.
+ * 히어로 = 이름 그대로 세 칸 (2026-09-23 · docs/38): **내가**(조건을 정한다) → **짠**(예산 안에서 맞춘다) → **데이**(하루가 나온다).
+ * 설명을 읽기 전에 손으로 만지는 곳이다: 어디서 · 무엇 · 몇 명 → 오늘 쓸 돈 → 그 돈으로 짜인 예시 하루의 영수증.
+ * 넓은 화면은 12칸을 4 · 4 · 4 로 나눠 왼쪽에서 오른쪽으로 읽히고, 좁은 화면은 같은 순서로 쌓인다(행동 버튼은 "짠" 칸 끝 — 첫 화면 안).
  *
- * 하루의 품목은 실제 가게가 아니라 **업종 평균가로 만든 예시**다 — 그렇게 적어 둔다.
+ * 영수증의 품목은 실제 가게가 아니라 **업종 평균가로 만든 예시**다 — 영수증 머리에 그렇게 적는다.
  */
 const MIN = 10000;
 const MAX = 120000;
 const STEP = 5000;
+/** 빠른 선택: 금액 + 어떤 하루인지 한 낱말 (색 없이도 무엇을 골랐는지 읽힌다) */
+const PRESETS = [
+  { value: 30000, hint: "가볍게" },
+  { value: 50000, hint: "무난하게" },
+  { value: 100000, hint: "넉넉하게" },
+];
+/** 목적 코드 → 짧은 이름 (API 이름은 "친구모임" · "혼밥·혼놀"처럼 길다) */
+const PURPOSE_SHORT: Record<string, string> = { date: "데이트", friends: "친구", solo: "혼자", family: "가족", travel: "여행" };
+const PURPOSE_ORDER = ["date", "friends", "solo", "family", "travel"];
 /** 예시 하루는 저녁 6시에 시작한다. 머무는 시간은 업종의 보통값, 사이마다 걸어서 10분 */
 const START_MIN = 18 * 60;
 const STAY_MIN: Record<string, number> = { 식사: 70, 카페: 50, 산책: 40, 한잔: 60, 놀거리: 60 };
 const WALK_MIN = 10;
-/** 장면 그림의 sizes: 좁은 화면 · 넓은 화면 두 곳이 같은 값을 써야 같은 파일을 받는다 */
-const SCENE_SIZES = "(max-width: 1024px) 100vw, 1400px";
-/** 빠른 선택: 슬라이더를 끌지 않고 한 번에 */
-const PRESETS = [30000, 50000, 100000];
-/** 장면 그림(1536×1024) 속 지도 핀의 머리 — 경복궁 · 종로 · 남대문 · 명동 */
-const SCENE_STOPS: [number, number][] = [
-  [1040, 76],
-  [1160, 160],
-  [1159, 297],
-  [1299, 256],
-];
-
-function reaction(left: number, budget: number): { mood: JjaniMood; say: string } {
-  const ratio = left / budget;
-  if (ratio <= 0.05) return { mood: "cheers", say: "예산을 꽉 채웠어요. 한 푼도 안 넘겨요" };
-  if (ratio <= 0.2) return { mood: "done", say: `여기서 ${left.toLocaleString("ko-KR")}원 남아요` };
-  return { mood: "wink", say: `${left.toLocaleString("ko-KR")}원 남으니 디저트 하나 더?` };
-}
-
-/** 한 세션에 한 번 (탭을 닫기 전까지) */
-const INTRO_KEY = "jj-hero-intro";
-/**
- * 인라인 스크립트: 첫 페인트 전에 랜딩 시퀀스(docs/32)를 틀지 정한다 → 틀지 않을 사람에게는 한 프레임도 흔들리지 않는다.
- * 건너뛰는 경우: 이번 세션에 이미 봤음 · 모션 최소화 · 자동화 브라우저(검증 · E2E · 캡처가 중간 프레임을 찍지 않게) · ?intro=0
- */
-export const HERO_INTRO_GATE = `(function(){try{var d=document.documentElement;if(sessionStorage.getItem("${INTRO_KEY}")||navigator.webdriver||matchMedia("(prefers-reduced-motion: reduce)").matches||/[?&]intro=0/.test(location.search))return;sessionStorage.setItem("${INTRO_KEY}","1");d.setAttribute("data-intro","play")}catch(e){}})();`;
-/** 예산이 세어지기 시작하는 때(ms) — globals.css 의 [data-beat="money"] 등장과 같은 시각 */
-const COUNT_AT_MS = 560;
 
 const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
+
+/** 한 세션에 한 번 (탭을 닫기 전까지) — 인트로(BrandIntro)가 이 표식으로 틀지 정한다 */
+const INTRO_KEY = "jj-brand-intro";
+/**
+ * 인라인 스크립트: 첫 페인트 전에 브랜드 인트로(내가 → 짠 → 데이)를 틀지 정한다 → 틀지 않을 사람에게는 한 프레임도 흔들리지 않는다.
+ * 건너뛰는 경우: 이번 세션에 이미 봤음 · 모션 최소화 · 자동화 브라우저(검증 · E2E · 캡처가 중간 프레임을 찍지 않게) · ?intro=0.
+ * ?intro=1 이면 무엇이든 무시하고 튼다(확인용).
+ */
+export const HERO_INTRO_GATE = `(function(){try{var d=document.documentElement,f=/[?&]intro=1/.test(location.search);if(!f&&(sessionStorage.getItem("${INTRO_KEY}")||navigator.webdriver||matchMedia("(prefers-reduced-motion: reduce)").matches||/[?&]intro=0/.test(location.search)))return;sessionStorage.setItem("${INTRO_KEY}","1");d.setAttribute("data-intro","play")}catch(e){}})();`;
+
+function status(region: string, left: number, preset: string | undefined): { mood: JjaniMood; say: string } {
+  if (!region) return { mood: "hi", say: "어디서 만날지만 알려 주세요." };
+  if (left < 0) return { mood: "sorry", say: "조금 넘었어요. 한 곳만 바꿔 볼까요?" };
+  if (preset === "넉넉하게") return { mood: "wink", say: `넉넉해요. ${won(left)} 남으니 디저트 하나 더?` };
+  return { mood: "done", say: `짠! ${won(left)} 남아요.` };
+}
 
 export function Hero() {
   const reduced = useReducedMotion();
   const sliderId = useId();
-  // 둘이서 5만 원: 식사 · 카페 · 산책 · 놀거리를 다 하고 8,000원이 남는 하루 (첫 진입 시퀀스의 영수증과 같은 계산)
+  const placeId = useId();
   const [budget, setBudget] = useState(50000);
   const [party, setParty] = useState(2);
-  const regions = useRegions();
-  // 첫 방문의 시퀀스: 예산은 0원에서 세어 올라간다(돈이 이 서비스의 주인공). 그 전에는 숫자 칸이 아직 보이지 않는다
-  const [counting, setCounting] = useState(false);
-  useEffect(() => {
-    const root = document.documentElement;
-    if (root.getAttribute("data-intro") !== "play") return;
-    // CSS 시간표는 첫 페인트에서 시작하지만 이 코드는 하이드레이션 뒤에 돈다(느린 폰 · 개발 서버는 몇 초 뒤).
-    // 숫자가 이미 보이기 시작했으면 0 으로 되돌렸다 세지 않는다 — 50,000 → 0 → 50,000 깜빡임보다 그냥 50,000 이 낫다
-    const paint = performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? 0;
-    const wait = paint + COUNT_AT_MS - performance.now();
-    let t = 0;
-    if (wait > 60) {
-      setCounting(true);
-      t = window.setTimeout(() => setCounting(false), wait);
-    }
-    // 다른 화면에 갔다가 돌아오면 다시 틀지 않는다
-    return () => {
-      window.clearTimeout(t);
-      root.removeAttribute("data-intro");
-    };
-  }, []);
+  const [purpose, setPurpose] = useState("date");
+  // 어디서: 목록에서 고르면 slug, 그냥 적으면 글자 그대로(위저드가 그 글자로 찾기부터 시작한다)
+  const [placeText, setPlaceText] = useState("");
+  const [picked, setPicked] = useState<Region | null>(null);
+  const [open, setOpen] = useState(false);
 
-  const items = useMemo(() => sampleCourse(Math.floor(budget / party), party), [budget, party]);
-  const total = items.reduce((sum, i) => sum + i.price, 0);
-  const left = budget - total;
-  const { mood, say } = reaction(left, budget);
-  const day = useMemo(() => {
-    let at = START_MIN;
-    return items.map((item) => {
-      const time = hhmm(at);
-      at += (STAY_MIN[item.label] ?? 60) + WALK_MIN;
-      return { key: `${item.label}-${item.name}`, time, label: item.label, name: item.name };
-    });
-  }, [items]);
+  const regions = useRegions();
+  const purposes = usePurposes();
+  const purposeInfo = purposes.data?.items.find((p) => p.code === purpose);
+  const maxParty = Math.min(6, purposeInfo?.max_party_size ?? 6);
+
+  // 많이 찾는 동네: 장소가 많은 동네부터 (위저드의 칩과 같은 기준)
+  const hot = useMemo(
+    () => [...(regions.data?.items ?? [])].filter((r) => r.level === 3 && r.place_count > 0).sort((a, b) => b.place_count - a.place_count).slice(0, 5),
+    [regions.data],
+  );
+  const query = placeText.trim();
+  // 동 · 읍 · 면(성수동 · 연남동 …)은 전체 목록에 없다 → 두 글자부터 서버에 묻는다 (위저드와 같은 방식)
+  const asked = useDebounced(query, 200);
+  const found = useRegions(asked.length >= 2 && picked?.name !== placeText ? { q: asked } : undefined);
+  const matches = useMemo(() => {
+    if (!query || picked?.name === placeText) return [];
+    const seen = new Set<string>();
+    return [...(regions.data?.items ?? []), ...(asked.length >= 2 ? (found.data?.items ?? []) : [])]
+      .filter((r) => r.place_count > 0 && r.name.includes(query) && !seen.has(r.slug) && seen.add(r.slug))
+      .sort((a, b) => Math.min(b.level, 3) - Math.min(a.level, 3) || b.place_count - a.place_count)
+      .slice(0, 5);
+  }, [query, placeText, picked, regions.data, asked, found.data]);
 
   // 증거는 지어내지 않는다: 지금 DB 에 실제로 있는 숫자만 보여 준다
   const proof = useMemo(() => {
@@ -108,137 +101,225 @@ export function Hero() {
     return all.length && places ? places : null;
   }, [regions.data]);
 
+  const items = useMemo(() => sampleCourse(Math.floor(budget / party), party), [budget, party]);
+  const total = items.reduce((sum, i) => sum + i.price, 0);
+  const left = budget - total;
+  const preset = PRESETS.find((p) => p.value === budget)?.hint;
+  const { mood, say } = status(picked?.slug ?? query, left, preset);
+  // "데이": 영수증 줄마다 그 시각을 붙인다 — 영수증이 곧 하루의 시간표
+  const dayItems = useMemo(() => {
+    let at = START_MIN;
+    return items.map((item) => {
+      const time = hhmm(at);
+      at += (STAY_MIN[item.label] ?? 60) + WALK_MIN;
+      return { ...item, label: `${time} ${item.label}` };
+    });
+  }, [items]);
+
+  const choose = (r: Region) => {
+    setPicked(r);
+    setPlaceText(r.name);
+    setOpen(false);
+  };
+  const pickPurpose = (code: string) => {
+    setPurpose(code);
+    const p = purposes.data?.items.find((x) => x.code === code);
+    const max = Math.min(6, p?.max_party_size ?? 6);
+    // 혼자면 1명, 데이트는 2명까지 — 목적이 받을 수 있는 인원으로 맞춘다
+    if (code === "solo") setParty(1);
+    else if (party > max) setParty(max);
+    else if (party === 1 && p?.default_party_size && p.default_party_size > 1) setParty(p.default_party_size);
+  };
+
+  const href = useMemo(() => {
+    const q = new URLSearchParams({ budget: String(budget), party: String(party), purpose });
+    if (picked && picked.name === placeText) q.set("region", picked.slug);
+    else if (query) q.set("q", query);
+    return `/plan?${q.toString()}`;
+  }, [budget, party, purpose, picked, placeText, query]);
+
+  const zoneLabel = (n: string, word: string, rest: string) => (
+    <p className="mb-3 flex items-baseline gap-2 text-body-sm font-semibold text-ink-2">
+      <span className="tabular text-caption font-bold text-muted-foreground">{n}</span>
+      <b className={cn("font-extrabold text-ink", word === "짠" && "text-tomato-deep")}>{word}</b>
+      {rest}
+    </p>
+  );
+
   return (
-    <section className="hero-intro paper-grain relative isolate overflow-hidden bg-paper pt-[calc(var(--header-h)+28px)] pb-10 lg:min-h-[min(920px,100svh)] lg:pt-[calc(var(--header-h)+56px)] lg:pb-20 short:pt-[calc(var(--header-h)+24px)] short:pb-10">
-      {/* 장면 (docs/33 §Hero 배경): 서울이 카드나 액자가 아니라 이 하루가 놓이는 공간이다. 종이(바탕) → 서울 → 종이로 번지는 가장자리 →
-          오늘의 정거장 → 글 → 예산 → 영수증 → 짠이. 넓은 화면은 그림의 원래 비율(3:2)로 오른쪽에 붙여, 정거장 점이 그림 속 지도 핀에 정확히 앉는다.
-          그림 왼쪽에 인쇄된 글귀는 종이로 번지는 가장자리 밑에 가려진다 */}
-      <div aria-hidden className="hero-scene pointer-events-none absolute top-0 right-0 -z-10 hidden h-full aspect-[3/2] lg:block">
-        <div data-beat="scene" className="absolute inset-0">
-          <Image src="/images/hero/seoul-scene.jpg" alt="" fill priority sizes={SCENE_SIZES} className="hero-scene-img object-cover" />
+    <section className="hero-home paper-map relative isolate bg-paper pt-[calc(var(--header-h)+20px)] pb-12 lg:pt-[calc(var(--header-h)+32px)] lg:pb-16 short:pt-[calc(var(--header-h)+12px)] short:pb-10">
+      <div className="wrap">
+        <div className="max-w-[760px]">
+          {/* 이름이 곧 문장: 내가 정하면 → 짠! → 하루가 나온다 */}
+          <h1 className="hero-title text-display font-extrabold tracking-[-0.03em] text-ink">
+            내가 정하면, <span className="hero-jjan">짠!</span> <span className="hero-day">하루가 나와요.</span>
+          </h1>
+          <p className="mt-3 text-body-lg text-ink-2 short:mt-2">얼마 쓸지만 정하세요. 하루는 짠이가 짜 볼게요.</p>
         </div>
-        {/* 오늘의 정거장: 그림 속 지도 핀(경복궁 · 종로 · 남대문 · 명동) 위에 잉크 점이 차례로 놓인다 */}
-        <svg viewBox="0 0 1536 1024" preserveAspectRatio="none" className="hero-scene-stops absolute inset-0 size-full">
-          {SCENE_STOPS.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="7" style={{ "--i": i } as React.CSSProperties} className="scene-stop" />
-          ))}
-        </svg>
-      </div>
 
-      <div className="wrap grid gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">
-        {/* 왼쪽: 약속 한 줄 → 오늘 쓸 돈 → 오늘의 하루 → 행동 하나. 작은 이름표 · 캡션은 두지 않는다 (docs/33) */}
-        <div className="min-w-0">
-          <div data-beat="type">
-            {/* 줄바꿈이 리듬을 만든다 (docs/35 §5): 조건 한 줄 → 쉼 → 결과. 강조는 금색이 아니라 크기와 굵기로 */}
-            <h1 className="hero-title font-serif text-display-xl">
-              예산만 말하면,
-              <br />
-              하루가
-              <br />
-              <span className="hero-em">영수증</span>으로 나온다.
-            </h1>
-            <p className="mt-5 max-w-[440px] text-body-lg text-ink-2 short:mt-3">짠이가 실제 장소로 하루를 짜고, 얼마가 남는지까지 영수증 한 장으로 보여 드려요.</p>
-          </div>
-
-          {/* 오늘 쓸 돈: 떠 있는 카드가 아니라 종이 위의 입력 줄 — 숫자 → 슬라이더 → 빠른 선택 */}
-          <div data-beat="money" className="mt-8 max-w-[520px] border-y border-ink/15 py-5 short:mt-5 short:py-4">
-            <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-              <div className="grid">
-                <label htmlFor={sliderId} className="text-body-sm font-semibold text-ink-2">
-                  오늘 쓸 돈
+        <div className="mt-7 grid gap-6 lg:grid-cols-12 lg:gap-8 short:mt-5">
+          {/* ① 내가 — 어디서 · 무엇 · 몇 명 */}
+          <div className="lg:col-span-4">
+            {zoneLabel("01", "내가", "정하고")}
+            <div className="grid gap-4">
+              <div className="relative">
+                <label htmlFor={placeId} className="sr-only">
+                  어디서 만나요?
                 </label>
-                <Money value={counting ? 0 : budget} duration={900} className="money text-price-lg text-ink" />
+                <div className="relative">
+                <MapPin aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id={placeId}
+                  value={placeText}
+                  onChange={(e) => {
+                    setPlaceText(e.target.value);
+                    setOpen(true);
+                  }}
+                  onFocus={() => setOpen(true)}
+                  onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+                  placeholder="어디서 만나요? (예: 홍대, 성수)"
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={open && matches.length > 0}
+                  aria-controls={`${placeId}-list`}
+                  className="h-12 w-full rounded-xl border border-ink/35 bg-white pr-3 pl-10 text-body text-ink outline-none placeholder:text-muted-foreground focus-visible:border-ink"
+                />
+                {open && matches.length > 0 ? (
+                  <ul id={`${placeId}-list`} role="listbox" className="absolute inset-x-0 top-[calc(100%+4px)] z-20 overflow-hidden rounded-xl border border-line bg-white shadow-card">
+                    {matches.map((r) => (
+                      <li key={r.slug} role="option" aria-selected={picked?.slug === r.slug}>
+                        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(r)} className="flex min-h-11 w-full items-center justify-between gap-3 px-3.5 text-left text-body-sm hover:bg-tomato-soft">
+                          <span className="font-semibold text-ink">{r.name}</span>
+                          <span className="tabular text-caption text-muted-foreground">장소 {r.place_count.toLocaleString("ko-KR")}곳</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                </div>
+                {hot.length > 0 ? (
+                  <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]" role="group" aria-label="많이 찾는 동네">
+                    {hot.map((r) => {
+                      const on = picked?.slug === r.slug && placeText === r.name;
+                      return (
+                        <button
+                          key={r.slug}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => choose(r)}
+                          className={cn(
+                            "inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full border px-3 text-body-sm transition-colors",
+                            on ? "border-tomato bg-tomato font-bold text-white" : "border-ink/20 bg-paper font-medium text-ink-2 hover:border-tomato hover:bg-tomato-soft",
+                          )}
+                        >
+                          {on ? <Check aria-hidden strokeWidth={3} className="size-3.5" /> : null}
+                          {r.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
-              <div className="flex items-center gap-1.5" role="group" aria-label="인원">
-                <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-11 place-items-center rounded-full border border-ink/15 bg-paper/80 hover:border-ink-2 disabled:opacity-40">
-                  <Minus aria-hidden className="size-4" />
-                </button>
-                <output aria-live="polite" className="tabular min-w-12 text-center text-body-lg font-bold">
-                  {party}명
-                </output>
-                <button type="button" onClick={() => setParty((p) => Math.min(6, p + 1))} disabled={party >= 6} aria-label="인원 늘리기" className="grid size-11 place-items-center rounded-full border border-ink/15 bg-paper/80 hover:border-ink-2 disabled:opacity-40">
-                  <Plus aria-hidden className="size-4" />
-                </button>
+
+              {/* 무엇: 하나만 고른다 (segmented) */}
+              <div role="radiogroup" aria-label="어떤 약속" className="grid grid-cols-5 rounded-xl border border-ink/20 bg-paper p-1">
+                {PURPOSE_ORDER.map((code) => {
+                  const on = purpose === code;
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => pickPurpose(code)}
+                      className={cn("min-h-10 rounded-lg text-body-sm transition-colors", on ? "bg-tomato font-extrabold text-white" : "font-medium text-ink-2 hover:bg-tomato-soft")}
+                    >
+                      {PURPOSE_SHORT[code]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-body-sm font-semibold text-ink-2">몇 명이서</span>
+                <div className="flex items-center gap-1.5" role="group" aria-label="인원">
+                  <button type="button" onClick={() => setParty((p) => Math.max(1, p - 1))} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-11 place-items-center rounded-full border border-ink/25 bg-paper hover:border-ink disabled:opacity-35">
+                    <Minus aria-hidden className="size-4" />
+                  </button>
+                  <output aria-live="polite" className="tabular min-w-12 text-center text-body-lg font-bold">
+                    {party}명
+                  </output>
+                  <button type="button" onClick={() => setParty((p) => Math.min(maxParty, p + 1))} disabled={party >= maxParty} aria-label="인원 늘리기" className="grid size-11 place-items-center rounded-full border border-ink/25 bg-paper hover:border-ink disabled:opacity-35">
+                    <Plus aria-hidden className="size-4" />
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* ② 짠 — 오늘 쓸 돈. 행동 버튼은 이 칸 끝에(모바일에서도 첫 화면 안) */}
+          <div className="lg:col-span-4 lg:border-x lg:border-dashed lg:border-ink/15 lg:px-8">
+            {zoneLabel("02", "짠", "예산 안에서")}
+            <label htmlFor={sliderId} className="text-body-sm font-semibold text-ink-2">
+              오늘 쓸 돈
+            </label>
+            <Money value={budget} duration={500} className="money block text-price-lg text-ink" />
             <input
               id={sliderId}
               type="range"
-              className="jj-range mt-4 short:mt-3"
+              className="jj-range mt-3"
+              style={{ "--fill": `${((budget - MIN) / (MAX - MIN)) * 100}%` } as CSSProperties}
               min={MIN}
               max={MAX}
               step={STEP}
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
-              aria-valuetext={`${budget.toLocaleString("ko-KR")}원, ${party}명`}
+              aria-valuetext={`${won(budget)}, ${party}명`}
             />
-            <div className="mt-4 flex flex-wrap gap-2 short:mt-3" role="group" aria-label="자주 쓰는 예산">
-              {PRESETS.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={budget === value}
-                  onClick={() => setBudget(value)}
-                  className="tabular inline-flex h-11 items-center rounded-full border border-ink/15 bg-paper/80 px-4 text-body-sm font-semibold text-ink-2 hover:border-ink-2 hover:text-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
-                >
-                  {value / 10000}만 원
-                </button>
+            <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="자주 쓰는 예산">
+              {PRESETS.map((p) => (
+                <BudgetChip key={p.value} amount={`${p.value / 10000}만 원`} hint={p.hint} selected={budget === p.value} onSelect={() => setBudget(p.value)} className="justify-center" />
               ))}
             </div>
-          </div>
 
-          {/* 오늘의 하루: 그 돈으로 짜인 순서. 좁은 화면 · 낮은 화면에서는 영수증이 하루를 말한다 */}
-          <div className="mt-7 hidden max-w-[520px] sm:block short:hidden!">
-            <DayRoute stops={day} />
-          </div>
+            <div className="mt-4 flex items-center gap-2.5">
+              <Jjani mood={mood} className="h-auto w-10 shrink-0" />
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.p
+                  key={say}
+                  aria-live="polite"
+                  initial={reduced ? false : { opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduced ? undefined : { opacity: 0, y: -3 }}
+                  transition={{ duration: 0.16 }}
+                  className="tabular rounded-lg rounded-bl-sm bg-white px-3 py-1.5 text-body-sm font-semibold text-ink shadow-soft"
+                >
+                  {say}
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
-          <div data-beat="act" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 short:mt-6">
-            <Button asChild variant="brand" size="xl" className="group max-sm:w-full">
-              {/* 고른 예산 · 인원을 그대로 들고 간다 (위저드가 ?budget · ?party 로 시작한다) */}
-              <Link href={`/plan?budget=${budget}&party=${party}`} onClick={() => track("plan_started", { entry: "landing_hero" })}>
-                이 예산으로 짜기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
+            <Button asChild variant="brand" size="xl" className="group mt-4 w-full">
+              <Link href={href} onClick={() => track("plan_started", { entry: "landing_hero" })}>
+                이 예산으로 하루 짜기 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
             {/* 증거는 지어내지 않는다: 지금 DB 에 실제로 있는 숫자만 */}
             {proof ? (
-              <p className="tabular text-body-sm font-semibold text-ink-2">
-                전국 실제 장소 <b className="font-bold text-ink">{proof.toLocaleString("ko-KR")}곳</b> · 가입 없이 바로
+              <p className="tabular mt-2 text-center text-caption font-semibold text-muted-foreground">
+                전국 실제 장소 {proof.toLocaleString("ko-KR")}곳 · 가입 없이 바로
               </p>
             ) : null}
           </div>
-        </div>
 
-        {/* 오른쪽: 서울 위, 전경의 영수증 한 장과 짠이. 넓은 화면은 칸의 오른쪽 아래(그림 속 광장 · 뜯긴 영수증 자리)에 놓여 성문의 홍예는 가리지 않는다.
-            예시라는 사실은 영수증 머리에 적는다 */}
-        <div className="relative h-[660px] lg:h-auto lg:self-stretch">
-          {/* 좁은 화면의 장면: 영수증 칸 위쪽에 성문 지붕과 스카이라인이 보이게 (같은 그림 · 같은 sizes → 한 번만 받는다) */}
-          <div aria-hidden className="hero-scene pointer-events-none absolute -inset-x-4 -top-5 -z-10 h-[400px] lg:hidden">
-            <div data-beat="scene" className="absolute inset-0">
-              <Image src="/images/hero/seoul-scene.jpg" alt="" fill sizes={SCENE_SIZES} className="hero-scene-img object-cover object-right" />
+          {/* ③ 데이 — 그 돈으로 짜인 하루: 영수증 줄마다 시각이 붙은 시간표 */}
+          <div className="lg:col-span-4">
+            {zoneLabel("03", "데이", "하루가 나와요")}
+            <div className="relative">
+              <Receipt heading={`예시 · ${party}명 · ${PURPOSE_SHORT[purpose] ?? ""} · 업종 평균가`} items={dayItems} budget={budget} className="drop-shadow-[0_14px_24px_rgba(40,32,20,.12)]" />
+              {/* 상태 도장: 색만이 아니라 글자로 */}
+              <span aria-hidden className={cn("hero-stamp", left < 0 && "is-over")}>{left < 0 ? "초과" : "예산 안"}</span>
             </div>
-          </div>
-          <div className="hero-par-fg absolute right-0 bottom-0 w-[82%] max-w-[296px] lg:-right-4 lg:bottom-[-28px]">
-            <div data-beat="receipt">
-              {/* 기울기는 안쪽에: 출력 애니메이션의 transform 이 기울기를 덮어쓰지 않게 */}
-              <Receipt heading={`예시 · ${party}명 · 업종 평균가`} items={items} budget={budget} className="-rotate-1 drop-shadow-[0_18px_28px_rgba(40,32,20,.16)]" />
-            </div>
-          </div>
-          {/* 짠이는 여기서 한 번: 영수증 곁에서 남은 돈을 알려 주는 동행 */}
-          <div data-beat="jjani" className="absolute top-6 left-0 flex max-w-[150px] flex-col items-start gap-1.5 lg:top-auto lg:right-[300px] lg:bottom-2 lg:left-auto lg:items-end">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.p
-                key={say}
-                aria-live="polite"
-                initial={reduced ? false : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduced ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: 0.18 }}
-                className="tabular rounded-lg rounded-bl-sm bg-paper px-3 py-2 text-body-sm leading-snug font-semibold text-ink shadow-soft lg:rounded-bl-lg lg:rounded-br-sm"
-              >
-                {say}
-              </motion.p>
-            </AnimatePresence>
-            <Jjani mood={mood} className="h-auto w-[60px] drop-shadow-sm lg:mr-3" />
           </div>
         </div>
       </div>

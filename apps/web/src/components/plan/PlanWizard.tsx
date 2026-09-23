@@ -15,6 +15,7 @@ import { ApiError } from "@/lib/api/client";
 import { decodeCampus, decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { num, toKstIso, won } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 import { resolveStart } from "./meet-time";
 import { PLAN_DEFAULTS, STEPS, planSchema, type PlanValues } from "./schema";
@@ -50,7 +51,9 @@ export function PlanWizard() {
   const fromBudget = intParam(params.get("budget"), 5000, 5_000_000);
   const fromParty = intParam(params.get("party"), 1, 20);
   const reduced = useReducedMotion();
-  const [step, setStep] = useState(0);
+  // 홈의 "이 예산으로 하루 짜기"(예산을 들고 온다)로 동네 · 목적까지 정하고 왔으면 그 다음 단계부터 (예산을 한 번 더 보여 주고 취향으로).
+  // 다른 링크(?region · ?purpose 만)는 예전처럼 첫 단계부터 — 고른 값은 채워 둔 채로
+  const [step, setStep] = useState(() => (fromBudget !== undefined && params.get("region") ? (params.get("purpose") ? 2 : 1) : 0));
   const [direction, setDirection] = useState(1);
   const headingRef = useRef<HTMLHeadingElement>(null);
   // 랜딩에서 예산을 정하고 왔으면 목적의 기본 예산으로 덮어쓰지 않는다
@@ -145,6 +148,7 @@ export function PlanWizard() {
     jump(next);
   };
 
+  const nextBlocked = (step === 0 && !values.region) || (step === 1 && !values.purpose);
   const stationName = pickedStation?.name ?? pickedCampus?.name;
   const stages = useMemo(
     () => [
@@ -339,8 +343,8 @@ export function PlanWizard() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[max(14px,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 px-5 pt-3.5 lg:max-w-[1120px]">
             {/* 데스크톱은 옆의 영수증이 같은 것을 보여 준다 → 자리만 지킨다 */}
-            <p className="tabular hidden min-w-0 flex-1 truncate text-body-sm font-bold text-ink-2 sm:block lg:invisible" aria-live="polite">
-              {[placeLabel, purpose?.name, step >= 2 ? `${values.party_size}명` : null, step >= 2 ? won(values.budget_total) : null].filter(Boolean).join(" · ") || "세 가지만 알려 주세요"}
+            <p className={cn("tabular min-w-0 flex-1 truncate text-body-sm font-bold", nextBlocked ? "block text-tomato-deep" : "hidden text-ink-2 sm:block lg:invisible")} aria-live="polite">
+              {nextBlocked ? (step === 0 ? "어디서 만날지 골라 주세요" : "어떤 약속인지 골라 주세요") : [placeLabel, purpose?.name, step >= 2 ? `${values.party_size}명` : null, step >= 2 ? won(values.budget_total) : null].filter(Boolean).join(" · ")}
             </p>
             {step > 0 ? (
               <Button type="button" variant="soft" size="xl" onClick={() => void go(step - 1)} className="max-sm:px-4">
@@ -357,7 +361,8 @@ export function PlanWizard() {
                 <ReceiptText aria-hidden /> 코스 짜 주세요
               </Button>
             ) : (
-              <Button key="next" type="button" variant="brand" size="xl" className="group max-sm:flex-1" onClick={() => void go(step + 1)}>
+              // 이 단계에서 꼭 골라야 할 것(지역 · 목적)을 아직 안 골랐으면 잠가 둔다 — 무엇을 해야 하는지는 버튼 옆 글이 말한다
+              <Button key="next" type="button" variant="brand" size="xl" className="group max-sm:flex-1" disabled={nextBlocked} onClick={() => void go(step + 1)}>
                 다음 <ArrowRight aria-hidden className="transition-transform group-hover:translate-x-1" />
               </Button>
             )}

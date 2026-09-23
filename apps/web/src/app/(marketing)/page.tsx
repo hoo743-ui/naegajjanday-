@@ -1,3 +1,4 @@
+import { BrandIntro } from "@/components/landing/BrandIntro";
 import { Differentiators } from "@/components/landing/Differentiators";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { HERO_INTRO_GATE, Hero } from "@/components/landing/Hero";
@@ -16,8 +17,9 @@ import { TabBar } from "@/components/layout/TabBar";
 export default function LandingPage() {
   return (
     <>
-      {/* 첫 페인트 전에 랜딩 시퀀스를 틀지 정한다 (이번 세션에 봤음 · 모션 최소화 · 자동화 브라우저면 건너뜀, docs/32) */}
+      {/* 첫 페인트 전에 브랜드 인트로(내가 → 짠 → 데이)를 틀지 정한다 (이번 세션에 봤음 · 모션 최소화 · 자동화 브라우저면 건너뜀, docs/38) */}
       <script dangerouslySetInnerHTML={{ __html: HERO_INTRO_GATE }} />
+      <BrandIntro />
       <SiteHeader overlay />
       <main id="main">
         <Hero />

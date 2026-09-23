@@ -50,7 +50,7 @@ export function LocalCard({ local, focus, onPick, busy, onShow }: LocalCardProps
               );
               const shape = cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-body-sm",
-                on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-ink",
+                on ? "border-tomato bg-tomato text-white" : "border-line bg-white text-ink",
               );
               return (
                 <li key={s.word}>

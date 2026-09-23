@@ -6,6 +6,11 @@
    값은 docs/21 "조용한 영수증"이 정본이다: 따뜻한 종이 · 깊은 잉크 · 돈에만 쓰는 금색.
    ───────────────────────────────────────────────────────────── */
 :root {
+  /* 토마토 레드 (2026-09-23 창업자 결정): 주 행동(CTA) · 선택된 상태 · 스탬프. 파랑은 지도 경로 · 링크에만 남는다.
+     흰 글자 대비 4.56:1(AA). deep 은 호버 · 종이 위 글자(5.5:1), soft 는 옅은 호버 · 선택 배경 */
+  --tomato: #d63f28;
+  --tomato-deep: #b93420;
+  --tomato-soft: #fde9e4;
   --blue: #4f8cff;
   --blue-deep: #2a5bd7;
   --blue-soft: #eaf1ff;
@@ -64,7 +69,7 @@
   --card-foreground: var(--ink);
   --popover: #ffffff;
   --popover-foreground: var(--ink);
-  --primary: var(--blue-deep);
+  --primary: var(--tomato);
   --primary-foreground: #ffffff;
   --secondary: #f3eee5;
   --secondary-foreground: var(--ink-2);
@@ -146,6 +151,9 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
+  --color-tomato: var(--tomato);
+  --color-tomato-deep: var(--tomato-deep);
+  --color-tomato-soft: var(--tomato-soft);
   --color-blue: var(--blue);
   --color-blue-deep: var(--blue-deep);
   --color-blue-soft: var(--blue-soft);
@@ -344,8 +352,9 @@
     transform: scale(0.975);
     transition-duration: var(--dur-1);
   }
+  /* 키보드 초점: 어떤 바탕 · 어떤 선택 색 위에서도 보이는 잉크 두 줄 */
   :focus-visible {
-    outline: 2px solid var(--blue);
+    outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
   /* 얇고 조용한 스크롤바 */
@@ -359,7 +368,8 @@
     width: 100%;
     height: 10px;
     border-radius: 10px;
-    background: linear-gradient(90deg, var(--blue-deep), #7f95ec);
+    /* 고른 만큼만 채운다(--fill 은 쓰는 쪽이 준다, 없으면 전부) → 막대만 봐도 얼마를 골랐는지 보인다 */
+    background: linear-gradient(90deg, var(--tomato) var(--fill, 100%), #e6dfd2 var(--fill, 100%));
     outline-offset: 6px;
   }
   input[type="range"].jj-range::-webkit-slider-thumb {
@@ -368,8 +378,8 @@
     height: 28px;
     border-radius: 50%;
     background: #fff;
-    border: 3px solid var(--blue-deep);
-    box-shadow: 0 4px 12px rgba(42, 91, 215, 0.3);
+    border: 3px solid var(--tomato);
+    box-shadow: 0 4px 12px rgba(214, 63, 40, 0.28);
     cursor: grab;
   }
   input[type="range"].jj-range::-moz-range-thumb {
@@ -377,7 +387,7 @@
     height: 24px;
     border-radius: 50%;
     background: #fff;
-    border: 3px solid var(--blue-deep);
+    border: 3px solid var(--tomato);
     cursor: grab;
   }
 }
@@ -848,114 +858,6 @@
     node-breathe 4.8s ease-in-out calc(var(--t0) + 1.2s) infinite;
 }
 
-/* 히어로의 장면 (docs/33 · HERO BACKGROUND): 서울은 카드가 아니라 공간이다. 가장자리는 종이로 번진다 — 사진이 시작되는 세로 경계가 없다.
-   좁은 화면: 히어로 아래쪽(영수증 자리)에만, 위아래가 종이로 번진다. 넓은 화면: 오른쪽에 붙고 왼쪽 36%까지는 종이 그대로(글이 먼저 읽힌다). */
-.hero-scene {
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent 0%, #000 28%, #000 84%, transparent 100%),
-    linear-gradient(to right, transparent 0%, #000 26%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to bottom, transparent 0%, #000 28%, #000 84%, transparent 100%),
-    linear-gradient(to right, transparent 0%, #000 26%);
-  mask-composite: intersect;
-}
-@media (min-width: 1024px) {
-  .hero-scene {
-    -webkit-mask-image:
-      linear-gradient(to right, transparent 0%, transparent 36%, #000 62%),
-      linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(to right, transparent 0%, transparent 36%, #000 62%),
-      linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-    mask-composite: intersect;
-  }
-}
-/* 사진을 그대로 진하게 두지 않는다: 채도 · 대비를 조금 낮추고 종이 톤으로 밝힌다. 흐려서 죽지는 않게 */
-.hero-scene-img {
-  filter: saturate(0.86) contrast(0.95) brightness(1.03);
-  opacity: 0.9;
-}
-/* 오늘의 정거장: 그림 속 지도 핀 위의 작은 잉크 고리. 네온 · 빛 번짐 없이 */
-.scene-stop {
-  fill: var(--paper);
-  stroke: var(--ink);
-  stroke-width: 3;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-/* 랜딩 첫 방문의 시퀀스 (약 2.8초, 한 세션에 한 번 · docs/33): 종이 → 서울이 천천히 드러남 → 지도 위 정거장이 차례로 놓임 →
-   오늘 쓸 돈이 세어짐 → 오늘의 경로가 그려짐 → 영수증이 위에서부터 출력 → 짠이 → 행동. 덮개 화면이 아니라 히어로 자신이 이 순서로 놓인다.
-   게이트(Hero.tsx HERO_INTRO_GATE)가 첫 페인트 전에 html[data-intro=play] 를 단다. 애니메이션이 없어도 화면은 완성돼 있다. */
-html[data-intro="play"] .hero-intro [data-beat="type"] {
-  animation: quiet-in 0.9s var(--motion-out) 0.08s both;
-}
-html[data-intro="play"] .hero-intro [data-beat="scene"] {
-  animation: scene-in 1.4s var(--motion-out) 0.1s both;
-}
-html[data-intro="play"] .hero-intro .scene-stop {
-  animation: stop-in 0.36s var(--motion-out) both;
-  animation-delay: calc(0.7s + var(--i, 0) * 160ms);
-}
-html[data-intro="play"] .hero-intro [data-beat="money"] {
-  animation: quiet-in 0.6s var(--motion-out) 0.5s both;
-}
-html[data-intro="play"] .hero-intro .day-route {
-  --t0: 1000ms;
-  --step: 160ms;
-}
-html[data-intro="play"] .hero-intro [data-beat="receipt"] {
-  animation: print-down 0.8s var(--motion-in-out) 1.55s both;
-}
-html[data-intro="play"] .hero-intro [data-beat="jjani"] {
-  animation: quiet-in 0.5s var(--motion-out) 2.2s both;
-}
-html[data-intro="play"] .hero-intro [data-beat="act"] {
-  animation: quiet-in 0.5s var(--motion-out) 2.3s both;
-}
-@keyframes scene-in {
-  from {
-    opacity: 0;
-    transform: scale(1.015);
-  }
-}
-/* 층의 깊이는 눈치채지 못할 만큼만: 스크롤 800px 동안 배경 2px · 정거장 4px · 영수증 -12px. 지원하는 브라우저에서만, 모션 최소화면 없음 */
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .hero-scene {
-      animation: drift-2 linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 800px;
-    }
-    .hero-scene-stops {
-      animation: drift-4 linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 800px;
-    }
-    .hero-par-fg {
-      animation: drift-up linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 800px;
-    }
-  }
-}
-@keyframes drift-2 {
-  to {
-    transform: translateY(2px);
-  }
-}
-@keyframes drift-4 {
-  to {
-    transform: translateY(4px);
-  }
-}
-@keyframes drift-up {
-  to {
-    transform: translateY(-12px);
-  }
-}
 /* 기다리는 동안 (JjaniLoader): 경로의 점이 차례로 켜지고 영수증 줄이 찍혔다 옅어진다. 2.4초 한 바퀴, 조용히 */
 .loader-node {
   animation: loader-node 2.4s var(--motion-in-out) infinite both;
@@ -1044,6 +946,433 @@ html[data-intro="play"] .hero-intro [data-beat="act"] {
 /* 낮은 화면의 히어로 제목: 글자 계단(text-display-xl)을 화면 높이로도 묶는다 — 세 줄이 첫 화면의 절반을 넘지 않게 */
 @media (min-width: 64rem) and (max-height: 820px) {
   .hero-title {
-    font-size: clamp(38px, 7.2svh, 64px);
+    font-size: clamp(28px, 5.4svh, 40px);
+  }
+}
+
+/* ── 워드마크 "내가 · 짠 · 데이" (components/brand/Wordmark.tsx) ───────────────────────── */
+.wordmark {
+  --wm: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12em;
+  font-family: var(--font-sans);
+  font-size: var(--wm);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.wordmark-sm {
+  --wm: 20px;
+}
+.wordmark-md {
+  --wm: 28px;
+}
+.wordmark-lg {
+  --wm: clamp(44px, 9vw, 72px);
+}
+/* 내가: 손으로 고른 조건 칩 */
+.wordmark-nae {
+  display: inline-block;
+  border: 0.06em solid var(--ink);
+  border-radius: 0.28em;
+  padding: 0.08em 0.18em 0.1em;
+  font-size: 0.78em;
+  font-weight: 700;
+  background: var(--paper);
+}
+/* 짠: 토마토 도장 — 살짝 기울어 찍혔다 */
+.wordmark-jjan {
+  display: inline-grid;
+  place-items: center;
+  width: 1.18em;
+  height: 1.18em;
+  border-radius: 0.3em;
+  background: var(--tomato);
+  color: #fff;
+  font-size: 0.92em;
+  transform: rotate(-6deg);
+  box-shadow: inset 0 0 0 0.07em rgba(255, 255, 255, 0.55);
+}
+/* 데이: 아래로 하루 타임라인이 이어진다 */
+.wordmark-day {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.2em;
+}
+.wordmark-line {
+  position: absolute;
+  left: 0.04em;
+  right: 0.04em;
+  bottom: -0.04em;
+  width: calc(100% - 0.08em);
+  height: 0.16em;
+  overflow: visible;
+}
+.wordmark-line line {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-dasharray: 2 2.5;
+}
+.wordmark-line circle {
+  fill: var(--ink);
+}
+.wordmark-line circle:last-child {
+  fill: var(--tomato);
+}
+
+/* ── 히어로 "내가 · 짠 · 데이" (Hero.tsx, docs/38) ─────────────────────────────── */
+/* 종이 위의 옅은 동네 지도: 골목 · 큰길 · 역 주변 동선을 닮은 추상 선. 글자 대비를 해치지 않게 아주 옅게, 좁은 화면은 더 옅게 */
+.paper-map {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360' viewBox='0 0 480 360' fill='none' stroke='%2310192e' stroke-linecap='round'%3E%3Cpath d='M-10 70 C80 60 120 110 210 100 S360 40 490 70' stroke-width='3' opacity='.07'/%3E%3Cpath d='M40 -10 C60 90 30 170 90 250 S150 330 140 370' stroke-width='2' opacity='.06'/%3E%3Cpath d='M300 -10 L280 120 L330 210 L310 370' stroke-width='2' opacity='.06'/%3E%3Cpath d='M-10 230 L120 215 L260 250 L490 225' stroke-width='1.5' opacity='.05' stroke-dasharray='5 7'/%3E%3Cpath d='M170 130 L250 150 L240 205' stroke-width='1.5' opacity='.06' stroke-dasharray='3 6'/%3E%3Ccircle cx='330' cy='210' r='6' stroke-width='2' opacity='.08'/%3E%3Ccircle cx='90' cy='250' r='4' stroke-width='2' opacity='.07'/%3E%3C/svg%3E");
+  background-size: 480px 360px;
+}
+@media (max-width: 40rem) {
+  .paper-map {
+    background-image: none;
+  }
+}
+/* 제목 속 "짠!": 토마토 도장이 찍힌 한 낱말 */
+.hero-jjan {
+  display: inline-block;
+  padding: 0 0.16em;
+  border-radius: 0.18em;
+  background: var(--tomato);
+  color: #fff;
+  transform: rotate(-3deg);
+}
+/* "하루가 나와요.": 아래로 하루의 점선 */
+.hero-day {
+  background-image: radial-gradient(circle, var(--ink) 1.6px, transparent 2px);
+  background-size: 10px 4px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  padding-bottom: 0.08em;
+}
+/* 영수증 위 상태 도장 — "예산 안" / "초과". 색만이 아니라 글자로 말한다 */
+.hero-stamp {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border: 2.5px solid var(--tomato);
+  border-radius: 50%;
+  color: var(--tomato-deep);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  transform: rotate(-12deg);
+  background: rgba(253, 233, 228, 0.55);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.7), inset 0 0 0 4.5px var(--tomato);
+  pointer-events: none;
+}
+.hero-stamp.is-over {
+  border-style: dashed;
+}
+
+/* ── 브랜드 인트로 "내가 → 짠 → 데이" (BrandIntro.tsx, 약 3.6초 · 한 세션에 한 번) ─────────────────
+   게이트가 첫 페인트 전에 html[data-intro=play] 를 달았을 때만 보인다. 시간표는 전부 여기 — 스크립트가 늦게 붙어도 제 시간에 돈다.
+   0.05s 내가(조건 칩이 톡톡) → 0.95s 짠(도장 · 영수증 인쇄 · 합계) → 1.85s 데이(시간표 · 남은 돈 도장) → 2.85s 워드마크로 모임 → 3.25s 걷힘 */
+.brand-intro {
+  display: none;
+}
+html[data-intro="play"] .brand-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px 20px;
+  background-color: var(--paper);
+  animation: bi-out 0.4s var(--motion-in-out) 3.25s forwards;
+}
+html[data-intro="play"] body {
+  overflow: hidden;
+}
+.brand-intro-skip {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: 16px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+.brand-intro-skip:hover {
+  background: rgba(16, 25, 46, 0.06);
+  color: var(--ink);
+}
+.brand-intro-stage {
+  grid-area: 1 / 1;
+  display: grid;
+  width: min(920px, 100%);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 36px;
+  align-items: start;
+  animation: bi-merge 0.35s var(--motion-in-out) 2.85s forwards;
+}
+.brand-intro-end {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  opacity: 0;
+  animation: bi-end 0.45s var(--motion-out) 2.95s forwards;
+}
+.brand-intro-end p {
+  color: var(--ink-2);
+  font-size: 16px;
+  font-weight: 600;
+}
+.bi-col {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  opacity: 0;
+  animation: bi-in 0.35s var(--motion-out) forwards;
+}
+.bi-nae {
+  animation-delay: 0.05s;
+}
+.bi-jjan {
+  animation-delay: 0.95s;
+}
+.bi-day {
+  animation-delay: 1.85s;
+}
+.bi-word {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.bi-cap,
+.bi-left {
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* 내가: 조건 칩이 손으로 고른 듯 톡톡 */
+.bi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 240px;
+}
+.bi-chip {
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0;
+  animation: bi-pop 0.32s var(--motion-spring) forwards;
+  animation-delay: calc(0.25s + var(--i) * 0.12s);
+}
+/* 짠: 도장이 찍히는 짧은 타격 */
+.bi-stamp-word {
+  animation: bi-snap 0.3s var(--motion-spring) 0.95s both;
+}
+.bi-receipt {
+  width: 220px;
+  border-radius: 6px;
+  background: #fff;
+  padding: 14px 16px 12px;
+  box-shadow: 0 10px 22px rgba(40, 32, 20, 0.1);
+  font-size: 14px;
+}
+.bi-receipt ol {
+  display: grid;
+  gap: 6px;
+}
+.bi-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+  clip-path: inset(0 100% 0 0);
+  animation: bi-print 0.22s linear forwards;
+  animation-delay: calc(1.2s + var(--i) * 0.12s);
+}
+.bi-leader {
+  flex: 1;
+  border-bottom: 1.5px dotted rgba(16, 25, 46, 0.3);
+}
+.bi-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1.5px dashed rgba(16, 25, 46, 0.35);
+  font-weight: 700;
+  opacity: 0;
+  animation: bi-in 0.25s var(--motion-out) 1.75s forwards;
+}
+/* 데이: 영수증이 하루의 시간표로 */
+.bi-timeline {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding-left: 4px;
+}
+.bi-timeline::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 9px;
+  border-left: 2px dashed rgba(16, 25, 46, 0.3);
+  transform-origin: top;
+  transform: scaleY(0);
+  animation: bi-grow 0.5s var(--motion-out) 2s forwards;
+}
+.bi-stop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0;
+  animation: bi-in 0.25s var(--motion-out) forwards;
+  animation-delay: calc(2.05s + var(--i) * 0.12s);
+}
+.bi-stop time {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.bi-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.bi-stop:first-child .bi-dot {
+  background: var(--ink);
+}
+.bi-left {
+  border: 2px solid var(--tomato);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--tomato-deep);
+  transform: rotate(-4deg);
+  opacity: 0;
+  animation: bi-snap 0.3s var(--motion-spring) 2.6s forwards;
+}
+.bi-left b {
+  font-weight: 800;
+}
+@keyframes bi-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bi-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-6deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bi-snap {
+  from {
+    opacity: 0;
+    transform: scale(1.7) rotate(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-4deg);
+  }
+}
+@keyframes bi-print {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes bi-grow {
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes bi-merge {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+@keyframes bi-end {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bi-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+/* 좁은 화면: 세 칸을 위에서 아래로, 조금 작게 */
+@media (max-width: 47.99rem) {
+  .brand-intro-stage {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .bi-col {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+    gap: 6px 14px;
+  }
+  .bi-word {
+    font-size: 30px;
+    grid-row: span 2;
+  }
+  .bi-cap {
+    display: none;
+  }
+  .bi-chips {
+    justify-content: flex-start;
+    max-width: none;
+  }
+  .bi-receipt {
+    width: 100%;
+    max-width: 240px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .bi-timeline {
+    grid-template-columns: repeat(2, auto);
+    gap: 6px 14px;
+  }
+  .bi-timeline::before {
+    display: none;
   }
 }

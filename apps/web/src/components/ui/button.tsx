@@ -20,7 +20,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         // 브랜드 CTA — index.html 의 .btn-primary / .btn-ghost / .btn-white
         // 행동하는 자리의 버튼 (docs/31 §10): 단색 파랑. 광택 · 들림 · 파란 그림자는 쓰지 않는다
-        brand: "bg-blue-deep font-bold tracking-tight text-white hover:bg-[#2451c4]",
+        brand: "bg-tomato font-bold tracking-tight text-white hover:bg-tomato-deep",
         soft: "bg-soft font-bold tracking-tight text-ink-2 hover:bg-line",
         white:
           "bg-white font-bold tracking-tight text-blue-deep hover:bg-blue-soft",

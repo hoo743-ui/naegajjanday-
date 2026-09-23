@@ -49,12 +49,12 @@ import type { PlanValues } from "./schema";
 // 고르는 칸: 떠오르는 카드가 아니라 테두리 하나 (docs/31 §6). 고르면 파랗게 찍힌다
 const choice = "relative flex w-full cursor-pointer items-start gap-3.5 rounded-lg border-[1.5px] p-4 text-left transition-colors duration-200";
 const choiceOff = "border-line hover:border-ink-2";
-const choiceOn = "border-blue-deep bg-blue-soft";
+const choiceOn = "border-tomato bg-tomato-soft";
 const field = "border-t-[1.5px] border-dashed border-ink/20 pt-6";
 
 function Tick({ on }: { on: boolean }) {
   return (
-    <span aria-hidden className={cn("ml-auto grid size-6 shrink-0 place-items-center rounded-full border", on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+    <span aria-hidden className={cn("ml-auto grid size-6 shrink-0 place-items-center rounded-full border", on ? "border-tomato bg-tomato text-white" : "border-line bg-white text-transparent")}>
       <Check className="size-3.5" />
     </span>
   );
@@ -95,8 +95,8 @@ function DayQuestion() {
             <button key={p.value} type="button" role="checkbox" aria-checked={on} onClick={() => toggle(p.value)} className={cn(choice, "flex-col gap-1.5 p-3.5 sm:flex-row sm:gap-3.5 sm:p-4", on ? choiceOn : choiceOff)}>
               {/* 좁은 화면: 체크 동그라미 대신 아이콘 자리에 체크 — 두 칸에 이름이 눌리지 않게 */}
               <span className="flex w-full items-center gap-2 sm:contents">
-                {on ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep sm:hidden" /> : null}
-                <p.icon aria-hidden className={cn("size-5 shrink-0 text-blue-deep sm:mt-0.5", on && "max-sm:hidden")} />
+                {on ? <Check aria-hidden className="size-5 shrink-0 text-tomato-deep sm:hidden" /> : null}
+                <p.icon aria-hidden className={cn("size-5 shrink-0 text-tomato-deep sm:mt-0.5", on && "max-sm:hidden")} />
                 <b className="text-body font-bold text-ink sm:hidden">{p.label}</b>
               </span>
               <span className="min-w-0">
@@ -111,7 +111,7 @@ function DayQuestion() {
         })}
       </div>
       {both ? (
-        <p className="border-l-2 border-blue-deep pl-3 text-body-sm text-ink-2" aria-live="polite">
+        <p className="border-l-2 border-tomato pl-3 text-body-sm text-ink-2" aria-live="polite">
           여유롭게 + 알차게: 들르는 곳 수는 그대로 두고, 한 곳 한 곳을 더 알차게 골라요.
         </p>
       ) : null}
@@ -156,7 +156,7 @@ function MoveQuestion() {
               }}
               className={cn(choice, "items-center py-3.5", on ? choiceOn : choiceOff)}
             >
-              <m.icon aria-hidden className="size-5 shrink-0 text-blue-deep" />
+              <m.icon aria-hidden className="size-5 shrink-0 text-tomato-deep" />
               <span className="min-w-0">
                 <b className="block text-body font-bold text-ink">{m.label}</b>
                 <span className="block text-body-sm text-muted-foreground">{m.hint}</span>
@@ -182,7 +182,7 @@ function MoveQuestion() {
                 onClick={() => setValue("transport", t.value, { shouldDirty: true })}
                 className={cn("flex min-h-11 flex-col items-center gap-0.5 rounded-lg border-[1.5px] px-2 py-2.5 text-center transition-colors", on ? choiceOn : choiceOff)}
               >
-                <t.icon aria-hidden className="size-4 text-blue-deep" />
+                <t.icon aria-hidden className="size-4 text-tomato-deep" />
                 <b className="text-body-sm font-bold text-ink">{t.label}</b>
                 <span className="text-caption text-muted-foreground">{t.hint}</span>
               </button>
@@ -235,9 +235,9 @@ function WishQuestion() {
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggle(w.value)}
-                className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] px-4 text-body font-semibold transition-colors", on ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line text-ink hover:border-ink-2")}
+                className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] px-4 text-body font-semibold transition-colors", on ? "border-tomato bg-tomato-soft text-tomato-deep" : "border-line text-ink hover:border-ink-2")}
               >
-                {on ? <Check aria-hidden className="size-4" /> : <w.icon aria-hidden className="size-4 text-blue-deep" />}
+                {on ? <Check aria-hidden className="size-4" /> : <w.icon aria-hidden className="size-4 text-tomato-deep" />}
                 {w.label}
               </button>
             );
@@ -253,7 +253,7 @@ function WishQuestion() {
           if (!open) track("advanced_preference_opened", {});
           setOpen(!open);
         }}
-        className="-ml-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-body-sm font-semibold text-blue-deep"
+        className="-ml-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-body-sm font-semibold text-tomato-deep"
       >
         {open ? <ChevronDown aria-hidden className="size-4" /> : <Plus aria-hidden className="size-4" />}
         {open ? "자세한 설정 접기" : "더 자세히 (비 · 술 한잔 · 야구 · 동네 명물 · 세부 취향)"}
@@ -267,12 +267,12 @@ function Toggle({ on, onChange, icon: Icon, title, hint }: { on: boolean; onChan
   return (
     <label className="flex cursor-pointer items-center gap-3.5 border-b border-dashed border-line py-3.5 last:border-b-0">
       <input type="checkbox" className="peer sr-only" checked={on} onChange={(e) => onChange(e.target.checked)} />
-      <Icon aria-hidden className="size-5 shrink-0 text-blue-deep" />
+      <Icon aria-hidden className="size-5 shrink-0 text-tomato-deep" />
       <span className="min-w-0 flex-1">
         <b className="block text-body font-semibold text-ink">{title}</b>
         <span className="block text-caption text-muted-foreground">{hint}</span>
       </span>
-      <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border peer-focus-visible:ring-2 peer-focus-visible:ring-blue-deep", on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-white text-transparent")}>
+      <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border peer-focus-visible:ring-2 peer-focus-visible:ring-tomato", on ? "border-tomato bg-tomato text-white" : "border-line bg-white text-transparent")}>
         <Check className="size-3.5" />
       </span>
     </label>
@@ -328,7 +328,7 @@ function Details() {
             {[{ value: "", label: "짠이가 알아서", hint: "" }, ...specialties.map((s) => ({ value: s.word, label: s.word, hint: `${s.count}곳` })), { value: FOCUS_OFF, label: "상관없어요", hint: "" }].map((o) => {
               const on = focus === o.value;
               return (
-                <button key={o.value || "auto"} type="button" role="radio" aria-checked={on} onClick={() => setValue("focus", o.value, { shouldDirty: true })} className={cn("inline-flex min-h-11 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-body-sm font-semibold", on ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line text-ink hover:border-ink-2")}>
+                <button key={o.value || "auto"} type="button" role="radio" aria-checked={on} onClick={() => setValue("focus", o.value, { shouldDirty: true })} className={cn("inline-flex min-h-11 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-body-sm font-semibold", on ? "border-tomato bg-tomato-soft text-tomato-deep" : "border-line text-ink hover:border-ink-2")}>
                   {o.label}
                   {o.hint ? <span className="tabular text-caption text-muted-foreground">{o.hint}</span> : null}
                 </button>
@@ -341,7 +341,7 @@ function Details() {
       <section>
         <h3 className="text-body-sm font-semibold text-ink-2">세부 취향</h3>
         <p className="mt-1 mb-2 text-caption text-muted-foreground">
-          한 번 누르면 <b className="text-blue-deep">좋아요</b>, 한 번 더 누르면 <b className="text-pink-deep">피할래요</b>, 또 누르면 해제돼요.
+          한 번 누르면 <b className="text-tomato-deep">좋아요</b>, 한 번 더 누르면 <b className="text-pink-deep">피할래요</b>, 또 누르면 해제돼요.
         </p>
         {tags.isPending ? (
           <div className="flex flex-wrap gap-2" aria-busy="true">
@@ -362,7 +362,7 @@ function Details() {
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
                     <span>
                       {group}
-                      {picked > 0 ? <span className="tabular ml-2 text-caption font-semibold text-blue-deep">{picked}개 고름</span> : null}
+                      {picked > 0 ? <span className="tabular ml-2 text-caption font-semibold text-tomato-deep">{picked}개 고름</span> : null}
                     </span>
                     <ChevronDown aria-hidden className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
                   </summary>
@@ -377,7 +377,7 @@ function Details() {
                           aria-label={`${tag.name}: ${state === "like" ? "좋아요" : state === "avoid" ? "피할래요" : "선택 안 함"}`}
                           className={cn(
                             "rounded-full border-[1.5px] px-3.5 py-1.5 text-body-sm font-semibold transition-colors",
-                            state === "like" && "border-blue-deep bg-blue-soft text-blue-deep",
+                            state === "like" && "border-tomato bg-tomato-soft text-tomato-deep",
                             state === "avoid" && "border-pink-deep bg-pink-soft text-pink-deep line-through",
                             state === "none" && "border-line text-ink-2 hover:border-ink-2",
                           )}
@@ -435,7 +435,7 @@ function Understood() {
           const Icon = LINE_ICON[line.kind] ?? Check;
           return (
             <li key={`${line.kind}-${line.key}`} className="flex items-center gap-3 py-2.5">
-              <Icon aria-hidden className={cn("size-4 shrink-0", line.kind === "budget" ? "text-gold-ink" : "text-blue-deep")} />
+              <Icon aria-hidden className={cn("size-4 shrink-0", line.kind === "budget" ? "text-gold-ink" : "text-tomato-deep")} />
               <span className={cn("text-body text-ink", line.kind === "budget" ? "tabular font-bold text-gold-ink" : "font-semibold")}>{line.text}</span>
             </li>
           );

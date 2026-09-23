@@ -57,9 +57,9 @@ export function HotPlaces({ regionSlug, partySize }: { regionSlug: string; party
                 track("hot_place_opened", { region: regionSlug, place_id: p.id, rank: p.rank });
                 setOpen(p);
               }}
-              className="flex w-full items-center gap-3 rounded-2xl border border-line p-2.5 text-left transition-colors hover:border-blue-deep hover:bg-blue-soft"
+              className="flex w-full items-center gap-3 rounded-2xl border border-line p-2.5 text-left transition-colors hover:border-tomato hover:bg-tomato-soft"
             >
-              <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-paper-2 text-blue-deep">
+              <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-paper-2 text-tomato-deep">
                 {p.thumbnail_url ? <Image src={p.thumbnail_url} alt="" fill sizes="48px" unoptimized className="object-cover" /> : <Navigation aria-hidden className="size-5" />}
               </span>
               <span className="min-w-0 flex-1">

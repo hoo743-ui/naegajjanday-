@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Money } from "./Money";
+import { Wordmark } from "./Wordmark";
 
 export interface ReceiptItem {
   /** 순번 뒤에 붙는 역할: 식사 · 카페 · 산책 … */
@@ -47,7 +48,9 @@ export function Receipt({ heading, caption, items, budget, footer, size = "md", 
   return (
     <div className={cn("receipt-wrap", className)}>
       <div className={cn("receipt receipt-print", lg ? "px-6 pt-8 pb-7 sm:px-9 sm:pt-9" : "px-6 pt-7 pb-6 sm:px-7")}>
-        <p className="text-center font-round text-h3 text-ink">내가짠데이</p>
+        <p className="text-center">
+          <Wordmark size="sm" />
+        </p>
         <p className="tabular mt-1 text-center text-caption font-semibold text-muted-foreground">{heading}</p>
         {caption ? <p className="mt-0.5 text-center text-caption text-muted-foreground">{caption}</p> : null}
 

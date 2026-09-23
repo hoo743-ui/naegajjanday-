@@ -68,7 +68,7 @@ export function MeetTimeCard() {
               min={toDayString(now)}
               value={day || toDayString(now)}
               onChange={(e) => pickDay(e.target.value)}
-              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body-sm font-extrabold", day && !days.some((d) => d.value === day) ? "border-blue-deep" : "border-input")}
+              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body-sm font-extrabold", day && !days.some((d) => d.value === day) ? "border-tomato" : "border-input")}
             />
           </div>
         </div>
@@ -100,7 +100,7 @@ export function MeetTimeCard() {
               step={600}
               value={startTime}
               onChange={(e) => setValue("start_time", e.target.value, opts)}
-              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body font-extrabold", startTime && !START_PRESETS.some((p) => p.time === startTime) ? "border-blue-deep" : "border-input")}
+              className={cn("tabular h-11 rounded-xl border-2 bg-white px-3 text-body font-extrabold", startTime && !START_PRESETS.some((p) => p.time === startTime) ? "border-tomato" : "border-input")}
             />
           </div>
         </div>

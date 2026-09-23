@@ -14,6 +14,7 @@ import type { Purpose } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
 import { cn } from "@/lib/utils";
+import { BudgetChip } from "@/components/brand/BudgetChip";
 import { HotPlaces } from "./HotPlaces";
 import { MeetTimeCard } from "./MeetTimeCard";
 import { RegionPicker } from "./RegionPicker";
@@ -21,7 +22,7 @@ import type { PlanValues } from "./schema";
 
 // 고르는 칸 (docs/31 §6): 떠오르는 흰 카드가 아니라 종이 위에 그은 테두리 하나. 고르면 파랗게 찍힌다
 const optionCard =
-  "flex cursor-pointer items-center gap-3.5 rounded-lg border-[1.5px] border-line p-4 transition-colors duration-200 hover:border-ink-2 peer-checked:border-blue-deep peer-checked:bg-blue-soft peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue";
+  "flex cursor-pointer items-center gap-3.5 rounded-lg border-[1.5px] border-line p-4 transition-colors duration-200 hover:border-ink-2 peer-checked:border-tomato peer-checked:bg-tomato-soft peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue";
 
 function FieldError({ name }: { name: keyof PlanValues }) {
   const { formState } = useFormContext<PlanValues>();
@@ -61,7 +62,7 @@ export function RegionStep() {
           <h3 className="text-body-sm font-semibold text-muted-foreground">이 순서로 들러요</h3>
           <ol className="mt-2.5 flex flex-wrap items-center gap-2">
             {before.map((slug, i) => (
-              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-blue-deep bg-blue-soft py-1.5 pr-1.5 pl-3 text-body-sm font-semibold text-blue-deep">
+              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-tomato bg-tomato-soft py-1.5 pr-1.5 pl-3 text-body-sm font-semibold text-tomato-deep">
                 <span className="tabular">{i + 1}.</span> <RegionName slug={slug} />
                 <button
                   type="button"
@@ -82,7 +83,7 @@ export function RegionStep() {
       ) : null}
       <RegionPicker value={selected} onChange={(next) => setValue("region", next, { shouldValidate: true, shouldDirty: true })} />
       {canAdd ? (
-        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-body font-bold text-ink-2 hover:border-blue-deep hover:text-blue-deep">
+        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-body font-bold text-ink-2 hover:border-tomato hover:text-tomato-deep">
           <Plus aria-hidden className="size-4" />
           {selectedName}에 이어 다른 동네도 들르기
         </button>
@@ -133,11 +134,11 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
               }}
             />
             <span className={cn(optionCard, "items-start")}>
-              <PurposeIcon icon={p.icon} className="mt-1 size-6 shrink-0 text-blue-deep" />
+              <PurposeIcon icon={p.icon} className="mt-1 size-6 shrink-0 text-tomato-deep" />
               <span className="min-w-0 flex-1">
                 <b className="block text-body-lg font-extrabold">{p.name}</b>
                 {p.description ? <span className="block text-body-sm text-muted-foreground">{p.description}</span> : null}
-                <span className="tabular mt-1 block text-caption font-extrabold text-blue-deep">
+                <span className="tabular mt-1 block text-caption font-extrabold text-tomato-deep">
                   1인 {wonCompact(p.budget_range.min)} ~ {wonCompact(p.budget_range.max)}
                 </span>
               </span>
@@ -167,7 +168,7 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
                     onClick={() => setValue("purposes_extra", on ? extra.filter((c) => c !== p.code) : [...extra, p.code], { shouldDirty: true })}
                     className={cn(
                       "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-body-sm font-semibold disabled:opacity-40",
-                      on ? "border-blue-deep bg-blue-deep text-white" : "border-line bg-soft text-ink hover:border-blue-deep",
+                      on ? "border-tomato bg-tomato text-white" : "border-line bg-soft text-ink hover:border-tomato",
                     )}
                   >
                     <PurposeIcon icon={p.icon} className="size-4" />
@@ -205,7 +206,7 @@ function NightsCard() {
             role="radio"
             aria-checked={nights === o.value}
             onClick={() => setValue("nights", o.value, { shouldDirty: true })}
-            className={cn("rounded-2xl border-2 px-3 py-3 text-body font-extrabold", nights === o.value ? "border-blue-deep bg-blue-soft text-blue-deep" : "border-line bg-white text-ink-2 hover:border-blue-deep")}
+            className={cn("rounded-2xl border-2 px-3 py-3 text-body font-extrabold", nights === o.value ? "border-tomato bg-tomato-soft text-tomato-deep" : "border-line bg-white text-ink-2 hover:border-tomato")}
           >
             {o.label}
           </button>
@@ -285,6 +286,7 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           id={sliderId}
           type="range"
           className="jj-range"
+          style={{ "--fill": `${((Math.min(budget, sliderMax) - sliderMin) / Math.max(1, sliderMax - sliderMin)) * 100}%` } as React.CSSProperties}
           min={sliderMin}
           max={sliderMax}
           step={step}
@@ -301,28 +303,14 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="빠른 예산 선택">
             {QUICK.map((qk) => {
               const amount = Math.min(sliderMax, roundTo(qk.pick(range) * party, 1000));
-              const on = amount === budget;
-              return (
-                <button
-                  key={qk.label}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setBudget(amount)}
-                  className={cn(
-                    "tabular inline-flex min-h-11 items-center rounded-full px-4 text-body-sm font-extrabold transition-colors",
-                    on ? "bg-ink text-white" : "bg-soft text-ink-2 hover:bg-line",
-                  )}
-                >
-                  {qk.label} · {wonCompact(amount)}
-                </button>
-              );
+              return <BudgetChip key={qk.label} amount={wonCompact(amount)} hint={qk.label} selected={amount === budget} onSelect={() => setBudget(amount)} />;
             })}
           </div>
         ) : null}
 
         <p className="tabular mt-5 flex items-baseline justify-between rounded-2xl bg-soft px-4 py-3 text-body-sm font-bold text-ink-2" aria-live="polite">
           1인당
-          <b className="money text-price-sm text-blue-deep">{won(perPerson)}</b>
+          <b className="money text-price-sm text-tomato-deep">{won(perPerson)}</b>
         </p>
         <FieldError name="budget_total" />
       </section>

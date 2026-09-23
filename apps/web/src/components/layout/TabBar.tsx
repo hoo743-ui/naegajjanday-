@@ -90,7 +90,7 @@ export function TabBar() {
                   {/* 지금 있는 곳은 헤더 메뉴처럼 선 한 줄 (위쪽 가장자리) */}
                   {active && !primary ? <span aria-hidden className="absolute inset-x-[28%] top-0 h-[2px] rounded-full bg-ink md:hidden" /> : null}
                   {primary ? (
-                    <span className={cn("grid size-9 place-items-center rounded-full text-white shadow-soft transition-transform", active ? "bg-ink" : "bg-blue-deep")}>
+                    <span className={cn("grid size-9 place-items-center rounded-full text-white shadow-soft transition-transform", active ? "bg-ink" : "bg-tomato")}>
                       <Icon aria-hidden className="size-[18px]" />
                     </span>
                   ) : (
