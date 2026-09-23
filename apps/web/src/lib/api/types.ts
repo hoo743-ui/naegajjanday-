@@ -624,13 +624,6 @@ export interface ChatSession {
   created_at: string;
 }
 
-export type ChatStreamEvent =
-  | { event: "token"; data: { text: string } }
-  | { event: "tool_call"; data: { name: string; arguments?: Record<string, unknown> } }
-  | { event: "course"; data: Course }
-  | { event: "done"; data: { message_id?: string } }
-  | { event: "error"; data: ProblemDetails };
-
 // ── 관리자 ──────────────────────────────────────────────────
 // 여기 타입은 "화면이 쓰는 모양"이다. 실제 API(apps/api/app/schemas/admin.py)의 필드명·모양은 다르고,
 // `lib/api/admin.ts` 의 어댑터가 읽을 때(wire → 화면)·쓸 때(화면 → API 본문) 양쪽을 맞춘다.

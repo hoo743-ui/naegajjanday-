@@ -37,7 +37,6 @@
   --danger: #d6336c;
 
   --grad: linear-gradient(120deg, #2a5bd7 0%, #8d9df2 48%, #f5a58c 100%);
-  --grad-btn: linear-gradient(120deg, #2a5bd7, #6a84ee 58%, #f29a8e);
   --grad-soft: linear-gradient(120deg, #eef2fb 0%, #f4f0f8 50%, #fbeee8 100%);
   /* 그림자는 3단계만 쓴다: 놓여 있음(sm) → 떠 있음(기본) → 들어 올림(lg, hover·모달) */
   /* 머리카락 선(잉크 7%) + 아주 길고 옅은 그림자. 광원은 하나(위), 그림자 색은 종이처럼 따뜻하게 */
@@ -205,29 +204,12 @@
   --shadow-card: var(--shadow);
   --shadow-float: var(--shadow-lg);
 
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-page: page-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-dash: dash 1.4s linear infinite;
-  --animate-radar: radar 2.6s linear infinite;
   --animate-shimmer: shimmer 1.6s linear infinite;
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(16px); }
-  }
   /* opacity 만 — transform 을 쓰면 main 안의 position:fixed 하단 바가 전환 중에 튄다 */
   @keyframes page-in {
     from { opacity: 0; }
-  }
-  @keyframes dash {
-    to { stroke-dashoffset: -26; }
-  }
-  @keyframes radar {
-    to { transform: rotate(360deg); }
   }
   /* 영수증이 위에서 아래로 "출력"된다 → 줄이 하나씩 찍힌다 → 마지막에 남은 돈이 한 번 반짝인다 */
   @keyframes receipt-print {
@@ -301,21 +283,10 @@
     font-weight: 600;
     letter-spacing: -0.02em;
   }
-  /* 히어로: 명세는 700 이지만 Hahmlet 700 의 한글은 획이 뭉툭해져 고딕처럼 읽혔다(캡처로 확인) → 600, 강조 한 단어만 700 */
-  .font-serif.text-display-xl {
-    font-weight: 600;
-    letter-spacing: -0.025em;
-  }
   /* 로고 · 영수증 머리: Hahmlet 700 (docs/35 — Jua 대신) */
   .font-round {
     font-weight: 700;
     letter-spacing: -0.02em;
-  }
-  /* 히어로의 강조 한 단어(영수증): 색이 아니라 크기로 — 64 → 68px (1.0625em), 행간 1.08 */
-  .hero-em {
-    font-size: 1.0625em;
-    line-height: 1.08;
-    font-weight: 700;
   }
   h3, h4 {
     letter-spacing: 0;
@@ -433,17 +404,6 @@
   }
 }
 
-@utility gt {
-  background: var(--grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-@utility hl {
-  background: linear-gradient(180deg, transparent 62%, #ffe3ee 62%);
-}
-
 @utility bg-grad {
   background: var(--grad);
 }
@@ -476,13 +436,6 @@
   mask:
     radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 51% repeat-x,
     radial-gradient(circle at var(--tooth) 100%, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 100% / calc(var(--tooth) * 2) 51% repeat-x;
-}
-
-/* 위쪽 가장자리만 영수증 톱니로: 긴 영수증이 끝나는 자리(랜딩의 마지막 장면) */
-@utility tear-top {
-  --tooth: 10px;
-  -webkit-mask: radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 100% repeat-x;
-  mask: radial-gradient(circle at var(--tooth) 0, transparent calc(var(--tooth) * 0.62), #000 calc(var(--tooth) * 0.62 + 0.5px)) 0 0 / calc(var(--tooth) * 2) 100% repeat-x;
 }
 
 /* 마스크는 그림자까지 잘라 내므로, 그림자는 바깥 래퍼에 둔다 */
@@ -535,22 +488,6 @@
   height: 6px;
   border: 0;
   background: radial-gradient(circle, rgba(16, 25, 46, 0.2) 2.2px, transparent 2.8px) 0 50% / 14px 6px repeat-x;
-}
-
-/* 경로의 선: 들르는 곳(점) 사이를 잇는 세로 점선. 결과 화면의 일정 · 랜딩의 단계가 이 선 위에 선다 */
-@utility rail {
-  background: linear-gradient(to bottom, rgba(16, 25, 46, 0.22) 55%, transparent 0) 50% 0 / 2px 9px repeat-y;
-}
-
-@utility bg-soft-band {
-  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 14%, var(--paper-2) 86%, var(--paper) 100%);
-}
-
-@utility bg-premium {
-  background:
-    radial-gradient(520px 420px at 0% 0%, rgba(47, 107, 234, 0.55) 0, rgba(47, 107, 234, 0) 70%),
-    radial-gradient(520px 420px at 100% 100%, rgba(255, 111, 165, 0.42) 0, rgba(255, 111, 165, 0) 70%),
-    var(--navy);
 }
 
 /* 이름은 남았지만 유리 효과는 쓰지 않는다 (docs/21): 종이 위에 얹은 흰 종이 */
@@ -827,36 +764,6 @@
   box-shadow: 0 2px 6px rgba(20, 33, 61, 0.25);
 }
 
-/* ── 모션 언어 (docs/32): 움직이는 것은 돈 · 경로 · 영수증 · 짠이 넷뿐이다 ─────────────────────────
-   경로: 들르는 곳(점)이 차례로 놓이고 그 사이 선이 그려진다. 새 코스 · 새 예산이면 다시 그려진다(마운트될 때마다).
-   속성은 transform · opacity · clip-path 만 — 레이아웃을 흔들지 않는다. */
-.day-route {
-  --t0: 0ms;
-  --step: 90ms;
-}
-.day-route .route-dot {
-  animation: stop-in 0.28s var(--motion-out) both;
-  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step));
-}
-.day-route .route-text {
-  animation: quiet-in 0.4s var(--motion-out) both;
-  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step) + 60ms);
-}
-.day-route .route-seg {
-  animation: draw-down 0.5s var(--motion-in-out) both;
-  animation-delay: calc(var(--t0) + var(--i, 0) * var(--step) + 80ms);
-}
-@media (min-width: 640px) {
-  .day-route .route-seg {
-    animation-name: draw-across;
-  }
-}
-/* 출발점만 아주 느리게 숨 쉰다 (4.8초 한 번) — 오래 보고 있어도 피곤하지 않을 만큼 */
-.day-route .route-dot.is-start {
-  animation:
-    stop-in 0.28s var(--motion-out) both calc(var(--t0)),
-    node-breathe 4.8s ease-in-out calc(var(--t0) + 1.2s) infinite;
-}
 
 /* 기다리는 동안 (JjaniLoader): 경로의 점이 차례로 켜지고 영수증 줄이 찍혔다 옅어진다. 2.4초 한 바퀴, 조용히 */
 .loader-node {
@@ -890,44 +797,6 @@
   }
   100% {
     opacity: 0.25;
-  }
-}
-@keyframes quiet-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-@keyframes stop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-}
-@keyframes draw-down {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-}
-@keyframes draw-across {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-}
-/* 종이가 위에서 아래로 나온다: 잘린 채로 조금 내려오며 펼쳐진다 */
-@keyframes print-down {
-  from {
-    clip-path: inset(0 0 100% 0);
-    transform: translateY(-6px);
-  }
-}
-@keyframes node-breathe {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 25, 46, 0.16);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(16, 25, 46, 0);
   }
 }
 

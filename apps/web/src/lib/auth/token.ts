@@ -11,7 +11,6 @@ import type { TokenResponse } from "@/lib/api/types";
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/v1").replace(/\/$/, "");
 
 let accessToken: string | null = null;
-let expiresAt = 0;
 let inflight: Promise<string | null> | null = null;
 const listeners = new Set<(token: string | null) => void>();
 
@@ -43,14 +42,9 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-export function setAccessToken(token: string | null, expiresInSec = 900): void {
+export function setAccessToken(token: string | null): void {
   accessToken = token;
-  expiresAt = token ? Date.now() + expiresInSec * 1000 : 0;
   listeners.forEach((fn) => fn(token));
-}
-
-export function isAccessTokenFresh(skewMs = 30_000): boolean {
-  return accessToken !== null && Date.now() < expiresAt - skewMs;
 }
 
 export function subscribeToken(fn: (token: string | null) => void): () => void {
@@ -75,7 +69,7 @@ export function refreshAccessToken(): Promise<string | null> {
         return null;
       }
       const data = (await res.json()) as TokenResponse;
-      setAccessToken(data.access_token, data.expires_in);
+      setAccessToken(data.access_token);
       markSession(true);
       return data.access_token;
     } catch {
@@ -133,7 +127,7 @@ export async function passwordAuth(
   }
   if (!res.ok) return { ok: false, error: await parseErrorResponse(res) };
   const data = (await res.json()) as TokenResponse;
-  setAccessToken(data.access_token, data.expires_in);
+  setAccessToken(data.access_token);
   markSession(true);
   return { ok: true };
 }

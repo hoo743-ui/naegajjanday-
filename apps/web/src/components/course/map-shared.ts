@@ -282,24 +282,3 @@ export function layoutLeg(path: Pt[], from: Pt, to: Pt, pins: Pt[]): LegLayout {
 export function legChipHtml(label: string, color: string, angle: number) {
   return `<span class="jj-leg" style="--leg:${color}"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true" style="transform:rotate(${angle.toFixed(1)}deg)"><path d="M2 6h7M6 2.5 9.5 6 6 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${escapeHtml(label)}</span>`;
 }
-
-/** 한 줄로 온 경로를 스톱에 가장 가까운 꼭짓점에서 끊어 구간별로 나눈다 → 구간마다 도착 스톱의 색으로 칠한다 */
-export function splitByStops(path: LatLngTuple[], stops: Stop[]): LatLngTuple[][] {
-  if (path.length < 2 || stops.length < 2) return [path];
-  const cuts: number[] = [0];
-  for (let s = 1; s < stops.length - 1; s += 1) {
-    const stop = stops[s]!;
-    let best = cuts[cuts.length - 1]!;
-    let bestD = Infinity;
-    for (let i = best; i < path.length; i += 1) {
-      const d = (path[i]![0] - stop.place.lat) ** 2 + (path[i]![1] - stop.place.lng) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    cuts.push(best);
-  }
-  cuts.push(path.length - 1);
-  return cuts.slice(1).map((end, i) => path.slice(cuts[i]!, end + 1)).filter((seg) => seg.length > 1);
-}

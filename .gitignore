@@ -91,3 +91,6 @@ $RECYCLE.BIN/
 *.db-shm
 apps/api/data/eval/baselines/
 apps/web/visual-audit/
+# 검사 스크립트(e2e/*-audit.mjs · qa-pass)의 결과 캡처: 다시 돌리면 생긴다
+apps/web/*-audit/
+apps/web/qa-pass/

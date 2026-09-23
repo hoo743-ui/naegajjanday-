@@ -76,4 +76,3 @@ export const STEPS = [
   { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["pace", "style", "move_style", "transport", "wishes", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags"] },
 ] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
 
-export type StepKey = (typeof STEPS)[number]["key"];

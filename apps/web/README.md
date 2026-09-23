@@ -77,8 +77,7 @@ src/
 
 - **에러 → 짠이**: API 는 RFC 9457 problem+json 을 준다. `client.ts` 가 `ApiError(code)` 로 바꾸고 `mascot-copy.ts` 가 code 별 표정·문구·다음 행동을 고른다 (`BUDGET_TOO_LOW` → sorry + "예산 다시 정하기").
 - **인증**: access token 은 메모리에만, refresh 는 API 가 심는 HttpOnly 쿠키 `rt`. 401 이면 refresh 를 한 번(동시 요청은 하나로 합쳐서) 시도하고 재요청한다. 미들웨어는 쿠키 유무만 보는 낙관적 가드고, 실제 권한은 API 가 판단한다.
-- **모션**: Motion(`motion/react`) + GSAP. `prefers-reduced-motion` 이면 GSAP 타임라인을 만들지 않고, Motion 은 `MotionConfig reducedMotion="user"`, CSS 애니메이션은 전역 미디어쿼리로 끈다. 히어로는 데스크톱에서 pin + 스크럽(스크롤 전에는 자동 재생), 1024px 미만에서는 세 막을 세로로 쌓아 각자 자동 재생한다.
-- **Lottie**: `<LottiePlayer src="/lottie/coin-spin.json">` — JSON 과 lottie 런타임을 필요할 때만 받는다. `public/lottie/coin-spin.json` 은 직접 작성한 동전 회전 로더.
+- **모션**: Motion(`motion/react`) + CSS. `prefers-reduced-motion` 이면 Motion 은 `MotionConfig reducedMotion="user"`, CSS 애니메이션은 전역 미디어쿼리로 끈다. 브랜드 인트로(/intro)는 CSS 시간표로 돈다(docs/38 · 40).
 - **결과 화면의 점수 설명**: `ScoreBreakdown` 은 8개 피처의 적합도(f)를 막대로 보여 준다. 종합 점수는 목적별 가중치(w)를 곱한 합이라 막대 평균과 다르다는 점을 화면에 밝힌다.
 - **API 타입**: `lib/api/types.ts` 는 docs/03 을 손으로 옮긴 것. 백엔드가 뜨면 `npm run gen:api` 로 생성한 타입으로 교체한다. 문서에 응답 예시가 없는 엔드포인트(코스 상세의 `request`/`siblings`/`og`, 관리자 분석 등)는 이 파일의 모양이 프론트의 제안이다.
 

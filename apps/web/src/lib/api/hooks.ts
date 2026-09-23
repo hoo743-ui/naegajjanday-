@@ -543,34 +543,12 @@ export function useEvents(params: { region?: string; from?: string; to?: string 
 }
 
 // ── 길찾기 (지도 표시용) ─────────────────────────────────────
-export interface WalkRoute {
-  /** osrm = 실제 보행 경로, straight = 라우터가 응답하지 않아 직선으로 이은 폴백 */
-  source: "osrm" | "straight";
-  coordinates: [number, number][];
-  /** coordinates: 이 구간만의 경로. 지도가 구간별로 색을 나눠 그릴 때 쓴다 */
-  legs: { distance_m: number; duration_min: number; coordinates?: [number, number][] }[];
-  distance_m: number;
-  duration_min: number;
-}
-
 export interface AccessHint {
   subway: { station: string; exit: string | null; lat: number; lng: number; distance_m: number; walk_min: number } | null;
   bus: { name: string; stop_no: string | null; lat: number; lng: number; distance_m: number; walk_min: number } | null;
 }
 
 const pointsParam = (points: { lat: number; lng: number }[]) => points.map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`).join(";");
-
-/** 방문 순서대로 이은 실제 보행 경로. 실패해도 화면은 직선으로 그리면 되므로 재시도하지 않는다. */
-export function useWalkRoute(points: { lat: number; lng: number }[]) {
-  const param = pointsParam(points);
-  return useQuery<WalkRoute, ApiError>({
-    queryKey: ["directions", "walk", param],
-    queryFn: ({ signal }) => api.get("/directions/walk", { query: { points: param }, signal }),
-    enabled: points.length >= 2,
-    staleTime: 30 * 60_000,
-    retry: false,
-  });
-}
 
 /**
  * 코스의 실제 경로 (docs/27): 구간별 거리 · 시간 · 경로 좌표 + 이동 가능 여부 검증. 지도 · 카드 · 바텀시트가 이 하나를 읽는다.
