@@ -1,0 +1,122 @@
+# 내가짠데이 — Render Blueprint (API 만. 웹은 Vercel — docs/37-deploy.md)
+#
+# 대시보드 › New › Blueprint › 이 저장소를 고르면 아래 서비스가 만들어진다.
+# sync: false 인 값은 Blueprint 를 처음 만들 때 대시보드가 입력을 요구한다(저장소에는 값이 들어가지 않는다).
+#
+# 저장소 선택: SQLite 파일 + 영구 디스크.
+#   - 지금까지 검증된 경로는 SQLite 뿐이다(전국 79만 곳 DB 가 이미 한 파일로 있다). PostgreSQL/PostGIS 경로는
+#     코드·마이그레이션은 있지만 실데이터로 돌려 본 적이 없다(docs/PROGRESS.md "검증 불가").
+#   - 대가: 디스크를 붙인 서비스는 인스턴스 1대 고정 · 무중단 배포 불가(배포 때 수십 초 끊김) ·
+#     preDeployCommand 에서 디스크가 안 보인다 → 스키마 갱신은 startCommand 의 `db init` 이 한다.
+#   - 무료 플랜에는 디스크가 없다 → plan 은 starter 이상.
+#   - Postgres 로 옮길 때의 설정은 파일 맨 아래 주석.
+#
+# 네이티브 Python 런타임을 쓴다(Dockerfile 아님): Dockerfile 은 non-root(uid 1001)로 돌아
+# Render 디스크(/var/data) 쓰기 권한이 어긋날 수 있다. Dockerfile 은 AWS/compose 용으로 그대로 둔다.
+
+services:
+  - type: web
+    name: naegajjanday-api            # → https://naegajjanday-api.onrender.com (이름이 이미 쓰였으면 뒤에 접미사가 붙는다)
+    runtime: python
+    region: singapore                 # 한국에서 가장 가까운 Render 리전
+    plan: starter                     # 512MB. 메모리 부족(OOM) 로그가 보이면 standard(2GB)로
+    rootDir: apps/api
+    buildFilter:
+      paths:
+        - apps/api/**
+    buildCommand: pip install --upgrade uv && uv sync --frozen --no-dev
+    # db init: SQLite 면 새 테이블·컬럼만 추가(create_all, 기존 데이터 유지), Postgres 면 `alembic upgrade head`.
+    startCommand: >-
+      .venv/bin/python -m app.cli db init &&
+      exec .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      --proxy-headers --forwarded-allow-ips '*'
+    healthCheckPath: /readyz          # DB 연결까지 본다 (/healthz 는 프로세스 생존만)
+    disk:
+      name: naegajjanday-data
+      mountPath: /var/data
+      sizeGB: 5                       # DB 약 1.2GB + 업로드 사진 + 교체용 여유
+    envVars:
+      # ── 런타임 ─────────────────────────────
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      - key: UV_LINK_MODE
+        value: copy
+      # ── app ────────────────────────────────
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_JSON
+        value: "true"
+      # 웹(Vercel) 주소. /v1 · /uploads 는 Vercel 이 이 API 로 넘겨 준다(apps/web/vercel.json) →
+      # OAuth 콜백 · refresh 쿠키가 웹과 같은 도메인에 붙는다. 예: https://naegajjanday.vercel.app
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: WEB_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS               # 쉼표 구분. 보통 WEB_BASE_URL 과 같은 값
+        sync: false
+      # ── storage ────────────────────────────
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:////var/data/naegajjanday.db
+      - key: UPLOAD_DIR                 # 운영자가 올린 장소 사진
+        value: /var/data/uploads
+      - key: NAEGAJJANDAY_DATA_DIR      # 서버에서 ingest-bulk 를 돌릴 때 원본 파일 위치(raw/)
+        value: /var/data
+      # ── security ───────────────────────────
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      # ── 기능 스위치 (키 없이도 폴백으로 동작) ──
+      - key: LLM_PROVIDER
+        value: none
+      - key: TRAVEL_TIME_PROVIDER
+        value: haversine
+      # ── 비밀 키: 있는 것만 대시보드에 넣는다. 비워 두면 그 기능만 꺼진다 ──
+      - key: KAKAO_CLIENT_ID
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: NAVER_CLIENT_ID
+        sync: false
+      - key: NAVER_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: KAKAO_REST_API_KEY
+        sync: false
+      - key: TOURAPI_SERVICE_KEY
+        sync: false
+      - key: KOPIS_API_KEY
+        sync: false
+      - key: NAVER_MAP_CLIENT_ID
+        sync: false
+      - key: NAVER_MAP_CLIENT_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+# ── PostgreSQL 로 옮길 때 (검증 전 — docs/37-deploy.md §9) ─────────────────────────
+# 1) 위 서비스에서 disk 블록을 지우고, DATABASE_URL 을 아래로 바꾼다. Render 가 주는 postgresql:// 주소는
+#    app/core/config.py 가 postgresql+asyncpg:// 로 고쳐 읽는다.
+#      - key: DATABASE_URL
+#        fromDatabase:
+#          name: naegajjanday-db
+#          property: connectionString
+#    그리고 preDeployCommand: .venv/bin/alembic upgrade head   (startCommand 의 db init 은 빼도 된다)
+# 2) 아래 데이터베이스를 추가한다. 마이그레이션이 postgis 확장을 만든다(Render Postgres 는 postgis 지원).
+# databases:
+#   - name: naegajjanday-db
+#     databaseName: naegajjanday
+#     user: naegajjanday
+#     region: singapore
+#     plan: basic-1gb
+#     diskSizeGB: 10
+#     ipAllowList: []                 # 외부 접속 차단. 로컬에서 적재할 동안만 내 IP 를 넣는다

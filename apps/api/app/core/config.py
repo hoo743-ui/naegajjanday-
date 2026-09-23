@@ -144,6 +144,16 @@ class Settings(BaseSettings):
             return [s.strip() for s in v.split(",") if s.strip()]
         return v
 
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _async_driver(cls, v: str) -> str:
+        # 관리형 Postgres(Render 등)는 `postgres://` · `postgresql://` 로 준다 → 비동기 드라이버를 붙인다.
+        # 드라이버가 이미 적힌 URL(`postgresql+asyncpg://`, `sqlite+aiosqlite://`)은 그대로 둔다.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+asyncpg://" + v[len(prefix) :]
+        return v
+
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
