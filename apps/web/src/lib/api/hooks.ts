@@ -97,11 +97,12 @@ function toPurpose({ recommended_budget, budget_per_person, ...p }: PurposeWire)
   return { ...p, budget_range: { min, max, ...(typical ? { typical } : {}) } };
 }
 
-export function usePurposes() {
+/** context "university": 대학교를 고른 하루의 목적(캠퍼스 탐방 · 대학가 맛집 · 축제 즐기기 + 데이트 · 친구) — docs/34 */
+export function usePurposes(context?: "university") {
   return useQuery<ItemList<Purpose>, ApiError>({
-    queryKey: qk.purposes,
+    queryKey: context ? [...qk.purposes, context] : qk.purposes,
     queryFn: async ({ signal }) => {
-      const res = await api.get<ItemList<PurposeWire>>("/meta/purposes", { signal });
+      const res = await api.get<ItemList<PurposeWire>>("/meta/purposes", { signal, ...(context ? { query: { context } } : {}) });
       return { ...res, items: res.items.map(toPurpose) };
     },
     staleTime: META_STALE,
@@ -628,6 +629,44 @@ export function decodeStation(value: string | undefined): Station | null {
   return m ? { name: m[1]!, lat: Number(m[2]), lng: Number(m[3]) } : null;
 }
 
+export interface University {
+  id: string;
+  name: string;
+  address: string | null;
+  lat: number;
+  lng: number;
+}
+
+/** 하루의 중심이 될 대학교 검색 (docs/34) — "가천", "홍익" */
+export function useUniversities(q: string, enabled = true) {
+  return useQuery<{ items: University[] }, ApiError>({
+    queryKey: ["meta", "universities", q],
+    queryFn: ({ signal }) => api.get("/meta/universities", { query: { ...(q ? { q } : {}), limit: 12 }, signal }),
+    enabled,
+    staleTime: 60 * 60_000,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/**
+ * 대학교를 고르면 위저드의 region 값은 "campus:<id>:<이름>" — 코스를 요청할 때 anchor 로 풀어 보낸다.
+ * 역("station:")과 같은 방식: 지역 트리에 없는 값이고, 지역 API(이름 · 핫플 · 명물)에 묻지 않는다.
+ */
+export function encodeCampus(u: Pick<University, "id" | "name">): string {
+  return `campus:${u.id}:${u.name.replace(/:/g, " ")}`;
+}
+
+export function decodeCampus(value: string | undefined): { id: string; name: string } | null {
+  const m = /^campus:([^:]+):(.+)$/.exec(value ?? "");
+  return m ? { id: m[1]!, name: m[2]! } : null;
+}
+
+/** 지역 slug 가 아니라 한 지점(역 · 장소 · 캠퍼스)인 값: 지역 API 에 묻지 않는다 */
+export function isPointValue(value: string | undefined): boolean {
+  return Boolean(value && (value.startsWith("station:") || value.startsWith("campus:")));
+}
+
 /**
  * 둘러보기의 "이 근처로 코스 짜기" 링크. 장소도 역과 같은 값("station:<이름>:<lat>,<lng>")으로 담아
  * 위저드가 그 지점을 출발점(origin)으로 코스를 짠다. 이름의 ":" 는 구분자와 겹치므로 뺀다.
@@ -701,7 +740,7 @@ export function useRegion(slug: string | undefined, enabled = true) {
   return useQuery<Region, ApiError>({
     queryKey: ["meta", "region", slug],
     queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(slug ?? "")}`, { signal }),
-    enabled: enabled && Boolean(slug) && !slug?.startsWith("station:"),
+    enabled: enabled && Boolean(slug) && !isPointValue(slug),
     staleTime: META_STALE,
     retry: false,
   });
@@ -724,7 +763,7 @@ export function useHotPlaces(regionSlug: string | undefined, limit = 8) {
   return useQuery<HotPlaces, ApiError>({
     queryKey: ["meta", "hot", regionSlug, limit],
     queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(regionSlug ?? "")}/hot`, { query: { limit }, signal }),
-    enabled: Boolean(regionSlug) && !regionSlug?.startsWith("station:"),
+    enabled: Boolean(regionSlug) && !isPointValue(regionSlug),
     staleTime: 60 * 60_000,
     retry: false,
   });
@@ -735,7 +774,7 @@ export function useLocalSignature(regionSlug: string | undefined) {
   return useQuery<LocalSignature, ApiError>({
     queryKey: ["meta", "signature", regionSlug],
     queryFn: ({ signal }) => api.get(`/meta/regions/${encodeURIComponent(regionSlug ?? "")}/signature`, { signal }),
-    enabled: Boolean(regionSlug) && !regionSlug?.startsWith("station:"),
+    enabled: Boolean(regionSlug) && !isPointValue(regionSlug),
     staleTime: 60 * 60_000,
     retry: false,
   });

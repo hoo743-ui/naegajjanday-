@@ -1,0 +1,22 @@
+{
+  "_note": "docs/34 앵커 하루. 앵커(대학교)는 추천 엔진의 새 입력일 뿐 — 목적마다 캠퍼스 정류장을 넣을지, 축제를 하루의 핵심 칸으로 쓸지, 얼마나 멀리까지 볼지(생활권)만 정한다. 반경 = rings_m[reach] × transport_scale. 모자라면 엔진의 기존 반경 확장이 넓힌다(캠퍼스 → 가까운 동네 → 넓게).",
+  "university": {
+    "category": "attraction.campus",
+    "campus_radius_m": 700,
+    "rings_m": { "campus": 500, "nearby": 1000, "extended": 3000 },
+    "transport_scale": { "walk": 1.0, "transit": 1.8, "car": 2.5 },
+    "context_purposes": ["campus", "campus_food", "festival"],
+    "purposes": {
+      "campus": { "intents": ["CAMPUS_WALK", "CAMPUS_PHOTO", "CAMPUS_LIFE"], "campus_stop": "required", "festival": "if_any", "reach": "nearby" },
+      "campus_food": { "intents": ["FOOD"], "campus_stop": "none", "festival": "none", "reach": "nearby" },
+      "festival": { "intents": ["FESTIVAL", "CAMPUS_LIFE"], "campus_stop": "optional", "festival": "core", "reach": "nearby" },
+      "date": { "intents": ["DATE"], "campus_stop": "optional", "festival": "if_any", "reach": "extended" },
+      "friends": { "intents": ["FRIENDS"], "campus_stop": "optional", "festival": "if_any", "reach": "extended" },
+      "_default": { "intents": ["CAMPUS_LIFE"], "campus_stop": "optional", "festival": "if_any", "reach": "extended" }
+    },
+    "festival_missing": {
+      "code": "FESTIVAL_NOT_FOUND",
+      "detail": "그날 이 학교 행사 정보가 없어서 캠퍼스를 중심으로 짰어요. 축제 날짜가 확실하면 날짜를 바꿔 보세요."
+    }
+  }
+}

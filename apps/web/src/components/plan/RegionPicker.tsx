@@ -1,16 +1,16 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { Check, ChevronRight, MapPin, Search, TrainFront } from "lucide-react";
+import { Check, ChevronRight, GraduationCap, MapPin, Search, TrainFront } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { decodeStation, encodeStation, useDebounced, useRegions, useStations } from "@/lib/api/hooks";
+import { decodeCampus, decodeStation, encodeCampus, encodeStation, useDebounced, useRegions, useStations, useUniversities, type University } from "@/lib/api/hooks";
 import type { Region } from "@/lib/api/types";
 import { num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface RegionPickerProps {
-  /** 지역 slug 또는 encodeStation() 값 */
+  /** 지역 slug · encodeStation() · encodeCampus() 값 */
   value: string;
   onChange: (value: string) => void;
 }
@@ -71,8 +71,12 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const regions = useRegions();
   const [path, setPath] = useState<Node[]>([]);
   const [q, setQ] = useState("");
+  // docs/34: 하루의 중심 — 동네 · 역, 또는 대학교(캠퍼스와 학교 앞, 그날의 축제까지)
+  const [mode, setMode] = useState<"area" | "campus">(() => (decodeCampus(value) ? "campus" : "area"));
   const query = useDebounced(q.trim(), 200);
-  const stations = useStations(query);
+  const stations = useStations(mode === "area" ? query : "");
+  // 동네 검색에도 학교가 함께 나온다("가천대"를 지역 칸에 쳐도 찾는다)
+  const universities = useUniversities(query, mode === "campus" ? query.length >= 1 : query.length >= 2);
   const searchId = useId();
 
   const tree = useMemo(() => buildTree(regions.data?.items ?? []), [regions.data]);
@@ -99,6 +103,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const dongs = district && inside.data && !inside.isPlaceholderData ? inside.data.items.filter((r) => r.level >= DONG_LEVEL && r.parent?.slug === district.slug).sort((a, b) => b.place_count - a.place_count) : [];
   const nodes = current ? current.children : tree;
   const pickedStation = decodeStation(value);
+  const pickedCampus = decodeCampus(value);
+  const campusRows = query && !universities.isPlaceholderData ? (universities.data?.items ?? []) : [];
 
   if (regions.isPending) {
     return (
@@ -110,6 +116,22 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
     );
   }
   if (regions.isError) return <ErrorState error={regions.error} onRetry={() => void regions.refetch()} size="sm" />;
+
+  const campusButton = (u: University) => {
+    const selected = pickedCampus?.id === u.id;
+    return (
+      <button key={u.id} type="button" role="radio" aria-checked={selected} onClick={() => onChange(encodeCampus(u))} className={cn(card, selected && "bg-blue-soft text-blue-deep")}>
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-paper-2 text-ink">
+          <GraduationCap aria-hidden className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <b className="block truncate text-body-lg font-semibold">{u.name}</b>
+          <span className="block truncate text-body-sm text-muted-foreground">{u.address ?? "대학교"}</span>
+        </span>
+        {selected ? <Check aria-hidden className="size-5 shrink-0 text-blue-deep" /> : null}
+      </button>
+    );
+  };
 
   const regionButton = (r: Region, label = r.name, sub?: string) => {
     const selected = value === r.slug;
@@ -133,8 +155,32 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
 
   return (
     <div>
+      {/* 하루의 중심: 동네 · 역 / 대학교. 새 서비스가 아니라 같은 코스의 다른 출발점이다 (docs/34) */}
+      <div role="tablist" aria-label="어디를 중심으로 짤까요" className="mb-3 inline-flex rounded-full bg-paper-2 p-1">
+        {(
+          [
+            { key: "area", label: "동네 · 역", Icon: MapPin },
+            { key: "campus", label: "대학교", Icon: GraduationCap },
+          ] as const
+        ).map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={mode === key}
+            onClick={() => {
+              setMode(key);
+              setQ("");
+            }}
+            className={cn("inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-body-sm font-semibold transition-colors", mode === key ? "bg-white text-ink shadow-soft" : "text-ink-2 hover:text-ink")}
+          >
+            <Icon aria-hidden className="size-4" />
+            {label}
+          </button>
+        ))}
+      </div>
       <label htmlFor={searchId} className="sr-only">
-        지역 · 역 검색
+        {mode === "campus" ? "대학교 검색" : "지역 · 역 검색"}
       </label>
       <div className="relative">
         <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -143,7 +189,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"
+          placeholder={mode === "campus" ? "학교 이름으로 찾기 (예: 가천대, 홍익대, 부산대)" : "동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"}
           autoComplete="off"
           className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-body font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-blue-deep"
         />
@@ -165,9 +211,36 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         </div>
       ) : null}
 
-      <div className="mt-4" role="radiogroup" aria-label="지역 선택" aria-live="polite">
-        {query ? (
-          matches.length === 0 && (stations.data?.items.length ?? 0) === 0 && !stations.isFetching ? (
+      {pickedCampus && !query ? (
+        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-blue-deep bg-blue-soft p-4 shadow-soft">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-blue-deep">
+            <GraduationCap aria-hidden className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block truncate text-body-lg font-semibold">{pickedCampus.name}</b>
+            <span className="block truncate text-body-sm text-ink-2">캠퍼스와 학교 앞, 그날 축제까지 이어서 짜요</span>
+          </span>
+          <button type="button" onClick={() => onChange("")} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-body-sm font-semibold text-ink-2 shadow-soft hover:text-ink" aria-label={`${pickedCampus.name} 선택 취소하고 다른 곳 고르기`}>
+            다른 곳 고르기
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-4" role="radiogroup" aria-label={mode === "campus" ? "대학교 선택" : "지역 선택"} aria-live="polite">
+        {mode === "campus" ? (
+          query && universities.isPending ? (
+            <div className="grid gap-x-8 sm:grid-cols-2" aria-busy="true">
+              {Array.from({ length: 4 }, (_, i) => (
+                <Skeleton key={i} className="h-[56px] rounded-md" />
+              ))}
+            </div>
+          ) : campusRows.length === 0 ? (
+            <EmptyState size="sm" mood="think" title={query ? `‘${query}’ 은(는) 찾지 못했어요` : "학교 이름을 써 주세요"} description="전국 대학 · 전문대학 중 위치를 확인한 곳만 있어요. 없으면 ‘동네 · 역’에서 가까운 역으로 골라 주세요." />
+          ) : (
+            <div className="grid gap-x-8 sm:grid-cols-2">{campusRows.map(campusButton)}</div>
+          )
+        ) : query ? (
+          matches.length === 0 && (stations.data?.items.length ?? 0) === 0 && campusRows.length === 0 && !stations.isFetching ? (
             <EmptyState size="sm" mood="think" title={`‘${query}’ 은(는) 찾지 못했어요`} description="가까운 지하철역이나 구 이름으로 다시 찾아볼까요?">
               <button type="button" onClick={() => setQ("")} className="rounded-full bg-soft px-4 py-2 text-body-sm font-semibold text-ink-2 hover:bg-line">
                 전체 지역 보기
@@ -199,6 +272,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                   </button>
                 );
               })}
+              {campusRows.map(campusButton)}
             </div>
           )
         ) : (

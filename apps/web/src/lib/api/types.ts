@@ -225,6 +225,8 @@ export interface GenerateCourseRequest {
   origin?: LatLng;
   /** origin 의 표시 이름(역·장소). 결과 화면 머리말과 "다시 짜기"에 그대로 돌아온다 */
   origin_label?: string;
+  /** docs/34: 하루의 중심(대학교). 주면 region/origin 은 보내지 않는다 */
+  anchor?: { kind: "university"; id: string };
   purpose: string;
   party_size: number;
   budget_total: number;
@@ -422,6 +424,9 @@ export interface CourseDetail extends Course {
     /** 지역 중심이 아니라 역·장소 주변으로 짠 코스일 때만 온다. 다시 짤 때 그대로 돌려보낸다 */
     origin?: LatLng | null;
     origin_label?: string | null;
+    /** docs/34: 대학교를 중심으로 짠 코스. festival = 코스에 들어간 그날의 행사 */
+    anchor?: { kind: "university"; id: string; name: string; festival?: string | null } | null;
+    context?: "general_area" | "specific_place" | "university" | "festival";
     preferences?: { liked_tags: string[]; disliked_tags: string[] };
     purpose: { code: string; name: string };
     party_size: number;
@@ -707,6 +712,14 @@ export interface AdminEvent {
   status: "draft" | "published" | "ended";
   /** 수집 출처 (admin = 직접 등록) */
   provider?: string;
+  /** docs/34: 대학 축제면 그 캠퍼스 id (등록할 때만). 위치를 비우면 캠퍼스에 선다 */
+  university?: string | null;
+  university_name?: string | null;
+  /** "HH:MM" — 있으면 코스가 이 시간 안에서만 행사를 넣는다 */
+  start_time?: string | null;
+  end_time?: string | null;
+  /** 같은 날 한 학교에 행사가 여럿이면 높은 것이 하루의 중심 */
+  priority?: number;
 }
 export type AdminEventInput = Omit<AdminEvent, "id" | "status" | "region_name" | "provider"> & {
   status?: AdminEvent["status"];

@@ -114,5 +114,37 @@
       "수변"
     ],
     "_no_door_note": "이름이 이런 곳은 문이 없다(바닷가 · 호수 · 둘레길). 업종이 그냥 'attraction' 이어도 밤에 도착했다고 '문 닫은 곳'으로 세지 않는다. 엔진의 추정(default_hours.json)과 따로 둔, 세상에 대한 판단이다: 유적 · 전시관은 여기 없다."
+  },
+  "universities": {
+    "_note": "docs/34 캠퍼스 하루: `eval-courses --scope university`. 캠퍼스는 이름으로 찾는다(DB 마다 id 가 다르다). 전국 여러 지역 · 규모를 섞었다.",
+    "anchors": [
+      "가천대학교",
+      "홍익대학교",
+      "서울대학교",
+      "연세대학교",
+      "부산대학교",
+      "경북대학교",
+      "전남대학교",
+      "충남대학교"
+    ],
+    "starts": [
+      "11:00",
+      "15:00",
+      "18:30"
+    ],
+    "purposes": {
+      "campus": {
+        "party_size": 2,
+        "budget_per_person": 20000
+      },
+      "campus_food": {
+        "party_size": 2,
+        "budget_per_person": 15000
+      },
+      "festival": {
+        "party_size": 3,
+        "budget_per_person": 20000
+      }
+    }
   }
 }

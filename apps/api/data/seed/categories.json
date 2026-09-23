@@ -489,6 +489,14 @@
       }
     },
     {
+      "code": "attraction.campus",
+      "name": "대학 캠퍼스",
+      "parent": "attraction",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 45,
+      "provider_mapping": {}
+    },
+    {
       "code": "activity",
       "name": "체험·액티비티",
       "parent": null,

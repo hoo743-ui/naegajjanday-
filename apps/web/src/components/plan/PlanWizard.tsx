@@ -12,7 +12,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { decodeStation, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
+import { decodeCampus, decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { num, toKstIso, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
@@ -58,11 +58,21 @@ export function PlanWizard() {
   const values = form.watch();
   const generate = useGenerateCourse();
 
-  const purposes = usePurposes();
-  const region = usePickedRegion(values.region || undefined);
+  const pickedCampus = decodeCampus(values.region);
+  const purposes = usePurposes(pickedCampus ? "university" : undefined);
+  const region = usePickedRegion(values.region && !isPointValue(values.region) ? values.region : undefined);
   const pickedStation = decodeStation(values.region);
-  const placeLabel = region?.name ?? (pickedStation ? `${pickedStation.name} 주변` : undefined);
+  const placeLabel = region?.name ?? (pickedStation ? `${pickedStation.name} 주변` : pickedCampus?.name);
   const purpose = purposes.data?.items.find((p) => p.code === values.purpose);
+  // 대학교 ↔ 동네를 바꾸면 고를 수 있는 목적도 바뀐다(캠퍼스 탐방은 대학교에서만) → 없는 목적은 비운다
+  const offered = purposes.data?.items;
+  useEffect(() => {
+    if (!offered) return;
+    const codes = new Set(offered.map((p) => p.code));
+    if (values.purpose && !codes.has(values.purpose)) form.setValue("purpose", "", { shouldDirty: true });
+    const extra = values.purposes_extra.filter((c) => codes.has(c));
+    if (extra.length !== values.purposes_extra.length) form.setValue("purposes_extra", extra, { shouldDirty: true });
+  }, [offered, values.purpose, values.purposes_extra, form]);
 
   useEffect(() => {
     // 헤더 · 랜딩의 버튼을 눌러서 왔으면 그 클릭이 이미 셌다 (entry 가 둘로 남지 않게)
@@ -114,7 +124,7 @@ export function PlanWizard() {
     jump(next);
   };
 
-  const stationName = pickedStation?.name;
+  const stationName = pickedStation?.name ?? pickedCampus?.name;
   const stages = useMemo(
     () => [
       region ? `${region.name} 장소 ${num(region.place_count)}곳 살펴보는 중…` : stationName ? `${stationName} 주변 장소를 살펴보는 중…` : "주변 장소를 살펴보는 중…",
@@ -137,11 +147,16 @@ export function PlanWizard() {
     setEmptyError(null);
     const start = resolveStart(data, new Date());
     const station = decodeStation(data.region);
+    const campus = decodeCampus(data.region);
     const body: GenerateCourseRequest = {
-      // 역을 골랐으면 지역 대신 그 역의 좌표를 출발점으로 보낸다 (API 는 region 또는 origin 을 받는다)
-      ...(station ? { origin: { lat: station.lat, lng: station.lng }, origin_label: station.name } : { region: data.region }),
-      // 여러 동네: 먼저 들를 동네들 → 마지막 동네 순서로 잇는다 (역 주변은 한 동네 코스만)
-      ...(!station && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
+      // 대학교를 골랐으면 그 캠퍼스가 하루의 중심(anchor, docs/34). 역을 골랐으면 그 역의 좌표가 출발점
+      ...(campus
+        ? { anchor: { kind: "university" as const, id: campus.id } }
+        : station
+          ? { origin: { lat: station.lat, lng: station.lng }, origin_label: station.name }
+          : { region: data.region }),
+      // 여러 동네: 먼저 들를 동네들 → 마지막 동네 순서로 잇는다 (역 · 대학교 주변은 한 동네 코스만)
+      ...(!station && !campus && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
       purpose: data.purpose,
       ...(data.purposes_extra.length > 0 ? { purposes: data.purposes_extra } : {}),
       party_size: data.party_size,

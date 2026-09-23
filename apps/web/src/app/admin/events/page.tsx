@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { providerLabel, useAdminEvents, useAdminRegions, useDeleteEvent, useSaveEvent } from "@/lib/api/admin";
-import { useCategories } from "@/lib/api/hooks";
+import { useCategories, useDebounced, useUniversities } from "@/lib/api/hooks";
 import type { AdminEvent } from "@/lib/api/types";
 import { dateRange, won } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
@@ -35,8 +35,13 @@ const makeSchema = (creating: boolean) =>
       type: z.string(),
       region: creating ? z.string().min(1, "지역을 골라 주세요") : z.string(),
       venue: creating ? z.string().trim().min(1, "장소를 입력해 주세요") : z.string().trim(),
-      lat: creating ? z.number({ error: "위도를 숫자로 입력해 주세요" }).min(33, "대한민국 범위(33~39)를 벗어났어요").max(39, "대한민국 범위(33~39)를 벗어났어요") : z.number().optional(),
-      lng: creating ? z.number({ error: "경도를 숫자로 입력해 주세요" }).min(124, "대한민국 범위(124~132)를 벗어났어요").max(132, "대한민국 범위(124~132)를 벗어났어요") : z.number().optional(),
+      // 대학 축제면 위치를 비워도 된다(캠퍼스에 선다) — 그 외에는 등록할 때 필수 (아래 refine)
+      lat: z.number({ error: "위도를 숫자로 입력해 주세요" }).min(33, "대한민국 범위(33~39)를 벗어났어요").max(39, "대한민국 범위(33~39)를 벗어났어요").optional(),
+      lng: z.number({ error: "경도를 숫자로 입력해 주세요" }).min(124, "대한민국 범위(124~132)를 벗어났어요").max(132, "대한민국 범위(124~132)를 벗어났어요").optional(),
+      university: z.string(),
+      start_time: z.string(),
+      end_time: z.string(),
+      priority: z.number({ error: "숫자로 입력해 주세요" }).int().min(0).max(100),
       starts_on: z.string().min(1, "시작일을 골라 주세요"),
       ends_on: z.string().min(1, "종료일을 골라 주세요"),
       is_free: z.boolean(),
@@ -44,10 +49,12 @@ const makeSchema = (creating: boolean) =>
       link_url: z.union([z.literal(""), z.url("주소 형식을 확인해 주세요")]),
       status: z.enum(["draft", "published", "ended"]),
     })
-    .refine((v) => v.ends_on >= v.starts_on, { path: ["ends_on"], message: "종료일이 시작일보다 빨라요" });
+    .refine((v) => v.ends_on >= v.starts_on, { path: ["ends_on"], message: "종료일이 시작일보다 빨라요" })
+    .refine((v) => !creating || v.university || (v.lat !== undefined && v.lng !== undefined), { path: ["lat"], message: "위치를 입력하거나 대학교를 골라 주세요" })
+    .refine((v) => !v.start_time === !v.end_time, { path: ["end_time"], message: "시작 · 종료 시각을 함께 입력해 주세요" });
 type Values = z.infer<ReturnType<typeof makeSchema>>;
 
-const EMPTY: Values = { title: "", type: DEFAULT_TYPE, region: "", venue: "", lat: undefined, lng: undefined, starts_on: "", ends_on: "", is_free: true, price: 0, link_url: "", status: "draft" };
+const EMPTY: Values = { title: "", type: DEFAULT_TYPE, region: "", venue: "", lat: undefined, lng: undefined, university: "", start_time: "", end_time: "", priority: 0, starts_on: "", ends_on: "", is_free: true, price: 0, link_url: "", status: "draft" };
 
 export default function AdminEventsPage() {
   const events = useAdminEvents();
@@ -162,7 +169,7 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
   const form = useForm<Values>({
     resolver: zodResolver(makeSchema(creating)),
     defaultValues: event
-      ? { title: event.title, type: event.type, region: event.region ?? "", venue: event.venue, lat: event.lat, lng: event.lng, starts_on: event.starts_on, ends_on: event.ends_on, is_free: event.is_free, price: event.price ?? 0, link_url: event.link_url ?? "", status: event.status }
+      ? { title: event.title, type: event.type, region: event.region ?? "", venue: event.venue, lat: event.lat, lng: event.lng, university: event.university ?? "", start_time: event.start_time ?? "", end_time: event.end_time ?? "", priority: event.priority ?? 0, starts_on: event.starts_on, ends_on: event.ends_on, is_free: event.is_free, price: event.price ?? 0, link_url: event.link_url ?? "", status: event.status }
       : EMPTY,
   });
   const { errors } = form.formState;
@@ -171,6 +178,11 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
   const typeOptions = flattenCategories(categories.data?.items ?? []).filter((o) => o.role && EVENT_ROLES.has(o.role));
   const currentType = form.getValues("type");
   const locked = creating ? undefined : "등록한 뒤에는 바꿀 수 없어요";
+  // docs/34: 대학 축제는 공식 데이터가 없어 여기서 넣는다 — 학교를 고르면 그 캠퍼스의 하루에 들어간다
+  const [schoolQ, setSchoolQ] = useState("");
+  const schoolQuery = useDebounced(schoolQ.trim(), 250);
+  const schools = useUniversities(schoolQuery, creating && schoolQuery.length >= 1);
+  const pickedSchool = form.watch("university");
 
   return (
     <form
@@ -178,7 +190,7 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
       className="grid gap-4"
       onSubmit={form.handleSubmit((v) =>
         save.mutate(
-          { id: event?.id, input: { title: v.title, type: v.type, region: v.region || null, venue: v.venue, lat: v.lat, lng: v.lng, starts_on: v.starts_on, ends_on: v.ends_on, is_free: v.is_free, price: v.is_free ? null : v.price, link_url: v.link_url || null, status: v.status } },
+          { id: event?.id, input: { title: v.title, type: v.type, region: v.region || null, venue: v.venue, lat: v.lat, lng: v.lng, university: v.university || null, start_time: v.start_time || null, end_time: v.end_time || null, priority: v.priority, starts_on: v.starts_on, ends_on: v.ends_on, is_free: v.is_free, price: v.is_free ? null : v.price, link_url: v.link_url || null, status: v.status } },
           { onSuccess: onDone },
         ),
       )}
@@ -216,6 +228,21 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
         <Input id="e-venue" aria-invalid={Boolean(errors.venue)} aria-describedby="e-venue-desc" {...form.register("venue")} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="e-school-q" label="대학 축제라면 학교" hint={locked ?? (pickedSchool ? "위치를 비우면 캠퍼스에 서요" : "학교 이름으로 찾기")}>
+          <Input id="e-school-q" value={schoolQ} onChange={(e) => setSchoolQ(e.target.value)} placeholder="가천대, 홍익대 …" disabled={!creating} aria-describedby="e-school-q-desc" />
+        </Field>
+        <Field id="e-school" label="학교 선택" hint={event?.university_name ?? undefined}>
+          <select id="e-school" className={nativeSelectClass} disabled={!creating} aria-describedby="e-school-desc" {...form.register("university")}>
+            <option value="">{event?.university_name ?? "대학 축제 아님"}</option>
+            {(schools.data?.items ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field id="e-lat" label="위도" required={creating} error={errors.lat?.message} hint={locked ?? "코스의 ‘근처 행사’ 거리 계산에 써요"}>
           <Input id="e-lat" type="number" step="0.0001" inputMode="decimal" placeholder="37.5560" disabled={!creating} aria-invalid={Boolean(errors.lat)} aria-describedby="e-lat-desc" {...form.register("lat", numeric)} />
         </Field>
@@ -229,6 +256,17 @@ function EventForm({ event, onDone }: { event: AdminEvent | null; onDone: () => 
         </Field>
         <Field id="e-end" label="종료일" required error={errors.ends_on?.message}>
           <Input id="e-end" type="date" aria-invalid={Boolean(errors.ends_on)} aria-describedby="e-end-desc" {...form.register("ends_on")} />
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field id="e-start-time" label="시작 시각" hint="있으면 코스가 이 시간에 맞춰요">
+          <Input id="e-start-time" type="time" aria-describedby="e-start-time-desc" {...form.register("start_time")} />
+        </Field>
+        <Field id="e-end-time" label="종료 시각" error={errors.end_time?.message}>
+          <Input id="e-end-time" type="time" aria-invalid={Boolean(errors.end_time)} aria-describedby="e-end-time-desc" {...form.register("end_time")} />
+        </Field>
+        <Field id="e-priority" label="우선순위" error={errors.priority?.message} hint="같은 날 여럿이면 높은 것">
+          <Input id="e-priority" type="number" min={0} max={100} inputMode="numeric" aria-describedby="e-priority-desc" {...form.register("priority", { valueAsNumber: true })} />
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

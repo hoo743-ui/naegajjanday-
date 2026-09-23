@@ -19,6 +19,16 @@ from app.core import course_key, errors
 from app.core.cache import Cache
 from app.core.config import Settings
 from app.core.logging import get_logger
+from app.domain.anchors import (
+    Anchor,
+    AnchoredEvent,
+    campus_first,
+    context_purposes,
+    festival_missing_warning,
+    pick_festival,
+    university_rules,
+)
+from app.domain.anchors import plan_for as anchor_plan_for
 from app.domain.media import distinct_photos
 from app.domain.models import (
     BudgetTooLowError,
@@ -130,6 +140,8 @@ class CourseService:
         self._config = SqlConfigRepository(session)
         self._places = SqlPlaceRepository(session)
         self._reads: CandidateReads | None = None  # the candidate reads of the plan under way (see `_plan`)
+        # docs/34: the anchors resolved for this request (campus id → campus + that day's festival)
+        self._anchors: dict[str, dict[str, Any]] = {}
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -439,7 +451,7 @@ class CourseService:
         ctx.purpose_tag_affinity = blend_affinity([await self._config.tag_affinity(p.id) for p in purposes])
         ctx.purpose_codes = tuple(p.code for p in purposes)
         asked = {str(extra_roles()[r].get("category")) for r in req.extras if r in extra_roles()}
-        ctx.blocked_categories = opt_in_categories() - asked
+        ctx.blocked_categories = (opt_in_categories() - asked) | {str(university_rules()["category"])}
         rules = get_signature_rules()
         signature = (await signature_service.load(self._s, region.id)).strong(rules.auto_focus_min_strength)
         ctx.local_words = tuple(s.word for s in signature.specialties)
@@ -474,9 +486,13 @@ class CourseService:
                 templates = with_role(templates, entry)
                 if entry.get("category"):
                     ctx.wanted_categories = (*ctx.wanted_categories, str(entry["category"]))
+        festival_missing = False
+        if req.anchor is not None:  # docs/34: a campus day — the same engine, a few knobs set by the anchor
+            templates, festival_missing = await self._apply_anchor(req, purpose, ctx, list(templates))
         engine = RecommendationEngine(self._reads or self._places, self._travel)
         try:
             out = await engine.generate(ctx, templates, profile)
+            self._note_festival(req, out, festival_missing)
         except BudgetTooLowError as exc:
             raise errors.BudgetTooLow(
                 f"{region.name}에서 {req.party_size}명 기준 최소 {exc.min_budget:,}원이 필요해요.",
@@ -575,8 +591,124 @@ class CourseService:
             return None
         return local_signature_out(region.name, signature)
 
+    async def _with_anchor(self, req: dto.CourseGenerateRequest) -> dto.CourseGenerateRequest:
+        """docs/34: a campus as the anchor of the day becomes the existing "around a point" request —
+        origin = the campus, origin_label = its name — so snapshot, echo and reroll need nothing new."""
+        if req.anchor is None:
+            if req.purpose in context_purposes():
+                raise errors.ValidationFailed("대학교를 먼저 고르면 쓸 수 있는 목적이에요.")
+            return req
+        rules = university_rules()
+        campus = await self._places.campus(req.anchor.id, str(rules["category"]))
+        if campus is None:
+            raise errors.NotFound("그 학교는 아직 없어요. 지역이나 역으로 골라 주세요.")
+        anchor = Anchor(
+            kind="university",
+            id=campus.public_id,
+            place_id=campus.id,
+            name=campus.name,
+            point=GeoPoint(campus.lat, campus.lng),
+            address=campus.road_address or campus.address,
+        )
+        self._anchors[anchor.id] = {"anchor": anchor, "festival": None, "festival_in_course": False}
+        return req.model_copy(
+            update={
+                "origin": LatLng(lat=anchor.point.lat, lng=anchor.point.lng),
+                "origin_label": anchor.name[:40],
+            }
+        )
+
+    async def _apply_anchor(
+        self, req: dto.CourseGenerateRequest, purpose: Purpose, ctx: RequestContext, templates: list[Template]
+    ) -> tuple[list[Template], bool]:
+        """The anchor's knobs for this purpose (data/recommendation/anchor_contexts.json) — nothing but the
+        engine's own: the reach, the campus as a pinned stop, the day's festival as a pinned event.
+        Returns the templates and whether a festival day was asked for but the campus has none that day."""
+        assert req.anchor is not None
+        state = self._anchors[req.anchor.id]
+        anchor: Anchor = state["anchor"]
+        plan = anchor_plan_for(purpose.code, req.transport)
+        ctx.anchored = True
+        ctx.radius_m = plan.radius_m
+        festival = None
+        if plan.festival != "none":
+            events = await self._places.anchored_events(
+                anchor.place_id, anchor.point, plan.campus_radius_m, ctx.start_at.date()
+            )
+            festival = pick_festival(events)
+        state["festival"] = festival
+        missing = plan.festival == "core" and festival is None
+        # no festival that day: the day falls back to the campus itself (docs/34 §6), not to any sight
+        campus_stop = "required" if missing else plan.campus_stop
+        if campus_stop == "required":
+            ctx.wanted_place_ids = ctx.wanted_place_ids | {anchor.place_id}
+            ctx.keep_roles = ctx.keep_roles | {"ATTRACTION"}
+            templates = campus_first(templates)
+        if campus_stop != "none":
+            ctx.anchor_place_ids = frozenset({anchor.place_id})
+        if festival is not None:
+            ctx.wanted_event_ids = frozenset({festival.id})
+            if plan.festival == "core":
+                templates = with_role(templates, {"role": "CULTURE", "share": 0.06, "min_slot_budget": 0})
+                ctx.keep_roles = ctx.keep_roles | {"CULTURE"}
+        return templates, missing
+
+    def _note_festival(self, req: dto.CourseGenerateRequest, out: EngineOutput, missing: bool) -> None:
+        """Say what happened to the festival: none that day (the day fell back to the campus), or one
+        that day whose hours do not fit the chosen time."""
+        if req.anchor is None:
+            return
+        state = self._anchors[req.anchor.id]
+        festival: AnchoredEvent | None = state["festival"]
+        notes: list[tuple[CourseResult, dict[str, Any]]] = []
+        if missing:
+            notes = [(course, festival_missing_warning()) for course in out.courses]
+        elif festival is not None:
+            for course in out.courses:
+                held = any(s.place.is_event and s.place.id == festival.id for s in course.stops)
+                state["festival_in_course"] = state["festival_in_course"] or held
+                if not held and anchor_plan_for(req.purpose, req.transport).festival == "core":
+                    hours = f"({festival.start_time}~{festival.end_time})" if festival.start_time else ""
+                    notes.append(
+                        (
+                            course,
+                            {
+                                "code": "FESTIVAL_TIME_CLASH",
+                                "detail": f"{festival.title}{hours}은(는) 고른 시간과 맞지 않아 못 넣었어요. "
+                                "출발 시간을 바꿔 보세요.",
+                            },
+                        )
+                    )
+        for course, warning in notes:
+            if warning not in out.warnings:
+                out.warnings.append(warning)
+            if warning not in course.warnings:
+                course.warnings.append(warning)
+
+    @staticmethod
+    def _context_of(snapshot: dict[str, Any], around_point: bool) -> str:
+        """docs/34: what the day was planned around — for the result page's first chip."""
+        anchor = snapshot.get("anchor")
+        if anchor:
+            return "festival" if anchor.get("festival") else "university"
+        return "specific_place" if around_point and snapshot.get("origin_label") else "general_area"
+
+    def _anchor_snapshot(self, req: dto.CourseGenerateRequest) -> dict[str, Any] | None:
+        if req.anchor is None or req.anchor.id not in self._anchors:
+            return None
+        state = self._anchors[req.anchor.id]
+        anchor: Anchor = state["anchor"]
+        festival: AnchoredEvent | None = state["festival"]
+        return {
+            "kind": anchor.kind,
+            "id": anchor.id,
+            "name": anchor.name,
+            "festival": festival.title if festival is not None and state["festival_in_course"] else None,
+        }
+
     async def dry_run(self, req: dto.CourseGenerateRequest) -> tuple[Region, RequestContext, EngineOutput]:
         """The exact production pipeline with nothing persisted — what `eval-courses` measures."""
+        req = await self._with_anchor(req)
         region, _origin, _purpose, ctx, _profile, out = await self._plan(req, None)
         return region, ctx, out
 
@@ -604,6 +736,7 @@ class CourseService:
         if user is None:
             keep = replaced is not None and replaced.edit_key_hash is not None
             edit_key = course_key.current_key() if keep else course_key.new_key()
+        req = await self._with_anchor(req)
         region, origin, purpose, ctx, profile, out = await self._plan(req, user)
 
         request_id = str(uuid.uuid4())
@@ -638,6 +771,8 @@ class CourseService:
             "conditions": [c for c in self._conditions(req) if not day_conditions()[c].get("auto")],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
             "origin_label": req.origin_label if req.origin else None,
+            # docs/34: the campus the day was planned around, and the festival that made it into the course
+            "anchor": self._anchor_snapshot(req),
             # a whole-city trip: planning this day again must ask for the city, not for the district the
             # first area happens to lie in
             "city": req.region
@@ -1011,6 +1146,8 @@ class CourseService:
                 region=dto.SlugName(slug=region.slug, name=region.name) if region else None,
                 origin=LatLng(lat=origin.lat, lng=origin.lng) if around_point else None,
                 origin_label=snapshot.get("origin_label") if around_point else None,
+                anchor=dto.AnchorEcho(**anchor) if (anchor := snapshot.get("anchor")) else None,
+                context=self._context_of(snapshot, around_point),
                 preferences=dto.EchoPreferences(
                     liked_tags=list(prefs.get("liked_tags") or []),
                     disliked_tags=list(prefs.get("disliked_tags") or []),
@@ -1109,7 +1246,7 @@ class CourseService:
         # a swap must not bring in what the course was never asked to have (a ballpark on a day off)
         kept = (row.request or {}).get("extras") or []
         asked = {str(extra_roles()[r].get("category")) for r in kept if r in extra_roles()}
-        ctx.blocked_categories = opt_in_categories() - asked
+        ctx.blocked_categories = (opt_in_categories() - asked) | {str(university_rules()["category"])}
         stay_scale = float((row.request or {}).get("stay_scale", 1.0))
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
 

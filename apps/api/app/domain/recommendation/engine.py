@@ -41,7 +41,7 @@ from app.domain.recommendation.diversify import (
     variant_profile,
 )
 from app.domain.recommendation.scorer import PlaceScorer
-from app.domain.recommendation.style import assign_buzz, wanted_places, wanted_pools
+from app.domain.recommendation.style import assign_buzz, wanted_events, wanted_places, wanted_pools
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import (
@@ -281,6 +281,7 @@ class RecommendationEngine:
         unfiltered = [p for found in cache.values() for p in found]
         pools = wanted_pools(pools, ctx.wanted_categories)
         pools = wanted_places(pools, ctx.wanted_place_ids)
+        pools = wanted_events(pools, ctx.wanted_event_ids)
         return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
 
     async def _ring(
@@ -375,7 +376,13 @@ class RecommendationEngine:
         beam took the top restaurant (a far-off mall), found nothing within a walk of it and returned a
         one-stop course. A person would pick the liveliest pocket of the district first: the 1.5 km block
         where the most KINDS of places for this course stand together, then the most places."""
-        if ctx.transport != "walk" or ctx.radius_m <= WALK_AREA_M or ctx.recentered or ctx.wanted_place_ids:
+        if (
+            ctx.transport != "walk"
+            or ctx.radius_m <= WALK_AREA_M
+            or ctx.recentered
+            or ctx.wanted_place_ids
+            or ctx.anchored
+        ):
             return
         d_lat = WALK_CELL_M / 111_000
         d_lng = d_lat / max(0.2, math.cos(math.radians(ctx.origin.lat)))

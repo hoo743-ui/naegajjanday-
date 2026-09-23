@@ -100,8 +100,8 @@ async function main() {
     // 그 동네 · 그 날짜의 데이터: 명소 이름, 공연, 숙소, 근처 행사, 예산을 바꿔 본 결과
     "[aria-labelledby='local-card'] ul", "[aria-labelledby='performance-card']", "[aria-labelledby='stay-card']",
     "[aria-labelledby='nearby-events']", "[aria-label='예산 도구'] [aria-live]",
-    // 남은 돈으로 갈 만한 곳: 그날 조회된 가게들
-    "[aria-labelledby='leftover-card'] ul",
+    // 남은 돈으로 갈 만한 곳: 그날 조회된 가게들. 권할 곳이 없으면 카드째 없다(제목까지 데이터에 달렸다)
+    "[aria-labelledby='leftover-card']",
     // 짠이의 이야기: 길이에 따라 "더 읽기"가 생기거나 없다
     "[aria-label='짠이의 코스 이야기']",
     // 경로 점검: 그 코스의 실제 이동 시간에 따라 생기거나 없다

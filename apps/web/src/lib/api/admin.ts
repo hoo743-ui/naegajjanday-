@@ -441,6 +441,11 @@ function toAdminEvent(raw: Raw, labels: AdminLabels): AdminEvent {
     link_url: strOrNull(raw.link_url) ?? strOrNull(raw.booking_url),
     status: EVENT_STATUS_IN[status] ?? (status as AdminEvent["status"]),
     provider: strOrNull(raw.provider) ?? undefined,
+    university: strOrNull(raw.university),
+    university_name: strOrNull(raw.university_name),
+    start_time: strOrNull(raw.start_time),
+    end_time: strOrNull(raw.end_time),
+    priority: numOrNull(raw.priority) ?? 0,
   };
 }
 
@@ -455,10 +460,14 @@ const eventPatchBody = (input: AdminEventInput) =>
     is_free: input.is_free,
     booking_url: input.link_url || null,
     status: input.status ? EVENT_STATUS_OUT[input.status] : undefined,
+    start_time: input.start_time || null,
+    end_time: input.end_time || null,
+    priority: input.priority ?? undefined,
   });
 
 /** `EventIn` — region · lat · lng 필수 */
-const eventCreateBody = (input: AdminEventInput) => compact({ ...eventPatchBody(input), region: input.region ?? undefined, category: input.type || null, lat: input.lat, lng: input.lng });
+const eventCreateBody = (input: AdminEventInput) =>
+  compact({ ...eventPatchBody(input), region: input.region ?? undefined, category: input.type || null, lat: input.lat, lng: input.lng, university: input.university || undefined });
 
 export function useAdminEvents() {
   const labels = useAdminLabels();

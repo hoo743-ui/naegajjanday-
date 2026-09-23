@@ -272,6 +272,15 @@ class RequestContext:
     # belongs in the course — the area is named after it
     wanted_place_ids: frozenset[int] = frozenset()
     keep_roles: frozenset[str] = frozenset()  # never trimmed to fit the meeting length
+    # docs/34: that day's festival of the anchor campus — an event id (events and places are separate
+    # tables, so their ids are kept apart). The first slot that can hold it offers nothing else.
+    wanted_event_ids: frozenset[int] = frozenset()
+    # docs/34: the day is planned around an anchor (a campus): the centre never wanders off to the
+    # liveliest block of the district — the school is the point of the day
+    anchored: bool = False
+    # docs/34: campuses are opt-in places (a random school is not a walk in an ordinary course): only the
+    # anchor campus passes the category block
+    anchor_place_ids: frozenset[int] = frozenset()
     blocked_categories: frozenset[str] = frozenset()
     recentered: bool = False  # the engine moved the origin onto a place asked for by name
     # a day across several neighbourhoods (recommendation.itinerary): one entry per neighbourhood with

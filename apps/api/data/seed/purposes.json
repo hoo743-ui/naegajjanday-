@@ -2956,6 +2956,880 @@
           "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
         }
       ]
+    },
+    {
+      "code": "campus",
+      "name": "캠퍼스 탐방",
+      "icon": "graduation-cap",
+      "description": "학교를 걸어 보고, 학교 앞 맛집과 카페까지",
+      "budget_min": 15000,
+      "budget_max": 100000,
+      "sort_order": 6,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.24,
+          "distance": 0.06,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.16,
+          "purpose_fit": 0.24,
+          "curated": 0.13
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "taste": 0.5,
+            "mood": 0.3,
+            "price": 0.2
+          },
+          "preference_prior": {
+            "가성비": 0.6,
+            "활기찬": 0.5,
+            "포토존": 0.4
+          }
+        }
+      },
+      "tag_affinities": {
+        "활기찬": 0.8,
+        "가성비": 0.8,
+        "단체석": 0.3,
+        "힙한": 0.6,
+        "체험형": 0.6,
+        "레트로": 0.4,
+        "포토존": 0.5,
+        "조용한": -0.2,
+        "노키즈존": 0.0,
+        "로맨틱": -0.3,
+        "체인점": -0.15,
+        "착한가격업소": 0.7,
+        "매운맛": 0.2,
+        "디저트맛집": 0.2,
+        "야경명소": 0.3,
+        "관광공사 소개": 0.5,
+        "간편식": 0.0
+      },
+      "templates": [
+        {
+          "code": "campus-lunch",
+          "name": "캠퍼스 점심",
+          "time_band": "lunch",
+          "min_budget_per_person": 7000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.6,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.38,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ],
+          "_note": "첫 칸 ATTRACTION 은 앵커 캠퍼스(대학 캠퍼스 산책, 무료)가 들어갈 자리다 — anchor_contexts.json campus_stop=required 가 그 캠퍼스로 고정한다."
+        },
+        {
+          "code": "campus-afternoon",
+          "name": "캠퍼스 오후",
+          "time_band": "afternoon",
+          "min_budget_per_person": 7000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.35,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.63,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "16:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ],
+          "_note": "첫 칸 ATTRACTION 은 앵커 캠퍼스(대학 캠퍼스 산책, 무료)가 들어갈 자리다 — anchor_contexts.json campus_stop=required 가 그 캠퍼스로 고정한다."
+        },
+        {
+          "code": "campus-evening",
+          "name": "캠퍼스 저녁",
+          "time_band": "evening",
+          "min_budget_per_person": 8000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.55,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.18,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.25,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "첫 칸 ATTRACTION 은 앵커 캠퍼스(대학 캠퍼스 산책, 무료)가 들어갈 자리다 — anchor_contexts.json campus_stop=required 가 그 캠퍼스로 고정한다."
+        },
+        {
+          "code": "campus-fullday",
+          "name": "캠퍼스 하루",
+          "time_band": "fullday",
+          "min_budget_per_person": 15000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.3,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.14,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.1,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.16,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.28,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ],
+          "_note": "캠퍼스 → 학교 앞 식사 → 카페 → (문화 · 놀거리) → 저녁 (docs/34 §6)."
+        },
+        {
+          "code": "campus-night",
+          "name": "밤 캠퍼스",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.62,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.36,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "campus_food",
+      "name": "대학가 맛집",
+      "icon": "utensils",
+      "description": "학교 앞 싸고 맛있는 집 위주로",
+      "budget_min": 12000,
+      "budget_max": 80000,
+      "sort_order": 7,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.24,
+          "distance": 0.06,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.16,
+          "purpose_fit": 0.24,
+          "curated": 0.13
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "taste": 0.5,
+            "mood": 0.3,
+            "price": 0.2
+          },
+          "preference_prior": {
+            "가성비": 0.7,
+            "활기찬": 0.4
+          }
+        }
+      },
+      "tag_affinities": {
+        "활기찬": 0.8,
+        "가성비": 0.9,
+        "단체석": 0.6,
+        "힙한": 0.6,
+        "체험형": 0.6,
+        "레트로": 0.4,
+        "포토존": 0.4,
+        "조용한": -0.2,
+        "노키즈존": 0.0,
+        "로맨틱": -0.3,
+        "체인점": -0.3,
+        "착한가격업소": 0.8,
+        "매운맛": 0.3,
+        "디저트맛집": 0.4,
+        "야경명소": 0.3,
+        "관광공사 소개": 0.5,
+        "간편식": 0.0
+      },
+      "templates": [
+        {
+          "code": "campus_food-lunch",
+          "name": "대학가 점심",
+          "time_band": "lunch",
+          "min_budget_per_person": 6000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.6,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.38,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "campus_food-afternoon",
+          "name": "대학가 오후",
+          "time_band": "afternoon",
+          "min_budget_per_person": 6000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.35,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.63,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "16:30",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "campus_food-evening",
+          "name": "대학가 저녁",
+          "time_band": "evening",
+          "min_budget_per_person": 8000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.55,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.18,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.25,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ]
+        },
+        {
+          "code": "campus_food-fullday",
+          "name": "대학가 하루",
+          "time_band": "fullday",
+          "min_budget_per_person": 14000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.36,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.16,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.46,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            }
+          ]
+        },
+        {
+          "code": "campus_food-night",
+          "name": "대학가 밤",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.68,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.3,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "festival",
+      "name": "축제 즐기기",
+      "icon": "party-popper",
+      "description": "그날 학교 축제를 중심으로, 앞뒤 식사까지",
+      "budget_min": 15000,
+      "budget_max": 100000,
+      "sort_order": 8,
+      "scoring_profile": {
+        "version": 3,
+        "weights": {
+          "budget": 0.24,
+          "distance": 0.06,
+          "rating": 0.03,
+          "sentiment": 0.02,
+          "congestion": 0.04,
+          "time_fit": 0.08,
+          "preference": 0.16,
+          "purpose_fit": 0.24,
+          "curated": 0.13
+        },
+        "params": {
+          "budget_target_util": 0.85,
+          "budget_sigma": 0.18,
+          "distance_scale_m": 900,
+          "bayes_m": 30,
+          "lambda_travel": 0.015,
+          "lambda_overrun": 2.0,
+          "diversity_bonus": 0.05,
+          "group_tag": "단체석",
+          "group_min_party": 6,
+          "aspect_weights": {
+            "taste": 0.5,
+            "mood": 0.3,
+            "price": 0.2
+          },
+          "preference_prior": {
+            "활기찬": 0.7,
+            "가성비": 0.6
+          }
+        }
+      },
+      "tag_affinities": {
+        "활기찬": 0.9,
+        "가성비": 0.7,
+        "단체석": 0.6,
+        "힙한": 0.6,
+        "체험형": 0.6,
+        "레트로": 0.4,
+        "포토존": 0.5,
+        "조용한": -0.2,
+        "노키즈존": 0.0,
+        "로맨틱": -0.3,
+        "체인점": -0.15,
+        "착한가격업소": 0.5,
+        "매운맛": 0.2,
+        "디저트맛집": 0.2,
+        "야경명소": 0.3,
+        "관광공사 소개": 0.5,
+        "간편식": 0.0
+      },
+      "templates": [
+        {
+          "code": "festival-lunch",
+          "name": "축제 낮",
+          "time_band": "lunch",
+          "min_budget_per_person": 7000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.5,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.25,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.07,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.18,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 6000
+            }
+          ],
+          "_note": "CULTURE 는 그날의 축제 자리. 행사가 있으면 앵커 전략이 그 행사로 고정하고(필수로 바꾼다), 없으면 전시 · 문화공간이 들어오거나 빠진다(선택)."
+        },
+        {
+          "code": "festival-afternoon",
+          "name": "축제 오후",
+          "time_band": "afternoon",
+          "min_budget_per_person": 7000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.25,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.08,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.45,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "DESSERT",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 3000
+            }
+          ],
+          "_note": "CULTURE 는 그날의 축제 자리. 행사가 있으면 앵커 전략이 그 행사로 고정하고(필수로 바꾼다), 없으면 전시 · 문화공간이 들어오거나 빠진다(선택)."
+        },
+        {
+          "code": "festival-evening",
+          "name": "축제 저녁",
+          "time_band": "evening",
+          "min_budget_per_person": 8000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.5,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.15,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.07,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.28,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:00",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "CULTURE 는 그날의 축제 자리. 행사가 있으면 앵커 전략이 그 행사로 고정하고(필수로 바꾼다), 없으면 전시 · 문화공간이 들어오거나 빠진다(선택)."
+        },
+        {
+          "code": "festival-fullday",
+          "name": "축제 하루",
+          "time_band": "fullday",
+          "min_budget_per_person": 15000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.28,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.12,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.06,
+              "is_optional": true,
+              "is_order_flexible": true,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.32,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": "17:00",
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "BAR",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": "18:30",
+              "latest_start": "23:30",
+              "min_slot_budget": 12000
+            }
+          ],
+          "_note": "캠퍼스 → 식사 → 카페 · 쉬는 시간 → 축제 → 뒤풀이 식사 → (한잔) (docs/34 §5)."
+        },
+        {
+          "code": "festival-night",
+          "name": "축제 밤",
+          "time_band": "night",
+          "min_budget_per_person": 5000,
+          "party_min": 1,
+          "party_max": 8,
+          "slots": [
+            {
+              "course_role": "CULTURE",
+              "budget_share": 0.05,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 0
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.6,
+              "is_optional": false,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "CAFE",
+              "budget_share": 0.35,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": 4000
+            }
+          ],
+          "_note": "CULTURE 는 그날의 축제 자리. 행사가 있으면 앵커 전략이 그 행사로 고정하고(필수로 바꾼다), 없으면 전시 · 문화공간이 들어오거나 빠진다(선택)."
+        }
+      ]
     }
   ]
 }

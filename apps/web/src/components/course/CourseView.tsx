@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, TrainFront, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, Tent, TrainFront, TriangleAlert, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -11,7 +11,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
+import { encodeCampus, useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, transportLabel, won } from "@/lib/format";
@@ -149,7 +149,9 @@ export function CourseView({ id }: { id: string }) {
   const firstStop = data.stops[0];
   const lastStop = data.stops[data.stops.length - 1];
   // 시 · 도 전체 여행: "부산광역시 · 송도해수욕장 주변 → 부산타워 주변"
-  const areaLabel = hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
+  // docs/34: 대학교를 중심으로 짠 하루는 그 학교 이름 그대로 ("가천대학교 · 캠퍼스 탐방")
+  const anchor = request.anchor ?? null;
+  const areaLabel = anchor ? anchor.name : hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
   const placeLabel = request.city ? [request.city.name, areaLabel].filter(Boolean).join(" · ") : areaLabel;
   // 목적을 여러 개 골랐으면 모두 보여 준다 (첫 번째가 하루의 틀)
   const purposeLabel = (request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name;
@@ -239,18 +241,19 @@ export function CourseView({ id }: { id: string }) {
   };
 
   // 조건 바꾸기: 지역 · 목적을 채운 채로 위저드로 돌아간다 (역 · 장소 기준 코스는 지역이 없어 목적만)
-  const changeHref = `/plan?${new URLSearchParams({ ...(request.region ? { region: request.region.slug } : {}), purpose: request.purpose.code }).toString()}`;
+  const changeHref = `/plan?${new URLSearchParams({ ...(anchor ? { region: encodeCampus(anchor) } : request.region ? { region: request.region.slug } : {}), purpose: request.purpose.code }).toString()}`;
 
   /** fork: 친구 코스를 같은 조건 그대로 내 코스로 새로 만든다 (지금 장소를 빼지 않는다). 아니면 다른 장소들로 다시 짠다. */
   /** focus: 이 동네 명물을 골라(또는 FOCUS_OFF 로 빼고) 다시 짠다. 안 주면 처음 조건 그대로 */
   /** 이 코스를 만든 조건 그대로. 다시 짜기 · 예산 what-if 가 여기서 필요한 것만 바꿔 보낸다 */
   const baseRequest: GenerateCourseRequest = {
-        region: request.city?.slug ?? request.region?.slug,
+        // 대학교를 중심으로 짠 하루: 다시 짜도 그 캠퍼스가 중심이다 (docs/34)
+        ...(anchor ? { anchor: { kind: "university" as const, id: anchor.id } } : { region: request.city?.slug ?? request.region?.slug }),
         // 도시 여행의 구역은 서버가 다시 고른다(인기 구역). 직접 고른 여러 동네만 그대로 보낸다
         ...(hopping && !request.city ? { regions: request.regions!.map((r) => r.slug) } : {}),
         ...((request.purposes?.length ?? 0) > 1 ? { purposes: request.purposes!.slice(1).map((p) => p.code) } : {}),
         // 역·장소 주변으로 짠 코스는 그 지점을 다시 보낸다 — 안 보내면 구 중심으로 옮겨 가 버린다
-        ...(request.origin && !request.city ? { origin: request.origin, ...(request.origin_label ? { origin_label: request.origin_label } : {}) } : {}),
+        ...(request.origin && !request.city && !anchor ? { origin: request.origin, ...(request.origin_label ? { origin_label: request.origin_label } : {}) } : {}),
         purpose: request.purpose.code,
         party_size: request.party_size,
         budget_total: request.budget_total,
@@ -456,6 +459,9 @@ export function CourseView({ id }: { id: string }) {
               <ul aria-label="이 코스의 조건" className="tabular flex items-center gap-1.5 text-body-sm font-semibold text-ink-2 max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 max-sm:[scrollbar-width:none] sm:flex-wrap">
                 {(
                   [
+                    // 하루의 중심이 대학교면 첫 칩 (docs/34). 그날 축제가 코스에 들어갔으면 그 이름도
+                    anchor ? { icon: GraduationCap, text: anchor.name } : null,
+                    anchor?.festival ? { icon: Tent, text: anchor.festival } : null,
                     request.days && request.days > 1 ? { icon: CalendarRange, text: `${request.day}일차 / ${request.days}일` } : null,
                     // 날짜와 시간은 한 칩: 좁은 화면에서 칩이 두 줄이 되어 첫 일정을 밀어내지 않게
                     { icon: CalendarDays, text: `${dateLabel(request.start_at)} ${meetWindow(request.start_at, request.duration_min)}` },

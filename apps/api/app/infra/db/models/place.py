@@ -227,6 +227,16 @@ class Event(Base, TimestampMixin):
     lng: Mapped[float]
     starts_on: Mapped[date] = mapped_column(Date)
     ends_on: Mapped[date] = mapped_column(Date)
+    # docs/34: whose event it is (a campus place = universityId) and when in the day it runs. With the
+    # hours the engine checks that the festival fits the day (meal before, walk there); without them only
+    # the date counts. "HH:MM"; an end before the start runs past midnight.
+    anchor_place_id: Mapped[int | None] = mapped_column(
+        BigIntPK, ForeignKey("place.id", ondelete="SET NULL"), index=True
+    )
+    start_time: Mapped[str | None] = mapped_column(String(5))
+    end_time: Mapped[str | None] = mapped_column(String(5))
+    priority: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    anchor_place: Mapped[Place | None] = relationship(foreign_keys=[anchor_place_id], lazy="raise")
     price: Mapped[int | None] = mapped_column(Integer)
     is_free: Mapped[bool] = mapped_column(default=False)
     booking_url: Mapped[str | None] = mapped_column(Text)

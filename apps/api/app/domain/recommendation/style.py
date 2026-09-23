@@ -191,7 +191,24 @@ def wanted_places(
     if not place_ids:
         return out
     for position in sorted(out):
-        matching = [c for c in out[position] if c.id in place_ids]
+        # an event id can equal a place id (separate tables): only places answer a place id
+        matching = [c for c in out[position] if c.id in place_ids and not c.is_event]
+        if matching:
+            out[position] = matching
+            break
+    return out
+
+
+def wanted_events(
+    pools: Mapping[int, list[PlaceCandidate]], event_ids: frozenset[int]
+) -> dict[int, list[PlaceCandidate]]:
+    """That day's festival of the anchor campus (docs/34): the first slot that can hold it offers only it.
+    Nothing changes when it did not pass the filters (its hours clash with the day, over the budget)."""
+    out = dict(pools)
+    if not event_ids:
+        return out
+    for position in sorted(out):
+        matching = [c for c in out[position] if c.is_event and c.id in event_ids]
         if matching:
             out[position] = matching
             break

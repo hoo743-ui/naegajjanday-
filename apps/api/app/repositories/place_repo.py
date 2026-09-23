@@ -6,10 +6,11 @@ from copy import copy
 from datetime import date, time
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, or_, select, update
+from sqlalchemy import ColumnElement, and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.domain.anchors import AnchoredEvent, event_window
 from app.domain.models import GeoPoint, OpeningPeriod, PlaceCandidate
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.base import as_utc
@@ -97,13 +98,26 @@ def to_candidate(place: Place) -> PlaceCandidate:
     )
 
 
+# what an event with no category is taken for (event_to_candidate) and what counts as a campus festival
+FESTIVAL_CATEGORY = "culture.festival"
+
+
+def event_hours(event: Event) -> list[OpeningPeriod]:
+    """An event with hours (docs/34) is "open" only then, every day of its run — so the engine's own
+    open check keeps the meal before and the walk there inside the day. Without hours: the date alone."""
+    window = event_window(event.start_time, event.end_time)
+    if window is None:
+        return []
+    return [OpeningPeriod(dow=dow, open_min=window[0], close_min=window[1]) for dow in range(7)]
+
+
 def event_to_candidate(event: Event) -> PlaceCandidate:
     cat = event.category
     return PlaceCandidate(
         id=event.id,
         public_id=event.public_id,
         name=event.title,
-        category_code=cat.code if cat else "culture.festival",
+        category_code=cat.code if cat else FESTIVAL_CATEGORY,
         category_name=cat.name if cat else "축제",
         course_role=cat.course_role if cat else "CULTURE",
         lat=event.lat,
@@ -113,6 +127,7 @@ def event_to_candidate(event: Event) -> PlaceCandidate:
         address=event.address,
         thumbnail_url=(event.images or [None])[0],
         default_stay_min=cat.default_stay_min if cat else 60,
+        opening_hours=event_hours(event),
         is_event=True,
     )
 
@@ -253,6 +268,67 @@ class SqlPlaceRepository:
             if dist <= radius_m:
                 found.append((event, dist))
         return sorted(found, key=lambda t: t[1])
+
+    async def campus(self, public_id: str, category: str) -> Place | None:
+        """An approved campus place (docs/34) by its public id."""
+        stmt = (
+            select(Place)
+            .join(Category, Category.id == Place.category_id)
+            .where(Place.public_id == public_id, Place.status == "approved", Category.code == category)
+        )
+        return await self._s.scalar(stmt)
+
+    async def search_campuses(self, q: str | None, category: str, limit: int = 20) -> list[Place]:
+        """Campuses by name — "가천", "홍대" (a school called 홍익대학교 is found by 홍익), in name order."""
+        stmt = (
+            select(Place)
+            .join(Category, Category.id == Place.category_id)
+            .where(Place.status == "approved", Category.code == category)
+        )
+        if q:
+            stmt = stmt.where(Place.name.contains(q.strip()))
+        stmt = stmt.order_by(func.length(Place.name), Place.name).limit(limit)
+        return list((await self._s.scalars(stmt)).all())
+
+    async def anchored_events(
+        self, place_id: int, origin: GeoPoint, radius_m: float, on_date: date
+    ) -> list[AnchoredEvent]:
+        """That day's events of this campus: linked to it (an admin-entered university festival) or a
+        public *festival* held within the campus ring. An exhibition or a performance next door is not the
+        campus's festival — it still shows up among the nearby events of the result page."""
+        festival = or_(Event.category_id.is_(None), Category.code == FESTIVAL_CATEGORY)
+        stmt = (
+            select(Event)
+            .outerjoin(Category, Category.id == Event.category_id)
+            .where(Event.status == "approved", Event.starts_on <= on_date, Event.ends_on >= on_date)
+            .where(
+                or_(
+                    Event.anchor_place_id == place_id,
+                    and_(festival, within(Event, origin, radius_m, self._dialect)),
+                )
+            )
+            .limit(50)
+        )
+        out = []
+        for event in (await self._s.scalars(stmt)).all():
+            dist = haversine_m(origin, GeoPoint(event.lat, event.lng))
+            anchored = event.anchor_place_id == place_id
+            if not anchored and dist > radius_m:
+                continue
+            out.append(
+                AnchoredEvent(
+                    id=event.id,
+                    title=event.title,
+                    starts_on=event.starts_on,
+                    ends_on=event.ends_on,
+                    start_time=event.start_time,
+                    end_time=event.end_time,
+                    priority=event.priority or 0,
+                    anchored=anchored,
+                    distance_m=dist,
+                )
+            )
+        return out
 
     async def candidates_by_ids(self, place_ids: Sequence[int]) -> dict[int, PlaceCandidate]:
         if not place_ids:

@@ -1,4 +1,4 @@
-import { Heart, House, Luggage, Sparkles, User, Users, Utensils, type LucideIcon } from "lucide-react";
+import { GraduationCap, Heart, House, Luggage, PartyPopper, Sparkles, User, Users, Utensils, type LucideIcon } from "lucide-react";
 
 /**
  * API 의 purpose.icon(키 문자열) → 아이콘. 목록 자체는 API 에서 오고, 여기는 "그림 사전"일 뿐이다.
@@ -13,6 +13,9 @@ const ICONS: Record<string, LucideIcon> = {
   home: House,
   users: Users,
   utensils: Utensils,
+  // docs/34: 대학교를 고른 하루의 목적
+  "graduation-cap": GraduationCap,
+  "party-popper": PartyPopper,
 };
 
 export function PurposeIcon({ icon, className }: { icon: string; className?: string }) {

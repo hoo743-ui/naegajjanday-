@@ -22,6 +22,15 @@ class Preferences(BaseModel):
     exclude_place_ids: list[str] = Field(default_factory=list, max_length=100)
 
 
+class AnchorRef(BaseModel):
+    """docs/34: the place a day is planned around. Only a university campus for now."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["university"] = "university"
+    id: str = Field(min_length=1, max_length=64, description="캠퍼스 장소의 public id (/meta/universities)")
+
+
 class CourseGenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -42,6 +51,10 @@ class CourseGenerateRequest(BaseModel):
         default=None,
         max_length=40,
         description="origin 의 표시 이름(역·장소). 결과 화면과 다시 짜기에 그대로 돌려준다",
+    )
+    anchor: AnchorRef | None = Field(
+        default=None,
+        description="하루의 중심(대학교). 주면 그 캠퍼스가 출발점, region/origin 은 필요 없다 (docs/34)",
     )
     purpose: str = Field(examples=["date"], description="하루의 틀을 정하는 첫 목적")
     purposes: list[str] = Field(
@@ -107,8 +120,10 @@ class CourseGenerateRequest(BaseModel):
         elif self.regions:
             self.region = self.region or self.regions[0]
             self.regions = []
-        if not self.region and self.origin is None:
-            raise ValueError("region 또는 origin 중 하나는 필요해요")
+        if self.anchor is not None:  # the campus is the centre: a region or a point would only compete
+            self.region, self.regions = None, []
+        elif not self.region and self.origin is None:
+            raise ValueError("region, origin, anchor 중 하나는 필요해요")
         return self
 
 
@@ -317,6 +332,13 @@ class EchoPreferences(BaseModel):
     disliked_tags: list[str] = Field(default_factory=list)
 
 
+class AnchorEcho(BaseModel):
+    kind: Literal["university"] = "university"
+    id: str
+    name: str
+    festival: str | None = Field(default=None, description="이 코스에 들어간 그날의 행사 이름")
+
+
 class CourseRequestEcho(BaseModel):
     """The conditions the course was generated with — the result page shows them next to the totals,
     and "다시 짜기" sends them back so the new course is planned around the same spot and taste."""
@@ -327,6 +349,13 @@ class CourseRequestEcho(BaseModel):
         description="지역 중심이 아닌 지점(역·장소)에서 짠 코스일 때만. 다시 짤 때 그대로 보낸다",
     )
     origin_label: str | None = None
+    anchor: AnchorEcho | None = Field(
+        default=None, description="대학교를 중심으로 짠 코스일 때 (docs/34). 다시 짤 때 anchor 로 보낸다"
+    )
+    context: Literal["general_area", "specific_place", "university", "festival"] = Field(
+        default="general_area",
+        description="하루의 중심: 지역 · 역/장소 · 대학교 · 대학교 + 그날의 축제",
+    )
     preferences: EchoPreferences = Field(default_factory=EchoPreferences)
     purpose: CodeName
     purposes: list[CodeName] = Field(default_factory=list, description="첫 목적 포함, 고른 순서대로")

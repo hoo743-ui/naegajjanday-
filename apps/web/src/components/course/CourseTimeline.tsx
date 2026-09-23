@@ -107,7 +107,8 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
 
         return (
           <Fragment key={stop.place.id}>
-            {leg ? (
+            {/* 출발점이 곧 첫 장소면(대학교 · 장소를 중심으로 짠 하루) "출발지에서 0분 · 0m" 줄은 말할 것이 없다 */}
+            {leg && !(i === 0 && distanceM < 30) ? (
               <li
                 className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-5 text-body-sm text-muted-foreground"
                 aria-label={unavailable ? "다음 장소까지 경로 정보를 불러오지 못했어요" : `${i === 0 ? "출발지에서" : "다음 장소까지"} ${transportLabel(mode)} ${estimated ? "약 " : ""}${minutes(travelMin)}, ${distance(distanceM)}${estimated && i > 0 ? " (추정)" : ""}`}

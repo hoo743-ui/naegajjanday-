@@ -201,6 +201,30 @@ def bulk_download_cmd(
         raise typer.Exit(code=1)
 
 
+@bulk_cli.command("universities")
+def bulk_universities(
+    step: Annotated[str, typer.Option(help="build (CSV + places → data/anchors) | load")] = "load",
+    path: Annotated[Path | None, typer.Option(help="raw CSV (default: raw/std_universities.csv)")] = None,
+) -> None:
+    """Universities and colleges as campus places — the anchor of a campus day (docs/34)."""
+    from app.infra.ingestion.bulk import universities
+
+    async def run() -> None:
+        db = Database(get_settings())
+        try:
+            if step == "build":
+                raw = path or bulk_download.default_raw_dir() / universities.RAW_FILENAME
+                await universities.build(db, raw, kakao_key=get_settings().kakao_rest_api_key, log=typer.echo)
+            elif step == "load":
+                await universities.load(db, log=typer.echo)
+            else:
+                raise _fail(f"unknown step {step!r}: build | load")
+        finally:
+            await db.dispose()
+
+    asyncio.run(run())
+
+
 @bulk_cli.command("semas")
 def bulk_semas(
     path: Annotated[Path | None, typer.Option(help="zip | directory of CSVs | one CSV")] = None,
@@ -493,7 +517,9 @@ def images_fingerprint(
 
 @cli.command("eval-courses")
 def eval_courses(
-    scope: Annotated[str, typer.Option(help="quick(4개 지역) | full(20개 지역)")] = "quick",
+    scope: Annotated[
+        str, typer.Option(help="quick(4개 지역) | full(20개 지역) | university(캠퍼스 하루)")
+    ] = "quick",
     region: Annotated[list[str] | None, typer.Option(help="이 지역만 (여러 번 가능)")] = None,
     purpose: Annotated[list[str] | None, typer.Option(help="이 목적만")] = None,
     start: Annotated[list[str] | None, typer.Option(help="이 시작 시각만, 예: 18:30")] = None,

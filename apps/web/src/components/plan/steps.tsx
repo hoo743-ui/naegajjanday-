@@ -9,7 +9,7 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { decodeStation, usePurposes, useRegionName } from "@/lib/api/hooks";
+import { decodeCampus, isPointValue, usePurposes, useRegionName } from "@/lib/api/hooks";
 import type { Purpose } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
@@ -49,7 +49,7 @@ export function RegionStep() {
   const partySize = useWatch<PlanValues, "party_size">({ name: "party_size" });
   const selectedName = useRegionName(selected || undefined) ?? "";
   // 역 주변 코스는 한 지점이 기준이라 다른 동네와 잇지 않는다
-  const canAdd = Boolean(selected) && !decodeStation(selected) && before.length < MAX_REGIONS - 1 && !before.includes(selected);
+  const canAdd = Boolean(selected) && !isPointValue(selected) && before.length < MAX_REGIONS - 1 && !before.includes(selected);
   const addAnother = () => {
     setValue("regions_before", [...before, selected], { shouldDirty: true });
     setValue("region", "", { shouldDirty: true });
@@ -88,7 +88,7 @@ export function RegionStep() {
         </button>
       ) : null}
       <FieldError name="region" />
-      {selected && !decodeStation(selected) ? <HotPlaces key={selected} regionSlug={selected} partySize={partySize} /> : null}
+      {selected && !isPointValue(selected) ? <HotPlaces key={selected} regionSlug={selected} partySize={partySize} /> : null}
     </div>
   );
 }
@@ -98,7 +98,9 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
   const { register, setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "purpose">({ name: "purpose" });
   const extra = useWatch<PlanValues, "purposes_extra">({ name: "purposes_extra" });
-  const purposes = usePurposes();
+  const region = useWatch<PlanValues, "region">({ name: "region" });
+  // docs/34: 대학교를 골랐으면 그 하루의 목적(캠퍼스 탐방 · 대학가 맛집 · 축제 즐기기 …)이 먼저 나온다
+  const purposes = usePurposes(decodeCampus(region) ? "university" : undefined);
 
   if (purposes.isPending) {
     return (

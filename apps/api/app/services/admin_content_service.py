@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core import errors
-from app.infra.db.models import Banner, Category, Event, Region
+from app.domain.anchors import university_rules
+from app.infra.db.models import Banner, Category, Event, Place, Region
+from app.repositories.place_repo import SqlPlaceRepository
 from app.schemas import admin as dto
 from app.services.audit import AuditLogger
 
@@ -35,18 +37,28 @@ class AdminContentService:
             category=e.category.code if e.category else None, description=e.description, address=e.address,
             lat=e.lat, lng=e.lng, starts_on=e.starts_on, ends_on=e.ends_on, is_free=e.is_free, price=e.price,
             booking_url=e.booking_url, status=e.status, provider=e.provider,
+            start_time=e.start_time, end_time=e.end_time, priority=e.priority or 0,
+            university=e.anchor_place.public_id if e.anchor_place else None,
+            university_name=e.anchor_place.name if e.anchor_place else None,
         )  # fmt: skip
 
     async def _event(self, public_id: str) -> Event:
         event = await self._s.scalar(
-            select(Event).where(Event.public_id == public_id).options(selectinload(Event.category))
+            select(Event)
+            .where(Event.public_id == public_id)
+            .options(selectinload(Event.category), selectinload(Event.anchor_place))
         )
         if event is None:
             raise errors.NotFound("이벤트를 찾을 수 없어요.")
         return event
 
     async def list_events(self, region: str | None, status: str | None) -> dto.AdminEventList:
-        stmt = select(Event).options(selectinload(Event.category)).order_by(Event.starts_on.desc()).limit(500)
+        stmt = (
+            select(Event)
+            .options(selectinload(Event.category), selectinload(Event.anchor_place))
+            .order_by(Event.starts_on.desc())
+            .limit(500)
+        )
         if region:
             stmt = stmt.where(Event.region_id == (await self._region(region)).id)
         if status:
@@ -63,9 +75,16 @@ class AdminContentService:
             category_id = await self._s.scalar(select(Category.id).where(Category.code == body.category))
             if category_id is None:
                 raise errors.ValidationFailed(f"'{body.category}' 카테고리는 없어요.")
+        campus = await self._campus(body.university) if body.university else None
+        if (body.lat is None or body.lng is None) and campus is None:
+            raise errors.ValidationFailed("위치(lat · lng)나 대학교(university) 중 하나는 필요해요.")
+        fields = body.model_dump(exclude={"region", "category", "university", "lat", "lng"})
         event = Event(
             region_id=region.id, category_id=category_id, provider="admin", images=[],
-            **body.model_dump(exclude={"region", "category"}),
+            anchor_place_id=campus.id if campus else None,
+            lat=body.lat if body.lat is not None else campus.lat,  # type: ignore[union-attr]
+            lng=body.lng if body.lng is not None else campus.lng,  # type: ignore[union-attr]
+            **fields,
         )  # fmt: skip
         self._s.add(event)
         await self._s.flush()
@@ -85,6 +104,15 @@ class AdminContentService:
         )
         await self._s.commit()
         return self._event_out(event, await self._slugs())
+
+    async def _campus(self, public_id: str) -> Place:
+        """docs/34: the campus a university festival belongs to."""
+        campus = await SqlPlaceRepository(self._s).campus(public_id, str(university_rules()["category"]))
+        if campus is None:
+            raise errors.ValidationFailed(
+                f"'{public_id}' 대학교는 없어요. /meta/universities 에서 id 를 골라 주세요."
+            )
+        return campus
 
     async def delete_event(self, public_id: str) -> None:
         event = await self._event(public_id)

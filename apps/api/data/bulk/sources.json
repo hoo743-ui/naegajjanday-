@@ -37,6 +37,12 @@
       "title": "전국문화축제표준데이터",
       "filename": "std_festivals.csv"
     },
+    "universities": {
+      "kind": "standard",
+      "public_data_pk": "15107736",
+      "title": "전국대학및전문대학정보표준데이터",
+      "filename": "std_universities.csv"
+    },
     "markets": {
       "kind": "standard",
       "public_data_pk": "15012894",

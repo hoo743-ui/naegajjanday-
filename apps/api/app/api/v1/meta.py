@@ -47,8 +47,20 @@ async def region_hot_places(
 
 
 @router.get("/purposes", response_model=dto.PurposeList, summary="목적 목록 + 추천 예산 범위")
-async def purposes(service: MetaServiceDep) -> dto.PurposeList:
-    return await service.purposes()
+async def purposes(
+    service: MetaServiceDep,
+    context: str | None = Query(default=None, description="university: 대학교를 고른 하루의 목적 (docs/34)"),
+) -> dto.PurposeList:
+    return await service.purposes(context)
+
+
+@router.get("/universities", response_model=dto.UniversityList, summary="하루의 중심이 될 대학교 검색")
+async def universities(
+    service: MetaServiceDep,
+    q: str | None = Query(default=None, max_length=30),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dto.UniversityList:
+    return await service.universities(q, limit)
 
 
 @router.get("/categories", response_model=dto.CategoryList, summary="카테고리 트리")

@@ -27,6 +27,7 @@ from sqlalchemy import select
 from app.core import errors
 from app.core.cache import MemoryCache
 from app.core.config import API_ROOT, Settings
+from app.domain.anchors import university_rules
 from app.domain.media import SHOWABLE, distinct_photos
 from app.domain.models import CourseResult, GeoPoint, RequestContext
 from app.domain.recommendation.day_score import REPEATABLE, experience_kind
@@ -35,6 +36,7 @@ from app.infra.analytics.base import NoopTracker
 from app.infra.db.models import PlaceImage
 from app.infra.db.session import Database
 from app.infra.tagging import get_tag_rules
+from app.repositories.place_repo import SqlPlaceRepository
 from app.schemas import course as dto
 from app.services.course_service import CourseService
 from app.services.narrative_service import NarrativeService
@@ -72,6 +74,7 @@ class Scenario:
     style: str
     party_size: int
     budget_total: int
+    anchor: str | None = None  # docs/34: a campus by name ("가천대학교"); the day is planned around it
 
     @property
     def key(self) -> str:
@@ -113,6 +116,8 @@ def build_scenarios(
 ) -> list[Scenario]:
     """`budget_scale` multiplies every budget: 3.0 asks what a generous budget buys, the case the
     service exists for (a bigger budget must become a fuller day, not the same course with change)."""
+    if scope == "university":
+        return _university_scenarios(spec, only, budget_scale)
     regions = only.get("region") or spec["regions"][scope]
 
     def per_person(p: dict[str, Any]) -> int:
@@ -131,6 +136,23 @@ def build_scenarios(
                             per_person(p) * int(p["party_size"]),
                         )
                     )  # fmt: skip
+    return out
+
+
+def _university_scenarios(
+    spec: dict[str, Any], only: dict[str, list[str]], budget_scale: float
+) -> list[Scenario]:
+    """docs/34: campus days — each campus × each campus purpose, by the campus's name (ids differ per DB)."""
+    uni = spec["universities"]
+    out = []
+    for name in only.get("region") or uni["anchors"]:
+        for purpose, p in uni["purposes"].items():
+            if only.get("purpose") and purpose not in only["purpose"]:
+                continue
+            for start in only.get("start") or uni.get("starts", spec["starts"]):
+                party = int(p["party_size"])
+                budget = round(int(p["budget_per_person"]) * budget_scale / 1000) * 1000 * party
+                out.append(Scenario(f"univ:{name}", purpose, start, "efficient", party, budget, anchor=name))
     return out
 
 
@@ -262,8 +284,20 @@ async def run(
             tracker=NoopTracker(),
         )
         for sc in scenarios:
+            anchor = None
+            if sc.anchor:  # docs/34: find the campus by name in this database
+                found = await SqlPlaceRepository(session).search_campuses(
+                    sc.anchor, str(university_rules()["category"]), 1
+                )
+                if not found:
+                    outcome = Outcome(sc, error="ANCHOR_NOT_FOUND")
+                    outcome.findings.append(Finding("NO_COURSE", f"캠퍼스 없음: {sc.anchor}"))
+                    outcomes.append(outcome)
+                    continue
+                anchor = dto.AnchorRef(kind="university", id=found[0].public_id)
             req = dto.CourseGenerateRequest(
-                region=sc.region,
+                region=None if anchor else sc.region,
+                anchor=anchor,
                 purpose=sc.purpose,
                 party_size=sc.party_size,
                 budget_total=sc.budget_total,

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import errors
 from app.core.cache import Cache
+from app.domain.anchors import context_purposes, university_rules
 from app.domain.models import GeoPoint
 from app.domain.signature import Signature, get_signature_rules
 from app.infra.db.base import utcnow
@@ -112,7 +113,37 @@ class MetaService:
         await self._cache.set(key, out.model_dump(mode="json"), META_TTL_S)
         return out
 
-    async def purposes(self) -> dto.PurposeList:
+    async def purposes(self, context: str | None = None) -> dto.PurposeList:
+        """Every purpose, minus the ones that only make sense around a campus — unless the day is anchored
+        on one (docs/34): then those come first, followed by the everyday purposes the anchor knows."""
+        full = await self._all_purposes()
+        hidden = context_purposes()
+        if context != "university":
+            return dto.PurposeList(items=[p for p in full.items if p.code not in hidden])
+        order = [code for code in university_rules()["purposes"] if not code.startswith("_")]
+        rank = {code: i for i, code in enumerate(order)}
+        picked = [p for p in full.items if p.code in rank]
+        return dto.PurposeList(items=sorted(picked, key=lambda p: rank[p.code]))
+
+    async def universities(self, q: str | None, limit: int) -> dto.UniversityList:
+        key = f"university:list:{q or ''}:{limit}"
+        if (cached := await self._cache.get(key)) is not None:
+            return dto.UniversityList.model_validate(cached)
+        rows = await SqlPlaceRepository(self._s).search_campuses(
+            q, str(university_rules()["category"]), limit
+        )
+        out = dto.UniversityList(
+            items=[
+                dto.UniversityOut(
+                    id=p.public_id, name=p.name, address=p.road_address or p.address, lat=p.lat, lng=p.lng
+                )
+                for p in rows
+            ]
+        )
+        await self._cache.set(key, out.model_dump(mode="json"), META_TTL_S)
+        return out
+
+    async def _all_purposes(self) -> dto.PurposeList:
         if (cached := await self._cache.get("purpose:list")) is not None:
             return dto.PurposeList.model_validate(cached)
         items = []

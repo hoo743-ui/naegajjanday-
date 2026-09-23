@@ -112,10 +112,16 @@ class EventIn(Strict):
     category: str | None = None
     description: str | None = None
     address: str | None = None
-    lat: float = Field(ge=-90, le=90)
-    lng: float = Field(ge=-180, le=180)
+    # docs/34: a university festival — the campus id (GET /meta/universities). Without lat/lng the event
+    # stands at the campus.
+    university: str | None = Field(default=None, max_length=64)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
     starts_on: date
     ends_on: date
+    start_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    end_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    priority: int = Field(default=0, ge=0, le=100)
     price: int | None = Field(default=None, ge=0)
     is_free: bool = False
     booking_url: str | None = None
@@ -134,6 +140,9 @@ class EventPatch(Strict):
     address: str | None = None
     starts_on: date | None = None
     ends_on: date | None = None
+    start_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    end_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    priority: int | None = Field(default=None, ge=0, le=100)
     price: int | None = Field(default=None, ge=0)
     is_free: bool | None = None
     booking_url: str | None = None
@@ -151,6 +160,11 @@ class AdminEventOut(BaseModel):
     lng: float
     starts_on: date
     ends_on: date
+    start_time: str | None = None
+    end_time: str | None = None
+    priority: int = 0
+    university: str | None = Field(default=None, description="이 행사가 속한 캠퍼스 id (docs/34)")
+    university_name: str | None = None
     is_free: bool
     price: int | None
     booking_url: str | None = None

@@ -50,6 +50,20 @@ class PurposeList(BaseModel):
     items: list[PurposeOut]
 
 
+class UniversityOut(BaseModel):
+    """docs/34: a campus that can anchor a day (전국대학및전문대학정보표준데이터 + our own place data)."""
+
+    id: str = Field(description="요청의 anchor.id 로 보낸다")
+    name: str
+    address: str | None = None
+    lat: float
+    lng: float
+
+
+class UniversityList(BaseModel):
+    items: list[UniversityOut]
+
+
 class CategoryOut(BaseModel):
     code: str
     name: str
