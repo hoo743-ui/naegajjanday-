@@ -14,7 +14,7 @@ import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { decodeCampus, decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
-import { num, toKstIso, won } from "@/lib/format";
+import { toKstIso, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError } from "@/lib/mascot-copy";
 import { resolveStart } from "./meet-time";
@@ -151,12 +151,12 @@ export function PlanWizard() {
   const nextBlocked = (step === 0 && !values.region) || (step === 1 && !values.purpose);
   const stationName = pickedStation?.name ?? pickedCampus?.name;
   const stages = useMemo(
+    // 전환 패널의 네 줄 (docs/41): 동네 → 예산 → 순서 → 거의 다. 엔진이 실제로 하는 일만 말한다
     () => [
-      region ? `${region.name} 장소 ${num(region.place_count)}곳 살펴보는 중…` : stationName ? `${stationName} 주변 장소를 살펴보는 중…` : "주변 장소를 살펴보는 중…",
-      `${won(values.budget_total)} 예산에 맞는 곳만 고르는 중…`,
-      // 엔진이 실제로 보는 것만 말한다 (평점·리뷰·혼잡도 자료는 아직 없다)
-      "거리 · 목적에 맞는 분위기 · 영업시간 · 공공기관 소개 여부로 점수 매기는 중…",
-      "가장 덜 걷는 동선 계산 중…",
+      region ? `${region.name} 동네를 읽는 중이에요` : stationName ? `${stationName} 주변을 읽는 중이에요` : "동네를 읽는 중이에요",
+      `${won(values.budget_total)} 안에 들어오는 조합을 맞추는 중`,
+      "먹고, 걷고, 놀 순서를 맞추고 있어요",
+      "짠! 거의 다 됐어요",
     ],
     [region, stationName, values.budget_total],
   );
@@ -259,12 +259,13 @@ export function PlanWizard() {
 
   return (
     <FormProvider {...form}>
-      {loading ? <JjaniLoader fullscreen stages={stages} interval={900} /> : null}
+      {loading ? <JjaniLoader fullscreen stages={stages} interval={700} note="곧 영수증처럼 정리해 드릴게요" /> : null}
 
       {/* overflow-x-clip: 단계가 옆에서 밀려 들어오는 동안(16px) 모바일에서 가로 스크롤이 순간 생기던 것을 막는다 */}
-      <form onSubmit={submit} noValidate className="mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12 lg:grid lg:max-w-[1120px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-16" inert={loading}>
+      <form onSubmit={submit} noValidate className={cn("mx-auto w-full max-w-[720px] overflow-x-clip px-5 pt-8 pb-36 sm:pt-12", step > 0 && "lg:grid lg:max-w-[1120px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-16")} inert={loading}>
         {/* 진행 표시 = 한 줄씩 찍히는 영수증 (모바일은 위쪽의 얇은 띠, 데스크톱은 옆의 영수증) */}
-        <ReceiptProgress step={step} lines={receiptLines} budget={step >= 2 ? { total: values.budget_total, party: values.party_size } : undefined} jjani={jjani} onJump={(i) => void go(i)} />
+        {/* 첫 단계는 질문 하나에만 집중한다 (docs/41): 비어 있는 영수증은 목적을 고른 뒤부터 */}
+        {step > 0 ? <ReceiptProgress step={step} lines={receiptLines} budget={step >= 2 ? { total: values.budget_total, party: values.party_size } : undefined} jjani={jjani} onJump={(i) => void go(i)} /> : null}
 
         <div className="relative lg:col-start-1 lg:row-start-1">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
@@ -286,7 +287,17 @@ export function PlanWizard() {
                 headingRef.current?.focus();
               }}
             >
+              {/* 몇 번째 질문인지: 작은 숫자 + 얇은 진행 줄 */}
+              <div className="mb-3 flex items-center gap-3" aria-hidden>
+                <span className="tabular text-body-sm font-bold text-tomato-deep">
+                  {step + 1}/{STEPS.length}
+                </span>
+                <span className="h-1 flex-1 overflow-hidden rounded-full bg-ink/10">
+                  <span className="block h-full rounded-full bg-tomato transition-[width] duration-300" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+                </span>
+              </div>
               <h1 ref={headingRef} tabIndex={-1} className="mb-6 text-h1 font-bold outline-none">
+                <span className="sr-only">{`${step + 1}/${STEPS.length} `}</span>
                 {current?.question}
               </h1>
 

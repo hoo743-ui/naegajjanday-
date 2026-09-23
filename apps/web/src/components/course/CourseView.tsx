@@ -37,9 +37,9 @@ import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
-const LOADING_STAGES = ["코스를 펼치는 중…", "지도에 핀 꽂는 중…"];
-const FORK_STAGES = ["친구 코스의 조건을 그대로 가져오는 중…", "예산에 맞는 곳만 고르는 중…", "내 코스로 옮겨 적는 중…"];
-const REROLL_STAGES = ["다른 곳들로 다시 살펴보는 중…", "예산에 맞는 곳만 고르는 중…", "가장 덜 걷는 동선 계산 중…"];
+const LOADING_STAGES = ["영수증을 꺼내는 중이에요", "지도에 핀을 꽂는 중"];
+const FORK_STAGES = ["친구 코스의 조건을 가져오는 중", "예산 안에 들어오는 조합을 맞추는 중", "짠! 거의 다 됐어요"];
+const REROLL_STAGES = ["다른 곳들로 다시 맞추는 중", "남는 돈까지 계산하고 있어요", "짠! 거의 다 됐어요"];
 
 /** 모바일 바텀시트의 세 단계 (docs/25 §5): 지도를 크게 · 절반 · 목록 전체 */
 type SheetStop = "map" | "half" | "full";

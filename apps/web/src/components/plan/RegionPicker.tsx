@@ -76,6 +76,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   const [q, setQ] = useState(() => params.get("q") ?? "");
   // 행정구역 목록은 보조 수단이다: 먼저 검색 · 많이 찾는 동네, 목록은 펼쳐야 보인다 (목록 안으로 들어간 뒤에는 계속 보인다)
   const [browse, setBrowse] = useState(false);
+  // 많이 찾는 동네는 여섯 곳만 먼저, 나머지는 "더 보기"
+  const [moreHot, setMoreHot] = useState(false);
   // docs/34: 하루의 중심 — 동네 · 역, 또는 대학교(캠퍼스와 학교 앞, 그날의 축제까지)
   const [mode, setMode] = useState<"area" | "campus">(() => (decodeCampus(value) ? "campus" : "area"));
   const query = useDebounced(q.trim(), 200);
@@ -286,7 +288,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
               <div className="mb-5">
                 <p className="mb-2 text-body-sm font-semibold text-ink-2">많이 찾는 동네</p>
                 <div className="flex flex-wrap gap-2">
-                  {hotspots.map((r) => (
+                  {(moreHot ? hotspots : hotspots.slice(0, 6)).map((r) => (
                     <button
                       key={r.slug}
                       type="button"
@@ -301,6 +303,11 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
                       {r.name}
                     </button>
                   ))}
+                  {hotspots.length > 6 ? (
+                    <button type="button" aria-expanded={moreHot} onClick={() => setMoreHot((v) => !v)} className="inline-flex min-h-11 items-center rounded-full px-3 text-body-sm font-semibold text-ink-2 underline decoration-line underline-offset-4 hover:text-ink">
+                      {moreHot ? "접기" : `더 보기 +${hotspots.length - 6}`}
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : null}

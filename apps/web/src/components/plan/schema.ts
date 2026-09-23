@@ -69,7 +69,7 @@ export const PLAN_DEFAULTS: PlanValues = {
 };
 
 export const STEPS = [
-  { key: "region", title: "지역", question: "오늘 어디서 만나요?", fields: ["region", "regions_before"] },
+  { key: "region", title: "지역", question: "어디서 만나요?", fields: ["region", "regions_before"] },
   { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "nights", "meet_day", "start_time", "duration_min"] },
   // 4단계는 그대로 (docs/32 B §10): 취향 단계 안에 짧은 질문 셋(어떤 하루 · 얼마나 이동 · 꼭 원하는 것), 세부 태그는 "더 자세히" 안에

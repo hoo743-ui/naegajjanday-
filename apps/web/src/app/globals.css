@@ -11,6 +11,9 @@
   --tomato: #d63f28;
   --tomato-deep: #b93420;
   --tomato-soft: #fde9e4;
+  /* 민트: 끝났음 · 확인됨 표시(전환 패널의 체크)에만. 흰 바탕 위 4.6:1 */
+  --mint: #1b7f68;
+  --mint-soft: #e3f3ee;
   --blue: #4f8cff;
   --blue-deep: #2a5bd7;
   --blue-soft: #eaf1ff;
@@ -153,6 +156,8 @@
   --color-tomato: var(--tomato);
   --color-tomato-deep: var(--tomato-deep);
   --color-tomato-soft: var(--tomato-soft);
+  --color-mint: var(--mint);
+  --color-mint-soft: var(--mint-soft);
   --color-blue: var(--blue);
   --color-blue-deep: var(--blue-deep);
   --color-blue-soft: var(--blue-soft);
@@ -764,39 +769,66 @@
   box-shadow: 0 2px 6px rgba(20, 33, 61, 0.25);
 }
 
-
-/* 기다리는 동안 (JjaniLoader): 경로의 점이 차례로 켜지고 영수증 줄이 찍혔다 옅어진다. 2.4초 한 바퀴, 조용히 */
-.loader-node {
-  animation: loader-node 2.4s var(--motion-in-out) infinite both;
+/* 전환 패널 (JjaniLoader · docs/41): 패널 등장 180ms → 단계 줄이 150ms 로 찍힘 → 마지막 단계에 도장 200ms. 작고 빠르게, 튀지 않게 */
+.jj-loader {
+  animation: jj-loader-in 0.18s var(--motion-out) both;
 }
-.loader-line {
-  animation: loader-line 2.4s var(--motion-out) infinite both;
+.jj-loader-line {
+  animation: jj-loader-print 0.15s linear both;
 }
-@keyframes loader-node {
-  0%,
-  12% {
-    background: var(--paper);
-  }
-  30%,
-  80% {
-    background: var(--ink);
-  }
-  100% {
-    background: var(--paper);
-  }
+/* 지금 하는 줄: 점선이 이어지는 중 */
+.jj-loader-leader {
+  animation: jj-loader-leader 0.9s var(--motion-in-out) infinite;
+  transform-origin: left;
 }
-@keyframes loader-line {
-  0% {
+.jj-loader-stamp {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--tomato);
+  border-radius: 50%;
+  color: var(--tomato-deep);
+  font-size: 14px;
+  font-weight: 800;
+  transform: rotate(-10deg);
+  animation: jj-loader-stamp 0.2s var(--motion-out) both;
+}
+@keyframes jj-loader-in {
+  from {
     opacity: 0;
-    transform: translateY(-3px);
+    transform: translateY(6px);
   }
-  18%,
-  78% {
-    opacity: 1;
-    transform: none;
+}
+@keyframes jj-loader-print {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes jj-loader-leader {
+  0% {
+    transform: scaleX(0.2);
+    opacity: 0.5;
   }
   100% {
-    opacity: 0.25;
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+@keyframes jj-loader-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.5) rotate(-18deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-10deg);
   }
 }
 
@@ -809,13 +841,6 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/* 낮은 화면의 히어로 제목: 글자 계단(text-display-xl)을 화면 높이로도 묶는다 — 세 줄이 첫 화면의 절반을 넘지 않게 */
-@media (min-width: 64rem) and (max-height: 820px) {
-  .hero-title {
-    font-size: clamp(28px, 5.4svh, 40px);
   }
 }
 
@@ -892,7 +917,7 @@
   fill: var(--tomato);
 }
 
-/* ── 히어로 "내가 · 짠 · 데이" (Hero.tsx, docs/38) ─────────────────────────────── */
+/* ── 종이 위 동네 지도 바탕 (홈 · 인트로 · 소개 · 전환 패널) ─────────────────────────── */
 /* 종이 위의 옅은 동네 지도: 골목 · 큰길 · 역 주변 동선을 닮은 추상 선. 글자 대비를 해치지 않게 아주 옅게, 좁은 화면은 더 옅게 */
 .paper-map {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360' viewBox='0 0 480 360' fill='none' stroke='%2310192e' stroke-linecap='round'%3E%3Cpath d='M-10 70 C80 60 120 110 210 100 S360 40 490 70' stroke-width='3' opacity='.07'/%3E%3Cpath d='M40 -10 C60 90 30 170 90 250 S150 330 140 370' stroke-width='2' opacity='.06'/%3E%3Cpath d='M300 -10 L280 120 L330 210 L310 370' stroke-width='2' opacity='.06'/%3E%3Cpath d='M-10 230 L120 215 L260 250 L490 225' stroke-width='1.5' opacity='.05' stroke-dasharray='5 7'/%3E%3Cpath d='M170 130 L250 150 L240 205' stroke-width='1.5' opacity='.06' stroke-dasharray='3 6'/%3E%3Ccircle cx='330' cy='210' r='6' stroke-width='2' opacity='.08'/%3E%3Ccircle cx='90' cy='250' r='4' stroke-width='2' opacity='.07'/%3E%3C/svg%3E");
@@ -902,46 +927,6 @@
   .paper-map {
     background-image: none;
   }
-}
-/* 제목 속 "짠!": 토마토 도장이 찍힌 한 낱말 */
-.hero-jjan {
-  display: inline-block;
-  padding: 0 0.16em;
-  border-radius: 0.18em;
-  background: var(--tomato);
-  color: #fff;
-  transform: rotate(-3deg);
-}
-/* "하루가 나와요.": 아래로 하루의 점선 */
-.hero-day {
-  background-image: radial-gradient(circle, var(--ink) 1.6px, transparent 2px);
-  background-size: 10px 4px;
-  background-repeat: repeat-x;
-  background-position: 0 100%;
-  padding-bottom: 0.08em;
-}
-/* 영수증 위 상태 도장 — "예산 안" / "초과". 색만이 아니라 글자로 말한다 */
-.hero-stamp {
-  position: absolute;
-  top: 18px;
-  right: 16px;
-  display: grid;
-  place-items: center;
-  width: 62px;
-  height: 62px;
-  border: 2.5px solid var(--tomato);
-  border-radius: 50%;
-  color: var(--tomato-deep);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  transform: rotate(-12deg);
-  background: rgba(253, 233, 228, 0.55);
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.7), inset 0 0 0 4.5px var(--tomato);
-  pointer-events: none;
-}
-.hero-stamp.is-over {
-  border-style: dashed;
 }
 
 /* ── 브랜드 인트로 페이지 "내가 → 짠 → 데이" (/intro · BrandIntro.tsx · docs/40) ─────────────────
@@ -1311,8 +1296,9 @@
 .home-ticket-half {
   display: grid;
   gap: 2px;
-  min-height: 108px;
-  padding: 14px 18px;
+  min-height: 148px;
+  align-content: center;
+  padding: 18px 24px;
   transition: background-color 0.2s;
 }
 .home-ticket-half.is-plan {
