@@ -1,13 +1,15 @@
-"""OAuth2 (authorization code + PKCE + state), refresh-token rotation with family reuse detection,
-logout with access-token `jti` denylist."""
+"""OAuth2 (authorization code + PKCE + state), id/password accounts (no e-mail verification),
+refresh-token rotation with family reuse detection, logout with access-token `jti` denylist."""
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 import httpx
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import errors, security
@@ -111,6 +113,56 @@ class AuthService:
         await self._s.commit()
         return tokens, saved.get("redirect_to")
 
+    # --- id / password ------------------------------------------------------------------------
+
+    async def signup(self, body: dto.SignupBody) -> IssuedTokens:
+        """Creates an active account at once (founder's decision: no e-mail verification) and signs it in.
+        `body.login_id` is already normalized by the schema."""
+        if await self._users.get_by_login_id(body.login_id) is not None:
+            raise errors.LoginIdTaken("이미 쓰고 있는 아이디예요.")
+        # scrypt is deliberately slow CPU work: keep it off the event loop
+        password_hash = await asyncio.to_thread(security.hash_password, body.password)
+        try:
+            user = await self._users.create(
+                email=None,
+                nickname=body.nickname or body.login_id,
+                login_id=body.login_id,
+                password_hash=password_hash,
+            )
+        except IntegrityError as exc:  # lost a race for the same id between the check and the insert
+            await self._s.rollback()
+            raise errors.LoginIdTaken("이미 쓰고 있는 아이디예요.") from exc
+        tokens = await self.issue(user, family_id=str(uuid.uuid4()))
+        await self._s.commit()
+        logger.info("auth.signup", user_id=user.id)
+        return tokens
+
+    async def login_password(self, body: dto.LoginBody) -> IssuedTokens:
+        """One generic failure for an unknown id and a wrong password, and the same scrypt cost for both
+        (a missing user is checked against a dummy hash), so ids cannot be probed."""
+        user = await self._users.get_by_login_id(body.login_id)
+        stored = user.password_hash if user is not None else None
+
+        def check() -> bool:
+            return security.verify_password(body.password, stored or security.dummy_password_hash())
+
+        ok = await asyncio.to_thread(check)
+        if user is None or not stored or not ok:
+            raise errors.InvalidCredentials("아이디 또는 비밀번호가 맞지 않아요.")
+        # same account-state rules as the OAuth callback
+        if user.status == "suspended":
+            raise errors.Forbidden("이용이 정지된 계정이에요.")
+        if user.status == "deleting":
+            if retention.is_purge_due(user, self._settings):
+                # the promise was "gone for good": purge now; the id no longer exists
+                await retention.purge_user(self._s, user)
+                await self._s.commit()
+                raise errors.InvalidCredentials("아이디 또는 비밀번호가 맞지 않아요.")
+            user.status, user.delete_requested_at = "active", None  # signing in cancels the deletion
+        tokens = await self.issue(user, family_id=str(uuid.uuid4()))
+        await self._s.commit()
+        return tokens
+
     # --- tokens ------------------------------------------------------------------------------
 
     async def issue(self, user: User, family_id: str) -> IssuedTokens:
@@ -167,8 +219,8 @@ class AuthService:
     def user_out(user: User) -> dto.UserOut:
         created = as_utc(user.created_at) or utcnow()
         return dto.UserOut(
-            id=user.public_id, email=user.email, nickname=user.nickname, role=user.role,
-            status=user.status, created_at=created,
+            id=user.public_id, email=user.email, login_id=user.login_id, nickname=user.nickname,
+            role=user.role, status=user.status, created_at=created,
         )  # fmt: skip
 
     async def patch_me(self, user: User, body: dto.UserPatch) -> dto.UserOut:

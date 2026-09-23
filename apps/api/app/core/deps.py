@@ -116,30 +116,53 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _limit_spec(settings: Settings, scope: str, signed_in: bool) -> tuple[str, str]:
+    """(limit spec, counter name) for a scope."""
+    if scope == "generate":
+        if signed_in:
+            return settings.rl_generate_user, "generate_user"
+        return settings.rl_generate_anon, "generate_anon"
+    if scope == "chat":
+        return settings.rl_chat, "chat"
+    if scope == "auth":
+        return settings.rl_auth, "auth"
+    return settings.rl_read, "read"
+
+
+async def _hit(response: Response, container: Container, scope: str, identity: str, signed_in: bool) -> None:
+    settings = container.settings
+    spec, name = _limit_spec(settings, scope, signed_in)
+    limit, window = settings.parse_limit(spec)
+    result = await container.rate_limiter.hit(name, identity, limit, window)
+    response.headers.update(result.headers)
+    if not result.allowed:
+        raise errors.RateLimited(
+            meta={"limit": limit, "window_s": window},
+            headers={**result.headers, "Retry-After": str(result.reset_s)},
+        )
+
+
 def rate_limit(scope: str) -> Callable[..., Awaitable[None]]:
     """Sliding-window limits of doc 03 §1. `generate` differs for anonymous IPs and signed-in users."""
 
     async def dependency(
         request: Request, response: Response, container: ContainerDep, claims: ClaimsDep
     ) -> None:
-        settings = container.settings
-        if not settings.rate_limit_enabled:
+        if not container.settings.rate_limit_enabled:
             return
-        if scope == "generate":
-            spec = settings.rl_generate_user if claims else settings.rl_generate_anon
-            name = "generate_user" if claims else "generate_anon"
-        elif scope == "chat":
-            spec, name = settings.rl_chat, "chat"
-        else:
-            spec, name = settings.rl_read, "read"
-        limit, window = settings.parse_limit(spec)
         identity = f"u:{claims.sub}" if claims else f"ip:{client_ip(request)}"
-        result = await container.rate_limiter.hit(name, identity, limit, window)
-        response.headers.update(result.headers)
-        if not result.allowed:
-            raise errors.RateLimited(
-                meta={"limit": limit, "window_s": window},
-                headers={**result.headers, "Retry-After": str(result.reset_s)},
-            )
+        await _hit(response, container, scope, identity, signed_in=claims is not None)
+
+    return dependency
+
+
+def ip_rate_limit(scope: str) -> Callable[..., Awaitable[None]]:
+    """Same limits, always counted per client IP and without reading the bearer token — for sign-up /
+    login, where a stale access token must not answer 401 and a token must not buy a separate budget."""
+
+    async def dependency(request: Request, response: Response, container: ContainerDep) -> None:
+        if not container.settings.rate_limit_enabled:
+            return
+        await _hit(response, container, scope, f"ip:{client_ip(request)}", signed_in=False)
 
     return dependency

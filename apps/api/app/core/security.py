@@ -1,13 +1,16 @@
-"""JWT access tokens, opaque rotating refresh tokens, OAuth2 authorization-code + PKCE helpers."""
+"""JWT access tokens, opaque rotating refresh tokens, OAuth2 authorization-code + PKCE helpers,
+scrypt password hashing for id/password accounts."""
 
 from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import cache
 from typing import Any
 from urllib.parse import urlencode
 
@@ -78,6 +81,52 @@ def new_refresh_token() -> str:
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+# --- passwords: stdlib scrypt, stored as a self-describing string ----------------------------
+
+# RFC 7914 interactive parameters (~16 MiB, tens of ms). Stored with each hash, so raising them later
+# only affects new hashes; old ones still verify with the parameters they were made with.
+SCRYPT_N, SCRYPT_R, SCRYPT_P, SCRYPT_DKLEN = 2**14, 8, 1, 32
+_SCRYPT_MAXMEM = 64 * 1024 * 1024
+
+
+def _b64(raw: bytes) -> str:
+    return base64.b64encode(raw).decode("ascii")
+
+
+def _scrypt(password: str, salt: bytes, n: int, r: int, p: int, dklen: int) -> bytes:
+    return hashlib.scrypt(
+        password.encode("utf-8"), salt=salt, n=n, r=r, p=p, dklen=dklen, maxmem=_SCRYPT_MAXMEM
+    )
+
+
+def hash_password(password: str) -> str:
+    """`scrypt$n$r$p$salt_b64$hash_b64` with a fresh random 16-byte salt."""
+    salt = secrets.token_bytes(16)
+    digest = _scrypt(password, salt, SCRYPT_N, SCRYPT_R, SCRYPT_P, SCRYPT_DKLEN)
+    return f"scrypt${SCRYPT_N}${SCRYPT_R}${SCRYPT_P}${_b64(salt)}${_b64(digest)}"
+
+
+def verify_password(password: str, stored: str | None) -> bool:
+    """Constant-time comparison; a missing or malformed stored hash simply never matches."""
+    if not stored:
+        return False
+    try:
+        scheme, n, r, p, salt_b64, hash_b64 = stored.split("$")
+        if scheme != "scrypt":
+            return False
+        salt, expected = base64.b64decode(salt_b64, validate=True), base64.b64decode(hash_b64, validate=True)
+        actual = _scrypt(password, salt, int(n), int(r), int(p), len(expected))
+    except (ValueError, TypeError):  # wrong field count, bad base64 / ints, parameters scrypt refuses
+        return False
+    return hmac.compare_digest(actual, expected)
+
+
+@cache
+def dummy_password_hash() -> str:
+    """Verified against when a login id does not exist, so a miss costs the same time as a wrong password."""
+    return hash_password(secrets.token_urlsafe(16))
 
 
 # --- OAuth2 authorization code + PKCE --------------------------------------------------------

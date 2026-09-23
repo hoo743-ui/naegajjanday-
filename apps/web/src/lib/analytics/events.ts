@@ -62,7 +62,9 @@ export interface AnalyticsEvents {
   explore_filtered: { type: string; region?: string };
   chat_message_sent: { session_id: string; length: number; suggested: boolean };
   chat_course_received: { session_id: string; course_id: string };
-  login_clicked: { provider: "kakao" | "naver" | "google" };
+  login_clicked: { provider: "kakao" | "naver" | "google" | "password" };
+  // 아이디로 가입 (이메일 인증 없음)
+  signup_completed: { method: "password" };
   error_shown: { code: string; where: string };
 }
 

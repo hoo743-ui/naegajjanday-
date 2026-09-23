@@ -15,6 +15,7 @@ python -m app.cli ingest-bulk all                            # semas → goodpri
 python -m app.cli ingest-bulk marks [--kind all|centurystore|…]  # 백년가게·모범음식점·인허가 → 태그/숨김
 python -m app.cli ingest-bulk stats
 python -m app.cli create-admin --email me@example.com [--print-token]
+ADMIN_PASSWORD=… python -m app.cli create-admin --login-id <id> [--role admin]   # id/password admin
 python -m app.cli purge-courses [--dry-run]                  # never-saved courses older than 24 h
 python -m app.cli purge-accounts [--dry-run]                 # accounts 30 d after DELETE /v1/me
 """
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Awaitable, Callable, Sequence
@@ -30,6 +32,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from pydantic import ValidationError
 
 from app.core import security
 from app.core.config import API_ROOT, Settings, get_settings
@@ -41,6 +44,7 @@ from app.infra.ingestion.bulk.std_datasets import KINDS as STD_KINDS
 from app.infra.ingestion.config_loader import ConfigFormatError, load_config
 from app.infra.ingestion.registry import UnknownProviderError
 from app.repositories.user_repo import SqlUserRepository
+from app.schemas.auth import SignupBody
 from app.services import retention_service as retention
 from app.services.ingestion_runner import IngestionError, ingest, run_job
 
@@ -394,15 +398,33 @@ def bulk_stats() -> None:
     typer.echo(json.dumps(_run(lambda db, _s: bulk.stats(db)), ensure_ascii=False, indent=2))
 
 
+ADMIN_PASSWORD_ENV = "ADMIN_PASSWORD"
+
+
 @cli.command("create-admin")
 def create_admin(
-    email: Annotated[str, typer.Option(help="OAuth 로그인에 쓰는 (검증된) 이메일")],
+    email: Annotated[str | None, typer.Option(help="OAuth 로그인에 쓰는 (검증된) 이메일")] = None,
+    login_id: Annotated[
+        str | None,
+        typer.Option(help=f"아이디·비밀번호 로그인용 아이디 (비밀번호는 환경변수 {ADMIN_PASSWORD_ENV} 로만)"),
+    ] = None,
     role: Annotated[str, typer.Option(help="admin | operator")] = "admin",
     print_token: Annotated[bool, typer.Option(help="로컬 테스트용 access token 출력 (15분)")] = False,
 ) -> None:
-    """Grant an admin role. The account is linked on the first OAuth login with the same e-mail."""
+    """Grant an admin role.
+
+    --email: the account is linked on the first OAuth login with the same e-mail.
+    --login-id: creates (or updates the password and role of) an id/password account. The password is
+    read only from the ADMIN_PASSWORD environment variable — never from an argument, never printed.
+    """
     if role not in {"admin", "operator"}:
         raise _fail("role must be admin or operator")
+    if (email is None) == (login_id is None):
+        raise _fail("pass exactly one of --email or --login-id")
+    if login_id is not None:
+        _create_admin_login(login_id, role, print_token)
+        return
+    assert email is not None
 
     async def job(db: Database, settings: Settings) -> None:
         async with db.sessionmaker() as session:
@@ -413,6 +435,41 @@ def create_admin(
             user.role = role
             await session.commit()
             typer.echo(f"{email} → role={role} id={user.public_id}")
+            if print_token:
+                token, _ = security.create_access_token(settings, user_public_id=user.public_id, role=role)
+                typer.echo(token)
+
+    _run(job)
+
+
+def _create_admin_login(login_id: str, role: str, print_token: bool) -> None:
+    """Idempotent: an existing id gets the new password and role, otherwise the account is created."""
+    password = os.environ.get(ADMIN_PASSWORD_ENV)
+    if not password:
+        raise _fail(f"set the {ADMIN_PASSWORD_ENV} environment variable (the password is never an argument)")
+    try:  # the same id / password rules as sign-up
+        checked = SignupBody(login_id=login_id, password=password)
+    except ValidationError as exc:  # only the messages: the error's repr would echo the password back
+        raise _fail("; ".join(str(e["msg"]) for e in exc.errors())) from None
+    password_hash = security.hash_password(checked.password)
+
+    async def job(db: Database, settings: Settings) -> None:
+        async with db.sessionmaker() as session:
+            users = SqlUserRepository(session)
+            user = await users.get_by_login_id(checked.login_id)
+            action = "updated"
+            if user is None:
+                action = "created"
+                user = await users.create(
+                    email=None,
+                    nickname=checked.login_id,
+                    role=role,
+                    login_id=checked.login_id,
+                    password_hash=password_hash,
+                )
+            user.role, user.password_hash = role, password_hash
+            await session.commit()
+            typer.echo(f"{checked.login_id} → role={role} id={user.public_id} ({action})")
             if print_token:
                 token, _ = security.create_access_token(settings, user_public_id=user.public_id, role=role)
                 typer.echo(token)

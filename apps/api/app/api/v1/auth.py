@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api.v1.responses import PROBLEMS
 from app.core import errors, security
-from app.core.deps import ContainerDep, CredentialsDep, client_ip, rate_limit
-from app.schemas.auth import AuthProviderOut, AuthProvidersResponse, TokenResponse
+from app.core.deps import ContainerDep, CredentialsDep, client_ip, ip_rate_limit, rate_limit
+from app.schemas.auth import AuthProviderOut, AuthProvidersResponse, LoginBody, SignupBody, TokenResponse
 from app.schemas.common import Ok
 from app.services.auth_service import IssuedTokens
 from app.services.factory import AuthServiceDep
@@ -18,6 +18,8 @@ from app.services.factory import AuthServiceDep
 # would answer 401 for an expired one, which `/logout` must survive.
 router = APIRouter(prefix="/auth", tags=["auth"])
 READ_LIMIT = [Depends(rate_limit("read"))]
+# sign-up / login: a much tighter per-IP budget (password guessing), independent of any bearer token
+AUTH_LIMIT = [Depends(ip_rate_limit("auth"))]
 
 Provider = Literal["kakao", "naver", "google"]
 
@@ -99,6 +101,37 @@ async def providers(container: ContainerDep) -> AuthProvidersResponse:
         client_id, client_secret = security.oauth_client(container.settings, name)
         items.append(AuthProviderOut(provider=name, enabled=bool(client_id and client_secret)))
     return AuthProvidersResponse(items=items)
+
+
+@router.post(
+    "/signup",
+    response_model=TokenResponse,
+    status_code=201,
+    responses=PROBLEMS(409, 422, 429),
+    dependencies=AUTH_LIMIT,
+    summary="아이디·비밀번호 가입 (이메일 인증 없음, 바로 활성) → access 발급 + refresh 쿠키",
+)
+async def signup(
+    body: SignupBody, response: Response, service: AuthServiceDep, container: ContainerDep
+) -> TokenResponse:
+    tokens = await service.signup(body)
+    _set_refresh_cookie(response, container, tokens)
+    return tokens.access
+
+
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    responses=PROBLEMS(401, 403, 422, 429),
+    dependencies=AUTH_LIMIT,
+    summary="아이디·비밀번호 로그인 → access 발급 + refresh 쿠키",
+)
+async def password_login(
+    body: LoginBody, response: Response, service: AuthServiceDep, container: ContainerDep
+) -> TokenResponse:
+    tokens = await service.login_password(body)
+    _set_refresh_cookie(response, container, tokens)
+    return tokens.access
 
 
 @router.get(

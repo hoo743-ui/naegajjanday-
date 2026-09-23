@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     rl_generate_user: str = "60/3600"
     rl_chat: str = "30/3600"
     rl_read: str = "300/60"
+    rl_auth: str = "20/600"  # POST /auth/signup · /auth/login, per IP (password guessing)
 
     # --- LLM ---
     llm_provider: Literal["anthropic", "openai", "gemini", "none"] = "none"

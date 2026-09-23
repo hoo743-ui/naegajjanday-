@@ -39,6 +39,10 @@ class TokenReuseDetected(Unauthorized):
     code, title = "TOKEN_REUSE_DETECTED", "보안을 위해 다시 로그인해 주세요"
 
 
+class InvalidCredentials(Unauthorized):
+    code, title = "INVALID_CREDENTIALS", "아이디 또는 비밀번호가 맞지 않아요"
+
+
 class Forbidden(AppError):
     status, code, title = 403, "FORBIDDEN", "권한이 없어요"
 
@@ -69,6 +73,10 @@ class PlaceNotFound(NotFound):
 
 class Conflict(AppError):
     status, code, title = 409, "CONFLICT", "이미 처리된 요청이에요"
+
+
+class LoginIdTaken(Conflict):
+    code, title = "LOGIN_ID_TAKEN", "이미 쓰고 있는 아이디예요"
 
 
 class BudgetTooLow(AppError):

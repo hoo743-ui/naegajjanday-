@@ -22,6 +22,10 @@ class SqlUserRepository:
     async def get_by_email(self, email: str) -> User | None:
         return await self._s.scalar(select(User).where(User.email == email))
 
+    async def get_by_login_id(self, login_id: str) -> User | None:
+        """`login_id` must already be normalized (trimmed, lowercase) — it is stored that way."""
+        return await self._s.scalar(select(User).where(User.login_id == login_id))
+
     async def get_preference(self, user_id: int) -> UserPreference | None:
         return await self._s.get(UserPreference, user_id)
 
@@ -33,8 +37,16 @@ class SqlUserRepository:
             await self._s.flush()
         return pref
 
-    async def create(self, *, email: str | None, nickname: str | None, role: str = "user") -> User:
-        user = User(email=email, nickname=nickname, role=role)
+    async def create(
+        self,
+        *,
+        email: str | None,
+        nickname: str | None,
+        role: str = "user",
+        login_id: str | None = None,
+        password_hash: str | None = None,
+    ) -> User:
+        user = User(email=email, nickname=nickname, role=role, login_id=login_id, password_hash=password_hash)
         self._s.add(user)
         await self._s.flush()
         return user

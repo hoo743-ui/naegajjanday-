@@ -4,6 +4,7 @@
  *  - refresh token: 서버가 심는 HttpOnly 쿠키 `rt`. JS에서는 볼 수 없고 `/auth/refresh` 호출에만 실린다.
  *  - 새로고침 직후에는 AuthProvider 가 refreshAccessToken() 을 한 번 불러 세션을 복원한다.
  */
+import { parseErrorResponse, type ApiError } from "@/lib/api/client";
 import { mockReady } from "@/lib/api/mock-ready";
 import type { TokenResponse } from "@/lib/api/types";
 
@@ -107,6 +108,34 @@ export async function logout(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * 아이디 · 비밀번호 로그인과 가입 (우리 DB 계정, 이메일 인증 없음 — 가입하면 바로 모든 기능).
+ * 성공하면 API 가 access token 을 돌려주고 refresh 쿠키를 심는다 → OAuth 로 돌아왔을 때와 같은 상태가 된다.
+ * 실패는 던지지 않고 ApiError 로 돌려준다(화면이 코드별로 문구를 고른다).
+ */
+export async function passwordAuth(
+  mode: "login" | "signup",
+  body: { login_id: string; password: string; nickname?: string },
+): Promise<{ ok: true } | { ok: false; error: ApiError }> {
+  await mockReady();
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/auth/${mode}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { ok: false, error: await parseErrorResponse(new Response(null, { status: 503 })) };
+  }
+  if (!res.ok) return { ok: false, error: await parseErrorResponse(res) };
+  const data = (await res.json()) as TokenResponse;
+  setAccessToken(data.access_token, data.expires_in);
+  markSession(true);
+  return { ok: true };
 }
 
 /** API 는 `redirect_to`(웹 안의 상대 경로)를 읽는다. 로그인에 실패하면 `/login?error=…&next=…` 로 돌아온다. */

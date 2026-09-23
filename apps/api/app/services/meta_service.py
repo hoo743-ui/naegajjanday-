@@ -54,8 +54,7 @@ class MetaService:
             raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
         signature = await signature_service.load(self._s, region.id)
         return await local_signature_out(
-            self._s,
-            region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
+            self._s, region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
         )
 
     async def hot_places(self, slug: str, limit: int) -> dto.HotPlaces:

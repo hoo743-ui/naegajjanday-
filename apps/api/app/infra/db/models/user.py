@@ -26,6 +26,10 @@ class User(Base, TimestampMixin):
     public_id: Mapped[str] = mapped_column(UuidStr, unique=True, default=new_uuid)
     email: Mapped[str | None] = mapped_column(Text, unique=True)
     nickname: Mapped[str | None] = mapped_column(Text)
+    # id/password accounts (docs: no e-mail verification). Both NULL for OAuth-only users.
+    # A unique *index* rather than a constraint: SQLite cannot ADD COLUMN ... UNIQUE on an existing file.
+    login_id: Mapped[str | None] = mapped_column(Text, unique=True, index=True)  # stored lowercase
+    password_hash: Mapped[str | None] = mapped_column(Text)  # security.hash_password (scrypt$…)
     role: Mapped[str] = mapped_column(String(16), default="user")  # user | admin | operator
     status: Mapped[str] = mapped_column(String(16), default="active")  # active | suspended | deleting
     delete_requested_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
