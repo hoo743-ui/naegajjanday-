@@ -14,6 +14,7 @@ import {
   MapPin,
   Menu,
   Settings2,
+  Database,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/regions", label: "지역 관리", icon: MapIcon },
       { href: "/admin/scoring", label: "추천 설정", icon: Settings2 },
+      { href: "/admin/database", label: "설정 · DB", icon: Database },
     ],
   },
   {

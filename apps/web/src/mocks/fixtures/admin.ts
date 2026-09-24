@@ -231,13 +231,40 @@ export function userAnalytics(): UserAnalytics {
   const daily = series(30, (date, i) => {
     const weekend = [0, 6].includes(new Date(date).getDay()) ? 1.35 : 1;
     const dau = Math.round((820 + i * 14 + hash(`d${date}`) * 160) * weekend);
-    return { date, dau, new_users: Math.round(dau * (0.11 + hash(`n${date}`) * 0.05)) };
+    const logged_in = Math.round(dau * 0.3);
+    const courses = Math.round(dau * 0.4);
+    return {
+      date,
+      dau,
+      visitors: dau,
+      logged_in,
+      anonymous: dau - logged_in,
+      page_views: dau * 4,
+      new_users: Math.round(dau * (0.11 + hash(`n${date}`) * 0.05)),
+      logins: logged_in,
+      courses,
+      courses_anonymous: Math.round(courses * 0.6),
+      saved: Math.round(courses * 0.2),
+    };
   });
   const dau = daily[daily.length - 1]?.dau ?? 0;
   const mau = 9_640;
   return {
     range: { from: daily[0]?.date ?? dayOffset(-29), to: dayOffset(0) },
-    totals: { users: 21_480, dau, wau: 4_310, mau, new_users: daily.reduce((a, d) => a + d.new_users, 0), stickiness: Number((dau / mau).toFixed(3)) },
+    totals: {
+      users: 21_480,
+      dau,
+      wau: 4_310,
+      mau,
+      new_users: daily.reduce((a, d) => a + d.new_users, 0),
+      stickiness: Number((dau / mau).toFixed(3)),
+      visitors: mau,
+      logged_in: Math.round(mau * 0.3),
+      anonymous: Math.round(mau * 0.7),
+      page_views: daily.reduce((a, d) => a + d.page_views, 0),
+      courses: daily.reduce((a, d) => a + d.courses, 0),
+      courses_anonymous: daily.reduce((a, d) => a + d.courses_anonymous, 0),
+    },
     daily,
     acquisition: [
       { channel: "인스타그램", users: 3120 },
@@ -250,6 +277,11 @@ export function userAnalytics(): UserAnalytics {
       { provider: "kakao", users: 12_860 },
       { provider: "naver", users: 5_410 },
       { provider: "google", users: 3_210 },
+    ],
+    devices: [
+      { device: "mobile", users: 6_900 },
+      { device: "desktop", users: 2_500 },
+      { device: "tablet", users: 240 },
     ],
     cohorts: series(6, (date, i) => {
       const weeks = 6 - i;

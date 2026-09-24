@@ -21,6 +21,7 @@ from app.infra.db.models.ops import (
     IngestionJob,
     PlaceRevision,
     SearchOutbox,
+    Visit,
 )
 from app.infra.db.models.place import (
     Event,
@@ -75,4 +76,5 @@ __all__ = [
     "TemplateSlot",
     "User",
     "UserPreference",
+    "Visit",
 ]

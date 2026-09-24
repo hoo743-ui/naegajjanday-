@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "motion/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { initAnalytics, page } from "@/lib/analytics";
+import { recordVisit } from "@/lib/analytics/visit";
 import { ApiError } from "@/lib/api/client";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 
@@ -29,6 +30,8 @@ function PageViews() {
   useEffect(() => {
     page(pathname + (search.size ? `?${search.toString()}` : ""));
   }, [pathname, search]);
+  // 우리 DB 에 남는 방문(docs/50) — 쿼리는 빼고 경로만
+  useEffect(() => recordVisit(pathname), [pathname]);
   return null;
 }
 

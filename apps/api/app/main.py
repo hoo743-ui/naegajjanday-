@@ -33,6 +33,7 @@ from app.infra.db.session import Database
 from app.infra.llm.factory import build_llm
 from app.infra.search.client import build_search
 from app.prompts.loader import PromptLoader
+from app.services import retention_service as retention
 
 logger = get_logger(__name__)
 
@@ -93,6 +94,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             search=container.search.backend if container.search else "sql-fallback",
             llm=container.llm.name,
         )
+        # the privacy page promises page views are kept a year at most (docs/50): enforced at every start
+        await retention.purge_old_visits(container.db, settings)
         try:
             yield
         finally:

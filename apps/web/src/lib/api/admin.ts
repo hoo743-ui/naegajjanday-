@@ -963,3 +963,66 @@ export function useReindexSearch() {
     },
   });
 }
+
+// ── DB 관리 (docs/50) ─────────────────────────────────────────
+export interface DatabaseOverview {
+  engine: "sqlite" | "postgresql";
+  size_bytes: number | null;
+  disk_free_bytes: number | null;
+  tables: { name: string; label: string; rows: number }[];
+  expired_unsaved_courses: number;
+  unsaved_course_ttl_hours: number;
+  visits_total: number;
+  oldest_visit: string | null;
+  backups: { name: string; size_bytes: number; created_at: string }[];
+  backup_running: boolean;
+}
+
+export interface PurgeResult {
+  matched: number;
+  deleted: number;
+  dry_run: boolean;
+}
+
+const databaseKey = ["admin", "database"] as const;
+
+export function useDatabaseOverview() {
+  return useQuery<DatabaseOverview, ApiError>({
+    queryKey: databaseKey,
+    queryFn: ({ signal }) => api.get("/admin/database", { signal }),
+    // 백업이 도는 동안은 끝났는지 5초마다 본다
+    refetchInterval: (q) => (q.state.data?.backup_running ? 5_000 : false),
+  });
+}
+
+export function usePurgeCourses() {
+  const client = useQueryClient();
+  return useMutation<PurgeResult, ApiError, { dryRun: boolean }>({
+    mutationFn: ({ dryRun }) => api.post(`/admin/database/purge-courses?dry_run=${dryRun}`),
+    onSuccess: () => void client.invalidateQueries({ queryKey: databaseKey }),
+  });
+}
+
+export function usePurgeVisits() {
+  const client = useQueryClient();
+  return useMutation<PurgeResult, ApiError, { olderThanDays: number; dryRun: boolean }>({
+    mutationFn: ({ olderThanDays, dryRun }) => api.post("/admin/database/purge-visits", { older_than_days: olderThanDays, dry_run: dryRun }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: databaseKey }),
+  });
+}
+
+export function useStartBackup() {
+  const client = useQueryClient();
+  return useMutation<void, ApiError, void>({
+    mutationFn: () => api.post("/admin/database/backup"),
+    onSuccess: () => void client.invalidateQueries({ queryKey: databaseKey }),
+  });
+}
+
+export function useDeleteBackup() {
+  const client = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: (name) => api.delete(`/admin/database/backups/${enc(name)}`),
+    onSuccess: () => void client.invalidateQueries({ queryKey: databaseKey }),
+  });
+}

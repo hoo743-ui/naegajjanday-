@@ -6,7 +6,17 @@ from typing import Any
 from sqlalchemy import ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infra.db.base import Base, BigIntPK, JsonB, TimestampMixin, UtcDateTime, json_dict, json_list, pk
+from app.infra.db.base import (
+    Base,
+    BigIntPK,
+    JsonB,
+    TimestampMixin,
+    UtcDateTime,
+    json_dict,
+    json_list,
+    pk,
+    utcnow,
+)
 
 
 class Banner(Base, TimestampMixin):
@@ -114,3 +124,19 @@ class ApiUsage(Base):
     remaining: Mapped[int | None] = mapped_column(Integer)  # from the provider's rate-limit header, when sent
     limit: Mapped[int | None] = mapped_column(Integer)
     updated_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+
+
+class Visit(Base):
+    """One page view, first-party (docs/50): who came — logged in or not — without an analytics vendor.
+    `visitor` is a keyed hash of a random id the browser keeps; no IP, no user agent string is stored."""
+
+    __tablename__ = "visit"
+    __table_args__ = (Index("ix_visit_created", "created_at"),)
+
+    id: Mapped[pk]
+    visitor: Mapped[str] = mapped_column(String(32), index=True)
+    user_id: Mapped[int | None] = mapped_column(BigIntPK, ForeignKey("user.id", ondelete="SET NULL"))
+    path: Mapped[str] = mapped_column(String(200))
+    referrer: Mapped[str | None] = mapped_column(String(120))  # host only: "instagram.com", "kakao"
+    device: Mapped[str] = mapped_column(String(8), default="desktop")  # mobile | tablet | desktop
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)

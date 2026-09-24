@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # --- retention (what the web promises users; enforced by `purge-courses` / `purge-accounts`) ---
     unsaved_course_ttl_hours: int = Field(default=24, ge=1)  # never-saved courses are removed after this
+    visit_retention_days: int = Field(default=365, ge=30)  # page views (docs/50) older than this are removed
     account_purge_grace_days: int = Field(default=30, ge=0)  # DELETE /v1/me → hard purge after this
 
     # --- OAuth2 (official endpoints are in core/security.py) ---

@@ -892,12 +892,39 @@ export interface IngestionJob {
   error: string | null;
 }
 
+/** docs/50: 우리 DB 의 방문 기록으로 센다. 방문자 = 브라우저 수(로그인 + 비로그인) */
 export interface UserAnalytics {
   range: { from: string; to: string };
-  totals: { users: number; dau: number; wau: number; mau: number; new_users: number; stickiness: number };
-  daily: { date: string; dau: number; new_users: number }[];
+  totals: {
+    users: number;
+    dau: number;
+    wau: number;
+    mau: number;
+    new_users: number;
+    stickiness: number;
+    visitors: number;
+    logged_in: number;
+    anonymous: number;
+    page_views: number;
+    courses: number;
+    courses_anonymous: number;
+  };
+  daily: {
+    date: string;
+    dau: number;
+    visitors: number;
+    logged_in: number;
+    anonymous: number;
+    page_views: number;
+    new_users: number;
+    logins: number;
+    courses: number;
+    courses_anonymous: number;
+    saved: number;
+  }[];
   acquisition: { channel: string; users: number }[];
   providers: { provider: string; users: number }[];
+  devices: { device: string; users: number }[];
   /** 주차별 리텐션 코호트: retention[i] = i주차 잔존율(0~1) */
   cohorts: { cohort: string; size: number; retention: number[] }[];
 }

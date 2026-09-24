@@ -22,6 +22,8 @@ ADMIN_GETS = [
     "/v1/admin/analytics/recommendations",
     "/v1/admin/analytics/places/top",
     "/v1/admin/system/health",
+    "/v1/admin/analytics/users",
+    "/v1/admin/database",
 ]
 
 
@@ -314,11 +316,64 @@ class TestOpsAndAnalytics:
     async def test_unimplemented_endpoints_say_so(
         self, client: httpx.AsyncClient, admin_headers: dict[str, str]
     ) -> None:
-        users = await client.get("/v1/admin/analytics/users", headers=admin_headers)
-        assert (users.status_code, users.json()["code"]) == (501, "NOT_IMPLEMENTED")
         presign = await client.post("/v1/admin/uploads/presign", headers=admin_headers,
                                     json={"filename": "a.png", "content_type": "image/png"})  # fmt: skip
         assert (presign.status_code, presign.json()["code"]) == (501, "NOT_IMPLEMENTED")
+
+    async def test_daily_usage_counts_logged_in_and_anonymous_visitors(
+        self, client: httpx.AsyncClient, admin_headers: dict[str, str], user_headers: dict[str, str]
+    ) -> None:
+        # docs/50: first-party page views — two anonymous browsers, one logged-in, a bot and an admin page
+        browser = {"user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile Safari"}
+        for visitor, path, extra in [
+            ("anon-aaaa-1111", "/home", {}),
+            ("anon-aaaa-1111", "/plan", {}),
+            ("anon-bbbb-2222", "/explore", {}),
+            ("user-cccc-3333", "/home", user_headers),
+        ]:
+            body = {"visitor_id": visitor, "path": path, "referrer": "https://www.instagram.com/p/x"}
+            assert (
+                await client.post("/v1/visits", json=body, headers={**browser, **extra})
+            ).status_code == 204
+        bot = {"user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1)"}
+        await client.post("/v1/visits", json={"visitor_id": "bot-dddd-4444", "path": "/home"}, headers=bot)
+        await client.post(
+            "/v1/visits", json={"visitor_id": "anon-aaaa-1111", "path": "/admin"}, headers=browser
+        )
+        await client.post("/v1/courses/generate", json={**GENERATE_BODY, "budget_total": 52000})
+
+        stats = (await client.get("/v1/admin/analytics/users", headers=admin_headers)).json()
+        today = stats["daily"][-1]
+        assert (today["visitors"], today["logged_in"], today["anonymous"], today["page_views"]) == (
+            3,
+            1,
+            2,
+            4,
+        )
+        assert today["courses"] >= 1 and today["courses_anonymous"] >= 1
+        assert stats["totals"]["visitors"] == 3 and stats["range"]["to"] == today["date"]
+        assert {"channel": "instagram.com", "users": 3} in stats["acquisition"]
+        assert stats["devices"] == [{"device": "mobile", "users": 3}]
+        assert stats["cohorts"][-1]["size"] == 3 and stats["cohorts"][-1]["retention"][0] == 1.0
+
+    async def test_database_overview_and_safe_purges(
+        self, client: httpx.AsyncClient, admin_headers: dict[str, str]
+    ) -> None:
+        db = (await client.get("/v1/admin/database", headers=admin_headers)).json()
+        assert {"user", "course", "visit"} <= {t["name"] for t in db["tables"]}
+        assert db["unsaved_course_ttl_hours"] >= 1 and db["backup_running"] is False
+        dry = await client.post("/v1/admin/database/purge-courses", headers=admin_headers)
+        assert dry.status_code == 200 and dry.json()["dry_run"] is True and dry.json()["deleted"] == 0
+        # page views younger than 30 days cannot be purged
+        young = await client.post(
+            "/v1/admin/database/purge-visits",
+            headers=admin_headers,
+            json={"older_than_days": 7, "dry_run": False},
+        )
+        assert young.status_code == 422
+        assert (
+            await client.delete("/v1/admin/database/backups/..%2Fuser.db", headers=admin_headers)
+        ).status_code == 404
 
     async def test_recommendation_stats_are_computed_from_logs(
         self, client: httpx.AsyncClient, admin_headers: dict[str, str]

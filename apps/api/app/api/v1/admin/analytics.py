@@ -2,28 +2,38 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query
 
-from app.api.v1.responses import PROBLEMS
 from app.core import errors
-from app.core.deps import SessionDep
+from app.core.deps import ContainerDep, SessionDep
 from app.schemas import admin as dto
 from app.services.analytics_service import AnalyticsService
+from app.services.usage_service import UsageService
 
 router = APIRouter(prefix="/analytics", tags=["admin:analytics"])
 
 
-@router.get("/users", responses=PROBLEMS(501), summary="DAU/WAU · 리텐션 코호트 · 유입 (미구현)")
+@router.get(
+    "/users",
+    response_model=dto.UserAnalytics,
+    summary="날짜별 방문자(로그인 · 비로그인) · 가입 · 로그인 · 코스 · 유입 · 리텐션 (docs/50)",
+)
 async def users(
+    session: SessionDep,
+    container: ContainerDep,
     date_from: Annotated[date | None, Query(alias="from")] = None,
     date_to: Annotated[date | None, Query(alias="to")] = None,
-) -> None:
-    # DAU/retention/acquisition need the client event stream (GA4 / PostHog); the API database only
-    # sees course generation. Returning numbers derived from it would be misleading.
-    raise errors.NotImplementedYet(
-        "사용자 분석은 제품 분석 도구(PostHog/GA4) 연동 후 제공돼요. ANALYTICS_PROVIDER 를 설정해 주세요."
-    )
+) -> dto.UserAnalytics:
+    tz = ZoneInfo(container.settings.timezone)
+    end = date_to or datetime.now(tz).date()
+    start = date_from or end - timedelta(days=13)
+    if start > end:
+        raise errors.ValidationFailed("from 은 to 보다 앞서야 해요.")
+    if (end - start).days > 180:
+        raise errors.ValidationFailed("기간은 180일까지 볼 수 있어요.")
+    return await UsageService(session, container.settings.timezone).users(start, end)
 
 
 @router.get(

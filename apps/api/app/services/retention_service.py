@@ -30,6 +30,7 @@ from app.infra.db.models import (
     RefreshToken,
     User,
     UserPreference,
+    Visit,
 )
 from app.infra.db.session import Database
 from app.repositories.course_repo import SqlCourseRepository
@@ -168,3 +169,18 @@ async def purge_deleted_accounts(
             )
     logger.info("retention.accounts_purged", grace_days=settings.account_purge_grace_days, **report.as_dict())
     return report
+
+
+async def purge_old_visits(db: Database, settings: Settings, *, now: datetime | None = None) -> int:
+    """Page views (docs/50) older than `visit_retention_days`. Never fails the caller: start-up goes on."""
+    cutoff = (now or utcnow()) - timedelta(days=settings.visit_retention_days)
+    try:
+        async with db.session() as session:
+            result = await session.execute(delete(Visit).where(Visit.created_at < cutoff))
+            deleted = _rowcount(result)
+    except Exception:
+        logger.exception("retention.visits_purge_failed")
+        return 0
+    if deleted:
+        logger.info("retention.visits_purged", retention_days=settings.visit_retention_days, deleted=deleted)
+    return deleted

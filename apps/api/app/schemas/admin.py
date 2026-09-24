@@ -454,3 +454,74 @@ class CacheInvalidateResult(BaseModel):
 class ReindexResult(BaseModel):
     enqueued: int
     search_backend: str
+
+
+# ── usage (docs/50): who came, day by day, logged in or not ───────────────────────────────
+class DateRangeOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    from_: date = Field(alias="from")
+    to: date
+
+
+class UsageTotals(BaseModel):
+    users: int = Field(description="가입한 계정 수 (전체 기간)")
+    dau: int = Field(description="마지막 날의 방문자")
+    wau: int
+    mau: int
+    new_users: int
+    stickiness: float = Field(description="기간 평균 일 방문자 / MAU")
+    visitors: int = Field(description="기간 중 방문한 브라우저 수 (로그인 + 비로그인)")
+    logged_in: int
+    anonymous: int
+    page_views: int
+    courses: int
+    courses_anonymous: int
+
+
+_Day = date  # a field called `date` hides the type inside the class body
+
+
+class UsageDay(BaseModel):
+    date: _Day
+    dau: int
+    visitors: int
+    logged_in: int
+    anonymous: int
+    page_views: int
+    new_users: int
+    logins: int
+    courses: int
+    courses_anonymous: int
+    saved: int
+
+
+class ChannelCount(BaseModel):
+    channel: str
+    users: int
+
+
+class ProviderCount(BaseModel):
+    provider: str
+    users: int
+
+
+class DeviceCount(BaseModel):
+    device: str
+    users: int
+
+
+class Cohort(BaseModel):
+    cohort: str
+    size: int
+    retention: list[float]
+
+
+class UserAnalytics(BaseModel):
+    range: DateRangeOut
+    totals: UsageTotals
+    daily: list[UsageDay]
+    acquisition: list[ChannelCount]
+    providers: list[ProviderCount]
+    devices: list[DeviceCount]
+    cohorts: list[Cohort]
