@@ -580,6 +580,8 @@ export type AttractionType = "attraction" | "park" | "exhibition" | "festival" |
 
 export interface Attraction {
   id: string;
+  /** place = 장소, event = 축제 · 행사 (더 알아보기 링크를 부를 주소가 다르다) */
+  kind?: "place" | "event";
   type: AttractionType;
   name: string;
   /** 업종 코드(예: attraction.park). 대표 사진을 고를 때 쓴다 */
@@ -993,4 +995,14 @@ export interface CourseRoute {
   feasible: boolean;
   providers: { walk: "osrm" | "estimate"; car: "naver" | "estimate"; transit: "estimate" };
   computed_at: string;
+}
+
+/** GET /places/{id}/links · /events/{id}/links — 그 장소의 페이지로 바로 가는 링크 (docs/44) */
+export interface ExternalLink {
+  kind: "official" | "place_page" | "blog" | "route";
+  label: string;
+  url: string;
+  source: string;
+  /** true = 그 장소의 페이지, false = 검색 결과 */
+  exact: boolean;
 }

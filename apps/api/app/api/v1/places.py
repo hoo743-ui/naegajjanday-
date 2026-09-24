@@ -6,9 +6,10 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query
 
 from app.api.v1.responses import PROBLEMS
-from app.core.deps import CurrentUser, rate_limit
+from app.core.deps import ContainerDep, CurrentUser, SessionDep, rate_limit
 from app.schemas import place as dto
 from app.services.factory import PlaceServiceDep
+from app.services.link_service import LinkService, PlaceLinks
 
 router = APIRouter(tags=["places"], dependencies=[Depends(rate_limit("read"))])
 
@@ -78,3 +79,23 @@ async def events(
     date_to: Annotated[date | None, Query(alias="to")] = None,
 ) -> dto.EventList:
     return await service.events(region, date_from, date_to)
+
+
+@router.get(
+    "/places/{place_id}/links",
+    response_model=PlaceLinks,
+    responses=PROBLEMS(404),
+    summary="더 알아보기 링크: 공식 홈페이지 · 카카오맵 장소 페이지(후기) · 블로그 후기 · 길찾기 (docs/44)",
+)
+async def place_links(place_id: str, session: SessionDep, container: ContainerDep) -> PlaceLinks:
+    return await LinkService(session, container.settings, container.cache).for_place(place_id)
+
+
+@router.get(
+    "/events/{event_id}/links",
+    response_model=PlaceLinks,
+    responses=PROBLEMS(404),
+    summary="축제 · 행사의 더 알아보기 링크 (docs/44)",
+)
+async def event_links(event_id: str, session: SessionDep, container: ContainerDep) -> PlaceLinks:
+    return await LinkService(session, container.settings, container.cache).for_event(event_id)

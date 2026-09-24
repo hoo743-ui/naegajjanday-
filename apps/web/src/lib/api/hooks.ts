@@ -17,6 +17,7 @@ import type {
   CourseRoute,
   SuggestionList,
   Attraction,
+  ExternalLink,
   AttractionType,
   Banner,
   Category,
@@ -525,6 +526,20 @@ function toEventItem(e: EventWire): EventItem {
     thumbnail_url: e.thumbnail_url ?? null,
     link_url: e.link_url ?? e.booking_url ?? null,
   };
+}
+
+/**
+ * 더 알아보기 링크 (docs/44): 공식 홈페이지 · 카카오맵 장소 페이지(후기) · 블로그 후기 · 길찾기.
+ * 서버가 처음 한 번 카카오 · 관광공사에 물어보고 일주일 기억한다 → 시트는 기본 링크를 먼저 보여 주고 이것으로 바꾼다.
+ */
+export function usePlaceLinks(kind: "place" | "event" | undefined, id: string | undefined) {
+  return useQuery<{ items: ExternalLink[] }, ApiError>({
+    queryKey: ["links", kind, id],
+    queryFn: ({ signal }) => api.get(`/${kind === "event" ? "events" : "places"}/${id}/links`, { signal, timeoutMs: 8_000 }),
+    enabled: Boolean(id),
+    staleTime: 24 * 60 * 60_000,
+    retry: false,
+  });
 }
 
 export function useAttractions(params: AttractionParams) {

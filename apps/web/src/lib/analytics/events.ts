@@ -64,7 +64,7 @@ export interface AnalyticsEvents {
   /** 둘러보기 카드 → 상세 시트 */
   attraction_opened: { attraction_id: string; type: string };
   /** 상세 시트에서 지도·길찾기·검색으로 나간 클릭 */
-  attraction_link_clicked: { attraction_id: string; to: "map" | "route" | "search" };
+  attraction_link_clicked: { attraction_id: string; to: "map" | "route" | "search" | "official" | "place_page" | "blog" };
   explore_filtered: { type: string; region?: string };
   chat_message_sent: { session_id: string; length: number; suggested: boolean };
   chat_course_received: { session_id: string; course_id: string };

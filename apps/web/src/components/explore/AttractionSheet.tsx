@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarDays, ExternalLink, MapPin, Navigation, Search } from "lucide-react";
+import { ArrowRight, CalendarDays, ExternalLink, Globe, MapPin, MessageSquareText, Navigation, Search, type LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { track } from "@/lib/analytics";
-import { planHrefNear } from "@/lib/api/hooks";
+import { planHrefNear, usePlaceLinks } from "@/lib/api/hooks";
 import type { Attraction, ImageRef } from "@/lib/api/types";
 import { dateRange, won } from "@/lib/format";
 import { PlacePhoto } from "@/components/brand/PlacePhoto";
@@ -17,37 +17,35 @@ interface AttractionSheetProps {
   onClose: () => void;
 }
 
+const LINK_ICON: Record<string, LucideIcon> = { official: Globe, place_page: MapPin, blog: MessageSquareText, route: Navigation, search: Search };
+
 /**
  * 볼거리·축제 하나를 눌렀을 때 뜨는 상세 시트.
- * 우리가 가진 정보(기간·주소·요금·태그)를 먼저 보여 주고, 그 장소의 실제 사진·후기·공식 안내는
- * 지도 앱과 검색으로 한 번에 넘긴다 — 남의 콘텐츠를 긁어 오지 않고 연결만 한다.
+ * 우리가 가진 정보(기간·주소·요금·태그)를 먼저 보여 주고, 공식 홈페이지 · 후기는 **그 장소의 페이지로 바로** 보낸다
+ * (docs/44: 서버가 카카오 로컬 · 관광공사 API 로 찾은 주소). 찾는 동안과 못 찾았을 때는 예전의 검색 링크.
+ * 남의 콘텐츠를 긁어 오지 않고 연결만 한다.
  */
 export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) {
+  const resolved = usePlaceLinks(item?.kind, item?.id);
   if (!item) return null;
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
   // 같은 이름이 전국에 많다 → 지역명을 붙여 검색해야 그 장소가 나온다
   const area = item.region?.name ?? item.address.split(" ").slice(0, 2).join(" ");
   const query = [area, item.name].filter(Boolean).join(" ");
-  const links = [
+  const fallback = [
+    { key: "place_page", href: `https://map.kakao.com/link/search/${encodeURIComponent(query)}`, label: "지도에서 실제 사진 · 후기 보기", note: null },
+    { key: "route", href: `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`, label: "여기까지 길찾기", note: null },
     {
-      key: "map" as const,
-      href: `https://map.kakao.com/link/search/${encodeURIComponent(query)}`,
-      label: "지도에서 실제 사진 · 후기 보기",
-      icon: MapPin,
-    },
-    {
-      key: "route" as const,
-      href: `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`,
-      label: "여기까지 길찾기",
-      icon: Navigation,
-    },
-    {
-      key: "search" as const,
+      key: "search",
       href: `https://search.naver.com/search.naver?query=${encodeURIComponent(item.period ? `${item.name} 일정` : query)}`,
       label: item.period ? "공식 일정 · 프로그램 찾아보기" : "운영 시간 · 관련 정보 찾아보기",
-      icon: Search,
+      note: null,
     },
   ];
+  // 서버가 찾은 링크: 그 장소의 페이지면 출처만, 검색 결과면 "검색 결과"라고 밝힌다
+  const links = resolved.data?.items.length
+    ? resolved.data.items.map((l) => ({ key: l.kind, href: l.url, label: l.label, note: l.exact ? l.source : `${l.source} 검색 결과` }))
+    : fallback;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
   const planHref = planHrefNear({ name: item.name, lat: item.lat, lng: item.lng });
 
@@ -101,11 +99,17 @@ export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) 
                 href={l.href}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => track("attraction_link_clicked", { attraction_id: item.id, to: l.key })}
+                onClick={() => track("attraction_link_clicked", { attraction_id: item.id, to: l.key as "official" | "place_page" | "blog" | "route" | "search" })}
                 className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-body-sm font-semibold text-ink transition-colors hover:border-blue/50 hover:bg-blue-soft"
               >
-                <l.icon aria-hidden className="size-4.5 shrink-0 text-blue-deep" />
-                <span className="min-w-0 flex-1">{l.label}</span>
+                {(() => {
+                  const Icon = LINK_ICON[l.key] ?? Search;
+                  return <Icon aria-hidden className="size-4.5 shrink-0 text-blue-deep" />;
+                })()}
+                <span className="min-w-0 flex-1">
+                  {l.label}
+                  {l.note ? <span className="block text-caption font-medium text-muted-foreground">{l.note}</span> : null}
+                </span>
                 <ExternalLink aria-hidden className="size-4 shrink-0 text-muted-foreground" />
               </a>
             ))}
