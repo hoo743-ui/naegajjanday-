@@ -24,12 +24,13 @@ from app.core.config import get_settings
 
 
 class CategoryImages:
-    """category code -> one curated open-licence image."""
+    """category code -> one curated free-licence image (docs/43: Wikimedia/Openverse/Pexels/Unsplash)."""
 
     def __init__(self, path: Path) -> None:
         self._items: dict[str, dict[str, Any]] = {}
         if path.exists():
-            self._items = json.loads(path.read_text(encoding="utf-8"))
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            self._items = {code: _normalize(entry) for code, entry in raw.items()}
 
     def all(self) -> dict[str, dict[str, Any]]:
         return self._items
@@ -43,6 +44,17 @@ class CategoryImages:
                 return hit
             parts.pop()
         return None
+
+
+def _normalize(entry: dict[str, Any]) -> dict[str, Any]:
+    """Older entries are Wikimedia-only and carry no source / thumbnail / credit line: fill them in."""
+    from app.domain.image_ref import attribution_for
+
+    out = dict(entry)
+    out.setdefault("source", "wikimedia")
+    out.setdefault("thumbnail_url", out["url"])
+    out.setdefault("attribution_text", attribution_for(out))
+    return out
 
 
 @lru_cache(maxsize=1)

@@ -56,6 +56,33 @@ export type KnownErrorCode =
 
 export type ErrorCode = KnownErrorCode | (string & {});
 
+// ── 사진 (docs/43) ──────────────────────────────────────────
+/**
+ * 카드 하나에 보일 그림 한 장과 그 출처. 서버가 정한다: 실제 사진 → 분위기 이미지 → 브랜드 그림.
+ * - actual: 그 장소의 사진(한국관광공사 · 운영자). attribution_text 가 있으면 반드시 같이 보인다.
+ * - category: 같은 종류의 무료 라이선스 사진. 그 가게 사진이 아니므로 "분위기 이미지"로 표시한다.
+ * - branded-placeholder: 우리 그림. image_url 이 없다.
+ */
+export type ImageType = "actual" | "category" | "branded-placeholder";
+export type PlaceholderKind = "meal" | "cafe" | "walk" | "activity" | "sight" | "bar" | "night";
+
+export interface ImageRef {
+  image_type: ImageType;
+  image_url: string | null;
+  thumbnail_url: string | null;
+  /** tourapi | upload | wikimedia | openverse | pexels | unsplash | naegajjanday */
+  source: string;
+  /** 원본 페이지(작가 · 라이선스 확인용) */
+  source_url: string | null;
+  photographer: string | null;
+  license: string | null;
+  /** 화면에 그대로 적는 출처 한 줄 */
+  attribution_text: string | null;
+  is_actual_place_photo: boolean;
+  is_fallback_image: boolean;
+  placeholder_kind: PlaceholderKind;
+}
+
 // ── 메타 ────────────────────────────────────────────────────
 export interface Region {
   slug: string;
@@ -79,6 +106,8 @@ export interface HotPlace {
   lng: number;
   address: string | null;
   thumbnail_url: string | null;
+  /** 서버가 고른 그림 한 장과 출처 (docs/43) */
+  image?: ImageRef;
   is_free: boolean;
 }
 
@@ -291,6 +320,8 @@ export interface PlaceSummary {
   lng: number;
   address: string;
   thumbnail_url: string | null;
+  /** 서버가 고른 그림 한 장과 출처 (docs/43) */
+  image?: ImageRef;
   rating: number | null;
   review_count: number;
   /** 무료이거나 가격을 모르면 null */
@@ -558,6 +589,8 @@ export interface Attraction {
   lng: number;
   address: string;
   thumbnail_url: string | null;
+  /** 서버가 고른 그림 한 장과 출처 (docs/43) */
+  image?: ImageRef;
   is_free: boolean;
   price_per_person: number;
   /** 축제·전시처럼 기간이 있는 경우 */

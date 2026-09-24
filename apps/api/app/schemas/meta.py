@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
+from app.domain.image_ref import ImageRef, resolve_image
 from app.schemas.common import LatLng
 
 
@@ -131,6 +132,12 @@ class HotPlace(BaseModel):
     address: str | None = None
     thumbnail_url: str | None = None
     is_free: bool = False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def image(self) -> ImageRef:
+        """카드에 보일 그림 한 장과 그 출처 (docs/43)"""
+        return resolve_image(self.thumbnail_url, self.category)
 
 
 class HotPlaces(BaseModel):

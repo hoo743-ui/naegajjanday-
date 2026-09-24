@@ -15,6 +15,9 @@ class Photo(BaseModel):
     title: str = ""
     author: str
     license: str
+    source: str = "wikimedia"
+    thumbnail_url: str | None = None
+    attribution_text: str | None = None
 
 
 class CategoryImageMap(BaseModel):
@@ -25,7 +28,7 @@ class CategoryImageMap(BaseModel):
     "/categories",
     response_model=CategoryImageMap,
     dependencies=[Depends(rate_limit("read"))],
-    summary="업종 대표 이미지 (가게 실사진이 없을 때 '예시'로 표시)",
+    summary="업종 대표 이미지 (가게 실사진이 없을 때 '분위기 이미지'로 표시)",
 )
 async def categories() -> CategoryImageMap:
     return CategoryImageMap(

@@ -57,7 +57,8 @@ export function SwapSheet({ open, onClose, courseId, stop, onPick, onStrategy }:
                     <Image src={c.place.thumbnail_url} alt="" fill sizes="56px" className="object-cover" unoptimized={!canOptimize(c.place.thumbnail_url)} />
                   </span>
                 ) : (
-                  <PlacePlaceholder kind={c.role} className="size-14 shrink-0 rounded-lg" />
+                  // 후보끼리 같은 분위기 이미지가 되풀이되면 고르기 어렵다 → 여기서는 실제 사진이 없으면 종류별 그림만 (docs/43)
+                  <PlacePlaceholder kind={c.place.image?.placeholder_kind ?? c.role} className="size-14 shrink-0 rounded-lg" />
                 )}
                 <span className="min-w-0 flex-1">
                   <b className="block truncate text-body font-semibold text-ink">{c.place.name}</b>

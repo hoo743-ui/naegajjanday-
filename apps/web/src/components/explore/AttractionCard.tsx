@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, Star } from "lucide-react";
-import { categoryImageFor, planHrefNear, useCategoryImages } from "@/lib/api/hooks";
+import { planHrefNear, useCategoryImages } from "@/lib/api/hooks";
 import type { Attraction } from "@/lib/api/types";
 import { dateRange, daysUntil, won } from "@/lib/format";
-import { canOptimize, photoCredit } from "@/lib/photo-credit";
 import { cn } from "@/lib/utils";
-import { PlacePlaceholder } from "@/components/brand/PlacePlaceholder";
+import { PlacePhoto } from "@/components/brand/PlacePhoto";
+import { resolvePlaceImage } from "@/lib/place-image";
 import { track } from "@/lib/analytics";
 import { ATTRACTION_TYPE_META } from "./attraction-meta";
 import { AttractionSheet } from "./AttractionSheet";
@@ -49,11 +48,14 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
   const planHref = planHrefNear({ name: item.name, lat: item.lat, lng: item.lng });
-  // 실사진이 없으면 검수한 업종 대표 사진을 쓴다. API 의 category 코드가 없으면 유형으로 대신 찾는다.
-  const images = useCategoryImages().data?.items;
-  const example = categoryImageFor(images, item.category ?? "") ?? categoryImageFor(images, TYPE_CATEGORY[item.type] ?? "attraction");
-  const photo = item.thumbnail_url ?? example?.url ?? null;
-  const credit = photoCredit(item.thumbnail_url);
+  // 그림 한 장 (docs/43): 실제 사진 → 분위기 이미지 → 브랜드 그림. 업종 코드가 없으면 유형으로 대신 찾는다
+  const image = resolvePlaceImage({
+    image: item.image,
+    thumbnailUrl: item.thumbnail_url,
+    category: item.category || (TYPE_CATEGORY[item.type] ?? "attraction"),
+    kind: item.type,
+    categoryImages: useCategoryImages().data?.items,
+  });
   const [open, setOpen] = useState(false);
   const openDetail = () => {
     track("attraction_opened", { attraction_id: item.id, type: item.type });
@@ -64,37 +66,15 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
     // 흰 상자 대신 사진이 앞에 선다 (docs/25 §5 둘러보기 = 여행 잡지). 카드 전체는 여전히 한 번에 눌린다
     <article className={cn("group relative flex h-full cursor-pointer flex-col", feature && "lg:grid lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12")}>
       <div className={cn("photo-edge relative overflow-hidden rounded-[20px] bg-gradient-to-br", feature ? "aspect-[3/2]" : "aspect-[4/3]", meta.gradient)}>
-        {photo ? (
-          <>
-            <Image
-              src={photo}
-              alt=""
-              fill
-              unoptimized={!canOptimize(photo)}
-              priority={feature}
-              sizes={feature ? "(max-width: 1024px) 100vw, 660px" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-            />
-            {credit ? (
-              <span className="absolute right-2 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span>
-            ) : null}
-            {!item.thumbnail_url && example ? (
-              // 그 장소의 실제 사진이 아니라 같은 종류의 예시 사진임을 밝히고, 오픈 라이선스 조건대로 출처를 단다
-              <a
-                href={example.page_url ?? example.url}
-                target="_blank"
-                rel="noreferrer"
-                className="absolute right-2 bottom-2 z-10 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95 hover:bg-black/65"
-                title="이 장소의 사진이 아니라 같은 종류의 예시 사진이에요"
-              >
-                예시 사진 · © {example.author}
-              </a>
-            ) : null}
-          </>
-        ) : (
-          // 사진도 예시 사진도 없으면 우리 종이 위의 그림 (빈 상자처럼 보이지 않게, 사진인 척하지 않게)
-          <PlacePlaceholder kind={item.type} size="lg" className="absolute inset-0" />
-        )}
+        {/* 실제 사진 = 출처 한 줄, 분위기 이미지 = "분위기 이미지" + 작가 · 라이선스, 둘 다 없으면 종류별 그림 */}
+        <PlacePhoto
+          image={image}
+          size="lg"
+          priority={feature}
+          sizes={feature ? "(max-width: 1024px) 100vw, 660px" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
+          className="absolute inset-0"
+          imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+        />
         <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
           <span className="rounded-full bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">{meta.label}</span>
           {item.period ? <DdayBadge startsOn={item.period.starts_on} endsOn={item.period.ends_on} /> : null}
@@ -166,7 +146,7 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
           <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
-      {open ? <AttractionSheet item={item} photo={photo} credit={credit} onClose={() => setOpen(false)} /> : null}
+      {open ? <AttractionSheet item={item} image={image} onClose={() => setOpen(false)} /> : null}
     </article>
   );
 }

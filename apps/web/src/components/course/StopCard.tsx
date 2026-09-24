@@ -1,15 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown, ChevronUp, ExternalLink, Eye, MapPinned, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Star, Users } from "lucide-react";
 import { track } from "@/lib/analytics";
-import { categoryImageFor, useCategoryImages } from "@/lib/api/hooks";
+import { useCategoryImages } from "@/lib/api/hooks";
 import type { ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { clock, minutes, num, roleLabel, transportLabel, won } from "@/lib/format";
-import { canOptimize } from "@/lib/photo-credit";
-import { PlacePlaceholder } from "@/components/brand/PlacePlaceholder";
+import { resolvePlaceImage } from "@/lib/place-image";
+import { PlacePhoto } from "@/components/brand/PlacePhoto";
 import { ReasonList } from "./ReasonList";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
@@ -75,7 +74,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   const priceUnknown = !free && stop.est_price === 0;
   // 이 장소에 자료가 없는 항목은 "왜 여기?"에서도 뺀다
   const hidden: ScoreFeature[] = [...hiddenFeatures, ...(place.rating === null ? (["rating"] as const) : []), ...(stop.congestion ? [] : (["congestion"] as const))];
-  const example = categoryImageFor(useCategoryImages().data?.items, place.category);
+  // 그림 한 장 (docs/43): 서버가 고른 것 — 실제 사진 → 분위기 이미지 → 브랜드 그림
+  const image = resolvePlaceImage({ image: place.image, thumbnailUrl: place.thumbnail_url, category: place.category, kind: stop.role, categoryImages: useCategoryImages().data?.items });
   // 같은 상호가 전국에 많다 → 주소의 시·구까지 붙여 검색해야 그 지점이 나온다
   const placeQuery = [place.address?.split(" ").slice(1, 3).join(" "), place.name].filter(Boolean).join(" ");
   const estimated = !free && place.price_is_estimated === true;
@@ -120,21 +120,9 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           {stop.position}
         </button>
 
-        {/* 사진은 모든 장소가 같은 크기: 카드 높이가 고르다 (그 가게의 사진이 없으면 같은 업종의 예시 사진에 "예시") */}
-        {place.thumbnail_url ? (
-          <span className="photo-edge relative size-[72px] shrink-0 overflow-hidden rounded-md sm:size-20">
-            {/* 첫 장소의 사진은 모바일 첫 화면에 보인다 → 먼저 받는다 */}
-            <Image priority={stop.position === 1} src={place.thumbnail_url} alt="" fill sizes="80px" className="object-cover" unoptimized={!canOptimize(place.thumbnail_url)} />
-          </span>
-        ) : example ? (
-          <span title={`이 가게의 사진이 아니라 같은 업종의 예시 사진이에요 · © ${example.author} · ${example.license}`} className="photo-edge relative size-[72px] shrink-0 overflow-hidden rounded-md sm:size-20">
-            <Image src={example.url} alt="" fill sizes="80px" className="object-cover opacity-80 saturate-[.7]" unoptimized={!canOptimize(example.url)} />
-            <span className="absolute inset-x-0 bottom-0 bg-ink/65 py-0.5 text-center text-caption font-semibold text-white">예시</span>
-          </span>
-        ) : (
-          // 마지막 단계: 역할(식사 · 카페 · 산책 …)의 브랜드 그림 — 카드 높이가 고르게 남는다
-          <PlacePlaceholder kind={stop.role} className="photo-edge size-[72px] shrink-0 rounded-md sm:size-20" />
-        )}
+        {/* 사진은 모든 장소가 같은 크기: 카드 높이가 고르다. 실제 사진이 아니면 "분위기 이미지" 띠나 종류별 그림.
+            첫 장소의 사진은 모바일 첫 화면에 보인다 → 먼저 받는다 */}
+        <PlacePhoto image={image} sizes="80px" priority={stop.position === 1} className="photo-edge size-[72px] shrink-0 rounded-md sm:size-20" />
 
         <div className="min-w-0 flex-1">
           <p className="tabular flex items-center gap-2 text-caption font-bold text-tomato-deep">
@@ -288,9 +276,10 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {stop.reason ? <p className="text-body-sm text-ink">{stop.reason}</p> : null}
               <ReasonList codes={stop.reason_codes} />
               <ScoreBreakdown scores={stop.score_breakdown} total={stop.score} hidden={hidden} />
-              {!place.thumbnail_url && example ? (
-                <a href={example.page_url ?? example.url} target="_blank" rel="noreferrer" className="truncate text-caption text-muted-foreground underline-offset-2 hover:underline">
-                  예시 사진 · © {example.author} · {example.license}
+              {/* 사진 출처: 실제 사진(한국관광공사 등)이든 분위기 이미지(작가 · 라이선스)든 적는다 */}
+              {image.attribution_text ? (
+                <a href={image.source_url ?? image.image_url ?? undefined} target="_blank" rel="noreferrer" className="truncate text-caption text-muted-foreground underline-offset-2 hover:underline">
+                  {image.attribution_text}
                 </a>
               ) : null}
 

@@ -666,17 +666,21 @@ export function planHrefNear(place: Station): string {
   return `/plan?region=${encodeURIComponent(encodeStation({ ...place, name }))}`;
 }
 
-// ── 사진 (Wikimedia Commons 오픈 라이선스) ─────────────────────
+// ── 사진 (업종 분위기 이미지: Wikimedia · Openverse · Pexels · Unsplash, docs/43) ──────
 export interface Photo {
   url: string;
   page_url: string | null;
   title: string;
   author: string;
   license: string;
+  source?: string;
+  thumbnail_url?: string | null;
+  /** "분위기 이미지 · © 작가 · 라이선스 · 출처" */
+  attribution_text?: string | null;
 }
 
 /**
- * 업종 대표 이미지. 가게 실사진이 아니므로 화면에는 반드시 "예시"로 표시한다.
+ * 업종 대표 이미지. 가게 실사진이 아니므로 화면에는 반드시 "분위기 이미지"로 표시한다(docs/43).
  * 실사진(카카오 로드뷰 · TourAPI · 점주/사용자 업로드)이 붙기 전까지의 임시 대체물이다.
  * 예시 사진을 아예 쓰지 않으려면 NEXT_PUBLIC_EXAMPLE_PHOTOS=off — 카드는 글자 타일로 돌아간다.
  */

@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from app.domain.image_ref import ImageRef, resolve_image
 from app.schemas.common import LatLng
 from app.schemas.meta import LocalSignature
 
@@ -176,6 +177,12 @@ class PlaceBrief(BaseModel):
     price_is_estimated: bool = False  # true → show as "예상" (category prior, not a menu price)
     is_free: bool = False
     tags: list[str] = Field(default_factory=list)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def image(self) -> ImageRef:
+        """카드에 보일 그림 한 장과 그 출처 (docs/43): 실제 사진 → 분위기 이미지 → 브랜드 그림"""
+        return resolve_image(self.thumbnail_url, self.category)
 
 
 class FromPrev(BaseModel):

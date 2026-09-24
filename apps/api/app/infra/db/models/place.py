@@ -114,6 +114,13 @@ class PlaceImage(Base, TimestampMixin):
     file_hash: Mapped[str | None] = mapped_column(String(64))  # sha256 of the bytes, when fetched
     phash: Mapped[str | None] = mapped_column(String(16))  # 64-bit difference hash, when fetched
     evidence: Mapped[json_dict]  # name similarity, distance, address match, other sizes, why rejected
+    # credit (docs/43): what the screen must show next to the photo, stored per photo because the licence
+    # differs per photo (TourAPI: KOGL type 1 vs type 3 = no edits). Null on rows made before 0009.
+    thumbnail_url: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    photographer: Mapped[str | None] = mapped_column(Text)
+    license: Mapped[str | None] = mapped_column(String(64))
+    attribution_text: Mapped[str | None] = mapped_column(Text)
 
 
 class PlaceStats(Base, TimestampMixin):

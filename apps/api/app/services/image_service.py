@@ -435,3 +435,43 @@ async def reproject(session: AsyncSession, place_ids: Iterable[int]) -> int:
         cover, urls = media.projection(group)
         await session.execute(update(Place).where(Place.id == pid).values(thumbnail_url=cover, images=urls))
     return len(grouped)
+
+
+async def backfill_credits(
+    session: AsyncSession, raw_dir: Path, *, apply: bool, log: Callable[[str], None] = print
+) -> Counter[str]:
+    """TourAPI 사진마다 출처 · 라이선스 · 작은 크기를 채운다 (docs/43). 원본 캐시의 `cpyrhtDivCd` 로
+    공공누리 제1유형(출처표시)과 제3유형(출처표시 · 변경금지)을 가른다. 이미 채운 칸은 덮지 않는다."""
+    from app.domain.image_ref import TOURAPI_CREDIT, TOURAPI_HOME, TOURAPI_LICENSE, TOURAPI_LICENSE_BY_CODE
+
+    records = load_records(raw_dir)
+    counts: Counter[str] = Counter()
+    rows = list(
+        (
+            await session.execute(
+                select(PlaceImage).where(PlaceImage.source == "tourapi", PlaceImage.license.is_(None))
+            )
+        ).scalars()
+    )
+    for r in rows:
+        item = records.get(r.source_place_id or "")
+        code = str((item or {}).get("cpyrhtDivCd") or "")
+        counts[code or ("기록 없음" if item is None else "유형 칸 비어 있음")] += 1
+        if not apply:
+            continue
+        r.license = TOURAPI_LICENSE_BY_CODE.get(code, TOURAPI_LICENSE)
+        r.photographer = "한국관광공사"
+        r.source_url = TOURAPI_HOME
+        r.attribution_text = TOURAPI_CREDIT
+        if item and _https(item.get("firstimage")) == r.url:
+            r.thumbnail_url = _https(item.get("firstimage2")) or r.url
+        else:
+            r.thumbnail_url = r.url
+    log(
+        f"출처를 채울 TourAPI 사진 {len(rows):,}장 · "
+        + " · ".join(f"{k or '?'} {v:,}" for k, v in counts.most_common())
+        + ("" if apply else "  (보고만 했다. 반영하려면 --apply)")
+    )
+    if apply:
+        await session.commit()
+    return counts

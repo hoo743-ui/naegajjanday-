@@ -542,6 +542,26 @@ def images_canonicalize(
     _run(job)
 
 
+@cli.command("images-credit")
+def images_credit(
+    apply: Annotated[bool, typer.Option(help="반영한다. 없으면 라이선스별 장수만 보고한다")] = False,
+    raw_dir: Annotated[
+        Path | None, typer.Option(help="default: %LOCALAPPDATA%/naegajjanday/raw/tourapi")
+    ] = None,
+) -> None:
+    """사진마다 출처 · 작가 · 라이선스 · 출처 문구를 채운다 (docs/43). TourAPI 는 공공누리 1유형/3유형."""
+    from app.services import image_service
+
+    target = raw_dir or bulk_download.default_raw_dir() / "tourapi"
+
+    async def job(db: Database, settings: Settings) -> None:
+        await db.create_all()  # SQLite 파일에 0009 의 새 칸이 아직 없을 수 있다
+        async with db.sessionmaker() as session:
+            await image_service.backfill_credits(session, target, apply=apply, log=typer.echo)
+
+    _run(job)
+
+
 @cli.command("images-fingerprint")
 def images_fingerprint(
     limit: Annotated[int, typer.Option(help="이번에 받을 사진 수")] = 300,

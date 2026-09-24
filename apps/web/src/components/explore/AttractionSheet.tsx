@@ -1,21 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, ExternalLink, MapPin, Navigation, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { track } from "@/lib/analytics";
 import { planHrefNear } from "@/lib/api/hooks";
-import type { Attraction } from "@/lib/api/types";
+import type { Attraction, ImageRef } from "@/lib/api/types";
 import { dateRange, won } from "@/lib/format";
-import { canOptimize } from "@/lib/photo-credit";
+import { PlacePhoto } from "@/components/brand/PlacePhoto";
 import { ATTRACTION_TYPE_META } from "./attraction-meta";
 
 interface AttractionSheetProps {
   item: Attraction | null;
-  photo: string | null;
-  /** 실제 사진일 때의 출처 표기(예시 사진이면 null) */
-  credit?: string | null;
+  /** 카드와 같은 그림 (docs/43): 실제 사진이면 출처, 분위기 이미지면 그 표시까지 같이 간다 */
+  image: ImageRef;
   onClose: () => void;
 }
 
@@ -24,13 +22,12 @@ interface AttractionSheetProps {
  * 우리가 가진 정보(기간·주소·요금·태그)를 먼저 보여 주고, 그 장소의 실제 사진·후기·공식 안내는
  * 지도 앱과 검색으로 한 번에 넘긴다 — 남의 콘텐츠를 긁어 오지 않고 연결만 한다.
  */
-export function AttractionSheet({ item, photo, credit, onClose }: AttractionSheetProps) {
+export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) {
   if (!item) return null;
   const meta = ATTRACTION_TYPE_META[item.type] ?? ATTRACTION_TYPE_META.attraction;
   // 같은 이름이 전국에 많다 → 지역명을 붙여 검색해야 그 장소가 나온다
   const area = item.region?.name ?? item.address.split(" ").slice(0, 2).join(" ");
   const query = [area, item.name].filter(Boolean).join(" ");
-  const Icon = meta.icon;
   const links = [
     {
       key: "map" as const,
@@ -58,16 +55,7 @@ export function AttractionSheet({ item, photo, credit, onClose }: AttractionShee
     <Sheet open onOpenChange={(open) => (open ? undefined : onClose())}>
       <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 sm:max-w-[440px]">
         <div className={`relative aspect-[16/10] shrink-0 bg-gradient-to-br ${meta.gradient}`}>
-          {photo ? (
-            <Image src={photo} alt="" fill unoptimized={!canOptimize(photo)} sizes="440px" className="object-cover" />
-          ) : (
-            <div aria-hidden className="absolute inset-0 grid place-items-center">
-              <span className="grid size-16 place-items-center rounded-[22px] bg-white/70 text-blue-deep shadow-soft">
-                <Icon className="size-8" />
-              </span>
-            </div>
-          )}
-          {photo && credit ? <span className="absolute right-2.5 bottom-2 rounded-md bg-black/45 px-1.5 py-0.5 text-caption font-medium text-white/95">{credit}</span> : null}
+          <PlacePhoto image={image} size="lg" sizes="440px" className="absolute inset-0" />
           <span className="absolute top-3 left-3 rounded-full bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">{meta.label}</span>
         </div>
 

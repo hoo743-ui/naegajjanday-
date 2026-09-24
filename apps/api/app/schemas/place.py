@@ -2,9 +2,19 @@ from __future__ import annotations
 
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from app.domain.image_ref import ImageRef, resolve_image
 from app.schemas.course import PlaceBrief
+
+# 둘러보기 유형 → 분위기 이미지를 찾을 업종 코드 (웹 AttractionCard 와 같은 표)
+_TYPE_CATEGORY = {
+    "park": "attraction.park",
+    "exhibition": "culture.gallery",
+    "festival": "culture.festival",
+    "culture": "culture",
+    "attraction": "attraction",
+}
 
 
 class PlaceSearchItem(PlaceBrief):
@@ -95,6 +105,12 @@ class AttractionItem(BaseModel):
     ends_on: date | None = None
     rating: float | None = None
     thumbnail_url: str | None = Field(default=None, description="그 장소의 실제 사진(있을 때만)")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def image(self) -> ImageRef:
+        """카드에 보일 그림 한 장과 그 출처 (docs/43). 업종 코드가 없으면 유형으로 고른다"""
+        return resolve_image(self.thumbnail_url, self.category or _TYPE_CATEGORY.get(self.type))
 
 
 class AttractionList(BaseModel):
