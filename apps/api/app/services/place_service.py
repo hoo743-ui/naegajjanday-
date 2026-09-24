@@ -284,7 +284,8 @@ class PlaceService:
             .limit(200)
         )
         if region is not None:
-            stmt = stmt.where(Event.region_id == region.id)
+            # a place or event sits on its most specific region only: a province (경기도) holds none itself
+            stmt = stmt.where(Event.region_id.in_(await self._regions.ids_under(region.id)))
         return dto.EventList(items=[_event_out(e) for e in (await self._s.scalars(stmt)).all()])
 
     async def attractions(
@@ -340,7 +341,7 @@ class PlaceService:
             .limit(300)
         )
         if region is not None:
-            stmt = stmt.where(Place.region_id == region.id)
+            stmt = stmt.where(Place.region_id.in_(await self._regions.ids_under(region.id)))
         needle = (q or "").strip()
         if needle:
             # in SQL, before the 300-row cap: a search has to reach every sight, not just the first page
@@ -353,9 +354,9 @@ class PlaceService:
                 )
             )
         rows = [(p, kind) for p in (await self._s.scalars(stmt)).all() if (kind := type_of(p.category.code))]
-        if region is None and not needle:
-            # the whole country: popularity is a rank within each district, so the top is hundreds of
-            # districts' number ones. Spread them — no two in a row from one district or of one type
+        if (region is None or region.level == 1) and not needle:
+            # the whole country (or a province): popularity is a rank within each district, so the top is
+            # hundreds of districts' number ones. Spread them — no two in a row from one district or one type
             rows = spread(rows, lambda r: (r[0].region_id, r[1]))
         for p, kind in rows:
             items.append(

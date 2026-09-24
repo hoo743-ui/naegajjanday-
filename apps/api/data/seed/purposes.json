@@ -53,13 +53,27 @@
                   "CAFE",
                   "DESSERT"
                 ]
+              },
+              "never_tags": {
+                "무인매장": [
+                  "CAFE",
+                  "DESSERT"
+                ]
+              }
+            },
+            "fun": {
+              "never_tags": {
+                "무인매장": [
+                  "CAFE",
+                  "DESSERT"
+                ]
               }
             }
           }
         },
         "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
         "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다.",
-        "_note_styles": "데이트는 알뜰·효율 코스에서도 식사·카페·디저트의 체인점을 뺀다(기본 스타일 위에 덮어쓴다)."
+        "_note_styles": "데이트는 알뜰·효율 코스에서도 식사·카페·디저트의 체인점을 뺀다(기본 스타일 위에 덮어쓴다). 무인카페 · 무인 디저트는 어느 스타일에서도 뺀다(never_tags — 후보가 없으면 그 자리를 비운다. 2026-09-24 밤 데이트 세 코스가 모두 무인카페로 끝났다)."
       },
       "tag_affinities": {
         "조용한": 0.8,
@@ -84,7 +98,8 @@
         "시그니처메뉴": 0.3,
         "활기찬": -0.1,
         "관광공사 소개": 0.6,
-        "간편식": -0.9
+        "간편식": -0.9,
+        "무인매장": -0.9
       },
       "templates": [
         {
@@ -574,8 +589,8 @@
           "party_max": 2,
           "slots": [
             {
-              "course_role": "MEAL",
-              "budget_share": 0.46,
+              "course_role": "BAR",
+              "budget_share": 0.68,
               "is_optional": false,
               "is_order_flexible": false,
               "earliest_start": null,
@@ -584,7 +599,7 @@
             },
             {
               "course_role": "ACTIVITY",
-              "budget_share": 0.3,
+              "budget_share": 0.16,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
@@ -611,7 +626,7 @@
             },
             {
               "course_role": "CAFE",
-              "budget_share": 0.2,
+              "budget_share": 0.12,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
@@ -619,7 +634,7 @@
               "min_slot_budget": 4000
             }
           ],
-          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
+          "_note": "밤 9시~새벽 5시. 식당은 대부분 닫았으므로 데이트의 중심은 술집(와인바 · 칵테일바 · 이자카야 — 안주가 식사를 겸한다). 예산의 2/3 를 술집에 준다: 체인이 아닌 술집은 업종 평균가가 1인 25,000원이라 그보다 작으면 체인 맥주집만 들어온다: 한잔 → (노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페). 2026-09-24 식사 자리였을 때 숭실대 밤 10시 데이트가 식사 없이 노래방 · 공원 · 무인카페로만 나왔다."
         }
       ]
     },

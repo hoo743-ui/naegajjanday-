@@ -25,7 +25,7 @@ from app.domain.models import (
 from app.domain.recommendation import budget as B
 from app.domain.recommendation import day_score
 from app.domain.recommendation import features as F
-from app.domain.recommendation.candidates import FilterContext, hard_filter
+from app.domain.recommendation.candidates import FilterContext, hard_filter, never_tags
 from app.domain.recommendation.composer import (
     MIN_OPEN_BUFFER_MIN,
     CourseComposer,
@@ -271,7 +271,12 @@ class RecommendationEngine:
                     # "no chains" is a preference of the style, not the user's veto: a 2,700원 café budget
                     # only buys a chain, and an empty café stop is worse than a Mega Coffee
                     pool = hard_filter(
-                        cache[key], replace(fc, disliked_tags=frozenset(ctx.disliked_tags)), params
+                        cache[key],
+                        replace(
+                            fc,
+                            disliked_tags=frozenset(ctx.disliked_tags) | never_tags(ctx, sb.slot.course_role),
+                        ),
+                        params,
                     )
                 if len(pool) >= params.min_candidates:
                     break

@@ -194,7 +194,7 @@ class TestWishes:
         )
         assert resp.status_code == 200, resp.text
         lines = [s["text"] for s in resp.json()["summary"] if s["kind"] == "wish"]
-        assert lines == ["조용한 곳 위주", "실내 위주", "사진이 있는 곳 위주", "무료로 들를 곳 더"]
+        assert lines == ["조용한 곳 위주", "실내 위주", "사진 찍기 좋은 곳", "무료로 들를 곳 더"]
 
 
 class TestReasonShort:

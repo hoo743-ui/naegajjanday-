@@ -3,12 +3,13 @@ from __future__ import annotations
 import pytest
 
 from app.domain.models import Slot
-from app.domain.recommendation.candidates import FilterContext, rejection_reason
+from app.domain.recommendation.candidates import FilterContext, never_tags, rejection_reason
 from app.domain.recommendation.style import (
     assign_buzz,
     resolve_style,
     styled_affinity,
     styled_avoidance,
+    styled_never,
     styled_profile,
     styled_templates,
 )
@@ -78,6 +79,26 @@ def test_fun_bans_chain_cafes_but_keeps_chain_pubs() -> None:
         rejection_reason(cafe, FilterContext.build(ctx, "CAFE", 10000, SUNDAY_6PM), params) == "excluded_tag"
     )
     assert rejection_reason(pub, FilterContext.build(ctx, "BAR", 30000, SUNDAY_6PM), params) != "excluded_tag"
+
+
+def test_a_date_never_ends_at_an_unmanned_cafe() -> None:
+    # 2026-09-24: 숭실대 밤 10시 데이트 세 코스가 모두 '틈새24시무인카페'로 끝났다 (밤에 연 카페가 그곳뿐)
+    from app.infra.tagging import get_tag_rules
+
+    tags = get_tag_rules().derive(
+        category_code="cafe", name="틈새24시무인카페", course_role="CAFE", has_measured_price=False
+    )
+    assert tags.get("무인매장") == 1.0 and "무인매장" not in get_tag_rules().visible(tags)
+    ctx = context(budget_total=60000)
+    ctx.never_tags_by_role = styled_never({"never_tags": {"무인매장": ["CAFE", "DESSERT"]}})
+    params = profile().params
+    unmanned = place("CAFE", "cafe", 6000, tags=tags)
+    assert (
+        rejection_reason(unmanned, FilterContext.build(ctx, "CAFE", 10000, SUNDAY_6PM), params)
+        == "excluded_tag"
+    )
+    # the style's own avoidance is relaxed when nothing else is left; this one is not
+    assert never_tags(ctx, "CAFE") == {"무인매장"} and never_tags(ctx, "BAR") == frozenset()
 
 
 def test_asking_for_a_drink_puts_the_bar_in_every_template() -> None:

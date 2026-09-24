@@ -89,6 +89,7 @@ from app.domain.recommendation.style import (
     resolve_style,
     styled_affinity,
     styled_avoidance,
+    styled_never,
     styled_profile,
     styled_templates,
     suggestion_rules,
@@ -1297,6 +1298,9 @@ class CourseService:
                 focus=(row.request or {}).get("focus"),
                 extras=list((row.request or {}).get("extras") or []),
                 conditions=list((row.request or {}).get("conditions") or []),
+                pace=list((row.request or {}).get("pace") or []),
+                move_style=(row.request or {}).get("move_style"),
+                wishes=list((row.request or {}).get("wishes") or []),
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[
@@ -1420,6 +1424,7 @@ class CourseService:
         ctx.style, style = resolve_style(profile, name)
         ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, style)
         ctx.avoid_tags_by_role = styled_avoidance(style)
+        ctx.never_tags_by_role = styled_never(style)
         return styled_profile(profile, style), styled_templates(templates, style)
 
     async def _finish_replan(

@@ -186,6 +186,11 @@
       "name": "간편식",
       "group": "feature",
       "is_selectable": false
+    },
+    {
+      "name": "무인매장",
+      "group": "feature",
+      "is_selectable": false
     }
   ]
 }

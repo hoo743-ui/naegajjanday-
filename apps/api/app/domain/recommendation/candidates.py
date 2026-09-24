@@ -44,12 +44,17 @@ class FilterContext:
             arrive_at=arrive_at,
             party_size=ctx.party_size,
             disliked_tags=frozenset(ctx.disliked_tags)
-            | frozenset(t for t, roles in ctx.avoid_tags_by_role.items() if role in roles),
+            | frozenset(t for t, roles in ctx.avoid_tags_by_role.items() if role in roles)
+            | never_tags(ctx, role),
             exclude_place_ids=frozenset(ctx.exclude_place_ids),
             area_names=ctx.area_names,
             blocked_categories=ctx.blocked_categories,
             allowed_place_ids=ctx.anchor_place_ids,
         )
+
+
+def never_tags(ctx: RequestContext, role: str) -> frozenset[str]:
+    return frozenset(t for t, roles in ctx.never_tags_by_role.items() if role in roles)
 
 
 def price_ok(place: PlaceCandidate, slot_budget: float, params: ScoringParams) -> bool:

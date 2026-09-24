@@ -79,6 +79,11 @@ def styled_avoidance(style: Mapping[str, Any]) -> dict[str, frozenset[str]]:
     return {tag: frozenset(roles) for tag, roles in (style.get("avoid_tags") or {}).items()}
 
 
+def styled_never(style: Mapping[str, Any]) -> dict[str, frozenset[str]]:
+    """Like avoid_tags, but kept even when the slot would otherwise stay empty."""
+    return {tag: frozenset(roles) for tag, roles in (style.get("never_tags") or {}).items()}
+
+
 def styled_templates(templates: Sequence[Template], style: Mapping[str, Any]) -> list[Template]:
     swaps: Mapping[str, Mapping[str, Any]] = style.get("swap_roles") or {}
     if not swaps:

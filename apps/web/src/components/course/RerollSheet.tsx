@@ -20,8 +20,14 @@ const TWEAKS: { key: Tweak; label: string }[] = [
   { key: "free", label: "무료 더 넣기" },
 ];
 
-export function tweaksToRequest(tweaks: Tweak[]): Pick<GenerateCourseRequest, "wishes" | "move_style"> {
-  const wishes = tweaks.filter((t): t is Exclude<Tweak, "near"> => t !== "near");
+/** kept: 처음에 고른 바람. 새로 고른 것은 그 위에 더한다 (바꾸기가 "로맨틱"을 지우지 않게) */
+export function tweaksToRequest(
+  tweaks: Tweak[],
+  kept: GenerateCourseRequest["wishes"] = [],
+): Pick<GenerateCourseRequest, "wishes" | "move_style"> {
+  const added = tweaks.filter((t): t is Exclude<Tweak, "near"> => t !== "near");
+  // 새로 고른 것이 먼저 — API 는 5개까지 받는다
+  const wishes = [...new Set([...added, ...(kept ?? [])])].slice(0, 5);
   return {
     ...(wishes.length ? { wishes } : {}),
     ...(tweaks.includes("near") ? { move_style: "local" as const } : {}),

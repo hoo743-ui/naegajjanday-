@@ -290,6 +290,10 @@ export function CourseView({ id }: { id: string }) {
         ...(request.focus ? { focus: request.focus } : {}),
         ...(request.extras?.length ? { extras: request.extras } : {}),
         ...(request.conditions?.length ? { conditions: request.conditions } : {}),
+        // 처음에 고른 취향(여유롭게 · 로맨틱 …)도 그대로
+        ...(request.pace?.length ? { pace: request.pace } : {}),
+        ...(request.move_style ? { move_style: request.move_style } : {}),
+        ...(request.wishes?.length ? { wishes: request.wishes } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
@@ -308,7 +312,7 @@ export function CourseView({ id }: { id: string }) {
         ...baseRequest,
         ...(focus ? { focus } : {}),
         ...(tripDay && !fork ? { replaces: id } : {}),
-        ...tweaksToRequest(tweaks),
+        ...tweaksToRequest(tweaks, baseRequest.wishes),
         ...(!fork && keep.length ? { keep_place_ids: keep } : {}),
         // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
         preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },

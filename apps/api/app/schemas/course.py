@@ -104,7 +104,8 @@ class CourseGenerateRequest(BaseModel):
         max_length=5,
         description="꼭 반영하고 싶은 것: night=야경 · walk=산책 · exhibition=전시 · "
         "value=가성비(더 저렴하게) · romantic=로맨틱 · quiet=조용하게(술집 · 노래방 빼고) · "
-        "indoor=실내 위주(비 오는 날과 같게) · photo=사진이 있는 곳 위주 · free=무료로 들를 곳 더",
+        "indoor=실내 위주(비 오는 날과 같게) · photo=사진 찍기 좋은 곳(노래방 · 오락실 빼고) · "
+        "free=무료로 들를 곳 더",
     )
     keep_place_ids: list[str] = Field(
         default_factory=list,
@@ -420,6 +421,10 @@ class CourseRequestEcho(BaseModel):
     focus: str | None = None
     extras: list[str] = Field(default_factory=list)
     conditions: list[str] = Field(default_factory=list)
+    # the taste picked in the wizard (docs/30): "다시 짜기" sends it back, or a reroll forgets "로맨틱하게"
+    pace: list[str] = Field(default_factory=list)
+    move_style: str | None = None
+    wishes: list[str] = Field(default_factory=list)
 
 
 class SiblingRef(BaseModel):

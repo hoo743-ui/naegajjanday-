@@ -486,6 +486,10 @@ export interface CourseDetail extends Course {
     trip_budget_total?: number | null;
     /** 시 · 도 전체를 고른 여행이면 그 도시. 다시 짤 때는 첫 구역의 구가 아니라 이 도시로 요청한다 */
     city?: { slug: string; name: string } | null;
+    /** 위저드에서 고른 취향(docs/30). 다시 짤 때 그대로 보낸다 — 안 보내면 "로맨틱하게"가 사라진다 */
+    pace?: GenerateCourseRequest["pace"];
+    move_style?: MoveStyle | null;
+    wishes?: GenerateCourseRequest["wishes"];
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

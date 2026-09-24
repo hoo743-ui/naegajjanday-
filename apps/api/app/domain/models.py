@@ -256,6 +256,9 @@ class RequestContext:
     style: str = "efficient"
     # style-level avoidance, per role: {"체인점": {"MEAL", "CAFE"}} — unlike disliked_tags (all roles)
     avoid_tags_by_role: dict[str, frozenset[str]] = field(default_factory=dict)
+    # same shape, but never relaxed when nothing else is left:
+    # an empty café stop beats an unmanned one on a date
+    never_tags_by_role: dict[str, frozenset[str]] = field(default_factory=dict)
     # names of the chosen area itself ("경주 황리단길", "홍대"): a sight called exactly that is not a stop
     area_names: frozenset[str] = frozenset()
     # the neighbourhood's signature (domain.signature): its specialty words, its landmark sights, and the

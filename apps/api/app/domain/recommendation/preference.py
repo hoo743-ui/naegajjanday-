@@ -51,7 +51,7 @@ WISH_LABEL = {
     "romantic": "로맨틱한 분위기",
     "quiet": "조용한 곳 위주",
     "indoor": "실내 위주",
-    "photo": "사진이 있는 곳 위주",
+    "photo": "사진 찍기 좋은 곳",
     "free": "무료로 들를 곳 더",
 }
 
@@ -64,7 +64,9 @@ WISH_TAGS: dict[str, dict[str, float]] = {
     "romantic": {"로맨틱": 0.5, "감성적인": 0.3, "활기찬": -0.1},
     "quiet": {"조용한": 0.5, "아늑한": 0.3, "감성적인": 0.1, "활기찬": -0.6},
     "indoor": {},  # the rainy-day condition does it (WISH_CONDITIONS)
-    "photo": {},  # a pull toward places with their own photo (WISH_PULL)
+    # "사진 좋은 곳" is a place worth photographing (2026-09-24: it only pulled toward places we hold a
+    # photo of, and a date reroll came back as three karaoke rooms); the WISH_PULL toward a photo stays
+    "photo": {"포토존": 0.6, "뷰맛집": 0.4, "야경명소": 0.3, "감성적인": 0.2, "활기찬": -0.1},
     "free": {"산책하기좋은": 0.2},
 }
 # wishes about the kind of place rather than a tag: added to the place score (scorer.trait_pull)
@@ -77,7 +79,10 @@ WISH_PULL: dict[str, dict[str, float]] = {
 WISH_CONDITIONS: dict[str, str] = {"indoor": "rain"}
 # "조용하게": no pub in the day and no karaoke room, unless the user asked for a drink by name
 WISH_AVOID_ROLES: dict[str, tuple[str, ...]] = {"quiet": ("BAR",)}
-WISH_BLOCKED_CATEGORIES: dict[str, tuple[str, ...]] = {"quiet": ("activity.karaoke",)}
+WISH_BLOCKED_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "quiet": ("activity.karaoke",),
+    "photo": ("activity.karaoke", "activity.arcade"),  # a closed room with nothing to photograph
+}
 PACE_TAGS: dict[str, dict[str, float]] = {
     "relaxed": {"조용한": 0.2, "아늑한": 0.2},
     "packed": {},
