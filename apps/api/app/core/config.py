@@ -48,7 +48,9 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = 14
     refresh_cookie_name: str = "rt"
     cookie_secure: bool = False
-    cors_origins: CsvList = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: CsvList = Field(
+        default_factory=lambda: ["http://localhost:3000", "http://localhost:3100"]  # 3100 = preview:prod
+    )
     webhook_secret: str | None = None
 
     # --- retention (what the web promises users; enforced by `purge-courses` / `purge-accounts`) ---

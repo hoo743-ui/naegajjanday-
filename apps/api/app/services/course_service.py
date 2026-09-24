@@ -117,6 +117,7 @@ from app.services.narrative_service import Narrative, NarrativeService
 logger = get_logger(__name__)
 
 COURSE_CACHE_TTL_S = 300
+CANDIDATES_TTL_S = 600
 IDEMPOTENCY_TTL_S = 86_400
 RANDOM_TOP_N = 5
 CANDIDATE_LINE_MAX = 40  # the one line under a replacement option (and reason_short) fits a card subtitle
@@ -1563,6 +1564,14 @@ class CourseService:
         target = self._target(stops, position)
         if target is None:
             raise errors.StopNotFound(f"{position}번째 장소가 없어요.")
+        # 1.5 s of engine work per sheet opening → remembered for this exact course state (the places in
+        # order: a swap or reorder changes the key) and this viewer (their preferences shape the order)
+        state = hashlib.sha256(
+            "|".join(f"{s.position}:{s.place.public_id}" for s in stops).encode()
+        ).hexdigest()[:16]
+        key = f"cand:{public_id}:{position}:{limit}:{viewer.public_id if viewer else '-'}:{state}"
+        if (cached := await self._cache.get(key)) is not None:
+            return dto.StopCandidateList.model_validate(cached)
         ctx, profile, composer, options = await self._swap_options(row, stops, target, origin, viewer)
         b = ctx.budget_per_person
         options.sort(key=lambda o: (-objective(o[1], b, profile.params, final=True, ctx=ctx), o[0].id))
@@ -1596,7 +1605,9 @@ class CourseService:
                     line=candidate_line(cand, price_delta, walk_delta),
                 )
             )
-        return dto.StopCandidateList(items=items)
+        out = dto.StopCandidateList(items=items)
+        await self._cache.set(key, out.model_dump(mode="json"), CANDIDATES_TTL_S)
+        return out
 
     async def _with_ring(
         self,

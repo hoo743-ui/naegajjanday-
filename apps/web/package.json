@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "preview:phone": "node scripts/phone-preview.mjs",
+    "preview:prod": "node scripts/prod-preview.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",

@@ -14,7 +14,7 @@ cp .env.example .env                                  # 선택. 없어도 기본
 uv run python -m app.cli db init                      # SQLite: 테이블 생성 / PostgreSQL: alembic upgrade head
 uv run python -m app.cli seed-config                  # 지역 · 카테고리 · 태그 · 목적 · 템플릿 · 가중치
 uv run python -m app.cli ingest --provider file --all # data/seed/places/*.json (3개 지역 × 40곳)
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m app.devserver   # localhost(::1)·127.0.0.1 둘 다 받는다 (docs/45). 코드 자동 반영이 필요하면: uv run uvicorn app.main:app --reload --port 8000
 ```
 
 - 문서: <http://localhost:8000/v1/docs> · 스키마: `/v1/openapi.json`

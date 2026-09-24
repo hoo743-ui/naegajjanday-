@@ -14,7 +14,7 @@ from app.repositories.config_repo import SqlConfigRepository
 from app.schemas import admin as dto
 from app.services.audit import AuditLogger
 
-META_PREFIXES = ("region:list", "purpose:list", "course:")
+META_PREFIXES = ("region:list", "region:one", "purpose:list", "course:")
 
 
 def _hhmm(value: object) -> str | None:

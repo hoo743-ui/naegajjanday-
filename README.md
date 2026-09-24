@@ -47,7 +47,7 @@ uv sync
 uv run python -m app.cli db init
 uv run python -m app.cli seed-config
 uv run python -m app.cli ingest --provider file --all
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m app.devserver   # localhost(::1)·127.0.0.1 둘 다 받는다 (docs/45). 코드 자동 반영이 필요하면: uv run uvicorn app.main:app --reload --port 8000
 
 # 2) Web — http://localhost:3000  (새 터미널)
 cd apps/web

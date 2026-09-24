@@ -99,10 +99,16 @@ class MetaService:
         )
 
     async def region(self, slug: str) -> dto.RegionOut:
+        # 0.4 s (place count of the area) on every wizard step showing the area → cached like the list
+        key = f"region:one:{slug}"
+        if (cached := await self._cache.get(key)) is not None:
+            return dto.RegionOut.model_validate(cached)
         found = await self._regions.get_active(slug)
         if found is None:
             raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
-        return _region_out(*found)
+        out = _region_out(*found)
+        await self._cache.set(key, out.model_dump(mode="json"), META_TTL_S)
+        return out
 
     async def regions(self, parent: str | None, q: str | None) -> dto.RegionList:
         key = f"region:list:{parent or ''}:{q or ''}"

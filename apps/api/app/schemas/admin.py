@@ -435,7 +435,16 @@ class TopPlaceList(BaseModel):
 
 
 class CacheInvalidateRequest(Strict):
-    prefixes: list[str] = Field(default_factory=lambda: ["region:list", "purpose:list", "course:", "cand:"])
+    prefixes: list[str] = Field(
+        default_factory=lambda: [
+            "region:list",
+            "region:one",
+            "purpose:list",
+            "course:",
+            "cand:",
+            "attractions:",
+        ]
+    )
 
 
 class CacheInvalidateResult(BaseModel):
