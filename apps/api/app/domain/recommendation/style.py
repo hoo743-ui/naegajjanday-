@@ -92,6 +92,10 @@ def styled_templates(templates: Sequence[Template], style: Mapping[str, Any]) ->
 
 
 def _swap_roles(template: Template, swaps: Mapping[str, Mapping[str, Any]]) -> Template:
+    if template.time_band == "night":
+        # each purpose writes its own night (docs/48): the walk after a drink is the point, and "fun" turned
+        # a family's and a solo evening's stroll into a karaoke room
+        return template
     present = {s.course_role for s in template.slots}
     slots: list[Slot] = []
     for slot in template.slots:

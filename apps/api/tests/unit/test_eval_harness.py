@@ -52,15 +52,19 @@ def test_each_clumsy_pattern_is_named() -> None:
     assert "VAGUE_SIGHT" in _codes([_stop(1, "ATTRACTION", "attraction.landmark", "홍대", 15, 0)])
     assert "NOT_A_SIGN" in _codes([_stop(1, "MEAL", "food.korean", "하이푸드", 18)])
     assert "FAMILY_BAR" in _codes([_stop(1, "BAR", "bar.pub", "호프", 19)], purpose="family")
+    # docs/48: a mountain trail after dark is not an evening walk
+    trail = "[서울둘레길 11코스] 관악산코스"
+    assert "NIGHT_TRAIL" in _codes([_stop(1, "ATTRACTION", "attraction.street", trail, 22, 0)])
+    assert "NIGHT_TRAIL" not in _codes([_stop(1, "ATTRACTION", "attraction.street", trail, 15, 0)])
     assert "OVER_BUDGET" in _codes([_stop(1, "MEAL", "food.korean", "비싼집", 18, 40000)])
 
 
 def test_matrix_size_and_filters() -> None:
-    assert len(H.build_scenarios(SPEC, "quick", {})) == 4 * 5 * 3 * 2
+    assert len(H.build_scenarios(SPEC, "quick", {})) == 4 * 5 * 4 * 2  # 12:00 · 15:00 · 18:30 · 21:30
     only = H.build_scenarios(
         SPEC, "quick", {"region": ["seoul-hongdae"], "purpose": ["date"], "style": ["fun"]}
     )
     assert {(s.region, s.purpose, s.style) for s in only} == {("seoul-hongdae", "date", "fun")} and len(
         only
-    ) == 3
+    ) == 4
     assert only[0].budget_total == 60000 and only[0].party_size == 2

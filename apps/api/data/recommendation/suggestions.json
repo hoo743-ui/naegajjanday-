@@ -6,11 +6,13 @@
   "walk_m_per_min": 67,
   "limit": 3,
   "price_floor_ratio": 0.0,
-  "_top_up": "한 곳뿐인 코스는 코스가 아니다. 예산이 나머지 자리를 감당하지 못해 below_stops 곳보다 적게 나오면(둘이서 2만원 · 새벽 2시: 열려 있는 가장 싼 식당도 예산을 넘는다), 위의 규칙으로 권했을 곳을 max_added 곳까지 코스에 직접 넣고 notice 로 그렇게 했다고 말한다({place} = 넣은 곳).",
+  "_top_up": "한 곳뿐인 코스는 코스가 아니다. 예산이 나머지 자리를 감당하지 못해 below_stops 곳보다 적게 나오면(둘이서 2만원 · 새벽 2시: 열려 있는 가장 싼 식당도 예산을 넘는다), 위의 규칙으로 권했을 곳을 max_added 곳까지 코스에 직접 넣고 notice 로 그렇게 했다고 말한다({place} = 넣은 곳). below_use: 예산의 이 비율보다 적게 쓴 코스(40% 넘게 남음)도 사용자에게 보여 주기 전에 한 번 더 채운다(docs/49 §2) — 그때의 안내는 notice_underspent.",
   "top_up": {
     "below_stops": 2,
     "max_added": 2,
-    "notice": "이 예산과 시간으로는 들를 곳이 너무 적어서, 걸어갈 수 있는 {place}을(를) 더했어요."
+    "notice": "이 예산과 시간으로는 들를 곳이 너무 적어서, 걸어갈 수 있는 {place}을(를) 더했어요.",
+    "below_use": 0.6,
+    "notice_underspent": "예산이 많이 남아서, 걸어갈 수 있는 {place}을(를) 더했어요."
   },
   "roles": {
     "DESSERT": {
@@ -35,6 +37,19 @@
     },
     "ATTRACTION": {
       "line": "돈 안 들이고 들를 만한 곳이 가까이 있어요."
+    }
+  },
+  "_leftover": "남은 돈을 말하는 법(docs/49). buffer_below 미만 = 여유(추정가라 남겨 둔 돈), explain_from 이상 = 덜 쓴 코스 — 이유 문장 없이는 보여 주지 않는다. reasons 의 {left} = 남은 돈. _buffer 는 여유 구간의 한 줄.",
+  "leftover": {
+    "buffer_below": 0.15,
+    "explain_from": 0.4,
+    "reasons": {
+      "_buffer": "여유 {left} — 가격이 업종 평균이라 조금 남겨 뒀어요.",
+      "USER_ASKED_VALUE": "더 저렴하게 짜서 {left}을 아꼈어요.",
+      "FEW_OPEN_AT_THIS_HOUR": "이 시간에는 근처에 연 곳이 많지 않아서 {left}이 남았어요.",
+      "FREE_HEAVY": "돈 안 드는 곳이 많은 코스라 {left}이 남았어요.",
+      "NOTHING_WORTH_IT": "더 넣을 만한 곳이 없어서 억지로 채우지 않았어요. {left}이 남아요.",
+      "CHEAP_AREA": "이 동네는 가격이 낮은 편이라 {left}이 남았어요."
     }
   }
 }

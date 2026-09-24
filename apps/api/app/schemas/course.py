@@ -222,11 +222,22 @@ class StopOut(BaseModel):
     congestion: Congestion | None = None
 
 
+class LeftoverOut(BaseModel):
+    """docs/49: buffer (≤15 %, kept on purpose — prices are estimates) · spendable · underspent (≥40 %)."""
+
+    band: Literal["buffer", "spendable", "underspent"] = "buffer"
+    reason: str | None = Field(
+        default=None, description="왜 남았나: USER_ASKED_VALUE · FEW_OPEN_AT_THIS_HOUR …"
+    )
+    text: str | None = Field(default=None, description="화면에 그대로 나가는 한 문장")
+
+
 class Totals(BaseModel):
     price: int
     price_per_person: int
     budget_left: int
     budget_utilization: float
+    leftover: LeftoverOut = Field(default_factory=LeftoverOut)
     travel_min: int
     distance_m: int
     duration_min: int

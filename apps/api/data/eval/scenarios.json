@@ -55,7 +55,8 @@
   "starts": [
     "12:00",
     "15:00",
-    "18:30"
+    "18:30",
+    "21:30"
   ],
   "styles": [
     "efficient",
@@ -106,14 +107,25 @@
       "해수욕장",
       "호수",
       "저수지",
-      "둘레길",
       "해안도로",
       "등대",
       "대교",
       "강변",
       "수변"
     ],
-    "_no_door_note": "이름이 이런 곳은 문이 없다(바닷가 · 호수 · 둘레길). 업종이 그냥 'attraction' 이어도 밤에 도착했다고 '문 닫은 곳'으로 세지 않는다. 엔진의 추정(default_hours.json)과 따로 둔, 세상에 대한 판단이다: 유적 · 전시관은 여기 없다."
+    "_no_door_note": "이름이 이런 곳은 문이 없다(바닷가 · 호수 · 둘레길). 업종이 그냥 'attraction' 이어도 밤에 도착했다고 '문 닫은 곳'으로 세지 않는다. 엔진의 추정(default_hours.json)과 따로 둔, 세상에 대한 판단이다: 유적 · 전시관은 여기 없다.",
+    "min_stops_night": 2,
+    "night_trail_words": [
+      "둘레길",
+      "코스]",
+      "등산로",
+      "숲길",
+      "산길",
+      "자락길",
+      "트레킹",
+      "올레길"
+    ],
+    "_night_note": "21:30 시나리오(docs/48): 밤에는 2곳(한잔 → 걷기)이 정상이라 FEW_STOPS 는 min_stops_night 로 센다. 해가 진 뒤(19시~) 산길(night_trail_words)에 도착하면 NIGHT_TRAIL — 엔진의 추정(default_hours.json)과 따로 둔 세상에 대한 판단."
   },
   "universities": {
     "_note": "docs/34 캠퍼스 하루: `eval-courses --scope university`. 캠퍼스는 이름으로 찾는다(DB 마다 id 가 다르다). 전국 여러 지역 · 규모를 섞었다.",

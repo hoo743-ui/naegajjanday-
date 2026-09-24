@@ -30,6 +30,7 @@ from app.core.config import API_ROOT, Settings
 from app.domain.anchors import university_rules
 from app.domain.media import SHOWABLE, distinct_photos
 from app.domain.models import CourseResult, GeoPoint, RequestContext
+from app.domain.recommendation.budget import evening_minute, is_night
 from app.domain.recommendation.day_score import REPEATABLE, experience_kind
 from app.domain.routing.travel_time import haversine_m
 from app.infra.analytics.base import NoopTracker
@@ -50,6 +51,7 @@ CHECKS: dict[str, str] = {
     "FEW_STOPS": "들르는 곳이 너무 적다",
     "EMPTY_SLOT": "템플릿의 단계를 채우지 못해 건너뛰었다",
     "CLOSED_AT_ARRIVAL": "도착 시각에 문 닫았을 곳(밤의 박물관·시장·유적)",
+    "NIGHT_TRAIL": "해 진 뒤의 산길 · 둘레길",
     "TOO_EARLY": "그 시각에 가기엔 이른 곳(낮술·낮의 야경)",
     "LONG_WALK": "한 구간을 너무 오래 걷는다",
     "LOW_BUDGET_USE": "예산을 절반도 못 썼다",
@@ -161,6 +163,11 @@ def _hm(value: str) -> time:
     return time(int(h), int(m))
 
 
+def _minute(value: str) -> int:
+    h, m = value.split(":")
+    return int(h) * 60 + int(m)
+
+
 def _prefix_lookup(table: dict[str, str], code: str) -> str | None:
     """'culture.museum' → its own entry, else 'culture', else nothing."""
     parts = code.split(".")
@@ -180,7 +187,9 @@ def judge(
     found: list[Finding] = []
     tag_rules = get_tag_rules()
     stops = course.stops
-    if len(stops) < int(rules["min_stops"]) and not ctx.duration_min:
+    night = is_night(ctx.start_at)
+    min_stops = int(rules.get("min_stops_night", rules["min_stops"]) if night else rules["min_stops"])
+    if len(stops) < min_stops and not ctx.duration_min:
         found.append(Finding("FEW_STOPS", f"{len(stops)}곳"))
     for w in course.warnings:
         if w.get("code") == "SLOT_EMPTY":
@@ -194,10 +203,15 @@ def judge(
             not s.place.is_event
             and not no_door
             and (limit := _prefix_lookup(closed_after, code))
-            and at >= _hm(limit)
+            and evening_minute(s.arrive_at) >= _minute(limit)  # a museum at 00:30 is closed too
         ):
             found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (≥{limit})"))
-        if (floor := _prefix_lookup(rules["not_before"], code)) and at < _hm(floor):
+        if (at >= time(19) or at < time(6)) and any(w in name for w in rules.get("night_trail_words", ())):
+            found.append(Finding("NIGHT_TRAIL", f"{name} {at:%H:%M} 도착"))
+        # past midnight is still the evening before: a pub at 00:12 is late, not early
+        if (floor := _prefix_lookup(rules["not_before"], code)) and evening_minute(s.arrive_at) < _minute(
+            floor
+        ):
             found.append(Finding("TOO_EARLY", f"{name} [{code}] {at:%H:%M}"))
         # v1 promised "20 min a leg"; v2 prices a longer leg instead of forbidding it -> flag the long ones
         leg_limit = int(rules.get("max_walk_leg_min_v2", 30) if ctx.is_v2 else rules["max_walk_leg_min"])

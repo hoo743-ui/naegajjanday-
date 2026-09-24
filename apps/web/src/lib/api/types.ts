@@ -384,6 +384,8 @@ export interface CourseTotals {
   price_per_person: number;
   budget_left: number;
   budget_utilization: number;
+  /** docs/49: 남은 돈의 구간과 이유. buffer = 추정가라 일부러 남긴 여유 · spendable · underspent(40%+) */
+  leftover?: { band: "buffer" | "spendable" | "underspent"; reason?: string | null; text?: string | null };
   travel_min: number;
   distance_m: number;
   duration_min: number;

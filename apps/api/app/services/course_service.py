@@ -43,7 +43,7 @@ from app.domain.models import (
     StopResult,
     Template,
 )
-from app.domain.recommendation import day_score
+from app.domain.recommendation import day_score, leftover
 from app.domain.recommendation.blend import (
     blend_affinity,
     blend_profiles,
@@ -1140,6 +1140,7 @@ class CourseService:
                 price_per_person=round(row.total_price / max(1, row.party_size)),
                 budget_left=budget - row.total_price,
                 budget_utilization=round(row.total_price / budget, 3) if budget else 0.0,
+                leftover=self._leftover(row, stops),
                 travel_min=row.total_travel_min,
                 distance_m=row.total_distance_m,
                 duration_min=row.duration_min,
@@ -1182,6 +1183,20 @@ class CourseService:
             ),
             warnings=[dto.Warning.model_validate(w) for w in row.warnings or []],
         )
+
+    def _leftover(self, row: Course, stops: Sequence[StopResult]) -> dto.LeftoverOut:
+        """How much is left, in the user's words, and why (docs/49)."""
+        request = row.request or {}
+        found = leftover.assess(
+            budget=row.budget_total,
+            price=row.total_price,
+            prices=[s.est_price for s in stops],
+            night=is_night(self._out_time(row.start_at)),
+            asked_value="value" in (request.get("wishes") or []),
+            slot_empty=any(w.get("code") == "SLOT_EMPTY" for w in row.warnings or []),
+            rules=(suggestion_rules() or {}).get("leftover") or {},
+        )
+        return dto.LeftoverOut(band=found.band, reason=found.reason, text=found.text)
 
     def _out_time(self, value: datetime) -> datetime:
         utc = as_utc(value)
@@ -1761,7 +1776,11 @@ class CourseService:
         rules = (suggestion_rules() or {}).get("top_up") or {}
         out: dto.CourseOut | None = None
         for _ in range(int(rules.get("max_added", 0))):
-            if len(stops) >= int(rules.get("below_stops", 0)):
+            few = len(stops) < int(rules.get("below_stops", 0))
+            # docs/49: a course that spent under 60 % is filled once more before anyone sees it
+            use = row.total_price / row.budget_total if row.budget_total else 1.0
+            underspent = use < float(rules.get("below_use", 0.0))
+            if not (few or underspent):
                 break
             options = await self._leftover_options(row, stops, user) or await self._leftover_options(
                 row, stops, user, same_role=True
@@ -1771,7 +1790,11 @@ class CourseService:
             role, place, _walk_min, _metres = options[0]
             note = {
                 "code": "TOPPED_UP",
-                "detail": str(rules.get("notice") or "").format(place=place.name),
+                "detail": str(
+                    rules.get("notice")
+                    if few
+                    else rules.get("notice_underspent") or rules.get("notice") or ""
+                ).format(place=place.name),
                 "meta": {"place_id": place.public_id, "role": role},
             }
             added = await self._append(row, stops, role, place, user, [note])

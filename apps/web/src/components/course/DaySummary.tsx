@@ -34,6 +34,14 @@ interface DaySummaryProps {
  */
 export function DaySummary({ totals, budget, partySize, transport, travelMin, distanceM, mood, line, summary, bubbleKey, stops, editable = true }: DaySummaryProps) {
   const over = totals.budget_left < 0;
+  // docs/49: 많이 남았으면 "남았어요"로 끝내지 않고 왜 남았는지 말한다. 조금 남은 것은 일부러 둔 여유다
+  const leftover = totals.leftover;
+  const leftLine =
+    totals.budget_left <= 0
+      ? "짠! 예산에 딱 맞췄어요."
+      : leftover && leftover.band !== "buffer" && leftover.text
+        ? leftover.text
+        : `짠! 예산 안에 맞췄어요. 여유 ${won(totals.budget_left)}은 남겨 뒀어요.`;
   return (
     <section aria-label="오늘의 요약" className="grid gap-3 sm:gap-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-6 gap-y-3">
@@ -69,7 +77,7 @@ export function DaySummary({ totals, budget, partySize, transport, travelMin, di
       <div key={bubbleKey} className="flex items-center gap-3">
         <Jjani mood={mood} size={44} className="shrink-0" />
         <div className="min-w-0">
-          <p className="text-body font-bold text-ink">{line ?? (totals.budget_left > 0 ? `짠! ${won(totals.budget_left)} 남았어요.` : "짠! 예산에 딱 맞췄어요.")}</p>
+          <p className="text-body font-bold text-ink">{line ?? leftLine}</p>
           <p className="text-body-sm text-ink-2">{editable ? "짠이가 먼저 예산 안에서 짜 봤어요. 마음에 안 드는 곳은 바꿔도 돼요 — 남은 돈은 바로 다시 계산할게요." : summary}</p>
         </div>
       </div>

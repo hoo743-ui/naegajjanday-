@@ -1199,21 +1199,21 @@
           "slots": [
             {
               "course_role": "MEAL",
-              "budget_share": 0.46,
-              "is_optional": false,
+              "budget_share": 0.45,
+              "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
               "min_slot_budget": null
             },
             {
-              "course_role": "ACTIVITY",
-              "budget_share": 0.3,
+              "course_role": "BAR",
+              "budget_share": 0.51,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 6000
+              "min_slot_budget": null
             },
             {
               "course_role": "ATTRACTION",
@@ -1232,18 +1232,9 @@
               "earliest_start": null,
               "latest_start": null,
               "min_slot_budget": null
-            },
-            {
-              "course_role": "CAFE",
-              "budget_share": 0.2,
-              "is_optional": true,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": 4000
             }
           ],
-          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
+          "_note": "밤 9시~새벽 5시, 여행의 밤은 그 지역의 밤(docs/48 §5): (야식 · 포차거리) → (한잔) → 밤거리 · 바닷가 → (야경). 서울에도 있는 노래방 · 오락실은 두지 않고, 카페를 빼서 새벽 3시까지 끌지 않는다."
         }
       ]
     },
@@ -1768,21 +1759,12 @@
           "slots": [
             {
               "course_role": "MEAL",
-              "budget_share": 0.46,
+              "budget_share": 0.6,
               "is_optional": false,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
               "min_slot_budget": null
-            },
-            {
-              "course_role": "ACTIVITY",
-              "budget_share": 0.3,
-              "is_optional": true,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": 6000
             },
             {
               "course_role": "ATTRACTION",
@@ -1803,16 +1785,16 @@
               "min_slot_budget": null
             },
             {
-              "course_role": "CAFE",
-              "budget_share": 0.2,
+              "course_role": "DESSERT",
+              "budget_share": 0.36,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 4000
+              "min_slot_budget": 3000
             }
           ],
-          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
+          "_note": "밤 9시~새벽 5시, 가족(docs/48 §2): 늦은 식사 → 가벼운 산책 → (야경) → (디저트). 노래방 · 오락 · 술집은 두지 않는다. 아이와의 밤은 원래 이른 저녁으로 당겨야 한다 — '누구와' 칩(아이와 / 부모님과 / 어른끼리)이 생기면 아이와는 밤 코스를 만들지 않는다(docs/48 §8-3)."
         }
       ]
     },
@@ -2351,8 +2333,8 @@
           "party_max": 8,
           "slots": [
             {
-              "course_role": "MEAL",
-              "budget_share": 0.46,
+              "course_role": "BAR",
+              "budget_share": 0.5,
               "is_optional": false,
               "is_order_flexible": false,
               "earliest_start": null,
@@ -2361,42 +2343,33 @@
             },
             {
               "course_role": "ACTIVITY",
-              "budget_share": 0.3,
+              "budget_share": 0.28,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 6000
+              "min_slot_budget": 3000
             },
             {
-              "course_role": "ATTRACTION",
-              "budget_share": 0.02,
-              "is_optional": false,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": null
-            },
-            {
-              "course_role": "NIGHTVIEW",
-              "budget_share": 0.02,
-              "is_optional": true,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": null
-            },
-            {
-              "course_role": "CAFE",
+              "course_role": "MEAL",
               "budget_share": 0.2,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 4000
+              "min_slot_budget": null
+            },
+            {
+              "course_role": "ATTRACTION",
+              "budget_share": 0.02,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
             }
           ],
-          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
+          "_note": "밤 9시~새벽 5시, 친구의 밤은 활기찬 쪽(docs/48 §3): 한잔(포차 · 호프 · 이자카야) → (노래방 · 오락) → (야식) → (밤거리). 데이트의 밤(한잔 → 조용히 걷기)과 다르다."
         }
       ]
     },
@@ -2923,22 +2896,13 @@
           "party_max": 1,
           "slots": [
             {
-              "course_role": "MEAL",
-              "budget_share": 0.46,
-              "is_optional": false,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": null
-            },
-            {
-              "course_role": "ACTIVITY",
-              "budget_share": 0.3,
+              "course_role": "BAR",
+              "budget_share": 0.6,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 6000
+              "min_slot_budget": null
             },
             {
               "course_role": "ATTRACTION",
@@ -2960,15 +2924,15 @@
             },
             {
               "course_role": "CAFE",
-              "budget_share": 0.2,
+              "budget_share": 0.36,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": null,
               "latest_start": null,
-              "min_slot_budget": 4000
+              "min_slot_budget": 3000
             }
           ],
-          "_note": "밤 9시~새벽 5시. 열려 있는 곳이 적으므로 식사 말고는 모두 '있으면' 자리다: 야식 → (코인노래방 · 볼링) → 밤 산책 → (야경) → (24시 카페)."
+          "_note": "밤 9시~새벽 5시, 혼자의 밤(docs/48 §4): (혼술) → 밤 산책 → (야경) → (24시 카페). 눈치 보지 않는 곳만 — 혼자 가는 노래방 · 오락실은 두지 않는다. 공연 자리(CULTURE)는 뺐다: 밤 9시 반에 막 들어갈 공연은 없다(21:39 난타극장이 나왔다)."
         }
       ]
     },

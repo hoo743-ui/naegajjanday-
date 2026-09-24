@@ -10,6 +10,16 @@ from app.services import course_service
 from tests.conftest import GENERATE_BODY
 
 
+@pytest.fixture(autouse=True)
+def no_underspent_top_up(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests need a course with money left: the docs/49 top-up of an underspent course stays off
+    (TestTopUp turns it back on where it is the subject)."""
+    rules = suggestion_rules()
+    monkeypatch.setattr(
+        course_service, "suggestion_rules", lambda: {**rules, "top_up": {**rules["top_up"], "below_use": 0.0}}
+    )
+
+
 async def course_with_money_left(client: httpx.AsyncClient) -> dict:
     # a short lunch on a dinner-sized budget: most of the money stays in the pocket
     resp = await client.post(
@@ -85,7 +95,10 @@ class TestTopUp:
         monkeypatch.setattr(
             course_service,
             "suggestion_rules",
-            lambda: {**rules, "top_up": {**rules["top_up"], "below_stops": short_of, "max_added": 1}},
+            lambda: {
+                **rules,
+                "top_up": {**rules["top_up"], "below_stops": short_of, "max_added": 1, "below_use": 0.0},
+            },
         )
         # a start ten minutes later: the answer to the first request is cached by its body
         resp = await client.post(
@@ -110,3 +123,26 @@ class TestTopUp:
         swapped = await client.post(f"/v1/courses/{course['id']}/swap", json={"position": added["position"]})
         if swapped.status_code == 200 and swapped.json()["stops"][-1]["place"]["id"] != added["place"]["id"]:
             assert "TOPPED_UP" not in [w["code"] for w in swapped.json()["warnings"]]
+
+    async def test_an_underspent_course_is_filled_before_anyone_sees_it(
+        self, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # docs/49: most of 120,000 won left on a two-hour lunch — one more place goes in, and it says why
+        plain = await course_with_money_left(client)
+        assert plain["totals"]["price"] < 0.6 * 120000
+        assert plain["totals"]["leftover"]["band"] == "underspent" and plain["totals"]["leftover"]["text"]
+        rules = suggestion_rules()
+        monkeypatch.setattr(
+            course_service,
+            "suggestion_rules",
+            lambda: {**rules, "top_up": {**rules["top_up"], "below_stops": 0, "max_added": 1}},
+        )
+        resp = await client.post(
+            "/v1/courses/generate",
+            json={**GENERATE_BODY, "budget_total": 120000, "start_at": "2026-09-22T12:20:00+09:00",
+                  "duration_min": 120, "alternatives": 0},
+        )  # fmt: skip
+        course = resp.json()["courses"][0]
+        notes = [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]
+        assert len(notes) == 1 and "예산이 많이 남아서" in notes[0]["detail"]
+        assert course["totals"]["price"] <= 120000
