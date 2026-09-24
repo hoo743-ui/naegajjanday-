@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useEffect, useRef } from "react";
-import { Bus, Car, Footprints, Sparkles, TrainFront, TramFront, type LucideIcon } from "lucide-react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
+import { Bus, Car, ChevronDown, Footprints, Sparkles, TrainFront, TramFront, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/mascot/EmptyState";
 import type { AccessHint } from "@/lib/api/hooks";
 import type { AlongLeg, Course, CourseRoute, CourseStyle, PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
@@ -60,6 +60,49 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   if (flat("congestion")) hidden.push("congestion");
   if (style !== "fun" && stops.every((s) => !s.score_breakdown.buzz)) hidden.push("buzz");
   return hidden;
+}
+
+/**
+ * 가는 길에 (docs/46): 사람들이 실제로 찾아가는 곳 중 조금만 돌아가면 되는 곳. 코스 · 예산에는 넣지 않는다.
+ * 구간 줄에는 한 줄만("가는 길에 들를 곳 2곳"), 누르면 아래에 이름 · 몇 분 더 · 왜(출처)가 열린다.
+ */
+function AlongLine({ items, onShow }: { items: AlongLeg["items"]; onShow?: (pin: Omit<NearbyPin, "n">) => void }) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  return (
+    <div className="grid gap-1.5 pt-0.5 text-caption">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={listId}
+        className="inline-flex w-fit items-center gap-1 font-semibold text-ink-2 hover:text-ink"
+      >
+        <Sparkles aria-hidden className="size-3.5 text-tomato-deep" />
+        <span className="underline decoration-ink/25 decoration-dotted underline-offset-4">가는 길에 들를 곳 {items.length}곳</span>
+        <ChevronDown aria-hidden className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+      {open ? (
+        <ul id={listId} className="grid gap-1">
+          {items.map((it) => (
+            <li key={it.place.id}>
+              <button
+                type="button"
+                onClick={() => onShow?.({ id: it.place.id, name: it.place.name, lat: it.place.lat, lng: it.place.lng, kind: it.line })}
+                className="grid w-full gap-0.5 rounded-xl border border-ink/10 bg-white px-3 py-2 text-left hover:border-blue-deep"
+              >
+                <b className="truncate text-body-sm font-bold text-ink">{it.place.name}</b>
+                <span className="text-muted-foreground">
+                  {it.line}
+                  {it.source ? ` · ${it.source}` : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
 }
 
 export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, pins = [], onTogglePin, along, onShowPlace, signals }: CourseTimelineProps) {
@@ -163,26 +206,7 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                         ) : null}
                       </p>
                     ) : null}
-                    {onTheWay.length > 0 ? (
-                      // 가는 길에 (docs/46): 사람들이 실제로 찾아가는 곳 중 조금만 돌아가면 되는 곳. 코스 · 예산에는 넣지 않는다
-                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-caption">
-                        <span className="inline-flex items-center gap-1 font-semibold text-ink-2">
-                          <Sparkles aria-hidden className="size-3.5 text-tomato-deep" /> 가는 길에
-                        </span>
-                        {onTheWay.map((it) => (
-                          <button
-                            key={it.place.id}
-                            type="button"
-                            title={[it.line, it.source].filter(Boolean).join(" · ")}
-                            onClick={() => onShowPlace?.({ id: it.place.id, name: it.place.name, lat: it.place.lat, lng: it.place.lng, kind: it.line })}
-                            className="inline-flex max-w-full items-center gap-1 rounded-full border border-ink/15 bg-white px-2.5 py-1 font-semibold text-ink hover:border-blue-deep"
-                          >
-                            <span className="truncate">{it.place.name}</span>
-                            <span className="shrink-0 font-medium text-muted-foreground">+{it.detour_min}분</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
+                    {onTheWay.length > 0 ? <AlongLine items={onTheWay} onShow={onShowPlace} /> : null}
                   </div>
                 </div>
               </li>

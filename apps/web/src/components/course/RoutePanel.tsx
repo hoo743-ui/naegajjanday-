@@ -1,10 +1,12 @@
 "use client";
 
-import { ExternalLink, Map as MapIcon, RotateCw } from "lucide-react";
+import { useId, useState } from "react";
+import { ChevronDown, ExternalLink, Map as MapIcon, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CourseRoute, Stop, Transport } from "@/lib/api/types";
 import { distance, minutes, transportLabel } from "@/lib/format";
 import { naverWebDirections, openInNaverMap, type MapPoint } from "@/lib/naver-map";
+import { cn } from "@/lib/utils";
 
 const MAX_VIA = 5;
 const point = (s: Stop): MapPoint => ({ lat: s.place.lat, lng: s.place.lng, name: s.place.name });
@@ -27,6 +29,9 @@ interface RoutePanelProps {
  * [네이버 지도에서 길찾기]는 보고 있는 장소에서 다음 장소로(자동차는 남은 곳을 경유지로) 넘긴다. 이 화면은 그대로 남는다.
  */
 export function RoutePanel({ stops, transport, route, loading, failed, onRetry, activeStop, onShowAll }: RoutePanelProps) {
+  // 한 줄(총 이동)만 보이고, 누르면 잰 방법 · 지도 · 길찾기가 열린다 (창업자 2026-09-24 "결과 화면이 너무 방대하다")
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
   // 마지막 장소를 보고 있으면 "다음"이 없다 → 바로 앞 장소에서 그곳으로 가는 길을 넘긴다
   const fromIndex = Math.max(0, Math.min(stops.findIndex((s) => s.position === activeStop), stops.length - 2));
   const from = stops[fromIndex];
@@ -47,16 +52,21 @@ export function RoutePanel({ stops, transport, route, loading, failed, onRetry, 
 
   return (
     <section aria-labelledby="route-panel" className="rule-section gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={bodyId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-left">
         <h2 id="route-panel" className="text-body font-bold text-ink">
           오늘의 이동
         </h2>
-        {route ? (
-          <p className="tabular text-body-sm text-ink-2">
-            {transportLabel(transport)} 이동 <b className="font-bold text-ink">{minutes(route.totals.travel_min)}</b> · {distance(route.totals.distance_m)}
-          </p>
-        ) : null}
-      </div>
+        <span className="tabular inline-flex items-center gap-1 text-body-sm text-ink-2">
+          {route ? (
+            <span>
+              {transportLabel(transport)} 이동 <b className="font-bold text-ink">{minutes(route.totals.travel_min)}</b> · {distance(route.totals.distance_m)}
+            </span>
+          ) : null}
+          <ChevronDown aria-hidden className={cn("size-4 self-center text-muted-foreground transition-transform", open && "rotate-180")} />
+        </span>
+      </button>
+      {failed ? null : !open ? null : (
+      <div id={bodyId} className="grid gap-3">
       <div aria-live="polite" className="text-body-sm text-muted-foreground">
         {loading ? (
           <p className="skeleton-shimmer h-5 w-40 rounded-md" aria-label="경로를 계산하는 중" />
@@ -87,6 +97,16 @@ export function RoutePanel({ stops, transport, route, loading, failed, onRetry, 
         <p className="text-caption text-muted-foreground">
           {from.position}. {from.place.name} → {to.position}. {to.place.name}
           {via.length > 0 ? ` (경유 ${via.length}곳)` : ""} · 네이버 지도가 새 창에서 열려요
+        </p>
+      ) : null}
+      </div>
+      )}
+      {failed ? (
+        <p className="flex flex-wrap items-center gap-2 text-body-sm text-muted-foreground">
+          경로를 계산하지 못했어요. 지도에는 장소 사이를 곧게 이어 두었어요.
+          <button type="button" onClick={onRetry} className="inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold text-blue-deep hover:bg-blue-soft">
+            <RotateCw aria-hidden className="size-3.5" /> 다시 시도
+          </button>
         </p>
       ) : null}
     </section>

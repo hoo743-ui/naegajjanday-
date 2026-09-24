@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { BedDouble, ExternalLink, MapPin, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { BedDouble, ChevronDown, ExternalLink, MapPin, TrendingUp } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { usePlaceSignals, useStays } from "@/lib/api/hooks";
-import { bookingLinks, kstDate } from "@/lib/booking";
+import { bookingLinks, kstDate, type BookingLink } from "@/lib/booking";
 import { distance } from "@/lib/format";
 import type { NearbyPin } from "./map-shared";
 
@@ -28,6 +29,32 @@ const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${enco
  * 요금은 말하지 않는다 — 숙박 요금의 공식 데이터가 없다(API 의 price_note). 예산에도 넣지 않는다.
  * 사람들이 실제로 찾아가는 숙소면(티맵 내비 실측) 그 순위를 출처와 함께 적는다.
  */
+/** 두 번째 예약처들은 한 줄 링크 뒤에 (창업자 2026-09-24: 결과 화면은 한 문장 + 누르면 아래에) */
+function MoreBookings({ links, onClick }: { links: BookingLink[]; onClick: () => void }) {
+  const [open, setOpen] = useState(false);
+  if (links.length === 0) return null;
+  return open ? (
+    <>
+      {links.map((l) => (
+        <a
+          key={l.key}
+          href={l.url}
+          target="_blank"
+          rel="noreferrer"
+          onClick={onClick}
+          className="inline-flex h-9 items-center rounded-full border border-ink/15 px-3 text-body-sm font-semibold text-ink hover:border-ink"
+        >
+          {l.label}
+        </a>
+      ))}
+    </>
+  ) : (
+    <button type="button" onClick={() => setOpen(true)} className="inline-flex h-9 items-center gap-0.5 px-1.5 text-body-sm font-semibold text-ink-2 underline decoration-ink/25 decoration-dotted underline-offset-4 hover:text-ink">
+      다른 예약처 <ChevronDown aria-hidden className="size-3.5" />
+    </button>
+  );
+}
+
 export function StayCard({ at, day, startAt, adults, onShow }: StayCardProps) {
   const stays = useStays(at);
   const signals = usePlaceSignals(stays.data?.items.map((s) => s.id) ?? []);
@@ -93,26 +120,19 @@ export function StayCard({ at, day, startAt, adults, onShow }: StayCardProps) {
                 >
                   예약하기 · {primary.label} <ExternalLink aria-hidden className="size-3.5" />
                 </a>
-                {others.map((l) => (
-                  <a
-                    key={l.key}
-                    href={l.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => track("stay_clicked", { day })}
-                    className="inline-flex h-9 items-center rounded-full border border-ink/15 px-3 text-body-sm font-semibold text-ink hover:border-ink"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                <MoreBookings links={others} onClick={() => track("stay_clicked", { day })} />
               </div>
             </li>
           );
         })}
       </ul>
-      <p className="text-caption text-muted-foreground">
-        예약처는 {nightLabel}으로 검색해 열어요(야놀자는 날짜를 그쪽에서 골라요). {stays.data.price_note} <span className="whitespace-nowrap">출처: {stays.data.source}</span>
-      </p>
+      {/* 안내는 한 줄만: 요금 · 출처는 누르면 */}
+      <details className="text-caption text-muted-foreground">
+        <summary className="w-fit cursor-pointer underline decoration-ink/25 decoration-dotted underline-offset-4">예약처는 {nightLabel}으로 열어요 · 요금 안내</summary>
+        <p className="mt-1">
+          야놀자는 날짜를 그쪽에서 골라요. {stays.data.price_note} <span className="whitespace-nowrap">출처: {stays.data.source}</span>
+        </p>
+      </details>
     </section>
   );
 }

@@ -92,6 +92,13 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   // 같은 상호가 전국에 많다 → 주소의 시·구까지 붙여 검색해야 그 지점이 나온다
   const placeQuery = [place.address?.split(" ").slice(1, 3).join(" "), place.name].filter(Boolean).join(" ");
   const estimated = !free && place.price_is_estimated === true;
+  const toggleDetail = () => {
+    if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
+    setOpen((v) => !v);
+  };
+  // 카드의 한 문장: 짠이의 한 줄 이유, 없으면 가장 강한 확인된 정보("완산구 방문 11위")
+  const lead = stop.reason_short ?? (signals[0] ? chipLabel(signals[0]) : null);
+  const LeadIcon = !stop.reason_short && signals[0] ? SIGNAL_ICON[signals[0].kind] : null;
   const openSheet = () => {
     setSheet(true);
     track("place_sheet_opened", { course_id: courseId, position: stop.position });
@@ -185,21 +192,19 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               </span>
             ) : null}
           </p>
-          {/* 한 줄 이유: 길게 설명하지 않는다 (자세한 이유는 ⋯ › 자세히 보기) */}
-          {stop.reason_short ? <p className="mt-1 line-clamp-1 text-body-sm text-ink-2">{stop.reason_short}</p> : null}
-          {/* 사람들 · 공공기관이 말하는 것 (docs/46): 별점이 아니라 출처가 있는 사실만, 카드에는 둘까지 (전부는 "자세히") */}
-          {signals.length > 0 ? (
-            <ul aria-label="확인된 정보" className="mt-1.5 flex flex-wrap gap-1">
-              {signals.slice(0, 2).map((s) => {
-                const Icon = SIGNAL_ICON[s.kind];
-                return (
-                  <li key={s.label} title={`출처: ${s.source}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-caption font-semibold text-ink-2">
-                    <Icon aria-hidden className="size-3.5 shrink-0 text-blue-deep" />
-                    <span className="truncate">{chipLabel(s)}</span>
-                  </li>
-                );
-              })}
-            </ul>
+          {/* 카드에는 한 문장만 (창업자 2026-09-24 "너무 방대하다"): 누르면 아래에 이유 · 확인된 정보(출처) · 점수가 열린다 */}
+          {lead ? (
+            <button
+              type="button"
+              onClick={toggleDetail}
+              aria-expanded={open}
+              aria-controls={panelId}
+              className="mt-1 flex max-w-full items-center gap-1 text-left text-body-sm text-ink-2 hover:text-ink"
+            >
+              {LeadIcon ? <LeadIcon aria-hidden className="size-3.5 shrink-0 text-blue-deep" /> : null}
+              <span className="truncate underline decoration-ink/25 decoration-dotted underline-offset-4">{lead}</span>
+              <ChevronDown aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+            </button>
           ) : null}
         </div>
       </div>
@@ -233,10 +238,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 rounded-xl p-1.5">
             <DropdownMenuItem
-              onSelect={() => {
-                if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
-                setOpen((v) => !v);
-              }}
+              onSelect={toggleDetail}
               aria-controls={panelId}
               className="min-h-11 gap-2 rounded-lg text-body-sm"
             >
@@ -305,7 +307,12 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {signals.length > 0 ? (
                 <ul aria-label="확인된 정보와 출처" className="grid gap-1 text-caption text-muted-foreground">
                   {signals.map((s) => (
-                    <li key={s.label}>
+                    <li key={s.label} className="flex items-start gap-1.5">
+                      {(() => {
+                        const Icon = SIGNAL_ICON[s.kind];
+                        return <Icon aria-hidden className="mt-0.5 size-3.5 shrink-0 text-blue-deep" />;
+                      })()}
+                      <span>
                       <b className="font-semibold text-ink-2">{s.label}</b> · {s.source}
                       {s.url ? (
                         <>
@@ -315,6 +322,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
                           </a>
                         </>
                       ) : null}
+                      </span>
                     </li>
                   ))}
                 </ul>

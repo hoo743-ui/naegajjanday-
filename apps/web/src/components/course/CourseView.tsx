@@ -48,7 +48,7 @@ type SheetStop = "map" | "half" | "full";
 /** 헤더 높이 (sticky 오프셋) */
 const HEADER_PX = 68;
 /** 이야기가 이보다 길면 네 줄만 보이고 "더 읽기"로 편다 */
-const STORY_FOLD = 160;
+const STORY_FOLD = 60; // 한 줄(모바일 약 30자)을 넘으면 접는다
 
 /** "18:00 ~ 21:00" — 만남 시간을 정했을 때만. 맡겼으면 출발 시각만. */
 function meetWindow(startAt: string, durationMin?: number | null): string {
@@ -676,10 +676,10 @@ export function CourseView({ id }: { id: string }) {
                 onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
               />
 
-              {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글. 길면 네 줄만 보이고 펼친다 */}
+              {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글. 한 줄만 보이고 펼친다 (2026-09-24 "결과 화면이 너무 방대하다") */}
               {narrative.text ? (
                 <section aria-label="짠이의 코스 이야기" className="grid justify-items-start gap-1.5 border-l-2 border-gold pl-4">
-                  <p className={cn("text-body whitespace-pre-line text-ink-2", longStory && !storyOpen && "line-clamp-4")} aria-live="polite" aria-busy={narrative.status === "streaming"}>
+                  <p className={cn("text-body whitespace-pre-line text-ink-2", longStory && !storyOpen && "line-clamp-1")} aria-live="polite" aria-busy={narrative.status === "streaming"}>
                     {narrative.text}
                     {narrative.status === "streaming" ? <span aria-hidden className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-pulse rounded-sm bg-blue-deep" /> : null}
                   </p>

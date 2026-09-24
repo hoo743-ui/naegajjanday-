@@ -1,6 +1,7 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { useId, useState } from "react";
+import { ChevronDown, MapPin } from "lucide-react";
 import { FOCUS_OFF, type LocalSignature } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import type { NearbyPin } from "./map-shared";
@@ -24,13 +25,29 @@ const kakaoSearch = (query: string) => `https://map.kakao.com/link/search/${enco
  * 명물을 누르면 같은 예산으로 그 명물을 넣은 코스를 다시 짠다 — 추천을 받기만 하는 게 아니라 고를 수 있어야 한다.
  */
 export function LocalCard({ local, focus, onPick, busy, onShow }: LocalCardProps) {
+  // 한 문장만 보이고, 누르면 명물 · 보러 오는 곳이 열린다 (창업자 2026-09-24 "결과 화면이 너무 방대하다")
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
   if (local.specialties.length === 0 && local.sights.length === 0) return null;
+  const top = local.specialties[0];
+  const picked = focus ? local.specialties.find((s) => s.word === focus) : undefined;
+  const lead = picked
+    ? `이 코스에 이 동네 명물 ‘${picked.word}’ 집을 넣었어요 · 간판 ${picked.count}곳, 전국의 ${Math.round(picked.lift)}배`
+    : top
+    ? `간판에 유독 많은 말 ‘${top.word}’ · ${top.count}곳, 전국의 ${Math.round(top.lift)}배`
+    : `사람들이 보러 오는 곳 · ${local.sights.slice(0, 2).map((s) => s.name).join(" · ")}`;
   return (
     <section aria-labelledby="local-card" className="rule-section gap-3.5">
       <h2 id="local-card" className="flex items-center gap-2 text-body font-extrabold text-ink">
         <MapPin aria-hidden className="size-4 text-blue-deep" />
         {local.region}, 이런 동네예요
       </h2>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={bodyId} className="-mt-2 flex max-w-full items-center gap-1 text-left text-body-sm text-ink-2 hover:text-ink">
+        <span className="truncate underline decoration-ink/25 decoration-dotted underline-offset-4">{lead}</span>
+        <ChevronDown aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open ? (
+      <div id={bodyId} className="grid gap-3.5">
 
       {local.specialties.length > 0 ? (
         <div className="grid gap-2">
@@ -106,6 +123,8 @@ export function LocalCard({ local, focus, onPick, busy, onShow }: LocalCardProps
             })}
           </ul>
         </div>
+      ) : null}
+      </div>
       ) : null}
     </section>
   );
