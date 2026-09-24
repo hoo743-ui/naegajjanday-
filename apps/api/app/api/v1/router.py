@@ -8,6 +8,7 @@ from app.api.v1 import (
     chat,
     courses,
     directions,
+    extras,
     me,
     media,
     meta,
@@ -20,6 +21,7 @@ from app.api.v1.admin import router as admin_router
 api_router = APIRouter()
 api_router.include_router(meta.router)
 api_router.include_router(courses.router)
+api_router.include_router(extras.router)
 api_router.include_router(places.router)
 api_router.include_router(attractions.router)
 api_router.include_router(stays.router)

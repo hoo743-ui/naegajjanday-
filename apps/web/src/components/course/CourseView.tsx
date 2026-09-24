@@ -11,7 +11,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { encodeCampus, useAccessHints, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
+import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, transportLabel, won } from "@/lib/format";
@@ -83,6 +83,10 @@ export function CourseView({ id }: { id: string }) {
   const courseRoute = useCourseRoute(course.data ? id : undefined, (course.data?.stops ?? []).map((s) => s.place.id));
   const mapRoute = useMemo(() => toMapRoute(courseRoute.data), [courseRoute.data]);
   const accessHints = useAccessHints(points);
+  // 코스 옆의 부가 정보 (docs/46): 가는 길에 들를 곳 · 장소별 평판 신호. 코스 자체는 건드리지 않고, 실패하면 안 보일 뿐이다
+  const stopIds = (course.data?.stops ?? []).map((s) => s.place.id);
+  const alongTheWay = useAlongTheWay(course.data ? id : undefined, course.data?.request.transport === "walk", stopIds.join(","));
+  const placeSignals = usePlaceSignals(stopIds);
 
   const [activeStop, setActiveStop] = useState<number | null>(null);
   // 카드 → 지도: 그 장소로 옮겨 가 확대 (n 이 바뀔 때마다) · "전체 코스 지도에서 보기": 코스 전체로 다시 맞춤
@@ -609,6 +613,9 @@ export function CourseView({ id }: { id: string }) {
                 onMove={onMove}
                 pins={pins}
                 onTogglePin={readOnly ? undefined : togglePin}
+                along={alongTheWay.data?.legs}
+                onShowPlace={showNearby}
+                signals={placeSignals.data?.items}
               />
               </div>
 
@@ -691,7 +698,7 @@ export function CourseView({ id }: { id: string }) {
 
               {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 */}
               {lastStop && request.day && request.days && request.day < request.days ? (
-                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} onShow={showNearby} />
+                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} startAt={request.start_at} adults={request.party_size} onShow={showNearby} />
               ) : null}
               {firstStop ? (
                 <PerformanceCard at={{ lat: firstStop.place.lat, lng: firstStop.place.lng }} startAt={request.start_at} durationMin={request.duration_min ?? Math.max(120, data.totals.duration_min ?? 240)} />

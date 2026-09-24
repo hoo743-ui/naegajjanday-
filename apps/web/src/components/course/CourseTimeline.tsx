@@ -1,13 +1,14 @@
 "use client";
 
 import { Fragment, useEffect, useRef } from "react";
-import { Bus, Car, Footprints, TrainFront, TramFront, type LucideIcon } from "lucide-react";
+import { Bus, Car, Footprints, Sparkles, TrainFront, TramFront, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/mascot/EmptyState";
 import type { AccessHint } from "@/lib/api/hooks";
-import type { Course, CourseRoute, CourseStyle, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
+import type { AlongLeg, Course, CourseRoute, CourseStyle, PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { clock, distance, minutes, transportLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { StopCard } from "./StopCard";
+import type { NearbyPin } from "./map-shared";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
 
@@ -38,6 +39,11 @@ interface CourseTimelineProps {
   /** 고정한 장소 id (다시 짜도 남는다) */
   pins?: string[];
   onTogglePin?: (placeId: string) => void;
+  /** 가는 길에 들를 만한 곳 (docs/46): 코스는 바꾸지 않고 구간 줄에만 보인다. 누르면 지도에 띄운다 */
+  along?: AlongLeg[];
+  onShowPlace?: (pin: Omit<NearbyPin, "n">) => void;
+  /** 장소별 확인할 수 있는 평판 신호 (docs/46) */
+  signals?: Record<string, PlaceSignal[]>;
 }
 
 
@@ -56,7 +62,7 @@ function featuresWithoutSignal(stops: Stop[], style?: CourseStyle): ScoreFeature
   return hidden;
 }
 
-export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, pins = [], onTogglePin }: CourseTimelineProps) {
+export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, pins = [], onTogglePin, along, onShowPlace, signals }: CourseTimelineProps) {
   const listRef = useRef<HTMLOListElement>(null);
   const onViewRef = useRef(onView);
   useEffect(() => {
@@ -105,6 +111,7 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
         const travelMin = measured?.duration_min ?? leg?.travel_min ?? 0;
         const distanceM = measured?.distance_m ?? leg?.distance_m ?? 0;
         const hint = access?.[i];
+        const onTheWay = along?.find((l) => l.to_position === stop.position)?.items ?? [];
 
         return (
           <Fragment key={stop.place.id}>
@@ -156,6 +163,26 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                         ) : null}
                       </p>
                     ) : null}
+                    {onTheWay.length > 0 ? (
+                      // 가는 길에 (docs/46): 사람들이 실제로 찾아가는 곳 중 조금만 돌아가면 되는 곳. 코스 · 예산에는 넣지 않는다
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-caption">
+                        <span className="inline-flex items-center gap-1 font-semibold text-ink-2">
+                          <Sparkles aria-hidden className="size-3.5 text-tomato-deep" /> 가는 길에
+                        </span>
+                        {onTheWay.map((it) => (
+                          <button
+                            key={it.place.id}
+                            type="button"
+                            title={[it.line, it.source].filter(Boolean).join(" · ")}
+                            onClick={() => onShowPlace?.({ id: it.place.id, name: it.place.name, lat: it.place.lat, lng: it.place.lng, kind: it.line })}
+                            className="inline-flex max-w-full items-center gap-1 rounded-full border border-ink/15 bg-white px-2.5 py-1 font-semibold text-ink hover:border-blue-deep"
+                          >
+                            <span className="truncate">{it.place.name}</span>
+                            <span className="shrink-0 font-medium text-muted-foreground">+{it.detour_min}분</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </li>
@@ -186,6 +213,7 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                 stops={course.stops}
                 transport={transport ?? "walk"}
                 pinned={pins.includes(stop.place.id)}
+                signals={signals?.[stop.place.id]}
                 onTogglePin={onTogglePin ? () => onTogglePin(stop.place.id) : undefined}
                 onMove={(delta) => onMove(stop.position, delta)}
               />

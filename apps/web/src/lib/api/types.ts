@@ -1006,3 +1006,27 @@ export interface ExternalLink {
   /** true = 그 장소의 페이지, false = 검색 결과 */
   exact: boolean;
 }
+
+/** 확인할 수 있는 평판 신호 (docs/46): 실측 인기 순위 · 공공 지정 · 영업 신고 30년 · 블로그 후기 수. 별점은 없다 */
+export interface PlaceSignal {
+  kind: "visited" | "designated" | "long_run" | "blog";
+  label: string;
+  /** 출처: "티맵 내비게이션 목적지 실측(2026년 8월)" · "지자체 지정" … 화면에 같이 보인다 */
+  source: string;
+  url: string | null;
+}
+
+/** GET /courses/{id}/along-the-way — 두 장소 사이, 조금만 돌아가면 되는 인기 장소 (docs/46). 코스는 바뀌지 않는다 */
+export interface AlongItem {
+  place: PlaceSummary;
+  detour_min: number;
+  /** "가는 길에 3분 더 · 성동구에서 사람들이 찾아간 곳 2위" */
+  line: string;
+  source: string | null;
+}
+export interface AlongLeg {
+  /** 0 = 출발지 */
+  from_position: number;
+  to_position: number;
+  items: AlongItem[];
+}

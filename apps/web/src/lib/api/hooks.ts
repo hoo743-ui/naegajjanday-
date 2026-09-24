@@ -18,6 +18,8 @@ import type {
   SuggestionList,
   Attraction,
   ExternalLink,
+  AlongLeg,
+  PlaceSignal,
   AttractionType,
   Banner,
   Category,
@@ -790,6 +792,30 @@ export function useLocalSignature(regionSlug: string | undefined) {
 }
 
 /** 이 지점 근처의 숙소 (관광공사 등재분). 가까이에 없으면 반경을 넓혀 다시 찾는다 — 등재 숙소는 전국 3천 곳뿐이다. */
+/** 가는 길에 들를 만한 곳 (docs/46). 걷는 코스만 — 서버도 걷지 않는 코스에는 빈 목록을 준다 */
+export function useAlongTheWay(courseId: string | undefined, walking: boolean, stops: string) {
+  return useQuery<{ legs: AlongLeg[] }, ApiError>({
+    // 장소를 바꾸거나 순서를 바꾸면 구간이 달라진다 → 장소 순서가 키에 들어간다
+    queryKey: ["along", courseId, stops],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId!)}/along-the-way`, { signal }),
+    enabled: Boolean(courseId) && walking,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+}
+
+/** 장소들의 평판 신호 (docs/46). 한 번에 10곳까지. 신호가 없는 곳은 목록에 없다 */
+export function usePlaceSignals(ids: string[]) {
+  const key = [...ids].sort().join(",");
+  return useQuery<{ items: Record<string, PlaceSignal[]> }, ApiError>({
+    queryKey: ["signals", key],
+    queryFn: ({ signal }) => api.get("/places/signals", { query: { ids: ids.slice(0, 10).join(",") }, signal }),
+    enabled: ids.length > 0,
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
+}
+
 export function useStays(at: { lat: number; lng: number } | null) {
   return useQuery<StayList, ApiError>({
     queryKey: ["stays", at?.lat.toFixed(4), at?.lng.toFixed(4)],

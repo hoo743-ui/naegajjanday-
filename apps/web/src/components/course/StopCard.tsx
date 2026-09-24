@@ -2,10 +2,10 @@
 
 import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronDown, ChevronUp, ExternalLink, Eye, MapPinned, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Star, Users } from "lucide-react";
+import { BadgeCheck, ChevronDown, ChevronUp, ExternalLink, Eye, History, MapPinned, MessageSquareText, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Star, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useCategoryImages } from "@/lib/api/hooks";
-import type { ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
+import type { PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
 import { clock, minutes, num, roleLabel, transportLabel, won } from "@/lib/format";
 import { resolvePlaceImage } from "@/lib/place-image";
 import { PlacePhoto } from "@/components/brand/PlacePhoto";
@@ -43,9 +43,22 @@ interface StopCardProps {
   /** 고정한 곳(다시 짜도 남는다) */
   pinned?: boolean;
   onTogglePin?: () => void;
+  /** 확인할 수 있는 평판 신호 (docs/46): 실측 인기 순위 · 공공 지정 · 영업 신고 30년 · 블로그 후기 수 */
+  signals?: PlaceSignal[];
   /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+}
+
+const SIGNAL_ICON: Record<PlaceSignal["kind"], LucideIcon> = { visited: TrendingUp, designated: BadgeCheck, long_run: History, blog: MessageSquareText };
+
+/** 카드 칩은 짧게: "전주시 완산구에서 사람들이 찾아간 곳 17위" → "완산구 방문 17위" (전체 문장 · 출처는 "자세히") */
+function chipLabel(s: PlaceSignal): string {
+  if (s.kind !== "visited") return s.label;
+  const m = s.label.match(/^(.+?)에서 사람들이 (?:가장 많이 찾아간 곳|찾아간 곳 (\d+)위)$/);
+  if (!m) return s.label;
+  const area = m[1]!.split(" ").at(-1);
+  return `${area} 방문 ${m[2] ?? 1}위`;
 }
 
 /** 혼잡도 value(0~1, 높을수록 붐빔) → 배지 색. 문구(level)는 API 가 준 그대로 쓴다. */
@@ -60,7 +73,7 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onSwapTo, onMove, stops, transport, pinned = false, onTogglePin, canMoveUp = true, canMoveDown = true }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onSwapTo, onMove, stops, transport, pinned = false, onTogglePin, signals = [], canMoveUp = true, canMoveDown = true }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
@@ -174,6 +187,20 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </p>
           {/* 한 줄 이유: 길게 설명하지 않는다 (자세한 이유는 ⋯ › 자세히 보기) */}
           {stop.reason_short ? <p className="mt-1 line-clamp-1 text-body-sm text-ink-2">{stop.reason_short}</p> : null}
+          {/* 사람들 · 공공기관이 말하는 것 (docs/46): 별점이 아니라 출처가 있는 사실만, 카드에는 둘까지 (전부는 "자세히") */}
+          {signals.length > 0 ? (
+            <ul aria-label="확인된 정보" className="mt-1.5 flex flex-wrap gap-1">
+              {signals.slice(0, 2).map((s) => {
+                const Icon = SIGNAL_ICON[s.kind];
+                return (
+                  <li key={s.label} title={`출처: ${s.source}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-caption font-semibold text-ink-2">
+                    <Icon aria-hidden className="size-3.5 shrink-0 text-blue-deep" />
+                    <span className="truncate">{chipLabel(s)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </div>
       </div>
 
@@ -275,6 +302,23 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {/* 왜 여기: 짠이의 한 줄 → 고른 이유 → 점수 */}
               {stop.reason ? <p className="text-body-sm text-ink">{stop.reason}</p> : null}
               <ReasonList codes={stop.reason_codes} />
+              {signals.length > 0 ? (
+                <ul aria-label="확인된 정보와 출처" className="grid gap-1 text-caption text-muted-foreground">
+                  {signals.map((s) => (
+                    <li key={s.label}>
+                      <b className="font-semibold text-ink-2">{s.label}</b> · {s.source}
+                      {s.url ? (
+                        <>
+                          {" "}
+                          <a href={s.url} target="_blank" rel="noreferrer" className="font-semibold text-blue-deep hover:underline">
+                            보기
+                          </a>
+                        </>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <ScoreBreakdown scores={stop.score_breakdown} total={stop.score} hidden={hidden} />
               {/* 사진 출처: 실제 사진(한국관광공사 등)이든 분위기 이미지(작가 · 라이선스)든 적는다 */}
               {image.attribution_text ? (
