@@ -33,9 +33,9 @@ jobs:
       matrix:
         language: [python, javascript-typescript]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: none
@@ -46,7 +46,7 @@ jobs:
               - "apps/web/public/mockServiceWorker.js"
               - "apps/api/tests/**"
 
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
 
@@ -59,8 +59,8 @@ jobs:
       contents: read
       pull-requests: write # summary comment on the PR
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
           deny-licenses: AGPL-3.0-only, AGPL-3.0-or-later, GPL-3.0-only, GPL-3.0-or-later
@@ -71,11 +71,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # scan the full history / PR range
 
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
           # Required only for repositories owned by an organisation.
@@ -94,7 +94,7 @@ jobs:
       matrix:
         app: [api, web]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for Dockerfile
         id: dockerfile
@@ -104,12 +104,12 @@ jobs:
             echo "::warning::apps/${{ matrix.app }}/Dockerfile does not exist yet - scan skipped"
           fi
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
         if: steps.dockerfile.outputs.present == 'true'
 
       - name: Build image
         if: steps.dockerfile.outputs.present == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/${{ matrix.app }}
           load: true
@@ -132,7 +132,7 @@ jobs:
 
       - name: Upload SARIF
         if: always() && steps.dockerfile.outputs.present == 'true' && hashFiles(format('trivy-{0}.sarif', matrix.app)) != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-${{ matrix.app }}.sarif
           category: trivy-${{ matrix.app }}
