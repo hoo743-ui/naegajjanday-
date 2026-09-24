@@ -94,6 +94,10 @@ services:
         sync: false
       - key: TOURAPI_SERVICE_KEY
         sync: false
+      - key: NAVER_SEARCH_CLIENT_ID     # 블로그 후기 수 (docs/46). 없으면 그 신호만 빠진다
+        sync: false
+      - key: NAVER_SEARCH_CLIENT_SECRET
+        sync: false
       - key: KOPIS_API_KEY
         sync: false
       - key: NAVER_MAP_CLIENT_ID

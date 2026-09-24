@@ -24,14 +24,16 @@
 
 name: Deploy
 
+# 지금 운영은 Render(API) + Vercel(웹)이다(docs/37). AWS 설정이 없는 동안 push 마다 실패하지 않도록
+# 손으로만 돌린다. AWS 로 옮길 때 아래 push 블록의 주석을 푼다.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/**"
-      - "scripts/ci/**"
-      - ".github/workflows/deploy.yml"
-      - ".github/workflows/_deploy-environment.yml"
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "apps/**"
+  #     - "scripts/ci/**"
+  #     - ".github/workflows/deploy.yml"
+  #     - ".github/workflows/_deploy-environment.yml"
   workflow_dispatch:
 
 # Never run two deployments at once and never cancel one half-way.
