@@ -6,7 +6,7 @@
 # 마이그레이션은 이미지가 하지 않는다. 배포 파이프라인(또는 compose 의 API_MIGRATE_CMD)이
 # `alembic upgrade head` 를 먼저 돌린다.
 
-FROM python:3.13-slim AS base
+FROM python:3.14-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 WORKDIR /app
