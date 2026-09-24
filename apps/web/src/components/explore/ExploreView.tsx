@@ -96,11 +96,11 @@ export function ExploreView() {
   return (
     <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-8 pt-8 pb-16 sm:pt-12">
       <header className="grid gap-4">
-        <p className="flex items-center gap-2.5 text-body-sm font-semibold tracking-[0.02em] text-ink-2">
+        <p className="flex items-center gap-2.5 text-body-sm font-semibold text-ink-2">
           <span aria-hidden className="size-2 rounded-full bg-gold" />
           둘러보기
         </p>
-        <h1 className="font-serif text-display text-ink">
+        <h1 className="text-h1 font-bold text-ink">
           돈 안 들이고도
           <br />
           갈 곳은 많아요
@@ -127,9 +127,9 @@ export function ExploreView() {
                 aria-pressed={type === option.value}
                 onClick={() => changeType(option.value)}
                 className={cn(
-                  "inline-flex h-10 shrink-0 items-center gap-1 rounded-full border px-4 text-body transition-colors",
+                  "inline-flex h-10 shrink-0 items-center gap-1 rounded-full border px-4 text-body-sm transition-colors",
                   // 선택 = 토마토 · 굵게 · 체크 (색 없이도 구분된다, docs/38)
-                  type === option.value ? "border-tomato bg-tomato font-extrabold text-white" : "border-ink/20 bg-paper font-semibold text-ink-2 hover:border-tomato hover:bg-tomato-soft",
+                  type === option.value ? "border-tomato bg-tomato font-bold text-white" : "border-ink/20 bg-paper font-medium text-ink-2 hover:border-tomato hover:bg-tomato-soft",
                 )}
               >
                 {type === option.value ? <Check aria-hidden strokeWidth={3} className="size-4" /> : null}
@@ -140,11 +140,11 @@ export function ExploreView() {
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[220px_190px_minmax(0,1fr)_auto]">
             <div className="grid gap-1.5">
-              <Label htmlFor={ids.region} className="text-caption font-semibold text-muted-foreground">
+              <Label htmlFor={ids.region} className="text-body-sm font-semibold text-ink-2">
                 지역
               </Label>
               <Select value={region} onValueChange={changeRegion} disabled={regions.isPending}>
-                <SelectTrigger id={ids.region} className="h-11 w-full rounded-xl font-bold">
+                <SelectTrigger id={ids.region} className="h-11 w-full rounded-xl text-body">
                   <SelectValue placeholder={regions.isPending ? "불러오는 중…" : "전체 지역"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,7 +168,7 @@ export function ExploreView() {
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor={ids.date} className="text-caption font-semibold text-muted-foreground">
+              <Label htmlFor={ids.date} className="text-body-sm font-semibold text-ink-2">
                 가는 날 (선택)
               </Label>
               <Input
@@ -176,12 +176,12 @@ export function ExploreView() {
                 type="date"
                 value={date}
                 onChange={(e) => changeDate(e.target.value)}
-                className="h-11 rounded-xl font-bold"
+                className="h-11 rounded-xl text-body md:text-body"
               />
             </div>
 
             <div className="grid gap-1.5 sm:col-span-2 lg:col-span-1">
-              <Label htmlFor={ids.q} className="text-caption font-semibold text-muted-foreground">
+              <Label htmlFor={ids.q} className="text-body-sm font-semibold text-ink-2">
                 검색
               </Label>
               <div className="relative">
@@ -194,13 +194,13 @@ export function ExploreView() {
                   placeholder="이름이나 주소로 찾기"
                   maxLength={60}
                   autoComplete="off"
-                  className="h-11 rounded-xl pl-10 font-bold"
+                  className="h-11 rounded-xl pl-10 text-body md:text-body"
                 />
               </div>
             </div>
 
             {filtered ? (
-              <Button type="button" variant="ghost" className="h-11 self-end rounded-xl font-bold text-ink-2" onClick={reset}>
+              <Button type="button" variant="ghost" className="h-11 self-end rounded-xl text-ink-2" onClick={reset}>
                 <X aria-hidden /> 조건 지우기
               </Button>
             ) : null}

@@ -58,12 +58,12 @@ export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) 
         </div>
 
         <SheetHeader className="gap-1.5 px-5 pt-5 pb-0 text-left">
-          <SheetTitle className="text-h3 leading-snug font-extrabold">{item.name}</SheetTitle>
+          <SheetTitle className="text-h3 font-bold">{item.name}</SheetTitle>
           <SheetDescription className="text-body-sm text-muted-foreground">{item.summary || `${item.region?.name ?? ""} ${meta.label}`.trim()}</SheetDescription>
         </SheetHeader>
 
         <div className="grid gap-5 px-5 pt-4 pb-6">
-          <ul className="grid gap-2 rounded-2xl bg-soft p-4 text-body-sm font-semibold text-ink-2">
+          <ul className="grid gap-2 rounded-2xl bg-soft p-4 text-body-sm text-ink-2">
             <li className="flex items-start gap-2">
               <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-blue-deep" />
               <span>{item.address || item.region?.name || "주소 정보 없음"}</span>
@@ -117,7 +117,7 @@ export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) 
 
           <Link
             href={planHref}
-            className="bg-grad inline-flex h-13 items-center justify-center gap-1.5 rounded-full px-6 text-body font-extrabold text-white shadow-card"
+            className="bg-grad inline-flex h-13 items-center justify-center gap-1.5 rounded-full px-6 text-body font-bold text-white shadow-card"
           >
             이 근처로 코스 짜기 <ArrowRight aria-hidden className="size-4" />
           </Link>

@@ -60,7 +60,7 @@ function EventCard({ event }: { event: EventItem }) {
       </span>
       <span className="mt-3 flex items-baseline justify-between gap-2">
         <span className="tabular text-caption font-semibold text-muted-foreground">{dateRange(event.starts_on, event.ends_on)}</span>
-        <span className={event.is_free ? "text-caption font-semibold text-success" : "tabular text-caption font-bold text-gold-ink"}>
+        <span className={event.is_free ? "text-caption font-semibold text-success" : "tabular text-caption font-semibold text-gold-ink"}>
           {event.is_free ? "무료" : event.price !== null ? won(event.price) : "유료"}
         </span>
       </span>
@@ -118,7 +118,7 @@ export function EventsStrip({ region }: { region?: string }) {
     <section aria-labelledby="events-heading" className="border-y border-ink/10 py-8">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <h2 id="events-heading" className="font-serif text-h2 text-ink">
+          <h2 id="events-heading" className="text-h3 font-bold text-ink">
             이번 주 이벤트
           </h2>
           <p className="mt-1 text-body-sm text-muted-foreground">오늘부터 7일 안에 열리는 축제 · 전시 · 공연이에요.</p>

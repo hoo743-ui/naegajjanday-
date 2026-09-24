@@ -30,7 +30,7 @@ export function DdayBadge({ endsOn, startsOn }: { endsOn: string; startsOn?: str
   return (
     <span
       className={cn(
-        "tabular rounded-full px-2.5 py-1 text-caption font-extrabold",
+        "tabular rounded-full px-2.5 py-1 text-caption font-semibold",
         urgent ? "bg-pink-soft text-pink-deep" : "bg-white/90 text-ink-2",
       )}
     >
@@ -84,7 +84,7 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
       <div className={cn("flex flex-1 flex-col gap-2.5 pt-4", feature && "lg:pt-0")}>
         {feature && kicker ? <p className="text-body-sm font-semibold text-blue-deep">{kicker}</p> : null}
         <div className="flex items-start justify-between gap-3">
-          <h3 className={cn("text-ink", feature ? "font-serif text-h1" : "text-body-lg font-semibold")}>
+          <h3 className={cn("text-ink", feature ? "text-h2 font-bold" : "text-body-lg font-semibold")}>
             {/* 카드 전체가 눌리도록 버튼의 클릭 영역을 카드까지 넓힌다(after:inset-0). 출처·코스 짜기 링크는 그 위(z-10)에 둔다. */}
             <button type="button" onClick={openDetail} aria-haspopup="dialog" className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-[20px] focus-visible:after:outline-[3px] focus-visible:after:outline-blue">
               {item.name}
@@ -94,7 +94,7 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
           {item.is_free || item.price_per_person > 0 ? (
             <span
               className={cn(
-                "tabular shrink-0 rounded-lg px-2 py-1 text-caption font-extrabold",
+                "tabular shrink-0 rounded-lg px-2 py-1 text-caption font-semibold",
                 item.is_free ? "bg-success-soft text-success" : "bg-gold-soft text-gold-ink",
               )}
             >
@@ -105,7 +105,7 @@ export function AttractionCard({ item, feature = false, kicker }: { item: Attrac
 
         {item.summary ? <p className={cn("text-muted-foreground", feature ? "line-clamp-4 text-body" : "line-clamp-2 text-body-sm")}>{item.summary}</p> : null}
 
-        <ul className="grid gap-1 text-body-sm font-semibold text-ink-2">
+        <ul className="grid gap-1 text-body-sm text-ink-2">
           <li className="flex items-center gap-1.5">
             <MapPin aria-hidden className="size-3.5 shrink-0 text-blue-deep" />
             <span className="truncate">{item.region ? `${item.region.name} · ${item.address}` : item.address}</span>
