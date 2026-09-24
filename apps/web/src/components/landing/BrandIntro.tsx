@@ -6,16 +6,10 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { track } from "@/lib/analytics";
+import { ENTERED_KEY } from "@/lib/entry";
 
-/** 입장한 적이 있다는 표식 (docs/40): 있으면 "/" 에서 인트로로 보내지 않는다 */
-export const ENTERED_KEY = "jj-entered";
-/**
- * 서비스 홈("/")의 첫 페인트 전 게이트: 처음 온 사람은 인트로 페이지로. 입장한 적이 있거나 · 자동화 브라우저(검증 · E2E) ·
- * ?intro=0 이면 그대로 홈. 저장소를 못 쓰면 홈(막히지 않게).
- */
-export const ENTRY_GATE = `(function(){try{if(localStorage.getItem("${ENTERED_KEY}")||navigator.webdriver||/[?&]intro=0/.test(location.search))return;location.replace("/intro")}catch(e){}})();`;
-
-export function markEntered() {
+/** 입장 표식은 인트로 페이지가 첫 페인트 전에 이미 남긴다(lib/entry.ts). 여기서는 한 번 더(스크립트가 막힌 경우 대비) */
+function markEntered() {
   try {
     localStorage.setItem(ENTERED_KEY, "1");
   } catch {

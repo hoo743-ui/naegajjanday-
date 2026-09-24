@@ -1,4 +1,4 @@
-import { ENTRY_GATE } from "@/components/landing/BrandIntro";
+import { ENTRY_GATE } from "@/lib/entry";
 import { HomeDashboard } from "@/components/home/HomeDashboard";
 import { BannerStrip } from "@/components/layout/BannerStrip";
 import { SiteFooter } from "@/components/layout/SiteFooter";
