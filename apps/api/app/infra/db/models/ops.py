@@ -98,3 +98,19 @@ class SearchOutbox(Base, TimestampMixin):
     processed_at: Mapped[datetime | None] = mapped_column(UtcDateTime, index=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text)
+
+
+class ApiUsage(Base):
+    """Calls to one external API on one day (docs/47) — counted by the httpx hook in infra/api_usage.py.
+    `exhausted_at` is set when the provider said the quota is used up (HTTP 429 or data.go.kr code 22)."""
+
+    __tablename__ = "api_usage"
+
+    provider: Mapped[str] = mapped_column(String(32), primary_key=True)
+    day: Mapped[str] = mapped_column(String(8), primary_key=True)  # YYYYMMDD, Asia/Seoul
+    calls: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[int] = mapped_column(Integer, default=0)
+    exhausted_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    remaining: Mapped[int | None] = mapped_column(Integer)  # from the provider's rate-limit header, when sent
+    limit: Mapped[int | None] = mapped_column(Integer)
+    updated_at: Mapped[datetime | None] = mapped_column(UtcDateTime)

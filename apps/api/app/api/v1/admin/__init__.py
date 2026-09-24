@@ -10,6 +10,7 @@ from app.api.v1.admin import (
     events,
     ingestion,
     places,
+    quotas,
     regions,
     scoring,
     system,
@@ -19,5 +20,5 @@ from app.api.v1.responses import PROBLEMS
 from app.core.deps import require_admin
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)], responses=PROBLEMS(401, 403))
-for module in (places, events, banners, regions, scoring, templates, ingestion, analytics, system):
+for module in (places, events, banners, regions, scoring, templates, ingestion, analytics, system, quotas):
     router.include_router(module.router)

@@ -59,6 +59,9 @@ def _run[T](fn: Callable[[Database, Settings], Awaitable[T]]) -> T:
     async def main() -> T:
         settings = get_settings()
         db = Database(settings)
+        from app.infra import api_usage
+
+        api_usage.install(db)  # bulk loads spend the same daily quotas (docs/47)
         try:
             return await fn(db, settings)
         finally:
@@ -558,6 +561,24 @@ def images_credit(
         await db.create_all()  # SQLite 파일에 0009 의 새 칸이 아직 없을 수 있다
         async with db.sessionmaker() as session:
             await image_service.backfill_credits(session, target, apply=apply, log=typer.echo)
+
+    _run(job)
+
+
+@cli.command("api-usage")
+def api_usage_report() -> None:
+    """외부 API 한도 대비 사용량 (docs/47). 표가 없으면 만든다(SQLite)."""
+    from app.infra import api_usage
+
+    async def job(db: Database, _settings: Settings) -> None:
+        await db.create_all()
+        async with db.sessionmaker() as session:
+            for r in await api_usage.report(session):
+                share = f"{r['share']:.0%}" if r["share"] is not None else "한도 모름"
+                limit = f"{r['limit']:,}" if r["limit"] else "-"
+                typer.echo(
+                    f"{r['status']:>9}  {r['name']:<28} {r['used']:>7,} / {limit:>8} ({share}, {r['period']})"
+                )
 
     _run(job)
 

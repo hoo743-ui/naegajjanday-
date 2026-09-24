@@ -27,7 +27,7 @@ from app.domain.routing.travel_time import (
     TmapProvider,
     TravelTimeProvider,
 )
-from app.infra import uploads
+from app.infra import api_usage, uploads
 from app.infra.analytics.factory import build_tracker
 from app.infra.db.session import Database
 from app.infra.llm.factory import build_llm
@@ -84,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         container = build_container(settings)
         app.state.container = container
+        api_usage.install(container.db)  # docs/47: count calls to external APIs with a quota
         logger.info(
             "app.start",
             env=settings.app_env,

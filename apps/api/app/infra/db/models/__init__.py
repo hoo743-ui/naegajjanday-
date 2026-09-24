@@ -13,7 +13,15 @@ from app.infra.db.models.course import (
     CourseStop,
     RecommendationLog,
 )
-from app.infra.db.models.ops import ApiKey, AuditLog, Banner, IngestionJob, PlaceRevision, SearchOutbox
+from app.infra.db.models.ops import (
+    ApiKey,
+    ApiUsage,
+    AuditLog,
+    Banner,
+    IngestionJob,
+    PlaceRevision,
+    SearchOutbox,
+)
 from app.infra.db.models.place import (
     Event,
     MenuItem,
@@ -31,6 +39,7 @@ from app.infra.db.models.user import OAuthAccount, RefreshToken, User, UserPrefe
 
 __all__ = [
     "ApiKey",
+    "ApiUsage",
     "AuditLog",
     "Banner",
     "Category",

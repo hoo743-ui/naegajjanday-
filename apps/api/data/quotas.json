@@ -1,0 +1,91 @@
+{
+  "_comment": "외부 API 한도 (docs/47). limit 이 null 이면 한도를 모른다 — 호출 수만 센다. verified=false 는 공식 문서로 확인하지 못한 기본값이라 콘솔에서 확인해 고친다. period: day | month (Asia/Seoul 기준).",
+  "tourapi": {
+    "name": "한국관광공사 TourAPI",
+    "limit": 1000,
+    "period": "day",
+    "verified": true,
+    "where": "응답 헤더 x-ratelimit-limit / remaining (자동, 2026-09-24 확인: 1000)",
+    "note": "개발계정 기본 트래픽. 운영계정 전환(활용사례 등록) 시 늘어난다. 둘러보기 링크의 공식 홈페이지 조회가 여기서 나간다."
+  },
+  "data_go_kr": {
+    "name": "공공데이터포털 (그 밖의 API)",
+    "limit": 1000,
+    "period": "day",
+    "verified": false,
+    "where": "공공데이터포털 › 마이페이지 › 활용신청 현황",
+    "note": "API 마다 따로 센다. 대량 적재(ingest-bulk) 때 주로 나간다."
+  },
+  "kakao_local": {
+    "name": "카카오 로컬",
+    "limit": 100000,
+    "period": "day",
+    "verified": false,
+    "where": "카카오 디벨로퍼스 › 내 애플리케이션 › 쿼터",
+    "note": "둘러보기 링크의 카카오맵 장소 찾기 · 대학 캠퍼스 좌표."
+  },
+  "kakao_mobility": {
+    "name": "카카오모빌리티 길찾기",
+    "limit": null,
+    "period": "day",
+    "verified": false,
+    "where": "카카오모빌리티 개발자센터",
+    "note": ""
+  },
+  "naver_search": {
+    "name": "네이버 검색 API",
+    "limit": 25000,
+    "period": "day",
+    "verified": true,
+    "where": "네이버 개발자센터 › 내 애플리케이션 › API 통계",
+    "note": "블로그 후기 수(평판 신호)."
+  },
+  "naver_maps": {
+    "name": "네이버 클라우드 지도 (길찾기 · 지오코딩)",
+    "limit": null,
+    "period": "month",
+    "verified": false,
+    "where": "네이버 클라우드 콘솔 › AI·NAVER API › 이용량",
+    "note": "요금제마다 무료 이용량이 달라 한도를 적지 않았다 — 콘솔에서 확인해 넣는다."
+  },
+  "pexels": {
+    "name": "Pexels",
+    "limit": 25000,
+    "period": "month",
+    "verified": true,
+    "where": "응답 헤더 X-Ratelimit-Remaining (자동)",
+    "note": "분위기 이미지 후보 수집 스크립트만 쓴다."
+  },
+  "unsplash": {
+    "name": "Unsplash",
+    "limit": null,
+    "period": "day",
+    "verified": false,
+    "where": "응답 헤더 X-Ratelimit-Remaining (자동, 데모 앱은 시간당 50)",
+    "note": ""
+  },
+  "openverse": {
+    "name": "Openverse",
+    "limit": null,
+    "period": "day",
+    "verified": false,
+    "where": "",
+    "note": "키 없이 쓰는 공개 API."
+  },
+  "kopis": {
+    "name": "KOPIS 공연정보",
+    "limit": null,
+    "period": "day",
+    "verified": false,
+    "where": "KOPIS 오픈API",
+    "note": ""
+  },
+  "tmap": {
+    "name": "티맵",
+    "limit": null,
+    "period": "day",
+    "verified": false,
+    "where": "SK open API 콘솔",
+    "note": ""
+  }
+}

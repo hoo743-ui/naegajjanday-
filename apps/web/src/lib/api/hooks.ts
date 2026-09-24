@@ -560,7 +560,7 @@ export function useAttractions(params: AttractionParams) {
   });
 }
 
-export function useEvents(params: { region?: string; from?: string; to?: string }) {
+export function useEvents(params: { region?: string; from?: string; to?: string }, enabled = true) {
   return useQuery<Page<EventItem>, ApiError>({
     queryKey: qk.events(params),
     queryFn: async ({ signal }) => {
@@ -568,6 +568,32 @@ export function useEvents(params: { region?: string; from?: string; to?: string 
       return { ...res, items: res.items.map(toEventItem) };
     },
     placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+/** 외부 API 한도 대비 사용량 (docs/47) — 관리자 · 운영자에게만. 한도 80% 부터 알림 종에 뜬다 */
+export interface QuotaItem {
+  provider: string;
+  name: string;
+  period: "day" | "month" | (string & {});
+  used: number;
+  limit: number | null;
+  share: number | null;
+  errors_today: number;
+  status: "ok" | "warn" | "critical" | "exhausted" | "unknown";
+  verified: boolean;
+  where: string;
+  note: string;
+}
+export function useQuotas(enabled: boolean) {
+  return useQuery<{ items: QuotaItem[] }, ApiError>({
+    queryKey: ["admin", "quotas"],
+    queryFn: ({ signal }) => api.get("/admin/quotas", { signal }),
+    enabled,
+    staleTime: 5 * 60_000,
+    refetchInterval: enabled ? 10 * 60_000 : false,
+    retry: false,
   });
 }
 

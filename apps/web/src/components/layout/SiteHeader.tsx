@@ -11,6 +11,7 @@ import { useFeatures } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 import { TAB_DOCK_AT } from "./TabBar";
+import { NotificationBell } from "./NotificationBell";
 
 const ALL_LINKS = [
   { href: "/plan", label: "코스 짜기" },
@@ -104,6 +105,8 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
         </nav>
 
         <div className="flex items-center gap-1.5">
+          {/* 알림 (docs/47): 축제 · 행사(기기 시각 기준) · 관리자에게는 API 한도 */}
+          <NotificationBell />
           {/* 좁은 화면: 소개는 아래 탭이 아니라 여기(탭은 행동 넷만 — 홈 · 둘러보기 · 코스 짜기 · 내 코스) */}
           {tabBar ? (
             <Link href="/about" aria-current={pathname.startsWith("/about") ? "page" : undefined} className="flex min-h-11 items-center rounded-lg px-2.5 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink aria-[current=page]:text-ink md:hidden">

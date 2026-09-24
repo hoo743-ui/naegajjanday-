@@ -37,6 +37,7 @@ import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
 import { RerollSheet, tweaksToRequest, type Tweak } from "./RerollSheet";
 import { usePins } from "@/lib/pins";
+import { LAST_AREA_KEY } from "@/components/layout/NotificationBell";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
 const LOADING_STAGES = ["영수증을 꺼내는 중이에요", "지도에 핀을 꽂는 중"];
@@ -87,6 +88,16 @@ export function CourseView({ id }: { id: string }) {
   const stopIds = (course.data?.stops ?? []).map((s) => s.place.id);
   const alongTheWay = useAlongTheWay(course.data ? id : undefined, course.data?.request.transport === "walk", stopIds.join(","));
   const placeSignals = usePlaceSignals(stopIds);
+  // 알림 종(docs/47)이 이 동네의 축제를 먼저 보여 준다: 마지막으로 본 코스의 첫 장소 주소 앞부분(시 · 구)
+  const firstAddress = course.data?.stops[0]?.place.address;
+  useEffect(() => {
+    if (!firstAddress) return;
+    try {
+      localStorage.setItem(LAST_AREA_KEY, JSON.stringify(firstAddress.split(" ").slice(0, 2).join(" ")));
+    } catch {
+      /* 저장이 막혀 있으면 기억하지 않는다 */
+    }
+  }, [firstAddress]);
 
   const [activeStop, setActiveStop] = useState<number | null>(null);
   // 카드 → 지도: 그 장소로 옮겨 가 확대 (n 이 바뀔 때마다) · "전체 코스 지도에서 보기": 코스 전체로 다시 맞춤
