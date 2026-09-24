@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useFeatures } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { Jjani } from "@/components/mascot/Jjani";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 const COLUMNS = [
   {
@@ -32,11 +33,11 @@ export function SiteFooter() {
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 font-round text-h3 leading-none text-ink"
+            className="inline-flex items-center gap-2 text-ink"
             aria-label="내가짠데이 홈"
           >
             <Jjani mood="hi" size={28} animated={false} decorative />
-            내가짠데이
+            <Wordmark size="sm" />
           </Link>
           <p className="mt-3 max-w-xs leading-relaxed">
             정해진 예산으로 짜는, 알찬 하루.
@@ -66,7 +67,9 @@ export function SiteFooter() {
       <div className="border-t">
         <div className="wrap flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-5 text-body-sm">
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span>© 2026 내가짠데이</span>
+            <span>
+              © 2026 <Wordmark size="inline" />
+            </span>
             <Link href="/terms" className="hover:text-ink">
               이용약관
             </Link>

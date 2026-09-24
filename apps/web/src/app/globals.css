@@ -867,6 +867,12 @@
 .wordmark-lg {
   --wm: clamp(44px, 9vw, 72px);
 }
+/* 문장 안의 이름: 둘레 글자 크기를 따르고, 도장 · 칩이 줄 높이를 밀지 않게 기준선에 맞춘다 */
+.wordmark-inline {
+  --wm: 1.08em;
+  vertical-align: -0.16em;
+  margin-inline: 0.08em;
+}
 /* 내가: 손으로 고른 조건 칩 */
 .wordmark-nae {
   display: inline-block;

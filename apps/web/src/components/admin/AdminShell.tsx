@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 interface NavItem {
   href: string;
@@ -92,9 +93,9 @@ function NavList({ pathname }: { pathname: string }) {
 
 function Brand() {
   return (
-    <Link href="/admin" className="flex items-center gap-2 font-round text-h3 leading-none" aria-label="내가짠데이 관리자 홈">
+    <Link href="/admin" className="flex items-center gap-2 leading-none" aria-label="내가짠데이 관리자 홈">
       <Jjani mood="hi" size={32} animated={false} decorative />
-      내가짠데이
+      <Wordmark size="sm" />
       <span className="rounded-md bg-ink px-1.5 py-0.5 font-sans text-caption font-semibold tracking-wider text-white">ADMIN</span>
     </Link>
   );

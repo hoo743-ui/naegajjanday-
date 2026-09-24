@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { markSession, oauthLoginUrl, refreshAccessToken } from "@/lib/auth/token";
 import { cn } from "@/lib/utils";
 import { PasswordForm } from "./PasswordForm";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /** 오픈 리다이렉트 방지: 사이트 내부 경로만 허용 */
 function safeNext(raw: string | null): string {
@@ -100,7 +101,9 @@ export function LoginCard() {
   return (
     <div className="mx-auto w-full max-w-[400px] text-center">
       <Jjani mood="hi" size={88} className="mx-auto" />
-      <p className="mt-4 font-round text-h3 leading-none text-ink">내가짠데이</p>
+      <p className="mt-4">
+        <Wordmark size="md" />
+      </p>
       <h1 className="mt-4 font-serif text-h1">다시 만나서 반가워요</h1>
       <p className="mt-1.5 text-body text-muted-foreground">로그인하면 짠 코스를 저장하고, 다녀온 곳으로 취향을 맞춰 드려요.</p>
 

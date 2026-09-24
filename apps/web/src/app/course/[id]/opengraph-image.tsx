@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { api } from "@/lib/api/client";
 import type { Course } from "@/lib/api/types";
-import { OG_BACKGROUND, OG_SIZE, OgBrand, OgJjani, loadOgFonts } from "@/lib/og";
+import { OG_BACKGROUND, OG_SIZE, OgBrand, OgJjani, OgWordmark, loadOgFonts } from "@/lib/og";
 
 export const alt = "내가짠데이 추천 코스";
 export const size = OG_SIZE;
@@ -70,7 +70,9 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         {/* 오른쪽: 영수증 */}
         <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 440, padding: "40px 36px", background: "#fffdf7", boxShadow: "0 24px 60px rgba(72,54,24,.16)" }}>
           <Teeth at="top" />
-          <div style={{ display: "flex", justifyContent: "center", fontSize: 26, fontWeight: 800 }}>내가짠데이</div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <OgWordmark size={26} />
+          </div>
           <div style={{ display: "flex", margin: "18px 0", borderTop: "3px dashed rgba(20,33,61,.22)" }} />
           <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
             {stops.map((stop) => (

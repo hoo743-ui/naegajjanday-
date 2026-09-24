@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 
 interface WordmarkProps {
-  size?: "sm" | "md" | "lg";
+  /** inline = 문장 안(둘레 글자 크기를 따른다) */
+  size?: "inline" | "sm" | "md" | "lg";
   className?: string;
 }
 

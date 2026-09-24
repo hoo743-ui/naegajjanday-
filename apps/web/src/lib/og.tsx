@@ -85,11 +85,36 @@ export function OgJjani({ size = 200 }: { size?: number }) {
   );
 }
 
+/**
+ * 워드마크 "내가 · 짠 · 데이"를 satori 용 인라인 스타일로 (components/brand/Wordmark.tsx 와 같은 모양):
+ * 테두리 칩 "내가" · 기울어 찍힌 토마토 도장 "짠" · 아래로 점선과 점 셋이 이어지는 "데이".
+ */
+export function OgWordmark({ size = 34 }: { size?: number }) {
+  const ink = "#10192e";
+  const tomato = "#d63f28";
+  const dot = size * 0.16;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: size * 0.12, fontSize: size, fontWeight: 800, color: ink, letterSpacing: -size * 0.03, lineHeight: 1 }}>
+      <div style={{ display: "flex", fontSize: size * 0.78, border: `${size * 0.06}px solid ${ink}`, borderRadius: size * 0.22, padding: `${size * 0.08}px ${size * 0.16}px ${size * 0.1}px`, background: "#fffdf7" }}>내가</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: size * 1.18, height: size * 1.18, borderRadius: size * 0.3, background: tomato, color: "#ffffff", fontSize: size * 0.92, transform: "rotate(-6deg)" }}>짠</div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+        <div style={{ display: "flex" }}>데이</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: size * 0.1, height: dot, position: "relative" }}>
+          <div style={{ display: "flex", position: "absolute", left: dot / 2, right: dot / 2, top: dot / 2 - 1, borderTop: `2px dashed ${ink}` }} />
+          <div style={{ display: "flex", width: dot, height: dot, borderRadius: dot, background: ink }} />
+          <div style={{ display: "flex", width: dot, height: dot, borderRadius: dot, background: ink }} />
+          <div style={{ display: "flex", width: dot, height: dot, borderRadius: dot, background: tomato }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function OgBrand() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 34, fontWeight: 800, color: "#14213d" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
       <OgJjani size={46} />
-      내가짠데이
+      <OgWordmark size={34} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, type LegalSection } from "@/components/legal/LegalDoc";
 import { OPERATOR, RETENTION, field } from "@/lib/legal";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export const metadata: Metadata = { title: "개인정보처리방침", description: "내가짠데이가 어떤 정보를 왜 모으고, 언제 지우는지 알려 드려요." };
 
@@ -170,7 +171,7 @@ export default function PrivacyPage() {
   return (
     <LegalDoc
       title="개인정보처리방침"
-      lead={<p>내가짠데이는 코스를 짜는 데 꼭 필요한 정보만 받아요. 무엇을 왜 받고 언제 지우는지, 어려운 말 없이 적었어요.</p>}
+      lead={<p><Wordmark size="inline" />는 코스를 짜는 데 꼭 필요한 정보만 받아요. 무엇을 왜 받고 언제 지우는지, 어려운 말 없이 적었어요.</p>}
       sections={sections}
       other={{ href: "/terms", label: "이용약관" }}
     />

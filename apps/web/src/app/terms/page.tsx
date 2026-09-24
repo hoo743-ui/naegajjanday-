@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, type LegalSection } from "@/components/legal/LegalDoc";
 import { OPERATOR, RETENTION, field } from "@/lib/legal";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export const metadata: Metadata = { title: "이용약관", description: "내가짠데이를 쓰실 때 서로 지키기로 한 약속이에요." };
 
@@ -10,7 +11,7 @@ const sections: LegalSection[] = [
     title: "서비스가 하는 일",
     body: (
       <p>
-        내가짠데이는 지역 · 인원 · 예산 · 시간을 받아, 그 예산 안에서 갈 만한 식당 · 카페 · 놀거리 · 볼거리를 하루 코스로 이어서 보여 드리는 서비스예요. 예약 · 결제 · 티켓 판매는 하지 않아요.
+        <Wordmark size="inline" />는 지역 · 인원 · 예산 · 시간을 받아, 그 예산 안에서 갈 만한 식당 · 카페 · 놀거리 · 볼거리를 하루 코스로 이어서 보여 드리는 서비스예요. 예약 · 결제 · 티켓 판매는 하지 않아요.
       </p>
     ),
   },
