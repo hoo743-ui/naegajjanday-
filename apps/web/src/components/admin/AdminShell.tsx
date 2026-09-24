@@ -120,7 +120,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Link href={`/login?next=${encodeURIComponent(pathname)}`}>로그인하기</Link>
           </Button>
           <Button asChild variant="soft" size="md">
-            <Link href="/">홈으로</Link>
+            <Link href="/home">홈으로</Link>
           </Button>
         </EmptyState>
       </main>
@@ -138,7 +138,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           footnote="오류 코드 FORBIDDEN"
         >
           <Button asChild variant="brand" size="md">
-            <Link href="/">홈으로</Link>
+            <Link href="/home">홈으로</Link>
           </Button>
         </EmptyState>
       </main>
@@ -167,7 +167,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <NavList pathname={pathname} />
         <div className="mt-auto grid gap-2">
           {account}
-          <Link href="/" className="px-3 text-caption font-semibold text-muted-foreground hover:text-ink">
+          <Link href="/home" className="px-3 text-caption font-semibold text-muted-foreground hover:text-ink">
             서비스 화면으로 돌아가기
           </Link>
         </div>

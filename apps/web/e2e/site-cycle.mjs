@@ -108,10 +108,10 @@ async function main() {
     "[aria-label='경로 점검']",
   ];
   const SCENES = [
-    { key: "landing", url: "/", dynamic: ["[aria-label='많이 찾는 동네']"], ready: "h1" },
+    { key: "landing", url: "/home", dynamic: ["[aria-label='많이 찾는 동네']"], ready: "h1" },
     // 소개 · 브랜드 인트로 (docs/40): 예전 랜딩의 설명 섹션은 소개로 옮겼다
     { key: "about", url: "/about", dynamic: [], ready: "h1" },
-    { key: "intro", url: "/intro", dynamic: [], ready: "h1" },
+    { key: "intro", url: "/", dynamic: [], ready: "h1" }, // 홈페이지 주소 = 인트로 (2026-09-24)
     { key: "plan", url: "/plan", dynamic: ["[role=radiogroup]", "[role=navigation]"] },
     { key: "plan-filled", url: "/plan?region=seoul-hongdae&purpose=date", dynamic: ["[role=radiogroup]", "[role=navigation]"], steps: 3 },
     { key: "course", url: `/course/${plain.id}`, dynamic: DATA, open: true, ready: "[aria-label='코스 일정'] article" },

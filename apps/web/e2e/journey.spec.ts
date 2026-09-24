@@ -2,8 +2,8 @@ import { createCourse, expect, expectHealthyLayout, firstPopulatedRegion, test }
 
 test.describe("핵심 여정 (실제 API)", () => {
   test("홈: 두 갈래 · 빠른 코스 만들기가 실제 데이터로 뜨고, 소개에 목적 카드가 있고, CTA 가 위저드로 간다", async ({ page }) => {
-    // 자동화 브라우저는 첫 방문 인트로(/intro)로 보내지 않는다 (docs/40)
-    await page.goto("/");
+    // 홈페이지 주소(/)는 인트로다 — 서비스 홈은 /home (2026-09-24)
+    await page.goto("/home");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("오늘 어떤 하루를");
     // 첫 화면의 핵심은 둘: 예산부터 짜기 · 갈 곳부터 둘러보기
     const paths = page.getByRole("navigation", { name: "시작하는 두 갈래" });
@@ -25,7 +25,7 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.locator("#purposes").getByText("데이트").first()).toBeVisible();
     await expectHealthyLayout(page);
 
-    await page.goto("/");
+    await page.goto("/home");
     await page.getByRole("link", { name: /이 조건으로 코스 짜기/ }).click();
     await expect(page).toHaveURL(/\/plan/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("어디서");

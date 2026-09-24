@@ -110,7 +110,7 @@ const ERROR_COPY: Record<string, CopyFactory> = {
     title: "찾는 게 여기 없어요",
     description: "주소가 바뀌었거나 삭제됐을 수 있어요.",
     retry: false,
-    action: { label: "홈으로", href: "/" },
+    action: { label: "홈으로", href: "/home" },
   }),
   UNAUTHORIZED: () => ({
     mood: "hi",
@@ -124,7 +124,7 @@ const ERROR_COPY: Record<string, CopyFactory> = {
     title: "여긴 들어올 수 없어요",
     description: "이 화면은 권한이 있는 계정만 볼 수 있어요.",
     retry: false,
-    action: { label: "홈으로", href: "/" },
+    action: { label: "홈으로", href: "/home" },
   }),
   RATE_LIMITED: (e) => ({
     mood: "sorry",

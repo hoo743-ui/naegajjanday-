@@ -39,7 +39,8 @@ const next = async (page, times) => {
   }
 };
 const SCENES = [
-  { key: "landing", url: "/" },
+  { key: "landing", url: "/home" },
+  { key: "intro", url: "/" },
   { key: "plan-1", url: "/plan" },
   { key: "plan-2", url: "/plan?region=seoul-hongdae", prepare: (p) => next(p, 1) },
   { key: "plan-3", url: "/plan?region=seoul-hongdae&purpose=date", prepare: (p) => next(p, 2) },

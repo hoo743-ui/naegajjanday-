@@ -38,7 +38,7 @@ export function AboutName() {
         <p className="mt-3 max-w-[620px] text-body-lg text-ink-2">
           내가 정하면, 짠이가 예산 안에서, 하루를 짜요. 짠이가 먼저 짜 본 하루는 정답이 아니라 초안이에요 — 마음에 안 드는 곳은 바꾸고, 남은 돈은 다시 계산하면 돼요.
         </p>
-        <Link href="/intro" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-ink/25 bg-white px-4 text-body-sm font-semibold text-ink hover:border-tomato hover:bg-tomato-soft">
+        <Link href="/" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-ink/25 bg-white px-4 text-body-sm font-semibold text-ink hover:border-tomato hover:bg-tomato-soft">
           <Play aria-hidden className="size-4" /> 인트로 다시 보기
         </Link>
 

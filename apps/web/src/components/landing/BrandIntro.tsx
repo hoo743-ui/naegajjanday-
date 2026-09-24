@@ -6,16 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { track } from "@/lib/analytics";
-import { ENTERED_KEY } from "@/lib/entry";
-
-/** 입장 표식은 인트로 페이지가 첫 페인트 전에 이미 남긴다(lib/entry.ts). 여기서는 한 번 더(스크립트가 막힌 경우 대비) */
-function markEntered() {
-  try {
-    sessionStorage.setItem(ENTERED_KEY, "1");
-  } catch {
-    // 저장소를 못 쓰면 다음에도 인트로를 본다 — 그뿐이다
-  }
-}
 
 const CHIPS = ["홍대", "2명", "50,000원", "데이트"];
 const LINES: [string, string][] = [
@@ -32,7 +22,7 @@ const DAY: [string, string][] = [
 ];
 
 /**
- * 첫 진입 브랜드 인트로 페이지 (/intro, 약 4초 · docs/38 · docs/40): 이름을 세 번에 나눠 보여 준 뒤, 스스로 들어오게 한다.
+ * 홈페이지 주소(/)의 브랜드 인트로 (약 4초 · docs/38 · docs/40): 이름을 세 번에 나눠 보여 준 뒤, 스스로 들어오게 한다(→ /home).
  *   내가 — 조건 칩(홍대 · 2명 · 50,000원 · 데이트)이 손으로 고른 듯 톡톡 놓인다
  *   짠   — 도장이 찍히고, 영수증이 한 줄씩 인쇄되고, 합계가 나온다
  *   데이 — 영수증이 하루의 시간표로 펼쳐지고, "남은 돈 8,000원" 도장
@@ -51,7 +41,6 @@ export function BrandIntro() {
   }, []);
 
   const enter = (to: string, entry: "intro_enter" | "intro_plan" | "intro_skip") => {
-    markEntered();
     track("intro_left", { via: entry });
     if (to === "/plan") track("plan_started", { entry: "intro" });
     router.push(to);
@@ -59,7 +48,7 @@ export function BrandIntro() {
 
   return (
     <main id="main" className="brand-intro paper-map" aria-label="내가짠데이 소개 인트로">
-      <button type="button" onClick={() => enter("/", "intro_skip")} className="brand-intro-skip">
+      <button type="button" onClick={() => enter("/home", "intro_skip")} className="brand-intro-skip">
         건너뛰기
       </button>
 
@@ -145,10 +134,10 @@ export function BrandIntro() {
         <div className="bi-cta">
           <Link
             ref={enterRef}
-            href="/"
+            href="/home"
             onClick={(e) => {
               e.preventDefault();
-              enter("/", "intro_enter");
+              enter("/home", "intro_enter");
             }}
             className="bi-enter"
           >

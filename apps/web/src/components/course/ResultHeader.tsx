@@ -35,7 +35,7 @@ export function ResultHeader({ title, subtitle, changeHref, onShare, shared = fa
         <button type="button" onClick={back} aria-label="뒤로" className="grid size-11 shrink-0 place-items-center rounded-full text-ink hover:bg-ink/[0.05]">
           <ArrowLeft aria-hidden className="size-5" />
         </button>
-        <Link href="/" aria-label="내가짠데이 홈" className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-ink/[0.05]">
+        <Link href="/home" aria-label="내가짠데이 홈" className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-ink/[0.05]">
           <Jjani mood="hi" size={28} animated={false} decorative />
         </Link>
 

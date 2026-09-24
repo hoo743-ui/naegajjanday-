@@ -70,10 +70,10 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
     >
       <div className="wrap flex h-(--header-h) items-center justify-between gap-4">
         <Link
-          href="/"
+          href="/home"
           className="-ml-1 flex min-h-11 items-center gap-2 rounded-xl px-1 hover:opacity-80"
           aria-label="내가짠데이 홈"
-          aria-current={pathname === "/" ? "page" : undefined}
+          aria-current={pathname === "/home" ? "page" : undefined}
         >
           <Jjani mood="hi" size={30} animated={false} decorative />
           <Wordmark size="sm" />
@@ -125,7 +125,7 @@ export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) 
                 type="button"
                 onClick={async () => {
                   await logout();
-                  router.push("/");
+                  router.push("/home");
                 }}
                 className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-body-sm font-semibold text-ink-2 hover:bg-ink/[0.05] hover:text-ink"
               >

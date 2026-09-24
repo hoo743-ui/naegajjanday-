@@ -32,7 +32,7 @@ export function SiteFooter() {
       <div className="wrap grid gap-10 py-12 md:grid-cols-[1.6fr_1fr_1fr]">
         <div>
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 text-ink"
             aria-label="내가짠데이 홈"
           >

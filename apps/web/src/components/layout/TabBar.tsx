@@ -20,7 +20,7 @@ interface Tab {
 export const TAB_DOCK_AT = 320;
 
 const TABS: Tab[] = [
-  { href: "/", label: "홈", Icon: House },
+  { href: "/home", label: "홈", Icon: House },
   { href: "/explore", label: "둘러보기", Icon: Compass },
   { href: "/plan", label: "코스 짜기", Icon: Route, primary: true },
   { href: "/chat", label: "짠이", Icon: MessageCircle },
@@ -39,7 +39,7 @@ export function TabBar() {
   // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 (헤더와 같은 규칙: 떴다가 사라지는 탭이 없게)
   const chatOn = useFeatures().data?.chat === true;
   const tabs = TABS.filter((t) => t.href !== "/chat" || chatOn);
-  const current = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const current = (href: string) => pathname.startsWith(href);
   // 넓은 화면의 알약: 헤더가 화면 밖으로 나갈 만큼 내려왔을 때만
   const [down, setDown] = useState(false);
   // md(768px) 이상인지: 알약이 숨는 폭. 렌더 중에 창을 읽지 않는다(서버와 첫 화면이 같아야 한다)

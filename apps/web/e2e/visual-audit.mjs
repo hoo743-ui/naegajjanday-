@@ -48,7 +48,7 @@ async function shootScrolling(page, name, maxShots = 12) {
 }
 
 const SCENES = {
-  landing: async (page, tag) => { await page.goto(`${WEB}/`); await page.waitForTimeout(1500); await shootScrolling(page, `${tag}-landing`, 10); },
+  landing: async (page, tag) => { await page.goto(`${WEB}/home`); await page.waitForTimeout(1500); await shootScrolling(page, `${tag}-landing`, 10); },
   plan: async (page, tag) => {
     await page.goto(`${WEB}/plan`);
     await page.waitForTimeout(1500);

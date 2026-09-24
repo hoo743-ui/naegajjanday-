@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     "/opengraph-image": ["./node_modules/@sun-typeface/suit/fonts/static/otf/SUIT-{ExtraBold,Medium}.otf"],
   },
   reactStrictMode: true,
+  // 인트로는 홈페이지 주소(/) 자체다 (2026-09-24). 예전 주소로 와도 인트로로
+  async redirects() {
+    return [{ source: "/intro", destination: "/", permanent: true }];
+  },
   poweredByHeader: false,
   images: {
     // 장소 썸네일은 수집 출처(CDN)가 다양하다. 운영에서는 이미지 프록시 도메인 하나로 좁힌다.

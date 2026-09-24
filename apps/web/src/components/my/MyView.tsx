@@ -72,7 +72,7 @@ export function MyView() {
               // logout() 은 실패해도 로컬 로그인 상태를 지우고 끝난다 → 어떤 경우에도 홈으로 나간다
               void logout()
                 .catch(() => undefined)
-                .finally(() => router.replace("/"));
+                .finally(() => router.replace("/home"));
             }}
           >
             <LogOut aria-hidden /> 로그아웃
@@ -196,7 +196,7 @@ function LeaveDialog({ onLeaving }: { onLeaving: () => void }) {
                 onSuccess: () => {
                   onLeaving();
                   setAccessToken(null);
-                  router.replace("/");
+                  router.replace("/home");
                 },
               })
             }

@@ -244,7 +244,7 @@ if (courseId) {
 }
 
 // ── 화면별 가로 넘침 · 콘솔 (여섯 폭) ────────────────────────────────────────
-const PAGES = ["/", "/plan", courseId ? `/course/${courseId}` : null, "/explore", "/my", "/login", "/chat", "/nowhere"].filter(Boolean);
+const PAGES = ["/", "/home", "/plan", courseId ? `/course/${courseId}` : null, "/explore", "/my", "/login", "/chat", "/nowhere"].filter(Boolean);
 for (const vp of Object.keys(VIEWPORTS)) {
   const ctx = await context(browser, vp);
   const page = await ctx.newPage();
