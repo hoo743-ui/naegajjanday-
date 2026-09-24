@@ -11,7 +11,7 @@ import { ENTERED_KEY } from "@/lib/entry";
 /** 입장 표식은 인트로 페이지가 첫 페인트 전에 이미 남긴다(lib/entry.ts). 여기서는 한 번 더(스크립트가 막힌 경우 대비) */
 function markEntered() {
   try {
-    localStorage.setItem(ENTERED_KEY, "1");
+    sessionStorage.setItem(ENTERED_KEY, "1");
   } catch {
     // 저장소를 못 쓰면 다음에도 인트로를 본다 — 그뿐이다
   }
