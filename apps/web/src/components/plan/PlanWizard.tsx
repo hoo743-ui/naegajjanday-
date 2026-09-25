@@ -200,7 +200,7 @@ export function PlanWizard() {
       ...(data.duration_min ? { duration_min: data.duration_min } : {}),
       style: data.style,
       ...(data.focus ? { focus: data.focus } : {}),
-      ...(data.with_bar || data.with_baseball ? { extras: [...(data.with_bar ? ["BAR"] : []), ...(data.with_baseball ? ["BASEBALL"] : [])] } : {}),
+      ...(data.with_bar || data.with_baseball || data.with_movie ? { extras: [...(data.with_bar ? ["BAR"] : []), ...(data.with_baseball ? ["BASEBALL"] : []), ...(data.with_movie ? ["MOVIE"] : [])] } : {}),
       ...(data.nights > 0 ? { nights: data.nights } : {}),
       ...(data.rainy ? { conditions: ["rain"] } : {}),
       transport: data.transport,

@@ -119,6 +119,19 @@ def test_asking_for_a_drink_puts_the_bar_in_every_template() -> None:
     assert kept.slots[1].budget_share == 0.5  # a template that planned for it keeps its own share
 
 
+def test_a_film_asked_by_name_gets_a_ticket_sized_share_of_the_fun_slot() -> None:
+    from app.domain.recommendation.style import with_role
+
+    extra = {"role": "ACTIVITY", "share": 0.5, "category": "activity.cinema", "min_slot_budget": 10000}
+    date = template(Slot(1, "MEAL", 0.6), Slot(2, "CAFE", 0.25), Slot(3, "ACTIVITY", 0.15, is_optional=True))
+
+    (out,) = with_role([date], extra)
+
+    assert out.slots[2].budget_share == 0.5 and not out.slots[2].is_optional
+    assert abs(sum(s.budget_share for s in out.slots) - 1.0) < 1e-9
+    assert out.slots[0].budget_share > out.slots[1].budget_share  # the others shrink in proportion
+
+
 def test_an_opt_in_category_stays_out_until_it_is_asked_for() -> None:
     from app.domain.recommendation.candidates import FilterContext, hard_filter
     from app.domain.recommendation.style import opt_in_categories, wanted_pools

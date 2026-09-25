@@ -361,6 +361,15 @@ def with_role(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[T
         slots = list(template.slots)
         at = next((i for i, s in enumerate(slots) if s.course_role == role), None)
         if at is not None:
+            own, wanted = slots[at].budget_share, float(extra["share"])
+            if extra.get("category") and wanted > own < 1.0:
+                # a kind of place asked by name (a film, a ballgame) has a ticket price: the template's
+                # "something fun" share (a photo booth) cannot buy it — take the asked share, others shrink
+                rest = (1.0 - wanted) / (1.0 - own)
+                slots = [replace(s, budget_share=s.budget_share * rest) for s in slots]
+                slots[at] = replace(
+                    slots[at], budget_share=wanted, min_slot_budget=extra.get("min_slot_budget")
+                )
             slots[at] = replace(slots[at], is_optional=False)
         else:
             share = float(extra["share"])

@@ -23,6 +23,7 @@ import {
   TrainFront,
   Trees,
   Trophy,
+  Clapperboard,
   Utensils,
   Wallet,
   Wine,
@@ -289,6 +290,7 @@ function Details() {
   const withBar = useWatch<PlanValues, "with_bar">({ name: "with_bar" });
   const rainy = useWatch<PlanValues, "rainy">({ name: "rainy" });
   const withBaseball = useWatch<PlanValues, "with_baseball">({ name: "with_baseball" });
+  const withMovie = useWatch<PlanValues, "with_movie">({ name: "with_movie" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
   // 이 동네가 무엇으로 알려져 있는지 — 뚜렷한 명물이 없는 동네면 이 칸은 아예 안 나온다
@@ -319,6 +321,7 @@ function Details() {
         <Toggle on={rainy} onChange={(v) => setValue("rainy", v, { shouldDirty: true })} icon={CloudRain} title="비 오는 날이에요" hint="실내 위주로 짜요. 산책 대신 전시 · 실내 놀거리를 넣어요." />
         <Toggle on={withBar} onChange={(v) => setValue("with_bar", v, { shouldDirty: true })} icon={Wine} title="술 한잔 포함" hint="저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 떼어 둘게요." />
         <Toggle on={withBaseball} onChange={(v) => setValue("with_baseball", v, { shouldDirty: true })} icon={Trophy} title="야구 보러 가요" hint="1군 구장이 있는 동네면 넣어요. 경기 일정은 직접 확인해 주세요." />
+        <Toggle on={withMovie} onChange={(v) => setValue("with_movie", v, { shouldDirty: true })} icon={Clapperboard} title="영화 한 편 봐요" hint="근처 영화관을 두 시간 남짓 넣어요. 상영 시간표는 직접 확인해 주세요." />
       </section>
 
       {specialties.length > 0 ? (
