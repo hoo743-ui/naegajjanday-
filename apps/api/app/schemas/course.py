@@ -107,6 +107,11 @@ class CourseGenerateRequest(BaseModel):
         "indoor=실내 위주(비 오는 날과 같게) · photo=사진 찍기 좋은 곳(노래방 · 오락실 빼고) · "
         "free=무료로 들를 곳 더",
     )
+    errand: ErrandIn | None = Field(
+        default=None,
+        description="가는 김에 (docs/51 B1): 꼭 들를 곳. 코스는 그 곳을 중심으로 짜고, "
+        "minutes 가 있으면 그 볼일 뒤부터",
+    )
     scene: str | None = Field(
         default=None,
         max_length=20,
@@ -136,6 +141,10 @@ class CourseGenerateRequest(BaseModel):
         elif self.regions:
             self.region = self.region or self.regions[0]
             self.regions = []
+        if self.errand is not None and self.anchor is None and len(self.regions) < 2:
+            # 가는 김에: the place the user has to go is the centre of the day
+            self.origin = LatLng(lat=self.errand.lat, lng=self.errand.lng)
+            self.origin_label = self.errand.name
         if self.anchor is not None:  # the campus is the centre: a region or a point would only compete
             self.region, self.regions = None, []
         elif not self.region and self.origin is None:
@@ -226,6 +235,16 @@ class StopOut(BaseModel):
         "USER_PREFERENCE · HIGH_PLACE_QUALITY · BUDGET_FIT · DIVERSITY · ROUTE_BALANCE)",
     )
     congestion: Congestion | None = None
+
+
+class ErrandIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    lat: float = Field(ge=33.0, le=39.0)
+    lng: float = Field(ge=124.0, le=132.0)
+    place_id: str | None = Field(
+        default=None, max_length=40, description="우리 장소면 그 id — 코스에 그대로 넣는다"
+    )
+    minutes: int = Field(default=0, ge=0, le=240, description="그곳에서 보낼 시간(분). 코스는 그 뒤부터")
 
 
 class LeftoverOut(BaseModel):
@@ -443,6 +462,7 @@ class CourseRequestEcho(BaseModel):
     move_style: str | None = None
     wishes: list[str] = Field(default_factory=list)
     scene: str | None = None
+    errand: ErrandIn | None = None
     scene_label: str | None = Field(default=None, description="누구와의 이름: 아이와 · 기념일 …")
 
 

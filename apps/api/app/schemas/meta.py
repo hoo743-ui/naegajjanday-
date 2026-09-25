@@ -160,6 +160,21 @@ class HotPlaces(BaseModel):
     items: list[HotPlace] = Field(default_factory=list)
 
 
+class SpotOut(BaseModel):
+    """가는 김에: a place the user has to go anyway. place_id only when it is one of ours."""
+
+    name: str
+    address: str | None = None
+    lat: float
+    lng: float
+    place_id: str | None = None
+    source: Literal["ours", "kakao"]
+
+
+class SpotList(BaseModel):
+    items: list[SpotOut]
+
+
 class RegionIntroOut(BaseModel):
     text: str
     keywords: list[str] = Field(default_factory=list)

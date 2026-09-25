@@ -3,9 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from app.api.v1.responses import PROBLEMS
-from app.core.deps import ContainerDep, rate_limit
+from app.core.deps import ContainerDep, SessionDep, rate_limit
 from app.schemas import meta as dto
 from app.services.factory import MetaServiceDep
+from app.services.spot_service import SpotService
 
 router = APIRouter(prefix="/meta", tags=["meta"], dependencies=[Depends(rate_limit("read"))])
 
@@ -86,3 +87,20 @@ async def features(container: ContainerDep) -> dto.Features:
     return dto.Features(
         chat=container.llm.available, performances=bool(container.settings.kopis_api_key.strip())
     )
+
+
+@router.get(
+    "/spots",
+    response_model=dto.SpotList,
+    summary="가는 김에: 꼭 들를 곳 검색 (우리 장소 + 카카오 검색, 저장하지 않음)",
+)
+async def spots(
+    session: SessionDep,
+    container: ContainerDep,
+    q: str = Query(
+        min_length=2, max_length=40, description="가게 · 매장 · 랜드마크 이름 (예: 애플 가로수길)"
+    ),
+    limit: int = Query(default=8, ge=1, le=15),
+) -> dto.SpotList:
+    found = await SpotService(session, container.settings, container.cache).lookup(q, limit)
+    return dto.SpotList(items=[dto.SpotOut.model_validate(f) for f in found])

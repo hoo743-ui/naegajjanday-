@@ -172,6 +172,7 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
+        req, errand = self._with_errand(req)  # first: an errand of ours is pinned like any kept stop
         req = await self._with_kept(req)
         req, earlier = self._earlier_for_scene(req)
         days = await self._city_days(req)
@@ -187,10 +188,43 @@ class CourseService:
             self._reads = None
         await self._note_missing_extras(req, planned[3], planned[5])
         self._note_kept(req, planned[3], planned[5])
-        if earlier is not None:
-            for bucket in (planned[5].warnings, *(c.warnings for c in planned[5].courses)):
-                bucket.insert(0, earlier)
+        if errand is not None and req.errand is not None and req.errand.place_id:
+            for course in planned[5].courses:  # pinned but it did not fit the hours or the money: say so
+                if not any(
+                    getattr(st.place, "public_id", None) == req.errand.place_id for st in course.stops
+                ):
+                    errand = errand | {
+                        "detail": f"{req.errand.name}은(는) 이 시간이나 예산에 맞지 않아 넣지 못했고, "
+                        "그 근처로 짰어요."
+                    }
+                    break
+        for note in (earlier, errand):
+            if note is not None:
+                for bucket in (planned[5].warnings, *(c.warnings for c in planned[5].courses)):
+                    bucket.insert(0, note)
         return planned
+
+    def _with_errand(
+        self, req: dto.CourseGenerateRequest
+    ) -> tuple[dto.CourseGenerateRequest, dict[str, Any] | None]:
+        """가는 김에 (docs/51 B1): the day is planned around the place the user has to go. One of ours with no
+        time given becomes a stop of the course (pinned); otherwise the course starts after the errand."""
+        e = req.errand
+        if e is None:
+            return req, None
+        update: dict[str, Any] = {}
+        start = self._local(req.start_at)
+        if e.place_id and not e.minutes:
+            update["keep_place_ids"] = list(dict.fromkeys([*req.keep_place_ids, e.place_id]))
+            detail = f"{e.name}을(를) 코스에 넣고 그 근처로 짰어요."
+        elif e.minutes:
+            moved = start + timedelta(minutes=e.minutes)
+            update["start_at"] = moved
+            detail = f"{e.name}에서 {e.minutes}분 볼일을 본 뒤, {moved:%H:%M}부터 그 근처로 이어서 짰어요."
+        else:
+            detail = f"{e.name} 근처로 짰어요."
+        note = {"code": "ERRAND", "detail": detail, "meta": {"name": e.name, "minutes": e.minutes}}
+        return (req.model_copy(update=update) if update else req), note
 
     def _earlier_for_scene(
         self, req: dto.CourseGenerateRequest
@@ -932,6 +966,10 @@ class CourseService:
             "pace": list(req.pace),
             "wishes": list(req.wishes),
             "scene": ctx.scene,
+            # 가는 김에: kept as asked — a reroll sends it back and must not shift the start twice
+            "errand": req.errand.model_dump() | {"asked_start_at": self._local(req.start_at).isoformat()}
+            if req.errand
+            else None,
             "focus": ctx.focus,
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
@@ -1243,6 +1281,11 @@ class CourseService:
         )
         return dto.LeftoverOut(band=found.band, reason=found.reason, text=found.text)
 
+    def _asked_start(self, row: Course) -> datetime:
+        """The start the user asked for: with an errand the course itself begins later (docs/51 B1)."""
+        asked = ((row.request or {}).get("errand") or {}).get("asked_start_at")
+        return self._out_time(datetime.fromisoformat(asked)) if asked else self._out_time(row.start_at)
+
     def _out_time(self, value: datetime) -> datetime:
         utc = as_utc(value)
         assert utc is not None
@@ -1352,7 +1395,7 @@ class CourseService:
                 party_size=row.party_size,
                 budget_total=row.budget_total,
                 transport=row.transport,
-                start_at=self._out_time(row.start_at),
+                start_at=self._asked_start(row),
                 duration_min=(row.request or {}).get("duration_min"),
                 style=(row.request or {}).get("style") or DEFAULT_STYLE,
                 focus=(row.request or {}).get("focus"),
@@ -1362,6 +1405,9 @@ class CourseService:
                 move_style=(row.request or {}).get("move_style"),
                 wishes=list((row.request or {}).get("wishes") or []),
                 scene=(row.request or {}).get("scene"),
+                errand=dto.ErrandIn.model_validate({k: v for k, v in errand.items() if k != "asked_start_at"})
+                if (errand := (row.request or {}).get("errand"))
+                else None,
                 scene_label=resolve_scene(purpose.code, (row.request or {}).get("scene"))[1].get("label")
                 if (row.request or {}).get("scene")
                 else None,

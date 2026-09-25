@@ -662,6 +662,52 @@ export function decodeStation(value: string | undefined): Station | null {
   return m ? { name: m[1]!, lat: Number(m[2]), lng: Number(m[3]) } : null;
 }
 
+/** 가는 김에 (docs/51 B1): 꼭 들를 곳. place_id 는 우리 장소일 때만 */
+export interface Errand {
+  name: string;
+  lat: number;
+  lng: number;
+  place_id?: string | null;
+  /** 그곳에서 보낼 시간(분). 0 이면 볼일 없이 그 근처로 */
+  minutes: number;
+}
+
+export interface Spot {
+  name: string;
+  address: string | null;
+  lat: number;
+  lng: number;
+  place_id: string | null;
+  source: "ours" | "kakao";
+}
+
+/** 가게 · 매장 · 랜드마크 이름으로 찾기 — 우리 장소 먼저, 없으면 지도 검색(저장하지 않는다) */
+export function useSpots(q: string) {
+  return useQuery<{ items: Spot[] }, ApiError>({
+    queryKey: ["meta", "spots", q],
+    queryFn: ({ signal }) => api.get("/meta/spots", { query: { q, limit: 8 }, signal }),
+    enabled: q.length >= 2,
+    staleTime: 60 * 60_000,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** 위저드의 region 값으로 담는다: "errand:<JSON>" — 코스를 요청할 때 errand 로 풀어 보낸다 */
+export function encodeErrand(e: Errand): string {
+  return `errand:${encodeURIComponent(JSON.stringify({ ...e, lat: Number(e.lat.toFixed(6)), lng: Number(e.lng.toFixed(6)) }))}`;
+}
+
+export function decodeErrand(value: string | undefined): Errand | null {
+  if (!value?.startsWith("errand:")) return null;
+  try {
+    const e = JSON.parse(decodeURIComponent(value.slice(7))) as Errand;
+    return typeof e.name === "string" && Number.isFinite(e.lat) && Number.isFinite(e.lng) ? { ...e, minutes: e.minutes ?? 0 } : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface University {
   id: string;
   name: string;
@@ -697,7 +743,7 @@ export function decodeCampus(value: string | undefined): { id: string; name: str
 
 /** 지역 slug 가 아니라 한 지점(역 · 장소 · 캠퍼스)인 값: 지역 API 에 묻지 않는다 */
 export function isPointValue(value: string | undefined): boolean {
-  return Boolean(value && (value.startsWith("station:") || value.startsWith("campus:")));
+  return Boolean(value && (value.startsWith("station:") || value.startsWith("campus:") || value.startsWith("errand:")));
 }
 
 /**

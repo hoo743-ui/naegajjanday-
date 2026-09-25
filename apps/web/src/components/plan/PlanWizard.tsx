@@ -12,7 +12,8 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { decodeCampus, decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
+import { decodeCampus, decodeErrand,
+  decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { toKstIso, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -80,7 +81,8 @@ export function PlanWizard() {
   const purposes = usePurposes(pickedCampus ? "university" : undefined);
   const region = usePickedRegion(values.region && !isPointValue(values.region) ? values.region : undefined);
   const pickedStation = decodeStation(values.region);
-  const placeLabel = region?.name ?? (pickedStation ? `${pickedStation.name} 주변` : pickedCampus?.name);
+  const pickedErrand = decodeErrand(values.region);
+  const placeLabel = region?.name ?? (pickedErrand ? `${pickedErrand.name} 가는 김에` : pickedStation ? `${pickedStation.name} 주변` : pickedCampus?.name);
   const purpose = purposes.data?.items.find((p) => p.code === values.purpose);
   // 대학교 ↔ 동네를 바꾸면 고를 수 있는 목적도 바뀐다(캠퍼스 탐방은 대학교에서만) → 없는 목적은 비운다
   const offered = purposes.data?.items;
@@ -172,16 +174,19 @@ export function PlanWizard() {
     setEmptyError(null);
     const start = resolveStart(data, new Date());
     const station = decodeStation(data.region);
+    const errand = decodeErrand(data.region);
     const campus = decodeCampus(data.region);
     const body: GenerateCourseRequest = {
       // 대학교를 골랐으면 그 캠퍼스가 하루의 중심(anchor, docs/34). 역을 골랐으면 그 역의 좌표가 출발점
       ...(campus
         ? { anchor: { kind: "university" as const, id: campus.id } }
-        : station
+        : errand
+          ? { errand } // 가는 김에: 그곳이 하루의 중심 (API 가 origin 으로 푼다)
+          : station
           ? { origin: { lat: station.lat, lng: station.lng }, origin_label: station.name }
           : { region: data.region }),
       // 여러 동네: 먼저 들를 동네들 → 마지막 동네 순서로 잇는다 (역 · 대학교 주변은 한 동네 코스만)
-      ...(!station && !campus && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
+      ...(!station && !campus && !errand && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
       purpose: data.purpose,
       ...(data.purposes_extra.length > 0 ? { purposes: data.purposes_extra } : {}),
       ...(data.scene ? { scene: data.scene } : {}),
