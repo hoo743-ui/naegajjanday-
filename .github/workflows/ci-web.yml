@@ -111,7 +111,8 @@ jobs:
           uv run --no-sync python -m app.cli seed-config
           uv run --no-sync python -m app.cli ingest --provider file --all
           nohup uv run --no-sync uvicorn app.main:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
-          npx --yes wait-on@8 --timeout 60000 http://127.0.0.1:8000/healthz
+          # http-get: wait-on sends HEAD by default and FastAPI answers HEAD on /healthz with 405
+          npx --yes wait-on@8 --timeout 60000 http-get://127.0.0.1:8000/healthz || { tail -n 80 "$RUNNER_TEMP/api.log"; exit 1; }
 
       - name: Install
         run: npm ci
@@ -122,7 +123,7 @@ jobs:
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
           PORT=3000 HOSTNAME=0.0.0.0 nohup node .next/standalone/server.js > "$RUNNER_TEMP/web.log" 2>&1 &
-          npx --yes wait-on@8 --timeout 60000 http://127.0.0.1:3000/home
+          npx --yes wait-on@8 --timeout 60000 http-get://127.0.0.1:3000/home || { tail -n 80 "$RUNNER_TEMP/web.log"; exit 1; }
 
       - name: Journey (phone + desktop)
         run: npx playwright test --project=mobile --project=desktop
