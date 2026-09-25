@@ -222,9 +222,9 @@ if (courseId) {
       await page.goto(`${WEB}/course/${courseId}`, { waitUntil: "domcontentloaded" });
       await page.waitForSelector("[aria-label='코스 일정'] article");
       await page.waitForTimeout(1500);
-      await page.getByRole("button", { name: "지도 크게 보기" }).click();
+      await page.getByRole("button", { name: "지도 크게", exact: true }).click();
       await page.waitForTimeout(600);
-      await page.getByRole("button", { name: "지도 작게 보기" }).click();
+      await page.getByRole("button", { name: "지도 닫기", exact: true }).click();
       await page.getByRole("button", { name: "목록 크게 보기" }).click();
       await page.waitForTimeout(600);
       const mapH = await page.evaluate(() => Math.round(document.querySelector(".jj-map")?.getBoundingClientRect().height ?? -1));

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Expand, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, ShoppingBag, Shrink, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Expand, Footprints, GraduationCap, PartyPopper, RotateCw, Share2, ShoppingBag, Shrink, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -14,7 +14,7 @@ import { ApiError } from "@/lib/api/client";
 import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { clock, dateLabel, transportLabel, won, wonCompact } from "@/lib/format";
+import { clock, dateLabel, obj, transportLabel, won, wonCompact } from "@/lib/format";
 import type { Transport } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
@@ -541,7 +541,7 @@ export function CourseView({ id }: { id: string }) {
                 track("map_fullscreen", { open: !mapFull });
               }}
               aria-pressed={mapFull}
-              className={cn("absolute right-3 z-[500] inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-white px-3.5 text-body-sm font-semibold text-ink-2 shadow-soft hover:bg-soft hover:text-ink", mapFull ? "bottom-[max(12px,env(safe-area-inset-bottom))]" : "bottom-8 lg:bottom-3")}
+              className={cn("absolute left-3 z-[500] inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-white px-3.5 text-body-sm font-semibold text-ink-2 shadow-soft hover:bg-soft hover:text-ink", mapFull ? "bottom-[max(12px,env(safe-area-inset-bottom))]" : "bottom-8 lg:bottom-3")}
             >
               {mapFull ? <Shrink aria-hidden className="size-3.5" /> : <Expand aria-hidden className="size-3.5" />}
               {mapFull ? "지도 닫기" : "지도 크게"}
@@ -564,7 +564,7 @@ export function CourseView({ id }: { id: string }) {
               </div>
             ) : null}
           </div>
-          {/* 바텀시트 손잡이: 누르면 절반 ↔ 전체, 위아래로 끌면 한 단계씩. 오른쪽 버튼은 지도를 크게 ↔ 절반 */}
+          {/* 바텀시트 손잡이: 누르면 절반 ↔ 전체, 위아래로 끌면 한 단계씩. 지도를 크게 보는 건 지도 위 "지도 크게" 버튼 */}
           <div className={cn("relative flex h-9 items-center justify-center rounded-t-[24px] bg-soft shadow-[0_-8px_24px_rgba(72,54,24,.10)] lg:hidden", sheet !== "full" && "-mt-5")}>
             <button
               type="button"
@@ -588,14 +588,6 @@ export function CourseView({ id }: { id: string }) {
               className="grid h-9 w-28 touch-none place-items-center rounded-full"
             >
               <span aria-hidden className="h-1 w-10 rounded-full bg-ink/20" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveSheet(sheet === "map" ? "half" : "map")}
-              aria-label={sheet === "map" ? "지도 작게 보기" : "지도 크게 보기"}
-              className="absolute top-0.5 right-3 grid size-11 place-items-center rounded-full text-ink-2 hover:bg-white"
-            >
-              {sheet === "map" ? <Minimize2 aria-hidden className="size-4" /> : <Maximize2 aria-hidden className="size-4" />}
             </button>
           </div>
         </div>
@@ -799,7 +791,7 @@ export function CourseView({ id }: { id: string }) {
                 budget={request.budget_total}
                 editable={!readOnly}
                 onShow={showNearby}
-                onAdded={(name, price) => setNotice({ mood: "cheers", title: `${name}을(를) 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
+                onAdded={(name, price) => setNotice({ mood: "cheers", title: `${obj(name)} 코스에 넣었어요`, body: price > 0 ? `${won(price)}을 더 써서, 남은 돈은 ${won(data.totals.budget_left - price)}이에요.` : "돈은 그대로 남아 있어요." })}
               />
 
               {/* 짠이의 이야기: 카드가 아니라 금빛 선 하나를 세운 곁글. 한 줄만 보이고 펼친다 (2026-09-24 "결과 화면이 너무 방대하다") */}

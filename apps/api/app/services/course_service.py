@@ -29,6 +29,7 @@ from app.domain.anchors import (
     university_rules,
 )
 from app.domain.anchors import plan_for as anchor_plan_for
+from app.domain.josa import obj
 from app.domain.media import distinct_photos
 from app.domain.models import (
     BudgetTooLowError,
@@ -233,7 +234,7 @@ class CourseService:
             if e.place_id:
                 update["keep_place_ids"] = list(dict.fromkeys([*req.keep_place_ids, e.place_id]))
                 meta["pinned"] = True
-                detail = f"{e.name}을(를) 코스에 넣고 그 근처로 짰어요."
+                detail = f"{obj(e.name)} 코스에 넣고 그 근처로 짰어요."
             elif e.minutes and e.when == "after":
                 update["duration_min"] = self._errand_shortened(req, start, e.minutes)
                 detail = f"끝나고 {e.name}에서 {e.minutes}분 볼일 볼 시간을 남겨 뒀어요."
@@ -2055,7 +2056,7 @@ class CourseService:
                     rules.get("notice")
                     if few
                     else rules.get("notice_underspent") or rules.get("notice") or ""
-                ).format(place=place.name),
+                ).format(place=place.name, place_obj=obj(place.name)),
                 "meta": {"place_id": place.public_id, "role": role},
             }
             added = await self._append(row, stops, role, place, user, [note])

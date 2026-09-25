@@ -75,7 +75,7 @@ console.log("[1] 데스크톱 · 5곳 도보 코스");
 console.log("[2] 모바일 · 핀 → 바텀시트");
 {
   const { ctx, page } = await open(devices["Pixel 7"], walkId);
-  await page.getByRole("button", { name: "지도 크게 보기" }).click();
+  await page.getByRole("button", { name: "지도 크게", exact: true }).click();
   await page.waitForTimeout(800);
   await page.locator(".jj-pin-drop", { hasText: /^4$/ }).first().click({ force: true });
   await page.waitForTimeout(1900);

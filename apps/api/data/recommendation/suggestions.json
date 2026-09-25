@@ -10,9 +10,9 @@
   "top_up": {
     "below_stops": 2,
     "max_added": 2,
-    "notice": "이 예산과 시간으로는 들를 곳이 너무 적어서, 걸어갈 수 있는 {place}을(를) 더했어요.",
+    "notice": "이 예산과 시간으로는 들를 곳이 너무 적어서, 걸어갈 수 있는 {place_obj} 더했어요.",
     "below_use": 0.6,
-    "notice_underspent": "예산이 많이 남아서, 걸어갈 수 있는 {place}을(를) 더했어요."
+    "notice_underspent": "예산이 많이 남아서, 걸어갈 수 있는 {place_obj} 더했어요."
   },
   "roles": {
     "DESSERT": {

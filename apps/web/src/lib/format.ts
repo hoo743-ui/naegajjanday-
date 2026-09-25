@@ -3,6 +3,13 @@ import type { CourseRole, ScoreFeature, Transport } from "@/lib/api/types";
 const KRW = new Intl.NumberFormat("ko-KR");
 
 /** 36000 → "36,000원" */
+/** 이름 + 을/를 ("황남빵을", "커피를"). 한글로 끝나지 않으면 둘 다 적는다 ("CGV을(를)") */
+export function obj(word: string): string {
+  const code = word.trim().charCodeAt(word.trim().length - 1) - 0xac00;
+  if (Number.isNaN(code) || code < 0 || code > 11171) return `${word}을(를)`;
+  return `${word}${code % 28 ? "을" : "를"}`;
+}
+
 export function won(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "-";
   return `${KRW.format(Math.round(value))}원`;
