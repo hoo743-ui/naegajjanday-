@@ -27,7 +27,7 @@ export function HomeDashboard() {
             <h1 id="home-heading" className="text-h1 font-extrabold tracking-[-0.02em] text-ink">
               오늘 어떤 하루를 짜 볼까요?
             </h1>
-            <p className="mt-1.5 text-body text-ink-2">예산부터 정해도, 갈 곳부터 봐도 돼요.</p>
+            <p className="mt-1.5 text-body text-ink-2">얼마를 쓰든, 오늘의 주인공은 같이 보낼 시간이에요.</p>
           </div>
           <nav aria-label="시작하는 두 갈래" className="home-ticket grid grid-cols-2">
             <Link href="/plan" onClick={() => track("plan_started", { entry: "home_ticket" })} className="home-ticket-half group is-plan">

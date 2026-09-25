@@ -40,7 +40,7 @@ export function PurposeCards() {
         <div className="mt-10 grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
           <div className="lg:sticky lg:top-[calc(var(--header-h)+48px)] lg:self-start">
             <h2 className="font-serif text-display">오늘은 어떤 약속인가요?</h2>
-            <p className="mt-5 max-w-[400px] text-body-lg text-ink-2">같은 예산이어도 목적이 다르면 코스가 달라져요.</p>
+            <p className="mt-5 max-w-[400px] text-body-lg text-ink-2">같은 돈이라도 누구와 쓰느냐에 따라 전혀 다른 하루가 돼요.</p>
           </div>
 
           <div>

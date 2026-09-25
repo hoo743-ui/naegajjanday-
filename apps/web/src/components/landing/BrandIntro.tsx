@@ -115,20 +115,20 @@ export function BrandIntro() {
         <h1>
           <Wordmark size="lg" />
         </h1>
-        <p className="bi-tagline">얼마 쓸지만 정하세요. 하루는 짠이가 짜 볼게요.</p>
+        <p className="bi-tagline">아껴 쓰는 건, 같이 있는 사람을 아끼는 일이에요.</p>
         {/* 세 낱말의 뜻: 애니메이션을 못 본 사람(모션 최소화 · 건너뛴 뒤 돌아온 사람)도 이름을 읽고 간다 */}
         <dl className="bi-meaning">
           <div>
             <dt>내가</dt>
-            <dd>지역 · 인원 · 예산 · 목적은 내가 정하고</dd>
+            <dd>누구와 어떤 하루를 보낼지는 내가 정하고</dd>
           </div>
           <div>
             <dt>짠</dt>
-            <dd>짠이가 예산 안에서 맞춰 짜고</dd>
+            <dd>아끼는 마음으로, 짠이가 예산 안에서 짜고</dd>
           </div>
           <div>
             <dt>데이</dt>
-            <dd>먹고 · 걷고 · 노는 하루가 영수증 한 장으로</dd>
+            <dd>남는 건 영수증이 아니라 함께 보낸 하루</dd>
           </div>
         </dl>
         <div className="bi-cta">

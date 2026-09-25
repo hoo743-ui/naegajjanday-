@@ -45,9 +45,9 @@ export function Differentiators() {
     <section id="different" className="scroll-mt-20 py-[clamp(48px,7vw,96px)]">
       <div className="wrap">
         <h2 className="max-w-[760px] font-serif text-display">
-          아끼는 것이 아니라,
+          덜 쓰자는 게 아니라,
           <br />
-          예산 안에서 <span className="relative whitespace-nowrap">더 잘 즐기게<span aria-hidden className="absolute inset-x-0 bottom-[0.06em] -z-10 h-[0.2em] rounded-full bg-gold/40" /></span> 합니다
+          쓴 만큼 <span className="relative whitespace-nowrap">오래 남게<span aria-hidden className="absolute inset-x-0 bottom-[0.06em] -z-10 h-[0.2em] rounded-full bg-gold/40" /></span> 하자는 거예요
         </h2>
 
         <Reveal className="mt-14 grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">

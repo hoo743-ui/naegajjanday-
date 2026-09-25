@@ -11,7 +11,7 @@ import { TabBar } from "@/components/layout/TabBar";
 
 export const metadata: Metadata = {
   title: "소개",
-  description: "내가짠데이는 예산 안에서 하루를 짜 주는 서비스예요. 내가 정하면, 짠이가 예산 안에서, 하루를 짜요.",
+  description: "내가짠데이는 예산 안에서 하루를 짜 주는 서비스예요. 아껴 쓰는 건, 같이 있는 사람을 아끼는 일이라고 믿어요.",
 };
 
 /**
