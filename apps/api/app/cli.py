@@ -23,6 +23,7 @@ python -m app.cli create-admin --email me@example.com [--print-token]
 ADMIN_PASSWORD=… python -m app.cli create-admin --login-id <id> [--role admin]   # id/password admin
 python -m app.cli purge-courses [--dry-run]                  # never-saved courses older than 24 h
 python -m app.cli purge-accounts [--dry-run]                 # accounts 30 d after DELETE /v1/me
+python -m app.cli eval-concept [--sample quick|full] [--save N] [--compare N] [--focus METRIC]  # docs/58
 """
 
 from __future__ import annotations
@@ -803,6 +804,63 @@ def eval_courses(
             typer.echo(f"기준선 저장: {harness.save(save, summary, outcomes)}")
 
     _run(job)
+
+
+@cli.command("eval-concept")
+def eval_concept(
+    sample: Annotated[str, typer.Option(help="quick(≈80코스, 6~8분) | full(≈350코스, 25분 안팎)")] = "quick",
+    save: Annotated[str | None, typer.Option(help="이 이름으로도 저장 (--compare 로 다시 비교)")] = None,
+    compare: Annotated[str | None, typer.Option(help="직전 실행 대신 이 이름의 실행과 비교")] = None,
+    json_path: Annotated[Path | None, typer.Option("--json", help="결과 JSON 을 이 경로에도 쓴다")] = None,
+    focus: Annotated[
+        str | None, typer.Option(help="고친 지표: 이것만 나아지고 나머지가 잡음 안이면 SHIP")
+    ] = None,
+    note: Annotated[str | None, typer.Option(help="기록 한 줄의 메모 (무엇을 고쳤나)")] = None,
+    log: Annotated[bool, typer.Option(help="docs/58-concept-scorecard-log.md 에 한 줄 덧붙이기")] = True,
+    examples: Annotated[int, typer.Option(help="실패한 지표마다 보여 줄 예시 코스 수")] = 4,
+) -> None:
+    """개념 점수표 (docs/58): 코스가 컨셉(명물 · 체인 · 장면 · 밤 · 예산)을 지키는지 목표와 함께 잰다.
+    DB 는 읽기만 한다."""
+    from app.evaluation import concept
+
+    if sample not in ("quick", "full"):
+        raise _fail("--sample 은 quick 또는 full")
+    if focus and focus not in concept.METRIC_BY_ID:
+        raise _fail(f"모르는 지표: {focus} (있는 것: {', '.join(concept.METRIC_BY_ID)})")
+    previous = concept.load_previous(compare)
+    if compare and previous is None:
+        raise _fail(f"'{compare}' 로 저장된 실행이 없어요 — 먼저 --save {compare}")
+
+    def progress(i: int, n: int) -> None:
+        if i % 10 == 0 or i == n:
+            typer.echo(f"  {i}/{n}", err=True)
+
+    settings = get_settings()
+    day, records, runtime = asyncio.run(concept.run(settings, sample, progress=progress))
+    results = concept.evaluate_all(records, examples=examples)
+    deltas = concept.compare(results, previous)
+    payload = concept.build_payload(
+        sample=sample, day=day, records=records, results=results, runtime_s=runtime, note=note
+    )
+    base = f"'{compare}'" if compare else "직전 실행"
+    since = f" · {base}({previous['run_at']}) 대비 Δ" if previous else " · 비교할 이전 실행 없음"
+    typer.echo(
+        f"개념 점수표 · {sample} · {len(records)}코스 · {day} (토) · {runtime / 60:.1f}분"
+        f" · 통과 {payload['passed']}/{len(results)}{since}"
+    )
+    typer.echo(concept.render(results, deltas))
+    if focus:
+        _ok, message = concept.verdict(results, deltas, focus)
+        typer.echo("")
+        typer.echo(message)
+    paths = concept.save_run(payload, save)
+    typer.echo("")
+    typer.echo(f"저장: {paths[0]}" + (f" · 이름 {save}: {paths[-1]}" if save else ""))
+    if json_path:
+        json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+        typer.echo(f"JSON: {json_path}")
+    if log:
+        typer.echo(f"기록: {concept.append_log(concept.log_line(payload, results, deltas))}")
 
 
 if __name__ == "__main__":

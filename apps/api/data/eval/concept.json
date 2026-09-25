@@ -1,0 +1,16 @@
+{
+  "_note": "개념 점수표(eval-concept, docs/58)의 장면 · 밤 표본 동네. 명소 동네(hotspot · solo_night)는 data/regions/draws.json 에서 온다. 동네를 바꾸면 이전 실행과의 Δ 가 표본 변화까지 섞이니 기록 메모에 적는다.",
+  "scene_regions": {
+    "quick": ["seoul-hongdae", "seoul-seongsu", "busan-seomyeon", "jeonju-hanok"],
+    "full": [
+      "seoul-hongdae",
+      "seoul-seongsu",
+      "busan-seomyeon",
+      "jeonju-hanok",
+      "seoul-gangnam-station",
+      "seoul-jamsil",
+      "gyeongju-hwangnidan",
+      "gangneung-anmok"
+    ]
+  }
+}
