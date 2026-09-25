@@ -608,6 +608,14 @@
       }
     },
     {
+      "code": "activity.fortune",
+      "name": "타로·사주",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 40,
+      "provider_mapping": {}
+    },
+    {
       "code": "activity.karaoke",
       "name": "노래방",
       "parent": "activity",

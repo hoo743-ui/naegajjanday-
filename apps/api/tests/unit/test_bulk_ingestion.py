@@ -511,3 +511,19 @@ def test_display_name_ignores_company_suffix_in_branch_column() -> None:
     assert display_name("커피빈홍대역8번출구점", "코리아") == "커피빈홍대역8번출구점"
     assert display_name("스타벅스", "홍대역점") == "스타벅스 홍대역점"
     assert display_name("스타벅스 홍대역점", "홍대역점") == "스타벅스 홍대역점"
+
+
+def test_a_name_says_what_the_code_does_not() -> None:
+    # 2026-09-25: 사진촬영업(M11301) was dropped whole — 셀프 사진관 never reached a date; 타로 카페 were plain cafés
+    photo = [
+        "P1,인생네컷 홍대점,,M11301,사진촬영업,서울특별시,마포구,서교동,,서울특별시 마포구 와우산로 1,,126.9230,37.5560",
+        "P2,한빛웨딩스튜디오,,M11301,사진촬영업,서울특별시,마포구,서교동,,서울특별시 마포구 와우산로 2,,126.9231,37.5561",
+        "P3,미래안사주까페,,I21201,카페,서울특별시,마포구,서교동,,서울특별시 마포구 와우산로 3,,126.9232,37.5562",
+        "P4,짠이커피,,I21201,카페,서울특별시,마포구,서교동,,서울특별시 마포구 와우산로 4,,126.9233,37.5563",
+    ]
+    rows = list(iter_csv_text(semas_csv(photo)))
+    m = mapper()
+    assert [m.category_for(r) for r in rows] == ["activity.photo", None, "activity.fortune", "cafe"]
+    assert m.skip_reason(rows[1]) == "unmapped_category"  # a wedding studio is not a date stop
+    tarot = m.to_place(rows[2])
+    assert tarot is not None and tarot.price_per_person is not None and tarot.price_per_person >= 10000

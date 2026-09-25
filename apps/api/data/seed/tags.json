@@ -193,6 +193,11 @@
       "is_selectable": false
     },
     {
+      "name": "타로·사주",
+      "group": "feature",
+      "is_selectable": true
+    },
+    {
       "name": "술자리",
       "group": "feature",
       "is_selectable": false

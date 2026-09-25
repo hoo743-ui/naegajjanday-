@@ -38,6 +38,7 @@ from app.core import security
 from app.core.config import API_ROOT, Settings, get_settings
 from app.infra.db.session import Database
 from app.infra.ingestion.base import ProviderNotConfiguredError
+from app.infra.ingestion.bulk import delta
 from app.infra.ingestion.bulk import download as bulk_download
 from app.infra.ingestion.bulk import runner as bulk
 from app.infra.ingestion.bulk.std_datasets import KINDS as STD_KINDS
@@ -230,6 +231,33 @@ def bulk_universities(
             await db.dispose()
 
     asyncio.run(run())
+
+
+@bulk_cli.command("delta-export")
+def bulk_delta_export(
+    out: Annotated[Path, typer.Option(help="where to write the delta JSON")] = Path(
+        "data/bulk/delta/semas_gated.json"
+    ),
+    path: Annotated[Path | None, typer.Option(help="소상공인 zip (default: the raw folder)")] = None,
+) -> None:
+    """name-gated 소상공인 codes (사진촬영업 → 셀프 사진관) → a small JSON production can load (docs/51)."""
+    source = _raw_file("semas", path)
+
+    async def job(db: Database, _settings: Settings) -> None:
+        n = await delta.export_semas_gated(db, source, out, log=typer.echo)
+        typer.echo(f"{n} places → {out}")
+
+    _run(job)
+
+
+@bulk_cli.command("delta")
+def bulk_delta(file: Annotated[Path, typer.Argument(help="a JSON from `delta-export`")]) -> None:
+    """Load a delta JSON (docs/51) — safe to run again: unchanged rows are skipped, nothing is closed."""
+
+    async def job(db: Database, _settings: Settings) -> None:
+        await delta.load(db, file, log=typer.echo)
+
+    _run(job)
 
 
 @bulk_cli.command("semas")

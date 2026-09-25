@@ -69,7 +69,9 @@
     "activity": 12000,
     "activity.karaoke": 8000,
     "activity.stadium": 15000,
-    "culture": 5000
+    "culture": 5000,
+    "activity.photo": 5000,
+    "activity.fortune": 15000
   },
   "_stadium_note": "activity.stadium = KBO 1군 경기 1인 입장권의 '예상' 값: 주말 기준 외야·일반석(구단·요일에 따라 대략 9,000~20,000원)의 중간값. 테이블석·프리미엄석, 먹거리는 포함하지 않는다. 업종 평균(activity 12,000원)이 아니라 이 값을 쓴다. 공식 가격 API 가 없어 실측가가 아니며 price_is_estimated=true 로 저장된다.",
   "_name_rules_note": "상호로 가격대를 알 수 있는 곳은 업종 평균보다 상호 규칙이 먼저다(위에서부터 첫 일치). 2026-09-21: 코인노래방이 일반 노래연습장 평균(8,000원)을 받아 2인 16,000원으로 나온 것을 사용자가 지적 — 코인노래방은 1인 3,000원 선이다. categories 는 접두어 일치(생략하면 전체), contains 는 공백을 뺀 상호의 부분 문자열.",

@@ -8,7 +8,7 @@ few date-friendly activities) and name keywords from `bulk_rules.json` drop cant
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -65,16 +65,35 @@ class SemasMapper:
     categories: Mapping[str, str]
     exclude_keywords: tuple[str, ...]
     prior: PricePrior
+    # a code kept only for names that say what it is (사진촬영업 → 셀프 사진관): {code: (category, words)}
+    gated: Mapping[str, tuple[str, tuple[str, ...], bool]] = field(default_factory=dict)
 
     @classmethod
     def from_data(
         cls, categories: Mapping[str, str], rules: Mapping[str, Any], prior: PricePrior
     ) -> SemasMapper:
         keywords = tuple(rules.get("semas", {}).get("exclude_name_keywords", []))
-        return cls(categories=categories, exclude_keywords=keywords, prior=prior)
+        gated = {
+            str(code): (
+                str(g["category"]),
+                tuple(str(w).upper() for w in g.get("names") or ()),
+                bool(g.get("override")),
+            )
+            for code, g in (rules.get("semas", {}).get("name_gated_codes") or {}).items()
+        }
+        return cls(categories=categories, exclude_keywords=keywords, prior=prior, gated=gated)
+
+    def category_for(self, row: Mapping[str, str]) -> str | None:
+        code = row.get(COL_CODE, "")
+        gate = self.gated.get(code)
+        if gate is not None:
+            name = (row.get(COL_NAME, "") or "").replace(" ", "").upper()
+            if any(w.replace(" ", "") in name for w in gate[1]):
+                return gate[0]  # 셀프 사진관 · 타로 카페: the name says what the code does not
+        return self.categories.get(code)
 
     def skip_reason(self, row: Mapping[str, str]) -> str | None:
-        if row.get(COL_CODE, "") not in self.categories:
+        if self.category_for(row) is None:
             return "unmapped_category"
         name = row.get(COL_NAME, "")
         if not name or not row.get(COL_ID):
@@ -91,12 +110,15 @@ class SemasMapper:
     def build(self, row: Mapping[str, str]) -> BulkPlace:
         """Caller has already checked `skip_reason(row) is None`."""
         code = row[COL_CODE]
-        category = self.categories[code]
+        category = self.category_for(row)
+        assert category is not None
         sido = row.get(COL_SIDO) or None
         lat, lng = to_float(row.get(COL_LAT)), to_float(row.get(COL_LNG))
         assert lat is not None and lng is not None
         name = display_name(row.get(COL_NAME, ""), row.get(COL_BRANCH, ""))
-        price = self.prior.estimate(category, sido, code, name)
+        # a place moved by its name (타로 카페) is priced as what it is, not as the code it was filed under
+        moved = category != self.categories.get(code)
+        price = self.prior.estimate(category, sido, None if moved else code, name)
         return BulkPlace(
             provider=PROVIDER,
             external_id=row[COL_ID],

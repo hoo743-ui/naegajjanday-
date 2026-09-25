@@ -99,7 +99,8 @@
         "활기찬": -0.1,
         "관광공사 소개": 0.6,
         "간편식": -0.9,
-        "무인매장": -0.9
+        "무인매장": -0.9,
+        "타로·사주": 0.6
       },
       "templates": [
         {
@@ -204,7 +205,7 @@
           "slots": [
             {
               "course_role": "MEAL",
-              "budget_share": 0.42,
+              "budget_share": 0.37,
               "is_optional": false,
               "is_order_flexible": false,
               "earliest_start": null,
@@ -221,6 +222,15 @@
               "min_slot_budget": null
             },
             {
+              "course_role": "ACTIVITY",
+              "budget_share": 0.15,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
+            },
+            {
               "course_role": "ATTRACTION",
               "budget_share": 0.02,
               "is_optional": false,
@@ -231,7 +241,7 @@
             },
             {
               "course_role": "BAR",
-              "budget_share": 0.43,
+              "budget_share": 0.33,
               "is_optional": true,
               "is_order_flexible": false,
               "earliest_start": "17:00",
@@ -239,7 +249,7 @@
               "min_slot_budget": 12000
             }
           ],
-          "_note": "슬롯 구성·순서는 그대로(식사→카페→산책→술집), 비중만 실제 가격에 맞췄다. 술집 1인 중앙값이 약 22,500원이라 BAR 0.2 로는 보통 예산에서 슬롯이 늘 비었다. BAR 는 선택 슬롯이므로 예산이 적으면 빠지고, 대표 시나리오(2인 4만원 → 식사·카페·산책)는 그대로 유지된다."
+          "_note": "저녁 데이트: 식사 → 카페 → (같이 하는 것: 셀프 사진관 · 타로 · 공방 · 방탈출) → 걷기 → (한잔). 2026-09-25 연인 코스가 먹고 · 마시고 · 걷기뿐이었다 — 셀프 사진관 1,259곳을 새로 넣고(data/bulk/delta) 체험 자리를 둔다. 인생네컷 1회 2인 약 1만원이 들어가는 몫."
         },
         {
           "code": "date-fullday",
@@ -1889,7 +1899,8 @@
         "디저트맛집": 0.2,
         "야경명소": 0.3,
         "관광공사 소개": 0.5,
-        "간편식": 0.0
+        "간편식": 0.0,
+        "타로·사주": 0.3
       },
       "templates": [
         {

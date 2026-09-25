@@ -60,12 +60,14 @@ class BulkWriter:
         self.seen: set[str] = set()
         self.report = BulkReport()
 
-    async def prepare(self) -> None:
-        rows = await self._s.stream(
-            select(PlaceSource.external_id, PlaceSource.id, PlaceSource.place_id, PlaceSource.content_hash)
-            .where(PlaceSource.provider == self._provider)
-            .execution_options(yield_per=10_000)
-        )
+    async def prepare(self, only_ids: set[str] | None = None) -> None:
+        """`only_ids`: a delta load (bulk/delta.py) only needs to know its own sources, not all of them."""
+        stmt = select(
+            PlaceSource.external_id, PlaceSource.id, PlaceSource.place_id, PlaceSource.content_hash
+        ).where(PlaceSource.provider == self._provider)
+        if only_ids is not None:
+            stmt = stmt.where(PlaceSource.external_id.in_(sorted(only_ids)))
+        rows = await self._s.stream(stmt.execution_options(yield_per=10_000))
         self._known = {ext: _Known(sid, pid, h) async for ext, sid, pid, h in rows}
         self._category_ids = {c.code: c.id for c in (await self._s.scalars(select(Category))).all()}
         # "closed" means out of business (admins use rejected / hidden for quality decisions), so a
