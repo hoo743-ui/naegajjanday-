@@ -50,9 +50,27 @@ def to_opening_period(h: OpeningHour) -> OpeningPeriod | None:
     return OpeningPeriod(h.dow, open_min, close_min, _minutes(h.break_start), _minutes(h.break_end))
 
 
+def _is_all_day(periods: Sequence[OpeningPeriod]) -> bool:
+    return len(periods) >= 7 and all(not p.is_closed and p.close_min - p.open_min >= 1440 for p in periods)
+
+
+def own_hours(periods: Sequence[OpeningPeriod], address: str | None) -> list[OpeningPeriod]:
+    """The place's own hours, unless they cannot be meant literally. TourAPI's "상시운영" is read as 24 h
+    (docs/55) — right for a pavilion or a district, wrong for a shop on "1층": there it means "a standing
+    shop, not a pop-up" (2026-09-26 '영카이브 성수점', 1층, came up at 23:04 on a night date). A place
+    inside a building has a door, so "open all day" there falls back to the usual hours."""
+    if _is_all_day(periods) and get_default_hours().in_building(address):
+        return []
+    return list(periods)
+
+
 def to_candidate(place: Place) -> PlaceCandidate:
     """Requires category, stats, opening_hours, popular_times and place_tags to be eagerly loaded."""
     stats, cat = place.stats, place.category
+    address = place.road_address or place.address
+    real_hours = own_hours(
+        [p for h in place.opening_hours if (p := to_opening_period(h)) is not None], address
+    )
     derived = get_tag_rules().derive(
         category_code=cat.code,
         name=place.name,
@@ -91,8 +109,8 @@ def to_candidate(place: Place) -> PlaceCandidate:
         tags=tags,
         # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
         # museum at 20:30; real hours always win
-        opening_hours=[p for h in place.opening_hours if (p := to_opening_period(h)) is not None]
-        or list(get_default_hours().for_place(cat.code, place.name, place.road_address or place.address)),
+        opening_hours=real_hours or list(get_default_hours().for_place(cat.code, place.name, address)),
+        hours_known=bool(real_hours),
         popular_times={(pt.dow, pt.hour): pt.congestion for pt in place.popular_times},
         approved_at=as_utc(place.approved_at),
     )

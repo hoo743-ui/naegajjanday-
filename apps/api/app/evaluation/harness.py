@@ -32,6 +32,7 @@ from app.domain.media import SHOWABLE, distinct_photos
 from app.domain.models import CourseResult, GeoPoint, RequestContext
 from app.domain.recommendation.budget import evening_minute, is_night
 from app.domain.recommendation.day_score import REPEATABLE, experience_kind
+from app.domain.recommendation.features import is_open
 from app.domain.routing.travel_time import haversine_m
 from app.infra.analytics.base import NoopTracker
 from app.infra.db.models import PlaceImage
@@ -199,9 +200,14 @@ def judge(
     for s in stops:
         code, name, at = s.place.category_code, s.place.name, s.arrive_at.time()
         no_door = any(word in name for word in rules.get("no_door_names", ()))  # a beach never closes
-        if (
-            not s.place.is_event
-            and not no_door
+        if s.place.is_event:
+            pass
+        elif s.place.hours_known:
+            # the place's own hours (TourAPI · docs/55) are evidence; the category rule below is a guess
+            if not is_open(s.place.opening_hours, s.arrive_at):
+                found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (영업시간 밖)"))
+        elif (
+            not no_door
             and (limit := _prefix_lookup(closed_after, code))
             and evening_minute(s.arrive_at) >= _minute(limit)  # a museum at 00:30 is closed too
         ):

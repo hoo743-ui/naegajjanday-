@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from app.domain.models import OpeningPeriod
 from app.domain.recommendation.features import is_open
 from app.infra.default_hours import DefaultHours, get_default_hours
+from app.repositories.place_repo import own_hours
 
 MON_2030 = datetime(2026, 9, 21, 20, 30)  # 월요일
 TUE_1400 = datetime(2026, 9, 22, 14, 0)
@@ -54,3 +56,14 @@ def test_an_always_open_place_with_a_floor_is_inside_a_building() -> None:
     # a mall filed as a street closes with the mall
     mall = hours.for_place("attraction.street", "센트럴시티", "서울특별시 서초구 신반포로 176 (반포동)")
     assert mall and mall[0].close_min == 22 * 60
+
+
+def test_open_all_day_inside_a_building_is_not_taken_literally() -> None:
+    all_day = [OpeningPeriod(d, 0, 1440) for d in range(7)]
+    # 2026-09-26: TourAPI "상시운영" for '영카이브 성수점' (… 32 (성수동2가) 1층) is a standing shop, not 24 h
+    assert own_hours(all_day, "서울특별시 성동구 성수이로18길 32 (성수동2가) 1층") == []
+    # "상시 개방" out of doors stays open all day (남천교 청연루)
+    assert own_hours(all_day, "전북특별자치도 전주시 완산구 천경로 40 (동서학동) 부근") == all_day
+    # real hours that are not all day are kept, floor or not
+    shop = [OpeningPeriod(d, 600, 1260) for d in range(7)]
+    assert own_hours(shop, "어느 건물 2층") == shop

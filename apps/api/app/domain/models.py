@@ -64,6 +64,9 @@ class PlaceCandidate:
     popularity: float = 0.0
     tags: dict[str, float] = field(default_factory=dict)
     opening_hours: list[OpeningPeriod] = field(default_factory=list)
+    # True when opening_hours are the place's own (TourAPI · docs/55), False when they are the category's
+    # usual hours (data/hours/default_hours.json) — the eval judge trusts only the former over its own rule
+    hours_known: bool = False
     popular_times: dict[tuple[int, int], float] = field(default_factory=dict)
     approved_at: datetime | None = None
     is_overexposed: bool = False

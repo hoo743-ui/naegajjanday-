@@ -64,10 +64,14 @@ class DefaultHours:
     ) -> tuple[OpeningPeriod, ...]:
         found = self._by_name_or_category(category_code, name)
         # "always open" (a street, a park, a view) with a floor in its address is inside a building
-        if not found and address and self._floor and self._floor.search(address):
+        if not found and self.in_building(address):
             root = category_code.split(".")[0]
             return self._building_by_category.get(root) or self._building
         return found
+
+    def in_building(self, address: str | None) -> bool:
+        """The address names a floor ("1층" · "B2"): the place is inside a building, which has a door."""
+        return bool(address and self._floor and self._floor.search(address))
 
     def _by_name_or_category(self, category_code: str, name: str) -> tuple[OpeningPeriod, ...]:
         for words, categories, periods in self._by_name:

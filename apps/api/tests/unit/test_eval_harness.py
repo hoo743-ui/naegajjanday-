@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from app.domain.models import CourseResult, StopResult
+from app.domain.models import CourseResult, OpeningPeriod, StopResult
 from app.evaluation import harness as H
 from tests.factories import SUNDAY_6PM, context, place
 
@@ -57,6 +57,23 @@ def test_each_clumsy_pattern_is_named() -> None:
     assert "NIGHT_TRAIL" in _codes([_stop(1, "ATTRACTION", "attraction.street", trail, 22, 0)])
     assert "NIGHT_TRAIL" not in _codes([_stop(1, "ATTRACTION", "attraction.street", trail, 15, 0)])
     assert "OVER_BUDGET" in _codes([_stop(1, "MEAL", "food.korean", "비싼집", 18, 40000)])
+
+
+def _with_hours(stop: StopResult, open_min: int, close_min: int) -> StopResult:
+    stop.place.opening_hours = [OpeningPeriod(d, open_min, close_min) for d in range(7)]
+    stop.place.hours_known = True
+    return stop
+
+
+def test_a_place_with_its_own_hours_is_judged_by_them_not_by_its_category() -> None:
+    # 2026-09-26: TourAPI says "상시 개방" for 남천교 청연루 (a pavilion on a bridge) → open at 22:42
+    pavilion = _with_hours(_stop(1, "ATTRACTION", "attraction.landmark", "남천교 청연루", 22, 0), 0, 1440)
+    assert "CLOSED_AT_ARRIVAL" not in _codes([pavilion])
+    # without hours of its own the category's common-sense limit still applies
+    assert "CLOSED_AT_ARRIVAL" in _codes([_stop(1, "ATTRACTION", "attraction.landmark", "어느 누각", 22, 0)])
+    # and its own hours can say it is closed, too
+    hall = _with_hours(_stop(1, "ATTRACTION", "attraction.landmark", "어느 전시장", 20, 0), 600, 1140)
+    assert "CLOSED_AT_ARRIVAL" in _codes([hall])
 
 
 def test_matrix_size_and_filters() -> None:
