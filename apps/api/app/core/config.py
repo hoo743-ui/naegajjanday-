@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     error_type_base: str = "https://api.naegajjanday.com/errors"
     timezone: str = "Asia/Seoul"
     seed_dir: Path = API_ROOT / "data" / "seed"
+    # docs/57: apply shipped data files (seed config, bulk deltas, anchors) the database has not seen yet, in
+    # the background after start. None = production only (a local nationwide DB is never touched by default).
+    data_sync_on_start: bool | None = None
+    data_sync_delay_s: float = Field(default=5.0, ge=0)  # let the health check pass first
 
     # --- storage ---
     database_url: str = "sqlite+aiosqlite:///./dev.db"

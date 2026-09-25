@@ -2,6 +2,7 @@
 
 python -m app.cli db init
 python -m app.cli seed-config [--dir data/seed]
+python -m app.cli data-sync [--status] [--force]             # seed + deltas + universities, only what changed
 python -m app.cli ingest --provider file --all
 python -m app.cli ingest --provider file --path places.json --region <slug>
 python -m app.cli ingest --provider kakao_local --region <slug>
@@ -113,6 +114,31 @@ def seed_config(
         _run(job)
     except (ConfigFormatError, KeyError) as exc:
         raise _fail(f"invalid seed config: {exc}") from exc
+
+
+@cli.command("data-sync")
+def data_sync_cmd(
+    force: Annotated[bool, typer.Option(help="apply every file again, even unchanged ones")] = False,
+    show: Annotated[bool, typer.Option("--status", help="only show what is applied")] = False,
+) -> None:
+    """seed-config + every bulk delta + universities, each only if its file changed (docs/57). The app runs
+    this by itself after a production start; this command is for a local DB or to run it by hand."""
+    from app.services import data_sync
+
+    async def job(db: Database, settings: Settings) -> bool:
+        if show:
+            s = await data_sync.status(db, settings)
+            typer.echo(f"last run: {s.last_finished_at or '-'} {s.last_summary or ''}")
+            for i in s.items:
+                mark = "ok " if i.applied else "-- "
+                typer.echo(f"{mark} {i.key:48} {i.applied_at or ''} {i.last_error or ''}")
+            return True
+        report = await data_sync.sync(db, settings, force=force, log=typer.echo)
+        typer.echo(report.line())
+        return not report.locked and report.count("failed") == 0
+
+    if not _run(job):
+        raise typer.Exit(code=1)
 
 
 @cli.command("ingest")

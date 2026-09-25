@@ -126,6 +126,21 @@ class ApiUsage(Base):
     updated_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
 
 
+class DataSync(Base):
+    """What the data sync (services/data_sync.py, docs/57) has applied to this database: one row per shipped
+    data file — the seed config, each bulk delta, the universities anchor file. `content_hash` is the hash of
+    the file last applied successfully; a file whose hash differs (or has no row) is applied again."""
+
+    __tablename__ = "data_sync"
+
+    key: Mapped[str] = mapped_column(String(160), primary_key=True)  # "seed", "delta/cinemas.json", …
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    applied_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    summary: Mapped[str | None] = mapped_column(Text)  # the loader's one-line report
+    last_error: Mapped[str | None] = mapped_column(Text)
+    attempted_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+
+
 class Visit(Base):
     """One page view, first-party (docs/50): who came — logged in or not — without an analytics vendor.
     `visitor` is a keyed hash of a random id the browser keeps; no user agent string is stored."""

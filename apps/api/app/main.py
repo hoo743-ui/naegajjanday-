@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -33,6 +35,7 @@ from app.infra.db.session import Database
 from app.infra.llm.factory import build_llm
 from app.infra.search.client import build_search
 from app.prompts.loader import PromptLoader
+from app.services import data_sync
 from app.services import retention_service as retention
 
 logger = get_logger(__name__)
@@ -97,9 +100,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # the privacy page promises page views are kept a year at most (docs/50): enforced at every start
         await retention.purge_old_visits(container.db, settings)
         await retention.clear_old_ips(container.db, settings)
+        # docs/57: shipped data files (seed config, bulk deltas, anchors) the DB has not applied yet — in the
+        # background, so the server answers its health check right away. Render's preDeploy has no disk.
+        sync_task = (
+            asyncio.create_task(data_sync.run_on_start(container.db, settings), name="data-sync")
+            if data_sync.enabled_on_start(settings)
+            else None
+        )
         try:
             yield
         finally:
+            if sync_task is not None and not sync_task.done():
+                sync_task.cancel()  # an unfinished item is not recorded → applied again next start
+                with contextlib.suppress(asyncio.CancelledError):
+                    await sync_task
             await container.tracker.aclose()
             if container.search is not None:
                 await container.search.aclose()

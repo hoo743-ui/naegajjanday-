@@ -5,11 +5,12 @@ import { Archive, Database, HardDrive, Trash2 } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/AdminShell";
 import { FormMessage } from "@/components/admin/Field";
 import { StatCard } from "@/components/admin/StatCard";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDatabaseOverview, useDeleteBackup, usePurgeCourses, usePurgeVisits, useStartBackup } from "@/lib/api/admin";
+import { useDatabaseOverview, useDataSync, useDeleteBackup, usePurgeCourses, usePurgeVisits, useRunDataSync, useStartBackup } from "@/lib/api/admin";
 import type { ApiError } from "@/lib/api/client";
 import { num } from "@/lib/format";
 import { mascotCopyForError } from "@/lib/mascot-copy";
@@ -31,6 +32,68 @@ function bytes(value: number | null | undefined): string {
 function when(iso: string | null): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * 데이터 반영 (docs/57): 코드와 함께 배포되는 데이터 파일(설정 · 장소 추가분 · 캠퍼스)이 DB 에 들어갔는지.
+ * 배포 후 서버가 켜지면 알아서 반영한다. 버튼은 같은 작업을 지금 한 번 더 — 이미 반영된 파일은 건너뛴다.
+ */
+function DataSyncPanel() {
+  const q = useDataSync();
+  const start = useRunDataSync();
+  const [error, setError] = useState<ApiError | null>(null);
+  const d = q.data;
+  const pending = d ? d.items.filter((i) => !i.applied).length : 0;
+  const description = !d
+    ? "배포된 데이터 파일이 DB 에 들어갔는지"
+    : d.running
+      ? "지금 반영하는 중이에요…"
+      : d.last_finished_at
+        ? `마지막 반영 ${when(d.last_finished_at)} · ${pending ? `반영 안 된 파일 ${pending}개` : "모두 반영됨"}`
+        : "아직 한 번도 반영하지 않았어요";
+
+  return (
+    <Panel title="데이터 반영" description={description}>
+      {q.isError ? (
+        <FormMessage tone="error">{mascotCopyForError(q.error).description}</FormMessage>
+      ) : !d ? (
+        <Skeleton className="h-[160px] rounded-2xl" />
+      ) : (
+        <div className="grid gap-3">
+          <ul className="grid gap-2">
+            {d.items.map((i) => (
+              <li key={i.key} className="rounded-2xl border border-line px-3 py-2 text-body-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="font-medium text-ink">{i.label}</span>{" "}
+                    <span className="text-caption text-muted-foreground">{i.files.join(", ")}</span>
+                  </span>
+                  <StatusBadge status={d.running && !i.applied ? "running" : i.applied ? "succeeded" : i.last_error ? "failed" : "queued"} />
+                </div>
+                {i.applied && i.applied_at ? (
+                  <p className="mt-1 text-caption text-muted-foreground">{when(i.applied_at)} 반영</p>
+                ) : i.last_error ? (
+                  <p className="mt-1 break-all text-caption text-pink-deep">{i.last_error}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {error ? <FormMessage tone="error">{mascotCopyForError(error).description}</FormMessage> : null}
+          <Button
+            type="button"
+            variant="brand"
+            disabled={d.running || start.isPending}
+            onClick={() => {
+              setError(null);
+              start.mutate(undefined, { onError: setError });
+            }}
+          >
+            {d.running || start.isPending ? "반영하는 중…" : "지금 반영하기"}
+          </Button>
+        </div>
+      )}
+    </Panel>
+  );
 }
 
 interface Confirm {
@@ -138,6 +201,8 @@ export default function AdminDatabasePage() {
         </Panel>
 
         <div className="grid content-start gap-5">
+          <DataSyncPanel />
+
           <Panel title="저장 안 한 코스 정리" description="만들고 저장하지 않은 코스는 보관 기간이 지나면 지워요. 저장한 코스 · 코스 생성 통계(추천 기록)는 그대로예요.">
             <Button
               type="button"

@@ -1027,6 +1027,46 @@ export function useDeleteBackup() {
   });
 }
 
+// ── 데이터 반영 (docs/57) ─────────────────────────────────────
+export interface DataSyncItem {
+  key: string;
+  kind: "seed" | "delta" | "anchor";
+  label: string;
+  files: string[];
+  applied: boolean;
+  applied_at: string | null;
+  summary: string | null;
+  last_error: string | null;
+  attempted_at: string | null;
+}
+
+export interface DataSyncStatus {
+  running: boolean;
+  last_started_at: string | null;
+  last_finished_at: string | null;
+  last_summary: string | null;
+  items: DataSyncItem[];
+}
+
+const dataSyncKey = ["admin", "database", "data-sync"] as const;
+
+export function useDataSync() {
+  return useQuery<DataSyncStatus, ApiError>({
+    queryKey: dataSyncKey,
+    queryFn: ({ signal }) => api.get("/admin/database/data-sync", { signal }),
+    // 반영하는 동안은 끝났는지 3초마다 본다
+    refetchInterval: (q) => (q.state.data?.running ? 3_000 : false),
+  });
+}
+
+export function useRunDataSync() {
+  const client = useQueryClient();
+  return useMutation<void, ApiError, void>({
+    mutationFn: () => api.post("/admin/database/data-sync"),
+    onSuccess: () => void client.invalidateQueries({ queryKey: dataSyncKey }),
+  });
+}
+
 // ── 회원 · 방문 로그 · 코스 요청 (docs/50) ────────────────────
 export type Who = "all" | "member" | "anonymous";
 export interface UserRef {

@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import shutil
 import sqlite3
+from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from app.core.config import Settings
 from app.core.deps import ContainerDep, SessionDep
 from app.core.logging import get_logger
 from app.infra.db.models import Course, Visit
+from app.services import data_sync
 from app.services import retention_service as retention
 from app.services.audit import AuditDep
 
@@ -234,3 +236,60 @@ async def delete_backup(name: str, container: ContainerDep, audit: AuditDep, ses
     target.unlink()
     audit.record("delete", "backup", name, {})
     await session.commit()
+
+
+# --- data sync (docs/57) ----------------------------------------------------------------------------------
+
+
+class DataSyncItemOut(BaseModel):
+    key: str
+    kind: str = Field(description="seed | delta | anchor")
+    label: str
+    files: list[str]
+    applied: bool = Field(description="지금 파일 그대로 반영됐는지")
+    applied_at: datetime | None
+    summary: str | None
+    last_error: str | None
+    attempted_at: datetime | None
+
+
+class DataSyncOut(BaseModel):
+    running: bool
+    last_started_at: datetime | None
+    last_finished_at: datetime | None
+    last_summary: str | None
+    items: list[DataSyncItemOut]
+
+
+_sync_tasks: set[asyncio.Task[data_sync.SyncReport]] = set()
+
+
+@router.get("/data-sync", response_model=DataSyncOut, summary="데이터 반영 현황: 설정 · 장소 추가분 · 캠퍼스")
+async def data_sync_status(container: ContainerDep) -> DataSyncOut:
+    s = await data_sync.status(container.db, container.settings)
+    return DataSyncOut(
+        running=s.running,
+        last_started_at=s.last_started_at,
+        last_finished_at=s.last_finished_at,
+        last_summary=s.last_summary,
+        items=[DataSyncItemOut(**asdict(i)) for i in s.items],
+    )
+
+
+@router.post(
+    "/data-sync",
+    status_code=202,
+    response_model=None,
+    responses=PROBLEMS(409),
+    summary="지금 반영하기 (배포 때 자동으로 도는 것과 같은 작업)",
+)
+async def data_sync_run(container: ContainerDep, audit: AuditDep, session: SessionDep) -> None:
+    """Applies the files the database has not applied yet, in the background — the status says when it is
+    done. Safe to press again: applied files are skipped."""
+    if data_sync.is_running():
+        raise errors.Conflict("데이터 반영이 이미 진행 중이에요.")
+    audit.record("sync", "data", None, {})
+    await session.commit()
+    task = asyncio.create_task(data_sync.sync(container.db, container.settings), name="data-sync")
+    _sync_tasks.add(task)  # keep a reference until it is done
+    task.add_done_callback(_sync_tasks.discard)

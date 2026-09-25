@@ -8,6 +8,7 @@
 #     코드·마이그레이션은 있지만 실데이터로 돌려 본 적이 없다(docs/PROGRESS.md "검증 불가").
 #   - 대가: 디스크를 붙인 서비스는 인스턴스 1대 고정 · 무중단 배포 불가(배포 때 수십 초 끊김) ·
 #     preDeployCommand 에서 디스크가 안 보인다 → 스키마 갱신은 startCommand 의 `db init` 이 한다.
+#     데이터 파일(seed · bulk delta · 캠퍼스)은 앱이 켜진 뒤 백그라운드로 반영한다 (docs/57, DATA_SYNC_ON_START).
 #   - 무료 플랜에는 디스크가 없다 → plan 은 starter 이상.
 #   - Postgres 로 옮길 때의 설정은 파일 맨 아래 주석.
 #
