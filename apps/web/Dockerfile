@@ -6,7 +6,7 @@
 # NEXT_PUBLIC_* 는 빌드 시점에 번들에 박힌다. 환경별로 이미지를 따로 빌드한다.
 # NEXT_PUBLIC_API_MOCKING 은 여기서 받지 않는다 → 운영 이미지에는 목이 들어갈 수 없다.
 
-FROM node:22-alpine AS base
+FROM node:25-alpine AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
