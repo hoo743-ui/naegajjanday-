@@ -261,6 +261,7 @@ class RequestContext:
     never_tags_by_role: dict[str, frozenset[str]] = field(default_factory=dict)
     # names a place must not carry (compact_name form): a mountain-top view on foot at night (conditions.json)
     avoid_names: frozenset[str] = frozenset()
+    scene: str | None = None  # 누구와 (docs/48): kids · parents · adults · new · steady · anniversary
     # names of the chosen area itself ("경주 황리단길", "홍대"): a sight called exactly that is not a stop
     area_names: frozenset[str] = frozenset()
     # the neighbourhood's signature (domain.signature): its specialty words, its landmark sights, and the

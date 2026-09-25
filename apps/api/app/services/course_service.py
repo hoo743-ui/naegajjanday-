@@ -7,7 +7,7 @@ import json
 import random
 import time
 import uuid
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Any
@@ -86,6 +86,7 @@ from app.domain.recommendation.style import (
     extra_unavailable,
     night_notice,
     opt_in_categories,
+    resolve_scene,
     resolve_style,
     styled_affinity,
     styled_avoidance,
@@ -127,6 +128,10 @@ PREFERENCE_EMA_ALPHA = 0.2
 
 
 FOCUS_OFF = "-"  # request.focus value meaning "do not build the course around a local specialty"
+
+
+DARK_BY_THE_END_H = 17  # a course starting from here on ends after dark
+SCENE_CATEGORY_PULL = 0.3  # 누구와: a liked kind of place (+1) adds this much to a place score of 0..1
 
 
 class CourseService:
@@ -292,11 +297,16 @@ class CourseService:
             planned = await self._plan_one(req, user)
         night = day_conditions().get("night")
         if night and is_night(self._local(req.start_at)):
-            notice, out = night_notice(night), planned[5]
-            out.warnings.append(notice)
-            for course in out.courses:
-                if notice not in course.warnings:
-                    course.warnings.append(notice)
+            notices = [night_notice(night)]
+            _key, scene = resolve_scene(req.purpose, req.scene)
+            if scene.get("night_notice"):  # "아이와" at 22:00: planned, and told it is late for a child
+                notices.append({"code": "SCENE_NIGHT", "detail": str(scene["night_notice"]), "meta": {}})
+            out = planned[5]
+            for notice in notices:
+                out.warnings.append(notice)
+                for course in out.courses:
+                    if notice not in course.warnings:
+                        course.warnings.append(notice)
         return planned
 
     async def _note_missing_extras(
@@ -575,6 +585,8 @@ class CourseService:
             ctx, profile, templates, understood.style if req.pace else req.style
         )
         profile, templates = self._apply_understood(ctx, profile, templates, understood)
+        ctx.scene, scene = resolve_scene(purpose.code, req.scene)
+        profile, templates = self._apply_scene(ctx, profile, templates, scene)
         # "조용하게": no pub and no karaoke room, unless a drink was asked for by name
         asked_roles = {str(extra_roles()[r]["role"]) for r in req.extras if r in extra_roles()}
         templates = without_roles(templates, understood.avoid_roles - asked_roles)
@@ -892,6 +904,7 @@ class CourseService:
             "move_style": ctx.move_style,
             "pace": list(req.pace),
             "wishes": list(req.wishes),
+            "scene": ctx.scene,
             "focus": ctx.focus,
             "purposes": list(ctx.purpose_codes),
             "segments": ctx.segments,
@@ -1321,6 +1334,10 @@ class CourseService:
                 pace=list((row.request or {}).get("pace") or []),
                 move_style=(row.request or {}).get("move_style"),
                 wishes=list((row.request or {}).get("wishes") or []),
+                scene=(row.request or {}).get("scene"),
+                scene_label=resolve_scene(purpose.code, (row.request or {}).get("scene"))[1].get("label")
+                if (row.request or {}).get("scene")
+                else None,
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[
@@ -1383,6 +1400,8 @@ class CourseService:
             disliked_tags=ctx.disliked_tags,
         )
         profile, _ = self._apply_understood(ctx, profile, [], understood)
+        ctx.scene, scene = resolve_scene(ctx.purpose_code, (row.request or {}).get("scene"))
+        profile, _ = self._apply_scene(ctx, profile, [], scene)
         # the day as it was said to be (rain, or "실내 위주"), and the night the clock says: a replacement
         # must not bring back the walk the rainy day took out
         said = [*((row.request or {}).get("conditions") or []), *understood.conditions]
@@ -1411,6 +1430,29 @@ class CourseService:
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
 
     @staticmethod
+    def _apply_scene(
+        ctx: RequestContext, profile: ScoringProfile, templates: Sequence[Template], scene: Mapping[str, Any]
+    ) -> tuple[ScoringProfile, list[Template]]:
+        """누구와 (docs/48): who comes along moves the same knobs a style does — never the hard limits."""
+        if not scene:
+            return profile, list(templates)
+        ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, scene)
+        for tag, roles in styled_never(scene).items():
+            ctx.never_tags_by_role[tag] = ctx.never_tags_by_role.get(tag, frozenset()) | roles
+        for tag in scene.get("allow_tags") or ():  # "어른끼리": the family's no-pocha rule does not apply
+            ctx.never_tags_by_role.pop(tag, None)
+            ctx.avoid_tags_by_role.pop(tag, None)
+        ctx.blocked_categories = ctx.blocked_categories | frozenset(scene.get("blocked_categories") or ())
+        # which kinds of place this company likes, straight onto the score: through the preference feature a
+        # place's many tags drowned the category and the scenes changed almost nothing (2026-09-25)
+        for code, weight in (scene.get("category_weights") or {}).items():
+            ctx.trait_pull[f"cat:{code}"] = round(
+                ctx.trait_pull.get(f"cat:{code}", 0.0) + SCENE_CATEGORY_PULL * float(weight), 3
+            )
+        templates = styled_templates(reweight_templates(templates, scene.get("role_share") or {}), scene)
+        return profile, templates
+
+    @staticmethod
     def _apply_conditions(ctx: RequestContext, names: Sequence[str]) -> None:
         """A condition's tag pull and its per-role avoidances (the template swap is generation's own)."""
         for name in names:
@@ -1420,8 +1462,11 @@ class CourseService:
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
             for tag, roles in styled_avoidance(condition).items():
                 ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
-            if ctx.transport != "car":  # by car a mountain view at night is the drive; on foot it is a climb
-                ctx.avoid_names |= {compact_name(w) for w in condition.get("avoid_names_on_foot") or ()}
+        # a walk that starts in the evening ends after dark: no mountain-top view on foot or by transit then
+        # either (18:30 starts reached 우면산 소망탑 at 21:55). By car a night view is the drive.
+        night = day_conditions().get("night") or {}
+        if ctx.transport != "car" and (ctx.start_at.hour >= DARK_BY_THE_END_H or is_night(ctx.start_at)):
+            ctx.avoid_names |= {compact_name(w) for w in night.get("avoid_names_on_foot") or ()}
 
     @staticmethod
     def _apply_understood(

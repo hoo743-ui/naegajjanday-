@@ -87,4 +87,10 @@ def trait_pull(place: PlaceCandidate, pull: dict[str, float]) -> float:
     if place.price == 0:
         out += pull.get("free", 0.0)
     out += pull.get("buzz", 0.0) * place.buzz
+    # 누구와 (docs/48): the kind of place this company likes — the most specific code the pull names
+    parts = place.category_code.split(".")
+    for depth in range(len(parts), 0, -1):
+        if (cat := pull.get("cat:" + ".".join(parts[:depth]))) is not None:
+            out += cat
+            break
     return out

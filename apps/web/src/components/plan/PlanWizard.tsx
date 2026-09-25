@@ -184,6 +184,7 @@ export function PlanWizard() {
       ...(!station && !campus && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
       purpose: data.purpose,
       ...(data.purposes_extra.length > 0 ? { purposes: data.purposes_extra } : {}),
+      ...(data.scene ? { scene: data.scene } : {}),
       party_size: data.party_size,
       budget_total: data.budget_total,
       start_at: toKstIso(start),

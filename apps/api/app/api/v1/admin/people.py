@@ -291,7 +291,11 @@ async def course_requests(
             or " → ".join(str(r) for r in req.get("regions") or [])
             or str(req.get("region") or "-")
         )
-        taste = [*(req.get("pace") or []), *(req.get("wishes") or [])]
+        taste = [
+            *([str(req["scene"])] if req.get("scene") else []),
+            *(req.get("pace") or []),
+            *(req.get("wishes") or []),
+        ]
         if req.get("style") and req["style"] != "efficient":
             taste.append(str(req["style"]))
         if req.get("move_style"):

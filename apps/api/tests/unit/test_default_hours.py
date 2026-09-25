@@ -44,7 +44,9 @@ def test_an_always_open_place_with_a_floor_is_inside_a_building() -> None:
     hours = get_default_hours()
     shop = hours.for_place("attraction.street", "풍월당", "서울특별시 강남구 도산대로53길 39 (신사동) 4층")
     assert shop and shop[0].close_min == 21 * 60
-    tower = hours.for_place("nightview.observatory", "롯데월드타워 서울스카이", "올림픽로 300 (신천동) 117~123층")
+    tower = hours.for_place(
+        "nightview.observatory", "롯데월드타워 서울스카이", "올림픽로 300 (신천동) 117~123층"
+    )
     assert tower and tower[0].close_min == 22 * 60
     # an underground road number is not a floor: a plaza above a subway station stays open
     assert hours.for_place("attraction.park", "서울광장", "서울특별시 중구 을지로 지하12 (을지로1가)") == ()

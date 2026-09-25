@@ -118,6 +118,8 @@ class TagRules:
     def sign_name(self, name: str) -> str:
         """The name on the sign: "강남에프앤비화덕고깃간 역삼본점" → "화덕고깃간 역삼본점". Left alone when
         what follows the company word is only a branch ("커피컴퍼니 홍대점") or too short to be a name."""
+        # an editor's note left in the name by the source: "코코리색채연구소(홍대점) (외국어사이트용)"
+        name = name.replace("(외국어사이트용)", "").strip()
         # a legal form stuck on either end is never part of the sign: "(주)<hotel>" → "<hotel>"
         for form in self.legal_forms:
             bare = name.strip()

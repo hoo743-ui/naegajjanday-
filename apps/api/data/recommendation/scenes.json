@@ -1,0 +1,173 @@
+{
+  "_comment": "누구와 (docs/48 §1 · §2): 같은 목적이라도 함께 가는 사람이 하루를 바꾼다. 목적마다 장면 몇 개, 고르지 않으면 default(가족 = 아이와, 데이트 = 없음 = 지금과 같다). 각 장면은 스타일과 같은 손잡이로만 움직인다: affinity_add(태그 선호), never_tags(자리마다 절대 안 됨 — 후보가 없으면 비운다), allow_tags(목적이 막아 둔 것을 이 장면에서는 푼다), blocked_categories(업종 통째로 빼기), role_share(예산 비중 배수), night_notice(밤에 짤 때 한 줄). 고치면 API 재시작. category_weights: 업종 선호(-1~1), 장소 점수에 직접 더한다(× 0.3). 태그만으로는 같은 업종 안의 가게가 갈리지 않아 장면이 코스를 거의 바꾸지 못했다(2026-09-25). swap_roles: 스타일과 같은 자리 바꾸기 — 설레는 사이는 걷기 자리를 전시로, 오래 만난 사이는 체험으로(업종 선호만으로는 템플릿에 없는 자리가 생기지 않는다).",
+  "family": {
+    "question": "누구와 가나요?",
+    "default": "kids",
+    "scenes": {
+      "kids": {
+        "label": "아이와",
+        "hint": "체험 · 공원 중심, 조금 걷고 일찍 마무리",
+        "affinity_add": {
+          "키즈프렌들리": 0.4,
+          "체험형": 0.3,
+          "산책하기좋은": 0.2,
+          "야외": 0.1
+        },
+        "night_notice": "아이와 함께라면 저녁 8시쯤 마무리하길 권해요. 밤에는 연 곳이 적어 코스가 짧아요.",
+        "category_weights": {
+          "attraction.park": 0.6,
+          "culture.museum": 0.6,
+          "activity": 0.5,
+          "dessert.icecream": 0.5,
+          "dessert": 0.3,
+          "food.korean": 0.2,
+          "cafe.book": -0.3,
+          "bar": -1.0
+        }
+      },
+      "parents": {
+        "label": "부모님과",
+        "hint": "정갈한 한 끼 · 조용한 곳 · 덜 걷기",
+        "affinity_add": {
+          "조용한": 0.5,
+          "예약가능": 0.4,
+          "로컬맛집": 0.3,
+          "레트로": 0.2,
+          "감성적인": 0.2,
+          "키즈프렌들리": -0.9,
+          "힙한": -0.5,
+          "활기찬": -0.4,
+          "웨이팅": -0.4,
+          "체험형": -0.3
+        },
+        "never_tags": {
+          "간편식": [
+            "MEAL"
+          ]
+        },
+        "blocked_categories": [
+          "activity.karaoke",
+          "activity.arcade",
+          "activity.escape",
+          "activity.sports",
+          "activity.boardgame"
+        ],
+        "category_weights": {
+          "food.korean": 0.8,
+          "cafe.tea": 0.7,
+          "attraction.landmark": 0.5,
+          "culture.museum": 0.4,
+          "attraction.park": 0.3,
+          "food.western": -0.3,
+          "food.asian": -0.4,
+          "food.snack": -0.8,
+          "activity": -0.8,
+          "cafe.coffee": -0.2
+        }
+      },
+      "adults": {
+        "label": "어른끼리",
+        "hint": "형제 · 친척끼리, 대화 중심 · 한잔도 괜찮아요",
+        "affinity_add": {
+          "키즈프렌들리": -0.9,
+          "단체석": 0.3,
+          "예약가능": 0.3,
+          "로컬맛집": 0.2
+        },
+        "allow_tags": [
+          "술자리",
+          "매운맛"
+        ],
+        "category_weights": {
+          "food.bbq": 0.5,
+          "food.korean": 0.4,
+          "food.chinese": 0.3,
+          "bar": 0.4
+        }
+      }
+    }
+  },
+  "date": {
+    "question": "어떤 사이인가요?",
+    "default": null,
+    "scenes": {
+      "new": {
+        "label": "설레는 사이",
+        "hint": "대화가 끊겨도 어색하지 않은 곳 · 시끄럽지 않게",
+        "affinity_add": {
+          "전시공연": 0.3,
+          "산책하기좋은": 0.3,
+          "체험형": 0.2,
+          "조용한": 0.2,
+          "활기찬": -0.3,
+          "단체석": -0.3
+        },
+        "category_weights": {
+          "culture.exhibition": 0.6,
+          "culture.gallery": 0.6,
+          "activity.craft": 0.5,
+          "attraction.street": 0.4,
+          "cafe": 0.3,
+          "food.bbq": -0.5,
+          "bar.pocha": -0.5
+        },
+        "swap_roles": {
+          "ATTRACTION": {
+            "role": "CULTURE",
+            "share": 0.14,
+            "take_from": "MEAL"
+          }
+        }
+      },
+      "steady": {
+        "label": "오래 만난 사이",
+        "hint": "안 가 본 곳 · 새로운 경험",
+        "affinity_add": {
+          "체험형": 0.4,
+          "힙한": 0.3,
+          "시그니처메뉴": 0.2,
+          "체인점": -0.3
+        },
+        "category_weights": {
+          "activity": 0.6,
+          "activity.escape": 0.6,
+          "activity.craft": 0.5,
+          "food.asian": 0.3,
+          "cafe.view": 0.3
+        },
+        "swap_roles": {
+          "ATTRACTION": {
+            "role": "ACTIVITY",
+            "share": 0.18,
+            "take_from": "MEAL"
+          }
+        }
+      },
+      "anniversary": {
+        "label": "기념일",
+        "hint": "한 끼에 힘주기 · 분위기 · 예약",
+        "affinity_add": {
+          "로맨틱": 0.4,
+          "예약가능": 0.5,
+          "뷰맛집": 0.3,
+          "조용한": 0.3,
+          "가성비": -0.3,
+          "간편식": -0.5
+        },
+        "role_share": {
+          "MEAL": 1.6
+        },
+        "category_weights": {
+          "food.western": 0.7,
+          "food.japanese": 0.5,
+          "cafe.view": 0.5,
+          "bar.wine": 0.8,
+          "bar.cocktail": 0.6,
+          "food.snack": -0.8,
+          "bar.pocha": -0.8,
+          "bar.pub": -0.4
+        }
+      }
+    }
+  }
+}

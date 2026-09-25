@@ -7,6 +7,8 @@ export const planSchema = z
     purpose: z.string().min(1, "어떤 약속인지 골라 주세요"),
     /** 함께 고른 다른 목적 (최대 2) */
     purposes_extra: z.array(z.string()).max(2),
+    /** 누구와 (docs/48). 빈 값 = 목적의 기본 장면 */
+    scene: z.string(),
     /** 먼저 들를 동네들(방문 순서). 마지막 동네는 region 이다. 비어 있으면 한 동네 코스 */
     regions_before: z.array(z.string()).max(2),
     party_size: z.number().int().min(1, "최소 1명이에요").max(20, "20명까지 짤 수 있어요"),
@@ -48,6 +50,7 @@ export const PLAN_DEFAULTS: PlanValues = {
   region: "",
   purpose: "",
   purposes_extra: [],
+  scene: "",
   regions_before: [],
   party_size: 2,
   budget_total: 40000,
@@ -70,7 +73,7 @@ export const PLAN_DEFAULTS: PlanValues = {
 
 export const STEPS = [
   { key: "region", title: "지역", question: "어디서 만나요?", fields: ["region", "regions_before"] },
-  { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra"] },
+  { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra", "scene"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "nights", "meet_day", "start_time", "duration_min"] },
   // 4단계는 그대로 (docs/32 B §10): 취향 단계 안에 짧은 질문 셋(어떤 하루 · 얼마나 이동 · 꼭 원하는 것), 세부 태그는 "더 자세히" 안에
   { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["pace", "style", "move_style", "transport", "wishes", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags"] },

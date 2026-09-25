@@ -107,6 +107,12 @@ class CourseGenerateRequest(BaseModel):
         "indoor=실내 위주(비 오는 날과 같게) · photo=사진 찍기 좋은 곳(노래방 · 오락실 빼고) · "
         "free=무료로 들를 곳 더",
     )
+    scene: str | None = Field(
+        default=None,
+        max_length=20,
+        description="누구와 (docs/48): 가족 kids · parents · adults(기본 kids), "
+        "데이트 new · steady · anniversary. 목적에 없는 값은 무시한다 (GET /meta/purposes 의 scenes)",
+    )
     keep_place_ids: list[str] = Field(
         default_factory=list,
         max_length=6,
@@ -436,6 +442,8 @@ class CourseRequestEcho(BaseModel):
     pace: list[str] = Field(default_factory=list)
     move_style: str | None = None
     wishes: list[str] = Field(default_factory=list)
+    scene: str | None = None
+    scene_label: str | None = Field(default=None, description="누구와의 이름: 아이와 · 기념일 …")
 
 
 class SiblingRef(BaseModel):

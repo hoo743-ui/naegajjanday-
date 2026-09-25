@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { Fragment, useId } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { X, Minus, Plus } from "lucide-react";
 import { Receipt } from "@/components/brand/Receipt";
@@ -9,7 +9,12 @@ import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
 import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { decodeCampus, isPointValue, usePurposes, useRegionName } from "@/lib/api/hooks";
+import {
+  decodeCampus,
+  isPointValue,
+  usePurposes,
+  useRegionName,
+} from "@/lib/api/hooks";
 import type { Purpose } from "@/lib/api/types";
 import { won, wonCompact } from "@/lib/format";
 import { budgetReaction } from "@/lib/mascot-copy";
@@ -46,11 +51,17 @@ function RegionName({ slug }: { slug: string }) {
 export function RegionStep() {
   const { setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "region">({ name: "region" });
-  const before = useWatch<PlanValues, "regions_before">({ name: "regions_before" });
+  const before = useWatch<PlanValues, "regions_before">({
+    name: "regions_before",
+  });
   const partySize = useWatch<PlanValues, "party_size">({ name: "party_size" });
   const selectedName = useRegionName(selected || undefined) ?? "";
   // 역 주변 코스는 한 지점이 기준이라 다른 동네와 잇지 않는다
-  const canAdd = Boolean(selected) && !isPointValue(selected) && before.length < MAX_REGIONS - 1 && !before.includes(selected);
+  const canAdd =
+    Boolean(selected) &&
+    !isPointValue(selected) &&
+    before.length < MAX_REGIONS - 1 &&
+    !before.includes(selected);
   const addAnother = () => {
     setValue("regions_before", [...before, selected], { shouldDirty: true });
     setValue("region", "", { shouldDirty: true });
@@ -58,16 +69,31 @@ export function RegionStep() {
   return (
     <div className="grid gap-4">
       {before.length > 0 ? (
-        <section aria-label="들를 동네 순서" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
-          <h3 className="text-body-sm font-semibold text-muted-foreground">이 순서로 들러요</h3>
+        <section
+          aria-label="들를 동네 순서"
+          className="border-t-[1.5px] border-dashed border-ink/20 pt-6"
+        >
+          <h3 className="text-body-sm font-semibold text-muted-foreground">
+            이 순서로 들러요
+          </h3>
           <ol className="mt-2.5 flex flex-wrap items-center gap-2">
             {before.map((slug, i) => (
-              <li key={slug} className="inline-flex items-center gap-1.5 rounded-full border border-tomato bg-tomato-soft py-1.5 pr-1.5 pl-3 text-body-sm font-semibold text-tomato-deep">
-                <span className="tabular">{i + 1}.</span> <RegionName slug={slug} />
+              <li
+                key={slug}
+                className="inline-flex items-center gap-1.5 rounded-full border border-tomato bg-tomato-soft py-1.5 pr-1.5 pl-3 text-body-sm font-semibold text-tomato-deep"
+              >
+                <span className="tabular">{i + 1}.</span>{" "}
+                <RegionName slug={slug} />
                 <button
                   type="button"
                   aria-label={`${i + 1}번째 동네 빼기`}
-                  onClick={() => setValue("regions_before", before.filter((s) => s !== slug), { shouldDirty: true })}
+                  onClick={() =>
+                    setValue(
+                      "regions_before",
+                      before.filter((s) => s !== slug),
+                      { shouldDirty: true },
+                    )
+                  }
                   className="grid size-6 place-items-center rounded-full hover:bg-white"
                 >
                   <X aria-hidden className="size-3.5" />
@@ -75,30 +101,108 @@ export function RegionStep() {
               </li>
             ))}
             <li className="text-body-sm font-semibold text-ink-2">
-              <span className="tabular">{before.length + 1}.</span> {selected ? selectedName : "아래에서 다음 동네를 골라 주세요"}
+              <span className="tabular">{before.length + 1}.</span>{" "}
+              {selected ? selectedName : "아래에서 다음 동네를 골라 주세요"}
             </li>
           </ol>
-          <p className="mt-2.5 text-caption text-muted-foreground">예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네 사이는 대중교통(또는 고른 이동수단)으로 이어요.</p>
+          <p className="mt-2.5 text-caption text-muted-foreground">
+            예산과 시간을 동네마다 나눠 쓰고, 남은 돈은 다음 동네로 넘겨요. 동네
+            사이는 대중교통(또는 고른 이동수단)으로 이어요.
+          </p>
         </section>
       ) : null}
-      <RegionPicker value={selected} onChange={(next) => setValue("region", next, { shouldValidate: true, shouldDirty: true })} />
+      <RegionPicker
+        value={selected}
+        onChange={(next) =>
+          setValue("region", next, { shouldValidate: true, shouldDirty: true })
+        }
+      />
       {canAdd ? (
-        <button type="button" onClick={addAnother} className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-body font-bold text-ink-2 hover:border-tomato hover:text-tomato-deep">
+        <button
+          type="button"
+          onClick={addAnother}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3.5 text-body font-bold text-ink-2 hover:border-tomato hover:text-tomato-deep"
+        >
           <Plus aria-hidden className="size-4" />
           {selectedName}에 이어 다른 동네도 들르기
         </button>
       ) : null}
       <FieldError name="region" />
-      {selected && !isPointValue(selected) ? <HotPlaces key={selected} regionSlug={selected} partySize={partySize} /> : null}
+      {selected && !isPointValue(selected) ? (
+        <HotPlaces key={selected} regionSlug={selected} partySize={partySize} />
+      ) : null}
     </div>
   );
 }
 
 // ── 2. 목적 ─────────────────────────────────────────────────
-export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void }) {
+/** 누구와 (docs/48): 같은 가족 나들이도 아이와 · 부모님과가 정반대다. 고르지 않으면 목적의 기본(가족 = 아이와) */
+function SceneChips({
+  purpose,
+  scene,
+  onPick,
+}: {
+  purpose?: Purpose;
+  scene: string;
+  onPick: (code: string) => void;
+}) {
+  const scenes = purpose?.scenes ?? [];
+  if (!purpose || scenes.length === 0) return null;
+  const current = scene || purpose.default_scene || "";
+  const picked = scenes.find((s) => s.code === current);
+  return (
+    <div
+      className="rounded-lg border border-dashed border-tomato/40 bg-tomato-soft/40 px-4 py-3"
+      role="radiogroup"
+      aria-label={purpose.scene_question ?? "누구와 가나요?"}
+    >
+      <h3 className="text-body font-bold text-ink">
+        {purpose.scene_question ?? "누구와 가나요?"}{" "}
+        <span className="text-body-sm font-medium text-muted-foreground">
+          (선택)
+        </span>
+      </h3>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {scenes.map((s) => {
+          const on = s.code === current;
+          return (
+            <button
+              key={s.code}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              // 데이트처럼 기본 장면이 없으면 다시 누르면 풀린다
+              onClick={() => onPick(on && !purpose.default_scene ? "" : s.code)}
+              className={cn(
+                "inline-flex min-h-11 items-center rounded-full border px-4 text-body-sm",
+                on
+                  ? "border-tomato bg-tomato font-bold text-white"
+                  : "border-line bg-soft font-medium text-ink hover:border-tomato",
+              )}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+      {picked?.hint ? (
+        <p className="mt-2 text-body-sm text-ink-2">{picked.hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+export function PurposeStep({
+  onPicked,
+}: {
+  onPicked: (purpose: Purpose) => void;
+}) {
   const { register, setValue } = useFormContext<PlanValues>();
   const selected = useWatch<PlanValues, "purpose">({ name: "purpose" });
-  const extra = useWatch<PlanValues, "purposes_extra">({ name: "purposes_extra" });
+  const extra = useWatch<PlanValues, "purposes_extra">({
+    name: "purposes_extra",
+  });
+  const scene = useWatch<PlanValues, "scene">({ name: "scene" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   // docs/34: 대학교를 골랐으면 그 하루의 목적(캠퍼스 탐방 · 대학가 맛집 · 축제 즐기기 …)이 먼저 나온다
   const purposes = usePurposes(decodeCampus(region) ? "university" : undefined);
@@ -112,46 +216,97 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
       </div>
     );
   }
-  if (purposes.isError) return <ErrorState error={purposes.error} onRetry={() => void purposes.refetch()} size="sm" />;
-  if (purposes.data.items.length === 0) return <EmptyState size="sm" title="고를 수 있는 목적이 아직 없어요" description="잠시 뒤에 다시 와 주세요." />;
+  if (purposes.isError)
+    return (
+      <ErrorState
+        error={purposes.error}
+        onRetry={() => void purposes.refetch()}
+        size="sm"
+      />
+    );
+  if (purposes.data.items.length === 0)
+    return (
+      <EmptyState
+        size="sm"
+        title="고를 수 있는 목적이 아직 없어요"
+        description="잠시 뒤에 다시 와 주세요."
+      />
+    );
 
   return (
     <fieldset>
       <legend className="sr-only">약속 목적 선택</legend>
       <div className="grid gap-3 sm:grid-cols-2">
         {purposes.data.items.map((p) => (
-          <label key={p.code} className="relative block">
-            <input
-              type="radio"
-              value={p.code}
-              className="peer sr-only"
-              {...register("purpose")}
-              checked={selected === p.code}
-              onChange={() => {
-                setValue("purpose", p.code, { shouldValidate: true, shouldDirty: true });
-                setValue("purposes_extra", extra.filter((c) => c !== p.code), { shouldDirty: true });
-                onPicked(p);
-              }}
-            />
-            <span className={cn(optionCard, "items-start")}>
-              <PurposeIcon icon={p.icon} className="mt-1 size-6 shrink-0 text-tomato-deep" />
-              <span className="min-w-0 flex-1">
-                <b className="block text-body-lg font-extrabold">{p.name}</b>
-                {p.description ? <span className="block text-body-sm text-muted-foreground">{p.description}</span> : null}
-                <span className="tabular mt-1 block text-caption font-extrabold text-tomato-deep">
-                  1인 {wonCompact(p.budget_range.min)} ~ {wonCompact(p.budget_range.max)}
+          <Fragment key={p.code}>
+            <label className="relative block">
+              <input
+                type="radio"
+                value={p.code}
+                className="peer sr-only"
+                {...register("purpose")}
+                checked={selected === p.code}
+                onChange={() => {
+                  setValue("purpose", p.code, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                  setValue(
+                    "purposes_extra",
+                    extra.filter((c) => c !== p.code),
+                    { shouldDirty: true },
+                  );
+                  setValue("scene", "", { shouldDirty: true }); // 누구와는 목적마다 다르다
+                  onPicked(p);
+                }}
+              />
+              <span className={cn(optionCard, "items-start")}>
+                <PurposeIcon
+                  icon={p.icon}
+                  className="mt-1 size-6 shrink-0 text-tomato-deep"
+                />
+                <span className="min-w-0 flex-1">
+                  <b className="block text-body-lg font-extrabold">{p.name}</b>
+                  {p.description ? (
+                    <span className="block text-body-sm text-muted-foreground">
+                      {p.description}
+                    </span>
+                  ) : null}
+                  <span className="tabular mt-1 block text-caption font-extrabold text-tomato-deep">
+                    1인 {wonCompact(p.budget_range.min)} ~{" "}
+                    {wonCompact(p.budget_range.max)}
+                  </span>
                 </span>
               </span>
-            </span>
-          </label>
+            </label>
+            {/* 누구와: 고른 카드 바로 아래 — 모바일에서 목록 끝까지 내려가지 않아도 보이게 */}
+            {selected === p.code ? (
+              <div className="sm:col-span-2">
+                <SceneChips
+                  purpose={p}
+                  scene={scene}
+                  onPick={(code) =>
+                    setValue("scene", code, { shouldDirty: true })
+                  }
+                />
+              </div>
+            ) : null}
+          </Fragment>
         ))}
       </div>
       <FieldError name="purpose" />
       {selected && purposes.data.items.length > 1 ? (
-        <div className="mt-8 border-t-[1.5px] border-dashed border-ink/20 pt-6" role="group" aria-label="함께 고를 목적">
-          <h3 className="text-body-sm font-semibold text-muted-foreground">다른 목적도 겹치나요? (선택)</h3>
+        <div
+          className="mt-8 border-t-[1.5px] border-dashed border-ink/20 pt-6"
+          role="group"
+          aria-label="함께 고를 목적"
+        >
+          <h3 className="text-body-sm font-semibold text-muted-foreground">
+            다른 목적도 겹치나요? (선택)
+          </h3>
           <p className="mt-1 text-body-sm text-ink-2">
-            위에서 고른 것이 하루의 틀이 되고, 여기서 더 고른 것까지 모두 맞는 곳을 찾아요. 예를 들어 가족이 함께면 술집은 빠져요.
+            위에서 고른 것이 하루의 틀이 되고, 여기서 더 고른 것까지 모두 맞는
+            곳을 찾아요. 예를 들어 가족이 함께면 술집은 빠져요.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {purposes.data.items
@@ -165,10 +320,20 @@ export function PurposeStep({ onPicked }: { onPicked: (purpose: Purpose) => void
                     type="button"
                     aria-pressed={on}
                     disabled={full}
-                    onClick={() => setValue("purposes_extra", on ? extra.filter((c) => c !== p.code) : [...extra, p.code], { shouldDirty: true })}
+                    onClick={() =>
+                      setValue(
+                        "purposes_extra",
+                        on
+                          ? extra.filter((c) => c !== p.code)
+                          : [...extra, p.code],
+                        { shouldDirty: true },
+                      )
+                    }
                     className={cn(
                       "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-body-sm font-semibold disabled:opacity-40",
-                      on ? "border-tomato bg-tomato text-white" : "border-line bg-soft text-ink hover:border-tomato",
+                      on
+                        ? "border-tomato bg-tomato text-white"
+                        : "border-line bg-soft text-ink hover:border-tomato",
                     )}
                   >
                     <PurposeIcon icon={p.icon} className="size-4" />
@@ -196,9 +361,21 @@ function NightsCard() {
   const { setValue } = useFormContext<PlanValues>();
   const nights = useWatch<PlanValues, "nights">({ name: "nights" });
   return (
-    <section aria-labelledby="nights-title" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
-      <h3 id="nights-title" className="text-body-sm font-semibold text-muted-foreground">며칠 일정인가요?</h3>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="일정 길이">
+    <section
+      aria-labelledby="nights-title"
+      className="border-t-[1.5px] border-dashed border-ink/20 pt-6"
+    >
+      <h3
+        id="nights-title"
+        className="text-body-sm font-semibold text-muted-foreground"
+      >
+        며칠 일정인가요?
+      </h3>
+      <div
+        className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+        role="radiogroup"
+        aria-label="일정 길이"
+      >
         {NIGHTS.map((o) => (
           <button
             key={o.value}
@@ -206,7 +383,12 @@ function NightsCard() {
             role="radio"
             aria-checked={nights === o.value}
             onClick={() => setValue("nights", o.value, { shouldDirty: true })}
-            className={cn("rounded-2xl border-2 px-3 py-3 text-body font-extrabold", nights === o.value ? "border-tomato bg-tomato-soft text-tomato-deep" : "border-line bg-white text-ink-2 hover:border-tomato")}
+            className={cn(
+              "rounded-2xl border-2 px-3 py-3 text-body font-extrabold",
+              nights === o.value
+                ? "border-tomato bg-tomato-soft text-tomato-deep"
+                : "border-line bg-white text-ink-2 hover:border-tomato",
+            )}
           >
             {o.label}
           </button>
@@ -214,7 +396,10 @@ function NightsCard() {
       </div>
       {nights > 0 ? (
         <p className="mt-3 text-body-sm text-ink-2">
-          위 예산을 <b>{nights + 1}일</b>에 나눠 써요(첫날은 만나는 시각부터). 남은 돈은 다음 날로 넘기고, 갔던 곳은 다시 넣지 않아요. 숙박비는 예산에 들어 있지 않아요 — 코스 화면에서 그날 동선 끝 근처의 숙소를 보여 드릴게요.
+          위 예산을 <b>{nights + 1}일</b>에 나눠 써요(첫날은 만나는 시각부터).
+          남은 돈은 다음 날로 넘기고, 갔던 곳은 다시 넣지 않아요. 숙박비는
+          예산에 들어 있지 않아요 — 코스 화면에서 그날 동선 끝 근처의 숙소를
+          보여 드릴게요.
         </p>
       ) : null}
     </section>
@@ -223,12 +408,20 @@ function NightsCard() {
 
 const QUICK = [
   { label: "알뜰하게", pick: (r: Purpose["budget_range"]) => r.min * 1.3 },
-  { label: "적당히", pick: (r: Purpose["budget_range"]) => r.typical ?? (r.min + r.max) / 2 },
-  { label: "넉넉하게", pick: (r: Purpose["budget_range"]) => (r.typical ?? (r.min + r.max) / 2) * 1.6 },
+  {
+    label: "적당히",
+    pick: (r: Purpose["budget_range"]) => r.typical ?? (r.min + r.max) / 2,
+  },
+  {
+    label: "넉넉하게",
+    pick: (r: Purpose["budget_range"]) =>
+      (r.typical ?? (r.min + r.max) / 2) * 1.6,
+  },
   { label: "오늘은 플렉스", pick: (r: Purpose["budget_range"]) => r.max },
 ];
 
-const roundTo = (value: number, unit: number) => Math.max(unit, Math.round(value / unit) * unit);
+const roundTo = (value: number, unit: number) =>
+  Math.max(unit, Math.round(value / unit) * unit);
 
 export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
   const { setValue } = useFormContext<PlanValues>();
@@ -247,25 +440,56 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
   const setParty = (next: number) => {
     const clamped = Math.min(maxParty, Math.max(1, next));
     // 1인당 예산을 유지한 채 인원만 바꾼다
-    setValue("party_size", clamped, { shouldValidate: true, shouldDirty: true });
-    setValue("budget_total", roundTo(perPerson * clamped, 1000), { shouldValidate: true, shouldDirty: true });
+    setValue("party_size", clamped, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("budget_total", roundTo(perPerson * clamped, 1000), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
-  const setBudget = (next: number) => setValue("budget_total", Math.round(next), { shouldValidate: true, shouldDirty: true });
+  const setBudget = (next: number) =>
+    setValue("budget_total", Math.round(next), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
   return (
     <div className="grid gap-5">
-      <section aria-labelledby="party-label" className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
-        <h3 id="party-label" className="mb-3 text-body-sm font-semibold text-muted-foreground">
+      <section
+        aria-labelledby="party-label"
+        className="border-t-[1.5px] border-dashed border-ink/20 pt-6"
+      >
+        <h3
+          id="party-label"
+          className="mb-3 text-body-sm font-semibold text-muted-foreground"
+        >
           몇 명이서?
         </h3>
         <div className="flex items-center gap-4">
-          <button type="button" onClick={() => setParty(party - 1)} disabled={party <= 1} aria-label="인원 줄이기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
+          <button
+            type="button"
+            onClick={() => setParty(party - 1)}
+            disabled={party <= 1}
+            aria-label="인원 줄이기"
+            className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40"
+          >
             <Minus aria-hidden className="size-5" />
           </button>
-          <output aria-live="polite" className="tabular min-w-[64px] text-center text-h2 font-extrabold">
+          <output
+            aria-live="polite"
+            className="tabular min-w-[64px] text-center text-h2 font-extrabold"
+          >
             {party}명
           </output>
-          <button type="button" onClick={() => setParty(party + 1)} disabled={party >= maxParty} aria-label="인원 늘리기" className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40">
+          <button
+            type="button"
+            onClick={() => setParty(party + 1)}
+            disabled={party >= maxParty}
+            aria-label="인원 늘리기"
+            className="grid size-12 place-items-center rounded-[14px] bg-soft transition-colors hover:bg-line disabled:opacity-40"
+          >
             <Plus aria-hidden className="size-5" />
           </button>
           {purpose?.max_party_size && party >= maxParty ? (
@@ -278,7 +502,10 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       </section>
 
       <section className="border-t-[1.5px] border-dashed border-ink/20 pt-6">
-        <label htmlFor={sliderId} className="mb-4 flex items-baseline justify-between text-body-sm font-semibold text-muted-foreground">
+        <label
+          htmlFor={sliderId}
+          className="mb-4 flex items-baseline justify-between text-body-sm font-semibold text-muted-foreground"
+        >
           총 예산
           <b className="money text-price text-ink">{won(budget)}</b>
         </label>
@@ -286,7 +513,11 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
           id={sliderId}
           type="range"
           className="jj-range"
-          style={{ "--fill": `${((Math.min(budget, sliderMax) - sliderMin) / Math.max(1, sliderMax - sliderMin)) * 100}%` } as React.CSSProperties}
+          style={
+            {
+              "--fill": `${((Math.min(budget, sliderMax) - sliderMin) / Math.max(1, sliderMax - sliderMin)) * 100}%`,
+            } as React.CSSProperties
+          }
           min={sliderMin}
           max={sliderMax}
           step={step}
@@ -300,17 +531,37 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
         </div>
 
         {range ? (
-          <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="빠른 예산 선택">
+          <div
+            className="mt-5 flex flex-wrap gap-2"
+            role="group"
+            aria-label="빠른 예산 선택"
+          >
             {QUICK.map((qk) => {
-              const amount = Math.min(sliderMax, roundTo(qk.pick(range) * party, 1000));
-              return <BudgetChip key={qk.label} amount={wonCompact(amount)} hint={qk.label} selected={amount === budget} onSelect={() => setBudget(amount)} />;
+              const amount = Math.min(
+                sliderMax,
+                roundTo(qk.pick(range) * party, 1000),
+              );
+              return (
+                <BudgetChip
+                  key={qk.label}
+                  amount={wonCompact(amount)}
+                  hint={qk.label}
+                  selected={amount === budget}
+                  onSelect={() => setBudget(amount)}
+                />
+              );
             })}
           </div>
         ) : null}
 
-        <p className="tabular mt-5 flex items-baseline justify-between rounded-2xl bg-soft px-4 py-3 text-body-sm font-bold text-ink-2" aria-live="polite">
+        <p
+          className="tabular mt-5 flex items-baseline justify-between rounded-2xl bg-soft px-4 py-3 text-body-sm font-bold text-ink-2"
+          aria-live="polite"
+        >
           1인당
-          <b className="money text-price-sm text-tomato-deep">{won(perPerson)}</b>
+          <b className="money text-price-sm text-tomato-deep">
+            {won(perPerson)}
+          </b>
         </p>
         <FieldError name="budget_total" />
       </section>
@@ -320,7 +571,9 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
       <details className="group border-t-[1.5px] border-dashed border-ink/20 pt-6 lg:hidden">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-body-sm font-semibold text-ink-2 [&::-webkit-details-marker]:hidden">
           이 예산이면 이런 하루예요
-          <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-caption text-gold-ink">예시 · 열어 보기</span>
+          <span className="tabular rounded-full bg-gold-soft px-2.5 py-1 text-caption text-gold-ink">
+            예시 · 열어 보기
+          </span>
         </summary>
         <Receipt
           className="mx-auto mt-4 max-w-[380px]"
@@ -335,8 +588,13 @@ export function BudgetStep({ purpose }: { purpose: Purpose | undefined }) {
 
       <MeetTimeCard />
 
-      <JjaniBubble mood={reaction.mood} title={reaction.line} bubbleKey={reaction.mood} live size={84} />
+      <JjaniBubble
+        mood={reaction.mood}
+        title={reaction.line}
+        bubbleKey={reaction.mood}
+        live
+        size={84}
+      />
     </div>
   );
 }
-

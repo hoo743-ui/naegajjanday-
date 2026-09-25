@@ -18,6 +18,12 @@ const WHO: { value: Who; label: string }[] = [
   { value: "anonymous", label: "비로그인" },
 ];
 const TASTE: Record<string, string> = {
+  kids: "아이와",
+  parents: "부모님과",
+  adults: "어른끼리",
+  new: "설레는 사이",
+  steady: "오래 만난 사이",
+  anniversary: "기념일",
   relaxed: "여유롭게",
   packed: "알차게",
   foodie: "맛집 중심",

@@ -11,6 +11,7 @@ from app.core import errors
 from app.core.cache import Cache
 from app.domain.anchors import context_purposes, university_rules
 from app.domain.models import GeoPoint
+from app.domain.recommendation.style import scene_rules
 from app.domain.signature import Sight, Signature, get_signature_rules
 from app.infra.db.base import utcnow
 from app.infra.db.models import Banner, Place, Region
@@ -170,6 +171,12 @@ class MetaService:
                     max_party_size=max((t.party_max for t in templates), default=None),
                     time_bands=sorted({t.time_band for t in templates}),
                     min_budget_per_person=min((t.min_budget_per_person for t in templates), default=None),
+                    scene_question=(scene_rules().get(p.code) or {}).get("question"),
+                    scenes=[
+                        dto.SceneOut(code=code, label=str(s["label"]), hint=s.get("hint"))
+                        for code, s in ((scene_rules().get(p.code) or {}).get("scenes") or {}).items()
+                    ],
+                    default_scene=(scene_rules().get(p.code) or {}).get("default"),
                 )
             )
         out = dto.PurposeList(items=items)

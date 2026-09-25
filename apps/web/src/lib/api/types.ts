@@ -197,6 +197,10 @@ export interface Purpose {
   budget_range: { min: number; max: number; typical?: number };
   default_party_size?: number;
   max_party_size?: number;
+  /** 누구와 (docs/48): 가족 · 데이트만. 칩 위의 질문, 고를 수 있는 장면, 안 고르면 쓰는 장면 */
+  scene_question?: string | null;
+  scenes?: { code: string; label: string; hint?: string | null }[];
+  default_scene?: string | null;
 }
 
 export interface Category {
@@ -290,6 +294,8 @@ export interface GenerateCourseRequest {
   pace?: ("relaxed" | "packed" | "foodie" | "special")[];
   move_style?: MoveStyle;
   wishes?: ("night" | "walk" | "exhibition" | "value" | "romantic" | "quiet" | "indoor" | "photo" | "free")[];
+  /** 누구와 (docs/48): 가족 kids · parents · adults, 데이트 new · steady · anniversary */
+  scene?: string;
   /** 고정한 장소(편집 가능한 초안, docs/42): 다시 짜도 코스에 남는다. 최대 6 */
   keep_place_ids?: string[];
 }
@@ -492,6 +498,8 @@ export interface CourseDetail extends Course {
     pace?: GenerateCourseRequest["pace"];
     move_style?: MoveStyle | null;
     wishes?: GenerateCourseRequest["wishes"];
+    scene?: string | null;
+    scene_label?: string | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

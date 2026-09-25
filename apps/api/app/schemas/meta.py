@@ -34,6 +34,12 @@ class PerPersonBudget(BudgetRange):
     typical: int | None = None
 
 
+class SceneOut(BaseModel):
+    code: str
+    label: str
+    hint: str | None = None
+
+
 class PurposeOut(BaseModel):
     code: str
     name: str
@@ -45,6 +51,9 @@ class PurposeOut(BaseModel):
     max_party_size: int | None = None
     time_bands: list[str] = Field(default_factory=list)
     min_budget_per_person: int | None = None
+    scene_question: str | None = Field(default=None, description="누구와 칩 위의 질문 (docs/48)")
+    scenes: list[SceneOut] = Field(default_factory=list)
+    default_scene: str | None = None
 
 
 class PurposeList(BaseModel):

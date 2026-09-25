@@ -126,6 +126,27 @@ def day_conditions(path: Path = CONDITIONS_PATH) -> dict[str, dict[str, Any]]:
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+SCENES_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "scenes.json"
+
+
+@lru_cache(maxsize=1)
+def scene_rules(path: Path = SCENES_PATH) -> dict[str, dict[str, Any]]:
+    """누구와 (docs/48): per purpose, the scenes one may pick — each with the knobs a style has."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+def resolve_scene(purpose_code: str, asked: str | None) -> tuple[str | None, dict[str, Any]]:
+    """The scene this day is planned for: the one asked if the purpose has it, else the purpose's default.
+    (None, {}) for a purpose without scenes — the day is planned as it always was."""
+    rules = scene_rules().get(purpose_code) or {}
+    scenes: dict[str, Any] = rules.get("scenes") or {}
+    key = asked if asked in scenes else rules.get("default")
+    return (key, dict(scenes[key])) if key in scenes else (None, {})
+
+
 EXTRA_ROLES_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "extra_roles.json"
 
 

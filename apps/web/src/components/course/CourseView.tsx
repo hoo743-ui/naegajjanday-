@@ -176,7 +176,9 @@ export function CourseView({ id }: { id: string }) {
   const areaLabel = anchor ? anchor.name : hopping ? request.regions!.map((r) => r.name).join(" → ") : request.origin_label ? `${request.origin_label} 주변` : request.region?.name;
   const placeLabel = request.city ? [request.city.name, areaLabel].filter(Boolean).join(" · ") : areaLabel;
   // 목적을 여러 개 골랐으면 모두 보여 준다 (첫 번째가 하루의 틀)
-  const purposeLabel = (request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name;
+  const purposeLabel =
+    ((request.purposes?.length ?? 0) > 1 ? request.purposes!.map((p) => p.name).join(" + ") : request.purpose.name) +
+    (request.scene_label ? ` · ${request.scene_label}` : ""); // 누구와 (docs/48)
 
   const fail = (error: unknown) => {
     const copy = mascotCopyForError(error);
@@ -294,6 +296,7 @@ export function CourseView({ id }: { id: string }) {
         ...(request.pace?.length ? { pace: request.pace } : {}),
         ...(request.move_style ? { move_style: request.move_style } : {}),
         ...(request.wishes?.length ? { wishes: request.wishes } : {}),
+        ...(request.scene ? { scene: request.scene } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
