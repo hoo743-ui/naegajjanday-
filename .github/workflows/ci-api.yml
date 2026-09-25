@@ -24,7 +24,7 @@ defaults:
 
 env:
   UV_FROZEN: "1" # never re-resolve: uv.lock is the source of truth
-  PYTHON_VERSION: "3.12"
+  PYTHON_VERSION: "3.13" # Render runs 3.13 (render.yaml)
 
 jobs:
   lint:
@@ -54,45 +54,14 @@ jobs:
         run: uv run mypy app
 
   test:
-    name: pytest (postgis + redis)
+    # Same database as local and production (Render runs SQLite on a disk): tests/conftest.py builds a
+    # temporary SQLite file seeded from data/seed through the real ingestion pipeline, with no Redis,
+    # search or LLM. The PostGIS path is not exercised anywhere, so CI does not pretend it is.
+    # No env overrides here on purpose: an inherited RATE_LIMIT_ENABLED=false once broke the
+    # rate-limit tests, because conftest only pins what the fixtures need.
+    name: pytest (sqlite, like production)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: naegajjanday
-          POSTGRES_PASSWORD: naegajjanday
-          POSTGRES_DB: naegajjanday_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U naegajjanday -d naegajjanday_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 20
-
-    env:
-      APP_ENV: test
-      LOG_JSON: "false"
-      DATABASE_URL: postgresql+asyncpg://naegajjanday:naegajjanday@localhost:5432/naegajjanday_test
-      REDIS_URL: redis://localhost:6379/0
-      CELERY_BROKER_URL: redis://localhost:6379/1
-      CELERY_RESULT_BACKEND: redis://localhost:6379/2
-      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
-      LLM_PROVIDER: none
-      RATE_LIMIT_ENABLED: "false"
-
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -106,27 +75,21 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Enable PostGIS extensions
+      - name: Production start path on a fresh SQLite file
+        # What Render's startCommand does (render.yaml), plus the seed loaders the e2e job uses.
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./ci-boot.db
         run: |
-          PGPASSWORD=naegajjanday psql -h localhost -U naegajjanday -d naegajjanday_test \
-            -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/infra/docker/postgres/init/01-extensions.sql"
-
-      - name: Migrate
-        # Alembic once revisions exist, otherwise the CLI bootstrap (create_all).
-        run: |
-          if [ -f alembic.ini ] && ls alembic/versions/*.py >/dev/null 2>&1; then
-            uv run alembic upgrade head
-          elif [ -f app/cli.py ] || [ -d app/cli ]; then
-            uv run python -m app.cli db init
-          else
-            echo "::notice::no migrations or CLI yet - skipping"
-          fi
+          uv run python -m app.cli db init
+          uv run python -m app.cli seed-config
+          uv run python -m app.cli ingest --provider file --all
+          rm -f ci-boot.db
 
       - name: pytest
         run: >-
-          uv run --with pytest-cov pytest
-          --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
-          --junitxml=junit.xml
+          uv run --with pytest-cov pytest -q
+          --cov=app --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml
+          --junitxml=junit.xml --durations=15
 
       - name: Coverage summary
         if: always()

@@ -89,6 +89,17 @@ export async function firstPopulatedRegion(page: Page): Promise<{ slug: string; 
   return region!;
 }
 
+/**
+ * 전국 DB 인가, 시드 DB(data/seed — 지역 8곳 · 가짜 장소 120곳, CI 의 e2e)인가.
+ * 전국 지역 나무나 실제 장소 분포에 기대는 검사는 시드 DB 에서 건너뛴다 (docs/56).
+ */
+export async function hasNationwideData(page: Page): Promise<boolean> {
+  const res = await page.request.get(`${API_URL}/meta/regions`);
+  if (!res.ok()) return false;
+  const { items } = (await res.json()) as { items: unknown[] };
+  return items.length >= 100;
+}
+
 /** UI 를 거치지 않고 코스를 하나 만든다(결과 화면 테스트용). 낮 12시 출발로 고정해 영업시간 영향을 없앤다. */
 export async function createCourse(page: Page, overrides: Record<string, unknown> = {}): Promise<string> {
   const region = await firstPopulatedRegion(page);

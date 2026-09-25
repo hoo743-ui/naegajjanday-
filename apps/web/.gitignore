@@ -12,3 +12,4 @@ src/lib/api/schema.gen.ts
 # playwright
 /playwright-report/
 /test-results/
+/e2e-screens/

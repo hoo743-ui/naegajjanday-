@@ -23,7 +23,7 @@ export function NearbyEvents({ events: all, region, startAt }: { events: NearbyE
       {events.length === 0 ? (
         <p className="mt-2 text-body-sm text-muted-foreground">{upcoming ? "그날은" : "오늘은"} 근처에 열리는 행사가 없어요. 코스에만 집중해도 충분해요.</p>
       ) : (
-        <ul className="no-scrollbar -mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
+        <ul className="no-scrollbar -mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
           {events.map((event) => {
             const left = daysUntil(event.ends_on);
             return (

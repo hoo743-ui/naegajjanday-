@@ -17,6 +17,9 @@
     "verify:record": "node e2e/site-cycle.mjs --record && node e2e/site-cycle.mjs --record --intersect",
     "e2e:report": "playwright show-report"
   },
+  "overrides": {
+    "postcss": "^8.5.28"
+  },
   "msw": {
     "workerDirectory": [
       "public"

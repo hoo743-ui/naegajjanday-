@@ -9,6 +9,7 @@ import { defineConfig, devices } from "@playwright/test";
  * 브라우저는 내려받지 않고 설치된 Chrome 을 쓴다(E2E_CHANNEL=msedge 로 바꿀 수 있다).
  */
 const channel = process.env.E2E_CHANNEL ?? "chrome";
+const SCREENS = /screens\.spec\.ts$/;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -26,8 +27,10 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1440, height: 900 } } },
-    { name: "tablet", use: { ...devices["Desktop Chrome"], channel, viewport: { width: 768, height: 1024 } } },
-    { name: "mobile", use: { ...devices["Pixel 7"], channel } },
+    { name: "desktop", testIgnore: SCREENS, use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1440, height: 900 } } },
+    { name: "tablet", testIgnore: SCREENS, use: { ...devices["Desktop Chrome"], channel, viewport: { width: 768, height: 1024 } } },
+    { name: "mobile", testIgnore: SCREENS, use: { ...devices["Pixel 7"], channel } },
+    // 판정 없이 390px 화면 사진만 찍는다 (e2e/screens.spec.ts, CI 아티팩트 mobile-screens)
+    { name: "screens", testMatch: SCREENS, use: { ...devices["Desktop Chrome"], channel } },
   ],
 });

@@ -25,7 +25,11 @@ FROM base AS runner
 ENV PATH="/app/.venv/bin:$PATH" \
     APP_ENV=production \
     LOG_JSON=true
-RUN groupadd -g 1001 app && useradd -u 1001 -g app -M -s /usr/sbin/nologin app
+# 실행에는 /app/.venv 만 쓴다. 시스템 pip(와 그 안에 번들된 msgpack · setuptools)는 필요 없고
+# Trivy 가 HIGH 로 잡으므로 이미지에서 뺀다 (docs/56).
+RUN groupadd -g 1001 app && useradd -u 1001 -g app -M -s /usr/sbin/nologin app \
+ && rm -rf /usr/local/lib/python3.13/site-packages/pip /usr/local/lib/python3.13/site-packages/pip-* \
+           /usr/local/lib/python3.13/ensurepip /usr/local/bin/pip /usr/local/bin/pip3*
 COPY --from=deps /app/.venv ./.venv
 COPY alembic.ini ./
 COPY alembic ./alembic

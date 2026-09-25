@@ -1,4 +1,4 @@
-import { createCourse, expect, expectHealthyLayout, firstPopulatedRegion, test } from "./fixtures";
+import { createCourse, expect, expectHealthyLayout, firstPopulatedRegion, hasNationwideData, test } from "./fixtures";
 
 test.describe("핵심 여정 (실제 API)", () => {
   test("홈: 두 갈래 · 빠른 코스 만들기가 실제 데이터로 뜨고, 소개에 목적 카드가 있고, CTA 가 위저드로 간다", async ({ page }) => {
@@ -130,6 +130,7 @@ test.describe("핵심 여정 (실제 API)", () => {
   });
 
   test("코스 스타일: '재미 우선'은 놀거리를 넣고, 체인 카페를 빼고, 화면에 표시된다", async ({ page }) => {
+    test.skip(!(await hasNationwideData(page)), "시드 DB 의 홍대 40곳에는 공원을 대신할 놀거리가 모자란다 — 전국 DB 에서만 본다");
     const evening = (() => {
       const d = new Date();
       d.setDate(d.getDate() + 1);
@@ -184,6 +185,7 @@ test.describe("핵심 여정 (실제 API)", () => {
   });
 
   test("지역 선택: 시도에서 시·군으로 들어가고, 행정구역이 아닌 동네는 역으로 찾는다", async ({ page }) => {
+    test.skip(!(await hasNationwideData(page)), "시드 DB 에는 경기도 · 수원시 지역 나무가 없다 — 전국 DB 에서만 본다");
     await page.goto("/plan");
     // 처음에는 많이 찾는 동네뿐, 지역 나무는 "지역에서 직접 고르기" 뒤에 있다(docs/41) — 열면 시도만 보인다
     await page.getByRole("button", { name: /지역에서 직접 고르기/ }).click();

@@ -1,0 +1,13 @@
+# Trivy exceptions for the container images (Security › Trivy gate). See docs/56-ci.md.
+#
+# Rules:
+#   - Only for a fixable HIGH/CRITICAL finding that cannot be fixed by a base-image or dependency bump now.
+#   - One ID per line, with the reason and an expiry date on the line above:
+#       # <package> — <why it cannot be fixed yet / why it does not apply> — expires YYYY-MM-DD
+#       CVE-XXXX-YYYY
+#     `exp:YYYY-MM-DD` after the ID makes Trivy itself stop ignoring it on that date:
+#       CVE-XXXX-YYYY exp:2026-12-31
+#   - Never add a blanket rule. When the expiry passes, fix it or write down again why not.
+#
+# (empty on 2026-09-26: the base-image npm/pip findings were removed from the runtime images and the
+#  postcss finding was fixed with an npm override)

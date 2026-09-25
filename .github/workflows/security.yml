@@ -127,6 +127,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD:/work" -v "$HOME/.cache/trivy:/root/.cache" \
             "$TRIVY_IMAGE" image --quiet --ignore-unfixed \
+            --ignorefile /work/.trivyignore \
             --format sarif --output "/work/trivy-${{ matrix.app }}.sarif" \
             "scan/${{ matrix.app }}:${{ github.sha }}"
 
@@ -138,11 +139,15 @@ jobs:
           category: trivy-${{ matrix.app }}
 
       - name: Trivy gate (fail on fixable HIGH / CRITICAL)
+        # Accepted exceptions live in /.trivyignore, each with a reason and an expiry date (docs/56).
+        # These images are for AWS/compose only: production API is built from source on Render and the
+        # web by Vercel, so this gate protects the container path, not what users hit today.
         if: steps.dockerfile.outputs.present == 'true'
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "$HOME/.cache/trivy:/root/.cache" \
+            -v "$PWD:/work" -v "$HOME/.cache/trivy:/root/.cache" \
             "$TRIVY_IMAGE" image --quiet --ignore-unfixed \
+            --ignorefile /work/.trivyignore \
             --severity HIGH,CRITICAL --exit-code 1 \
             "scan/${{ matrix.app }}:${{ github.sha }}"

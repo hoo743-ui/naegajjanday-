@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "apps/web/**"
+      - "apps/api/**" # e2e runs the web against the real API
       - ".github/workflows/ci-web.yml"
   push:
     branches: [main]
     paths:
       - "apps/web/**"
+      - "apps/api/**" # e2e runs the web against the real API
       - ".github/workflows/ci-web.yml"
 
 concurrency:
@@ -25,8 +27,7 @@ defaults:
 env:
   NODE_VERSION: "22"
   NEXT_TELEMETRY_DISABLED: "1"
-  # Build-time public configuration. CI builds against the MSW mocks so that no
-  # backend is needed (see apps/web/.env.example).
+  # Build-time public configuration. The e2e job serves the real API on this address.
   NEXT_PUBLIC_API_URL: http://localhost:8000/v1
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
@@ -65,48 +66,94 @@ jobs:
         run: npm run build
 
   e2e:
-    # PLACEHOLDER: Playwright is not set up in apps/web yet. The job runs as soon
-    # as a Playwright config exists, and is a green no-op until then.
-    name: e2e (Playwright placeholder)
+    # The core journey against the REAL API (not MSW): a small SQLite seeded from apps/api/data/seed with
+    # the same CLI commands production uses, the web built exactly like the Docker/standalone output.
+    # Tests that need the nationwide DB (region tree, real place mix) skip themselves on the seed DB.
+    # Also takes 390px phone screenshots of home / wizard / a generated course → artifact "mobile-screens".
+    name: e2e (real API on seed SQLite) + phone screenshots
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     needs: [verify]
+    env:
+      E2E_BASE_URL: http://localhost:3000
+      E2E_API_URL: http://localhost:8000/v1
+      E2E_CHANNEL: chrome # Google Chrome is preinstalled on ubuntu-latest → no browser download
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect Playwright
-        id: pw
-        run: |
-          if ls playwright.config.* >/dev/null 2>&1; then echo "present=true" >> "$GITHUB_OUTPUT"; else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::no playwright.config.* in apps/web - e2e skipped"
-          fi
-
       - uses: actions/setup-node@v4
-        if: steps.pw.outputs.present == 'true'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install + browsers
-        if: steps.pw.outputs.present == 'true'
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
 
-      - name: Run e2e against MSW mocks
-        if: steps.pw.outputs.present == 'true'
+      - name: Start API on a seeded SQLite
+        working-directory: apps/api
         env:
-          NEXT_PUBLIC_API_MOCKING: enabled
-        run: npx playwright test
+          UV_FROZEN: "1"
+          DATABASE_URL: sqlite+aiosqlite:///./e2e.db
+          LOG_JSON: "false"
+          LOG_LEVEL: WARNING
+          RATE_LIMIT_ENABLED: "false" # the journey makes more than 10 anonymous courses an hour
+          OSRM_FOOT_URL: "" # no third-party routing in CI: walking legs use the engine estimate
+          CORS_ORIGINS: http://localhost:3000
+          WEB_BASE_URL: http://localhost:3000
+        run: |
+          uv sync --no-dev
+          uv run --no-sync python -m app.cli db init
+          uv run --no-sync python -m app.cli seed-config
+          uv run --no-sync python -m app.cli ingest --provider file --all
+          nohup uv run --no-sync uvicorn app.main:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
+          npx --yes wait-on@8 --timeout 60000 http://127.0.0.1:8000/healthz
+
+      - name: Install
+        run: npm ci
+
+      - name: Build and start web (standalone, like the image)
+        run: |
+          npm run build
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          PORT=3000 HOSTNAME=0.0.0.0 nohup node .next/standalone/server.js > "$RUNNER_TEMP/web.log" 2>&1 &
+          npx --yes wait-on@8 --timeout 60000 http://127.0.0.1:3000/home
+
+      - name: Journey (phone + desktop)
+        run: npx playwright test --project=mobile --project=desktop
+
+      - name: Phone screenshots (390px)
+        if: always()
+        run: npx playwright test --project=screens --reporter=list
+
+      - name: Server logs
+        if: failure()
+        run: |
+          echo "::group::api.log"; tail -n 200 "$RUNNER_TEMP/api.log" || true; echo "::endgroup::"
+          echo "::group::web.log"; tail -n 200 "$RUNNER_TEMP/web.log" || true; echo "::endgroup::"
+
+      - name: Upload phone screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-screens
+          path: apps/web/e2e-screens
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload report
-        if: always() && steps.pw.outputs.present == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: apps/web/playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
           if-no-files-found: ignore
           retention-days: 7
 
