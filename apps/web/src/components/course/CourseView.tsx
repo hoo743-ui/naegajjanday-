@@ -22,6 +22,7 @@ import { BudgetTools } from "./BudgetTools";
 import { DaySummary } from "./DaySummary";
 import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
+import { ScenicStrip } from "./ScenicStrip";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
 import { VisitedCard } from "./VisitedCard";
@@ -751,6 +752,9 @@ export function CourseView({ id }: { id: string }) {
                   courseUrl={typeof window === "undefined" ? "" : window.location.href}
                 />
               ) : null}
+
+              {/* 오늘 지나갈 길을 사진으로 — 장소 목록 뒤(늦게 도착해도 첫 카드를 밀지 않는다) */}
+              <ScenicStrip courseId={id} stops={stopIds.join(",")} onShow={showNearby} />
 
               {data.local ? <LocalCard local={data.local} focus={request.focus} onPick={readOnly ? undefined : (word) => onReroll(false, word)} busy={reroll.isPending} onShow={showNearby} /> : null}
 

@@ -1076,3 +1076,18 @@ export interface AlongLeg {
   to_position: number;
   items: AlongItem[];
 }
+
+/** GET /courses/{id}/scenery — 오늘 지나갈 길을 사진으로 (2026-09-26). 실제 사진만, 걷는 순서대로 */
+export interface SceneryItem {
+  place_id: string;
+  name: string;
+  category_name: string | null;
+  lat: number;
+  lng: number;
+  image: ImageRef;
+  /** 코스에 든 장소면 true, 길가 볼거리면 false */
+  is_stop: boolean;
+  position: number;
+  /** "2번째 곳" · "1 → 2 가는 길에" */
+  caption: string;
+}

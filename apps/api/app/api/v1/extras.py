@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.v1.responses import PROBLEMS
 from app.core.deps import ContainerDep, SessionDep, rate_limit
 from app.services.along_service import AlongList, AlongService
+from app.services.scenery_service import Scenery, SceneryService
 from app.services.signal_service import SignalMap, SignalService
 
 router = APIRouter(tags=["extras"], dependencies=[Depends(rate_limit("read"))])
@@ -22,6 +23,16 @@ router = APIRouter(tags=["extras"], dependencies=[Depends(rate_limit("read"))])
 )
 async def along_the_way(course_id: str, session: SessionDep, container: ContainerDep) -> AlongList:
     return await AlongService(session, container.cache).for_course(course_id)
+
+
+@router.get(
+    "/courses/{course_id}/scenery",
+    response_model=Scenery,
+    responses=PROBLEMS(404),
+    summary="오늘 지나갈 길을 사진으로: 코스 장소와 길가 볼거리의 실제 사진(출처 포함), 걷는 순서대로",
+)
+async def scenery(course_id: str, session: SessionDep, container: ContainerDep) -> Scenery:
+    return await SceneryService(session, container.cache).for_course(course_id)
 
 
 @router.get(

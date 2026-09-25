@@ -19,6 +19,7 @@ import type {
   Attraction,
   ExternalLink,
   AlongLeg,
+  SceneryItem,
   PlaceSignal,
   AttractionType,
   Banner,
@@ -871,6 +872,17 @@ export function useAlongTheWay(courseId: string | undefined, walking: boolean, s
     queryKey: ["along", courseId, stops],
     queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId!)}/along-the-way`, { signal }),
     enabled: Boolean(courseId) && walking,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+}
+
+/** 오늘 지나갈 길을 사진으로: 코스 장소와 길가 볼거리의 실제 사진(출처 포함). 장소 순서가 바뀌면 다시 묻는다 */
+export function useScenery(courseId: string | undefined, stops: string) {
+  return useQuery<{ items: SceneryItem[] }, ApiError>({
+    queryKey: ["scenery", courseId, stops],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId!)}/scenery`, { signal }),
+    enabled: Boolean(courseId),
     staleTime: 10 * 60_000,
     retry: false,
   });
