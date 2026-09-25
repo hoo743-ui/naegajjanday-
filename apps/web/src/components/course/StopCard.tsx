@@ -9,6 +9,7 @@ import type { PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@
 import { clock, minutes, num, roleLabel, transportLabel, won } from "@/lib/format";
 import { resolvePlaceImage } from "@/lib/place-image";
 import { PlacePhoto } from "@/components/brand/PlacePhoto";
+import { InsideStrip, INSIDE_CATEGORIES } from "./InsideStrip";
 import { ReasonList } from "./ReasonList";
 import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
@@ -206,6 +207,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               <ChevronDown aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
             </button>
           ) : null}
+          {INSIDE_CATEGORIES.has(stop.place.category) ? <InsideStrip courseId={courseId} position={stop.position} name={stop.place.name} /> : null}
         </div>
       </div>
 

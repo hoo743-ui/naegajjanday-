@@ -337,6 +337,22 @@ class SuggestionList(BaseModel):
     items: list[Suggestion] = Field(default_factory=list)
 
 
+class InsidePlace(BaseModel):
+    place: PlaceBrief
+    role: str
+    price_per_person: int | None = None
+    reason: str = Field(
+        description="왜 이 곳: 관광공사 소개 · 동네 명물 ‘곱창’ · 티맵 인기 목적지 · 사진 있는 곳"
+    )
+
+
+class InsideList(BaseModel):
+    """이 골목에서 가볼 만한 곳 — 거리 · 시장 스톱 안(둘레)의 괜찮은 곳."""
+
+    stop_name: str
+    items: list[InsidePlace] = Field(default_factory=list)
+
+
 class AddStopRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     place_id: str = Field(description="suggestions 가 준 장소의 id")

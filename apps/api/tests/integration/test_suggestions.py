@@ -165,3 +165,17 @@ class TestTopUp:
         assert resp.status_code == 200, resp.text
         course = resp.json()["courses"][0]
         assert not [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]
+
+
+async def test_a_street_in_the_course_says_what_is_worth_a_look_inside(client: httpx.AsyncClient) -> None:
+    # 2026-09-26 창업자: 먹자골목이면 그 골목의 가볼 만한 곳을 말해 줘야 한다
+    course = await course_with_money_left(client)
+    for stop in course["stops"]:
+        got = await client.get(f"/v1/courses/{course['id']}/stops/{stop['position']}/inside")
+        assert got.status_code == 200, got.text
+        body = got.json()
+        in_course = {s["place"]["id"] for s in course["stops"]}
+        assert body["stop_name"] == stop["place"]["name"]
+        assert all(i["place"]["id"] not in in_course and i["reason"] for i in body["items"])
+        assert len(body["items"]) <= 4
+    assert (await client.get(f"/v1/courses/{course['id']}/stops/99/inside")).status_code == 404

@@ -927,3 +927,14 @@ export function usePlaceDetail(id: string | null) {
     retry: false,
   });
 }
+
+/** 이 골목 · 시장에서 가볼 만한 곳 — 스톱 카드에서 펼칠 때만 묻는다 */
+export function useInside(courseId: string, position: number, enabled: boolean) {
+  return useQuery<{ stop_name: string; items: { place: { id: string; name: string }; role: string; price_per_person: number | null; reason: string }[] }, ApiError>({
+    queryKey: ["course", courseId, "inside", position],
+    queryFn: ({ signal }) => api.get(`/courses/${encodeURIComponent(courseId)}/stops/${position}/inside`, { signal }),
+    enabled,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+}

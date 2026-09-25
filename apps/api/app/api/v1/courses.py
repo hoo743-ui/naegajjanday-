@@ -112,6 +112,16 @@ async def suggestions(course_id: str, service: CourseServiceDep, user: OptionalU
     return await service.suggestions(course_id, user)
 
 
+@router.get(
+    "/{course_id}/stops/{position}/inside",
+    response_model=dto.InsideList,
+    responses=PROBLEMS(404),
+    summary="이 골목 · 시장 · 거리에서 가볼 만한 곳",
+)
+async def inside(course_id: str, position: int, service: CourseServiceDep) -> dto.InsideList:
+    return await service.inside(course_id, position)
+
+
 @router.post(
     "/{course_id}/stops",
     response_model=dto.CourseOut,

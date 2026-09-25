@@ -51,5 +51,27 @@
       "NOTHING_WORTH_IT": "더 넣을 만한 곳이 없어서 억지로 채우지 않았어요. {left}이 남아요.",
       "ROOM_TO_ADD": "예산에서 {left}이 남았어요. 더 들르고 싶으면 아래에서 골라 넣어도 돼요."
     }
+  },
+  "_inside": "골목 · 시장 · 거리에 들렀을 때 '그 안에서 가볼 만한 곳'(2026-09-26 창업자: 먹자골목이면 먹자골목의 가볼 만한 곳을 추천하는 게 정상). 그 장소 둘레 radius_m 안, 도착 시각에 여는 곳, 코스에 없는 곳, 체인 · 무인 매장은 빼고 — 보증(관광공사 · 티맵 인기 · 백년가게) · 동네 명물 · 실제 사진 순. 역할마다 max_per_role 곳, 모두 limit 곳.",
+  "inside": {
+    "categories": {
+      "attraction.street": 250,
+      "attraction.market": 180,
+      "attraction": 200,
+      "attraction.landmark": 200
+    },
+    "roles": [
+      "MEAL",
+      "DESSERT",
+      "CAFE",
+      "ACTIVITY",
+      "BAR"
+    ],
+    "limit": 4,
+    "max_per_role": 2,
+    "skip_tags": [
+      "체인점",
+      "무인매장"
+    ]
   }
 }

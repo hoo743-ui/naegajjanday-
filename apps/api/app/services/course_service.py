@@ -1859,6 +1859,74 @@ class CourseService:
         ]
         return dto.SuggestionList(budget_left=left, items=items)
 
+    async def inside(self, public_id: str, position: int) -> dto.InsideList:
+        """이 골목에서 가볼 만한 곳: a street or a market in the course is a place full of places — say which
+        (founder, 2026-09-26). Open when the course gets there, not already in the course, no chain."""
+        row, stops, _origin = await self._load(public_id)
+        stop = next((s for s in stops if s.position == position), None)
+        if stop is None:
+            raise errors.NotFound("그 순서의 장소가 코스에 없어요.")
+        rules = (suggestion_rules() or {}).get("inside") or {}
+        radii: dict[str, float] = rules.get("categories") or {}
+        radius = radii.get(stop.place.category_code)
+        if radius is None or stop.place.is_event:
+            return dto.InsideList(stop_name=stop.place.name, items=[])
+        purposes = [str(c) for c in (row.request or {}).get("purposes") or []] or [
+            str((row.request or {}).get("purpose") or "")
+        ]
+        vetoed = vetoed_roles(purposes)
+        in_course = {s.place.id for s in stops if not s.place.is_event}
+        skip = set(rules.get("skip_tags") or ())
+        region = await self._s.get(Region, row.region_id) if row.region_id else None
+        words = (
+            tuple(s.word for s in (await signature_service.load(self._s, region.id)).specialties)
+            if region
+            else ()
+        )
+        found: list[tuple[float, str, PlaceCandidate, str]] = []
+        for role in rules.get("roles") or ():
+            if role in vetoed:
+                continue
+            pool = await self._places.fetch(
+                role, stop.place.point, float(radius), stop.arrive_at.date(), words
+            )
+            for p in pool:
+                if (
+                    p.id in in_course
+                    or any(p.tags.get(t) for t in skip)
+                    or not is_open(p.opening_hours, stop.arrive_at)
+                ):
+                    continue
+                word = next((w for w in words if w in p.name), None)
+                reasons = [
+                    (1.0 if p.is_curated else 0.0, "공공기관이 소개한 곳"),
+                    (p.popularity, "티맵 인기 목적지"),
+                    (0.9 if word else 0.0, f"이 동네 명물 ‘{word}’"),
+                    (0.3 if p.thumbnail_url else 0.0, "실제 사진이 있는 곳"),
+                ]
+                score, why = max(reasons, key=lambda r: r[0])
+                if score <= 0:
+                    continue
+                found.append((score + (0.3 if p.thumbnail_url else 0.0), role, p, why))
+        found.sort(key=lambda f: -f[0])
+        per_role: dict[str, int] = {}
+        items: list[dto.InsidePlace] = []
+        for _score, role, p, why in found:
+            if per_role.get(role, 0) >= int(rules.get("max_per_role", 2)):
+                continue
+            per_role[role] = per_role.get(role, 0) + 1
+            items.append(
+                dto.InsidePlace(
+                    place=place_brief(p),
+                    role=role,
+                    price_per_person=None if p.is_free else p.price_per_person,
+                    reason=why,
+                )
+            )
+            if len(items) >= int(rules.get("limit", 4)):
+                break
+        return dto.InsideList(stop_name=stop.place.name, items=items)
+
     async def add_stop(self, public_id: str, req: dto.AddStopRequest, user: User | None) -> dto.CourseOut:
         """Puts a suggested place at the end of the course. Only what `suggestions` would offer right
         now can be added, so the budget, the hours and the walk have already been checked."""
