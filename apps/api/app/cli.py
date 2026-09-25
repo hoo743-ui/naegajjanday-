@@ -239,6 +239,21 @@ def bulk_download_cmd(
         raise typer.Exit(code=1)
 
 
+@bulk_cli.command("reprice")
+def bulk_reprice() -> None:
+    """Re-estimate stored SEMAS prices from the current data/bulk/price_prior.json (measured prices kept)."""
+    from app.infra.ingestion.bulk import reprice
+
+    async def run() -> None:
+        db = Database(get_settings())
+        try:
+            await reprice.reprice(db, log=typer.echo)
+        finally:
+            await db.dispose()
+
+    asyncio.run(run())
+
+
 @bulk_cli.command("universities")
 def bulk_universities(
     step: Annotated[str, typer.Option(help="build (CSV + places → data/anchors) | load")] = "load",

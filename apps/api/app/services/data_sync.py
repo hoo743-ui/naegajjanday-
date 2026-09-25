@@ -50,9 +50,14 @@ Log = Callable[[str], None]
 SEED_FILES = ("categories.json", "tags.json", "regions.json", "purposes.json")  # what `load_config` reads
 DELTA_DIR = API_ROOT / "data" / "bulk" / "delta"
 UNIVERSITIES_PATH = API_ROOT / "data" / "anchors" / "universities.json"
+# the price estimates of places already loaded follow the prior (bulk/reprice.py)
+PRICE_PRIOR_PATHS = (
+    API_ROOT / "data" / "bulk" / "price_prior.json",
+    API_ROOT / "data" / "bulk" / "regions_kr.json",
+)
 RUN_KEY = "@run"  # the row that remembers the last whole run (not an item)
 
-Kind = Literal["seed", "delta", "anchor"]
+Kind = Literal["seed", "delta", "anchor", "reprice"]
 Action = Literal["applied", "skipped", "failed"]
 
 
@@ -119,6 +124,7 @@ class Sources:
     seed_dir: Path
     delta_dir: Path = DELTA_DIR
     universities: Path = UNIVERSITIES_PATH
+    price_prior: tuple[Path, ...] = PRICE_PRIOR_PATHS
 
 
 def default_sources(settings: Settings) -> Sources:
@@ -148,6 +154,9 @@ def plan(sources: Sources) -> list[Item]:
     if sources.universities.is_file():
         u = (sources.universities,)
         items.append(Item(f"anchors/{u[0].name}", "anchor", "대학교 캠퍼스", u, _hash(u)))
+    prices = tuple(p for p in sources.price_prior if p.is_file())
+    if prices:  # last: the deltas above bring places whose estimate it may correct
+        items.append(Item("prices/price_prior.json", "reprice", "추정 가격 다시 계산", prices, _hash(prices)))
     return items
 
 
@@ -235,6 +244,10 @@ async def _apply(db: Database, item: Item, log: Log) -> str:
         )
     if item.kind == "delta":
         return await _apply_delta(db, item.paths[0], log)
+    if item.kind == "reprice":
+        from app.infra.ingestion.bulk import reprice
+
+        return (await reprice.reprice(db, log=log)).line()
     from app.infra.ingestion.bulk import universities
 
     return (await universities.load(db, path=item.paths[0], log=log)).line()

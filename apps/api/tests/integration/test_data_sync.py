@@ -67,7 +67,9 @@ def sources(tmp_path: Path) -> data_sync.Sources:
         shutil.copy(SEED_DIR / name, seed / name)
     deltas = tmp_path / "delta"
     delta.write_delta(deltas / "cinemas.json", "test_sync", [_cinema("씨네 홍대")])
-    return data_sync.Sources(seed_dir=seed, delta_dir=deltas, universities=tmp_path / "none.json")
+    return data_sync.Sources(
+        seed_dir=seed, delta_dir=deltas, universities=tmp_path / "none.json", price_prior=()
+    )
 
 
 def _actions(report: data_sync.SyncReport) -> dict[str, str]:
