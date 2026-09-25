@@ -92,7 +92,7 @@ def to_candidate(place: Place) -> PlaceCandidate:
         # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
         # museum at 20:30; real hours always win
         opening_hours=[p for h in place.opening_hours if (p := to_opening_period(h)) is not None]
-        or list(get_default_hours().for_place(cat.code, place.name)),
+        or list(get_default_hours().for_place(cat.code, place.name, place.road_address or place.address)),
         popular_times={(pt.dow, pt.hour): pt.congestion for pt in place.popular_times},
         approved_at=as_utc(place.approved_at),
     )
