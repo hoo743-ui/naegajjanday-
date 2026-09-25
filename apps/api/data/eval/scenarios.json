@@ -123,9 +123,14 @@
       "산길",
       "자락길",
       "트레킹",
-      "올레길"
+      "올레길",
+      "소망탑",
+      "봉수대",
+      "산 전망대",
+      "산 정상",
+      "산성"
     ],
-    "_night_note": "21:30 시나리오(docs/48): 밤에는 2곳(한잔 → 걷기)이 정상이라 FEW_STOPS 는 min_stops_night 로 센다. 해가 진 뒤(19시~) 산길(night_trail_words)에 도착하면 NIGHT_TRAIL — 엔진의 추정(default_hours.json)과 따로 둔 세상에 대한 판단."
+    "_night_note": "21:30 시나리오(docs/48): 밤에는 2곳(한잔 → 걷기)이 정상이라 FEW_STOPS 는 min_stops_night 로 센다. 해가 진 뒤(19시~) 산길(night_trail_words)에 도착하면 NIGHT_TRAIL — 엔진의 추정(default_hours.json)과 따로 둔 세상에 대한 판단. 산 위 전망대(소망탑 · 봉수대 · '○○산 전망대')도 걸어서 밤에 가면 같은 결함으로 센다 — 이 규칙은 도보 시나리오에만 쓰인다."
   },
   "universities": {
     "_note": "docs/34 캠퍼스 하루: `eval-courses --scope university`. 캠퍼스는 이름으로 찾는다(DB 마다 id 가 다르다). 전국 여러 지역 · 규모를 섞었다.",

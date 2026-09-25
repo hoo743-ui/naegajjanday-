@@ -206,7 +206,8 @@ def judge(
             and evening_minute(s.arrive_at) >= _minute(limit)  # a museum at 00:30 is closed too
         ):
             found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (≥{limit})"))
-        if (at >= time(19) or at < time(6)) and any(w in name for w in rules.get("night_trail_words", ())):
+        dark = at >= time(19) or at < time(6)
+        if dark and ctx.transport != "car" and any(w in name for w in rules.get("night_trail_words", ())):
             found.append(Finding("NIGHT_TRAIL", f"{name} {at:%H:%M} 도착"))
         # past midnight is still the evening before: a pub at 00:12 is late, not early
         if (floor := _prefix_lookup(rules["not_before"], code)) and evening_minute(s.arrive_at) < _minute(

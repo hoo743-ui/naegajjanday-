@@ -52,7 +52,7 @@ from app.domain.recommendation.blend import (
     without_roles,
 )
 from app.domain.recommendation.budget import SlotBudget, evening_minute, is_night
-from app.domain.recommendation.candidates import FilterContext, area_names_of, hard_filter
+from app.domain.recommendation.candidates import FilterContext, area_names_of, compact_name, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
 from app.domain.recommendation.features import is_open
@@ -1420,6 +1420,8 @@ class CourseService:
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
             for tag, roles in styled_avoidance(condition).items():
                 ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
+            if ctx.transport != "car":  # by car a mountain view at night is the drive; on foot it is a climb
+                ctx.avoid_names |= {compact_name(w) for w in condition.get("avoid_names_on_foot") or ()}
 
     @staticmethod
     def _apply_understood(

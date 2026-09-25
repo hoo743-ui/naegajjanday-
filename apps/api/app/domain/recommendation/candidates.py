@@ -35,6 +35,7 @@ class FilterContext:
     blocked_categories: frozenset[str] = frozenset()
     # docs/34: places let through a blocked category — the campus the day is anchored on
     allowed_place_ids: frozenset[int] = frozenset()
+    avoid_names: frozenset[str] = frozenset()
 
     @classmethod
     def build(cls, ctx: RequestContext, role: str, slot_budget: float, arrive_at: datetime) -> FilterContext:
@@ -50,6 +51,7 @@ class FilterContext:
             area_names=ctx.area_names,
             blocked_categories=ctx.blocked_categories,
             allowed_place_ids=ctx.anchor_place_ids,
+            avoid_names=ctx.avoid_names,
         )
 
 
@@ -74,6 +76,8 @@ def rejection_reason(place: PlaceCandidate, fc: FilterContext, params: ScoringPa
         return "opt_in_only"  # shown only when the user asks for it (or the day is anchored on it)
     if not price_ok(place, fc.slot_budget, params):
         return "price_cap"
+    if fc.avoid_names and any(word in compact_name(place.name) for word in fc.avoid_names):
+        return "avoided_name"  # e.g. a mountain-top view at night, on foot
     if fc.area_names and place.course_role in SIGHT_ROLES and compact_name(place.name) in fc.area_names:
         return "is_the_area"  # the "sight" is the area the user is already in
     if any(place.tags.get(t, 0.0) >= params.exclude_tag_threshold for t in fc.disliked_tags):

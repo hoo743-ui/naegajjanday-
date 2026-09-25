@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from app.domain.models import Slot
@@ -137,3 +139,17 @@ def test_an_opt_in_category_stays_out_until_it_is_asked_for() -> None:
     )
     assert pools[2] == [park]  # the slot that can hold it offers nothing else
     assert len(pools[1]) == 1  # other slots are untouched
+
+
+def test_a_mountain_top_view_is_not_a_night_walk() -> None:
+    # 2026-09-25: 강남역 밤 도보 코스가 우면산 소망탑(00:30 도착, 31분 걷기)으로 끝났다 — 차로는 괜찮다
+    ctx = context(budget_total=60000)
+    ctx.avoid_names = frozenset({"소망탑", "산전망대"})
+    params = profile().params
+    peak = replace(place("NIGHTVIEW", "nightview", 0), name="우면산 소망탑")
+    ridge = replace(place("NIGHTVIEW", "nightview", 0), name="황령산 전망대")
+    river = replace(place("NIGHTVIEW", "nightview", 0), name="반포한강공원 달빛무지개분수")
+    fc = FilterContext.build(ctx, "NIGHTVIEW", 0, SUNDAY_6PM)
+    assert rejection_reason(peak, fc, params) == "avoided_name"
+    assert rejection_reason(ridge, fc, params) == "avoided_name"
+    assert rejection_reason(river, fc, params) != "avoided_name"
