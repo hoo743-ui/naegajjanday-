@@ -49,7 +49,7 @@
       "FEW_OPEN_AT_THIS_HOUR": "이 시간에는 근처에 연 곳이 많지 않아서 {left}이 남았어요.",
       "FREE_HEAVY": "돈 안 드는 곳이 많은 코스라 {left}이 남았어요.",
       "NOTHING_WORTH_IT": "더 넣을 만한 곳이 없어서 억지로 채우지 않았어요. {left}이 남아요.",
-      "CHEAP_AREA": "이 동네는 가격이 낮은 편이라 {left}이 남았어요."
+      "ROOM_TO_ADD": "예산에서 {left}이 남았어요. 더 들르고 싶으면 아래에서 골라 넣어도 돼요."
     }
   }
 }

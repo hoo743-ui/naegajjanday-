@@ -48,10 +48,12 @@ def assess(
             reason = "FEW_OPEN_AT_THIS_HOUR"
         elif prices and free * 2 >= len(prices):
             reason = "FREE_HEAVY"
-        elif slot_empty:
-            reason = "NOTHING_WORTH_IT"
+        elif slot_empty or band == UNDERSPENT:
+            reason = "NOTHING_WORTH_IT"  # a day that still spent under 60 % was already topped up once
         else:
-            reason = "CHEAP_AREA"
+            # no evidence of why (prices are category averages): say what is left, not a story about it —
+            # "이 동네는 가격이 낮은 편이라" was a guess shown on most courses (2026-09-25)
+            reason = "ROOM_TO_ADD"
     texts: Mapping[str, str] = rules.get("reasons") or {}
     text = texts.get(reason or "") if reason else texts.get("_buffer") if left > 0 else None
     return Leftover(band, reason, text.format(left=f"{left:,}원") if text else None)
