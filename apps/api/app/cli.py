@@ -823,6 +823,10 @@ def eval_concept(
     DB 는 읽기만 한다."""
     from app.evaluation import concept
 
+    for stream in (sys.stdout, sys.stderr):  # ✓ · ✗ on a Windows cp949 console (the loop crashed on it)
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     if sample not in ("quick", "full"):
         raise _fail("--sample 은 quick 또는 full")
     if focus and focus not in concept.METRIC_BY_ID:
