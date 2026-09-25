@@ -43,9 +43,11 @@ export function AttractionSheet({ item, image, onClose }: AttractionSheetProps) 
     },
   ];
   // 서버가 찾은 링크: 그 장소의 페이지면 출처만, 검색 결과면 "검색 결과"라고 밝힌다
-  const links = resolved.data?.items.length
+  const server = resolved.data?.items.length
     ? resolved.data.items.map((l) => ({ key: l.kind, href: l.url, label: l.label, note: l.exact ? l.source : `${l.source} 검색 결과` }))
-    : fallback;
+    : null;
+  // 서버 링크에는 길찾기가 없다 — "여기까지 길찾기"는 언제나 남긴다 (E2E 가 잡은 빠짐, 2026-09-25)
+  const links = server ? [...server, ...(server.some((l) => l.key === "route") ? [] : [fallback[1]!])] : fallback;
   // API 는 region 을 주지 않는다 → 그 장소의 좌표를 출발점으로 넘겨야 정말 "이 근처"로 짠다
   const planHref = planHrefNear({ name: item.name, lat: item.lat, lng: item.lng });
 

@@ -52,7 +52,7 @@ test.describe("핵심 여정 (실제 API)", () => {
     await page.getByText("데이트", { exact: true }).first().click();
     await goTo("몇 명");
     // 기본 예산은 1인당 범위 × 인원이다. API 의 총액을 1인당으로 읽어 데이트 2인이 15만원으로 잡히던 회귀를 막는다.
-    await expect(page.getByRole("button", { name: /적당히 · 6만원/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: /6만원\s*적당히|적당히\s*·?\s*6만원/ })).toHaveAttribute("aria-pressed", "true");
     // 만나는 시간: 내일 저녁 6시부터 3시간 → 요약 문구와 결과 화면 머리말에 그대로 나와야 한다
     const when = page.getByRole("region", { name: "언제 만나요?" });
     await when.getByRole("button", { name: "내일" }).click();
@@ -110,6 +110,8 @@ test.describe("핵심 여정 (실제 API)", () => {
     await page.getByRole("button", { name: "닫기" }).click();
     // 코스 전체: 오늘의 이동 · 전체 코스 보기 · 네이버 지도에서 길찾기
     await expect(page.getByRole("heading", { name: "오늘의 이동" })).toBeVisible();
+    const route = page.getByRole("button", { name: /오늘의 이동/ });
+    if ((await route.getAttribute("aria-expanded")) !== "true") await route.click();
     await expect(page.getByRole("link", { name: /네이버 지도에서 길찾기/ })).toHaveAttribute("href", /^https:\/\/map\.naver\.com\/p\/directions\//);
     await expectHealthyLayout(page);
   });
@@ -163,7 +165,10 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.getByText(/데이트 \+ 친구/).first()).toBeVisible(); // 고른 목적이 모두 보인다
     // 숙소: 관광공사 등재분이 근처에 없으면 카드는 아예 나오지 않는다(없는 것을 말하지 않는다) → 있으면 요금 고지를 확인한다
     const stay = page.getByRole("region", { name: /이 근처에서 묵는다면/ });
-    if (await stay.count()) await expect(stay.getByText(/숙박 요금은 공식 데이터가 없어요/)).toBeVisible();
+    if (await stay.count()) {
+      await stay.getByText(/요금 안내/).click();
+      await expect(stay.getByText(/숙박 요금은 공식 데이터가 없어요/)).toBeVisible();
+    }
     await expectHealthyLayout(page);
 
     // 하루에 두 동네: 동네가 바뀌는 구간은 걷는 구간이 아니라 "○○(으)로 대중교통 N분"이다
@@ -180,7 +185,8 @@ test.describe("핵심 여정 (실제 API)", () => {
 
   test("지역 선택: 시도에서 시·군으로 들어가고, 행정구역이 아닌 동네는 역으로 찾는다", async ({ page }) => {
     await page.goto("/plan");
-    // 처음에는 시도만 보인다 — 전국 300여 개 지역이 한꺼번에 쏟아지지 않는다
+    // 처음에는 많이 찾는 동네뿐, 지역 나무는 "지역에서 직접 고르기" 뒤에 있다(docs/41) — 열면 시도만 보인다
+    await page.getByRole("button", { name: /지역에서 직접 고르기/ }).click();
     await page.getByRole("button", { name: /경기도 안으로 들어가기/ }).click();
     await expect(page.getByRole("navigation", { name: "지역 단계" })).toContainText("경기도");
     await expect(page.getByRole("radio", { name: /경기도 전체/ })).toBeVisible();
@@ -210,9 +216,11 @@ test.describe("핵심 여정 (실제 API)", () => {
     const sheet = page.getByRole("dialog");
     await expect(sheet.getByRole("heading", { name })).toBeVisible();
     const links = sheet.getByRole("navigation", { name: "관련 페이지" }).getByRole("link");
-    await expect(links).toHaveCount(3);
-    await expect(links.nth(0)).toHaveAttribute("href", /^https:\/\/map\.kakao\.com\/link\/search\//);
-    await expect(links.nth(1)).toHaveAttribute("href", /^https:\/\/map\.kakao\.com\/link\/to\/.+,\d+\.\d+,\d+\.\d+$/);
+    // 서버가 찾은 공식 링크(docs/44)든 검색 링크든: 그 장소의 지도 페이지 하나와 "여기까지 길찾기"는 늘 있다
+    await expect(links.first()).toBeVisible();
+    const hrefs = await links.evaluateAll((els) => els.map((a) => a.getAttribute("href") ?? ""));
+    expect(hrefs.some((h) => /^https:\/\/(place\.map\.kakao\.com\/|map\.kakao\.com\/(link\/search\/|\?q=))/.test(h))).toBeTruthy();
+    expect(hrefs.some((h) => /^https:\/\/map\.kakao\.com\/link\/to\/.+,\d+\.\d+,\d+\.\d+$/.test(h))).toBeTruthy();
     await expect(sheet.getByRole("link", { name: /이 근처로 코스 짜기/ })).toHaveAttribute("href", /^\/plan/);
     await expectHealthyLayout(page);
 
