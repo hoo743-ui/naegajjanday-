@@ -119,7 +119,9 @@ class CourseComposer:
         """The longest single leg allowed. v1: a comfort limit used as a wall (20 min on foot).
         v2: only what nobody would do with that mode; anything shorter is priced by the day score."""
         mode = self._ctx.transport
-        return self._params.hard_leg_min(mode) if self._ctx.is_v2 else self._params.max_leg_min(mode)
+        limit = self._params.hard_leg_min(mode) if self._ctx.is_v2 else self._params.max_leg_min(mode)
+        # at night a long walk between two places is not a stroll: the night condition caps it (walk only)
+        return min(limit, self._ctx.leg_cap_min) if self._ctx.leg_cap_min and mode == "walk" else limit
 
     def empty(self) -> Partial:
         c = self._ctx

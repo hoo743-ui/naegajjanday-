@@ -1495,6 +1495,8 @@ class CourseService:
             ctx.purpose_tag_affinity = styled_affinity(ctx.purpose_tag_affinity, condition)
             for tag, roles in styled_avoidance(condition).items():
                 ctx.avoid_tags_by_role[tag] = ctx.avoid_tags_by_role.get(tag, frozenset()) | roles
+            if condition.get("max_walk_leg_min"):
+                ctx.leg_cap_min = float(condition["max_walk_leg_min"])
         # a walk that starts in the evening ends after dark: no mountain-top view on foot or by transit then
         # either (18:30 starts reached 우면산 소망탑 at 21:55). By car a night view is the drive.
         night = day_conditions().get("night") or {}
