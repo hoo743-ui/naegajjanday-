@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.responses import PROBLEMS
 from app.core.course_key import capture_course_key
-from app.core.deps import CurrentUser, OptionalUser, rate_limit
+from app.core.deps import CurrentUser, OptionalUser, client_ip, rate_limit
 from app.core.sse import SSE_HEADERS, sse, with_heartbeat
 from app.domain.recommendation.preference import interpret
 from app.schemas import course as dto
@@ -29,11 +29,12 @@ router = APIRouter(prefix="/courses", tags=["courses"], dependencies=[Depends(ca
 )
 async def generate(
     body: dto.CourseGenerateRequest,
+    request: Request,
     service: CourseServiceDep,
     user: OptionalUser,
     idempotency_key: Annotated[str | None, Header(max_length=128)] = None,
 ) -> dto.CourseGenerateResponse:
-    return await service.generate(body, user, idempotency_key)
+    return await service.generate(body, user, idempotency_key, ip=client_ip(request)[:45])
 
 
 @router.post(

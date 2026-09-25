@@ -24,6 +24,9 @@ ADMIN_GETS = [
     "/v1/admin/system/health",
     "/v1/admin/analytics/users",
     "/v1/admin/database",
+    "/v1/admin/members",
+    "/v1/admin/visits",
+    "/v1/admin/course-requests",
 ]
 
 
@@ -355,6 +358,40 @@ class TestOpsAndAnalytics:
         assert {"channel": "instagram.com", "users": 3} in stats["acquisition"]
         assert stats["devices"] == [{"device": "mobile", "users": 3}]
         assert stats["cohorts"][-1]["size"] == 3 and stats["cohorts"][-1]["retention"][0] == 1.0
+
+    async def test_members_visits_and_course_requests(
+        self, client: httpx.AsyncClient, admin_headers: dict[str, str], user_headers: dict[str, str]
+    ) -> None:
+        browser = {"user-agent": "Mozilla/5.0 (Windows NT 10.0) Chrome/130", "x-forwarded-for": "203.0.113.7"}
+        body = {"visitor_id": "member-eeee-5555", "path": "/my"}
+        await client.post("/v1/visits", json=body, headers={**browser, **user_headers})
+        made = await client.post(
+            "/v1/courses/generate",
+            json={**GENERATE_BODY, "budget_total": 51000},
+            headers={"x-forwarded-for": "198.51.100.9"},
+        )
+        assert made.status_code == 200, made.text
+
+        members = (await client.get("/v1/admin/members", headers=admin_headers)).json()
+        assert members["total"] >= 1 and members["items"]
+        me = next(m for m in members["items"] if m["last_ip"] == "203.0.113.7")
+        assert me["last_seen_at"] and me["role"] == "user"
+
+        log = (await client.get("/v1/admin/visits", params={"who": "member"}, headers=admin_headers)).json()
+        row = next(v for v in log["items"] if v["path"] == "/my")
+        assert row["ip"] == "203.0.113.7" and row["user"] and row["device"] == "desktop"
+        assert all(
+            v["user"] is None
+            for v in (
+                await client.get("/v1/admin/visits", params={"who": "anonymous"}, headers=admin_headers)
+            ).json()["items"]
+        )
+
+        asked = (await client.get("/v1/admin/course-requests", headers=admin_headers)).json()["items"][0]
+        assert asked["ip"] == "198.51.100.9" and asked["user"] is None and asked["budget_total"] == 51000
+        assert asked["purpose"] == "데이트" and asked["courses"]
+        first = asked["courses"][0]
+        assert first["exists"] and first["places"] and "(지워진 장소)" not in first["places"]
 
     async def test_database_overview_and_safe_purges(
         self, client: httpx.AsyncClient, admin_headers: dict[str, str]

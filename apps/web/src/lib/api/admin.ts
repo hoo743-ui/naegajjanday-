@@ -12,7 +12,7 @@
  * API 가 주지 않는 값은 null 로 둔다 — 0 이나 가짜 값으로 채우지 않는다.
  */
 import { useCallback, useMemo } from "react";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ApiError, IS_MOCKING, api, newIdempotencyKey } from "./client";
 import { useCategories, usePurposes } from "./hooks";
 import {
@@ -1024,5 +1024,89 @@ export function useDeleteBackup() {
   return useMutation<void, ApiError, string>({
     mutationFn: (name) => api.delete(`/admin/database/backups/${enc(name)}`),
     onSuccess: () => void client.invalidateQueries({ queryKey: databaseKey }),
+  });
+}
+
+// ── 회원 · 방문 로그 · 코스 요청 (docs/50) ────────────────────
+export type Who = "all" | "member" | "anonymous";
+export interface UserRef {
+  id: string;
+  login_id: string | null;
+  nickname: string | null;
+}
+
+export interface AdminMember {
+  id: string;
+  login_id: string | null;
+  nickname: string | null;
+  email: string | null;
+  role: string;
+  status: string;
+  providers: string[];
+  created_at: string;
+  last_login_at: string | null;
+  logins: number;
+  courses_generated: number;
+  courses_saved: number;
+  last_ip: string | null;
+  last_seen_at: string | null;
+}
+
+export interface AdminVisit {
+  id: number;
+  at: string;
+  path: string;
+  device: string;
+  referrer: string | null;
+  ip: string | null;
+  visitor: string;
+  user: UserRef | null;
+}
+
+export interface AdminCourseRequest {
+  id: number;
+  at: string;
+  ip: string | null;
+  user: UserRef | null;
+  where: string;
+  purpose: string;
+  party_size: number | null;
+  budget_total: number | null;
+  start_at: string | null;
+  taste: string[];
+  latency_ms: number;
+  candidates: number;
+  warnings: string[];
+  courses: { id: string; label: string; exists: boolean; status: string | null; total_price: number | null; places: string[] }[];
+}
+
+const MEMBERS_PAGE = 50;
+
+export function useMembers(q: string, page: number) {
+  return useQuery<{ items: AdminMember[]; total: number }, ApiError>({
+    queryKey: ["admin", "members", q, page],
+    queryFn: ({ signal }) => api.get("/admin/members", { query: { ...(q ? { q } : {}), limit: MEMBERS_PAGE, offset: page * MEMBERS_PAGE }, signal }),
+    placeholderData: keepPreviousData,
+  });
+}
+export { MEMBERS_PAGE };
+
+export function useVisitLog(who: Who, q: string) {
+  return useInfiniteQuery<{ items: AdminVisit[]; next_before: number | null }, ApiError>({
+    queryKey: ["admin", "visits", who, q],
+    initialPageParam: undefined as number | undefined,
+    queryFn: ({ pageParam, signal }) =>
+      api.get("/admin/visits", { query: { who, ...(q ? { q } : {}), limit: 100, ...(pageParam ? { before: pageParam as number } : {}) }, signal }),
+    getNextPageParam: (last) => last.next_before ?? undefined,
+  });
+}
+
+export function useCourseRequests(who: Who) {
+  return useInfiniteQuery<{ items: AdminCourseRequest[]; next_before: number | null }, ApiError>({
+    queryKey: ["admin", "course-requests", who],
+    initialPageParam: undefined as number | undefined,
+    queryFn: ({ pageParam, signal }) =>
+      api.get("/admin/course-requests", { query: { who, limit: 30, ...(pageParam ? { before: pageParam as number } : {}) }, signal }),
+    getNextPageParam: (last) => last.next_before ?? undefined,
   });
 }

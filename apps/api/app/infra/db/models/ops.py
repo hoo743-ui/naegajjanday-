@@ -128,7 +128,7 @@ class ApiUsage(Base):
 
 class Visit(Base):
     """One page view, first-party (docs/50): who came — logged in or not — without an analytics vendor.
-    `visitor` is a keyed hash of a random id the browser keeps; no IP, no user agent string is stored."""
+    `visitor` is a keyed hash of a random id the browser keeps; no user agent string is stored."""
 
     __tablename__ = "visit"
     __table_args__ = (Index("ix_visit_created", "created_at"),)
@@ -139,4 +139,6 @@ class Visit(Base):
     path: Mapped[str] = mapped_column(String(200))
     referrer: Mapped[str | None] = mapped_column(String(120))  # host only: "instagram.com", "kakao"
     device: Mapped[str] = mapped_column(String(8), default="desktop")  # mobile | tablet | desktop
+    # for spotting abuse only; cleared after `ip_retention_days` (the privacy page says so)
+    ip: Mapped[str | None] = mapped_column(String(45))
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)

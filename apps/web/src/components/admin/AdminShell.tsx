@@ -15,6 +15,9 @@ import {
   Menu,
   Settings2,
   Database,
+  Contact,
+  ScrollText,
+  Route,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +59,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
     title: "분석",
     items: [
       { href: "/admin/users", label: "사용자 분석", icon: Users },
+      { href: "/admin/members", label: "회원 목록", icon: Contact },
+      { href: "/admin/visits", label: "방문 로그", icon: ScrollText },
+      { href: "/admin/course-requests", label: "코스 요청", icon: Route },
       { href: "/admin/recommendations", label: "추천 결과 통계", icon: BarChart3 },
     ],
   },

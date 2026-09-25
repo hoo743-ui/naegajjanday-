@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from app.core import security
-from app.core.deps import ContainerDep, CredentialsDep, SessionDep, rate_limit
+from app.core.deps import ContainerDep, CredentialsDep, SessionDep, client_ip, rate_limit
 from app.infra.db.models import User, Visit
 
 router = APIRouter(tags=["visits"], dependencies=[Depends(rate_limit("read"))])
@@ -73,6 +73,7 @@ async def record_visit(
             path=body.path.split("?")[0][:200],
             referrer=referrer_host(body.referrer, own),
             device=device_of(ua),
+            ip=client_ip(request)[:45],
         )
     )
     await session.commit()

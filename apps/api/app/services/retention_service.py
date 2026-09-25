@@ -184,3 +184,22 @@ async def purge_old_visits(db: Database, settings: Settings, *, now: datetime | 
     if deleted:
         logger.info("retention.visits_purged", retention_days=settings.visit_retention_days, deleted=deleted)
     return deleted
+
+
+async def clear_old_ips(db: Database, settings: Settings, *, now: datetime | None = None) -> int:
+    """IPs on page views and course requests are for spotting abuse: gone after `ip_retention_days`."""
+    cutoff = (now or utcnow()) - timedelta(days=settings.ip_retention_days)
+    cleared = 0
+    try:
+        async with db.session() as session:
+            for model in (Visit, RecommendationLog):
+                result = await session.execute(
+                    update(model).where(model.created_at < cutoff, model.ip.is_not(None)).values(ip=None)
+                )
+                cleared += _rowcount(result)
+    except Exception:
+        logger.exception("retention.ip_clear_failed")
+        return 0
+    if cleared:
+        logger.info("retention.ips_cleared", retention_days=settings.ip_retention_days, cleared=cleared)
+    return cleared

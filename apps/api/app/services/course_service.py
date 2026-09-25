@@ -836,7 +836,11 @@ class CourseService:
         return region, ctx, out
 
     async def generate(
-        self, req: dto.CourseGenerateRequest, user: User | None, idempotency_key: str | None = None
+        self,
+        req: dto.CourseGenerateRequest,
+        user: User | None,
+        idempotency_key: str | None = None,
+        ip: str | None = None,
     ) -> dto.CourseGenerateResponse:
         started = time.perf_counter()
         body = req.model_dump(mode="json")
@@ -875,6 +879,7 @@ class CourseService:
                 engine_version=f"{self._settings.engine_version}+{ctx.algorithm}",  # A/B-ready (docs/29)
                 selected_courses=[],
                 warnings=out.warnings,
+                ip=ip,
             )
         )
         snapshot = {

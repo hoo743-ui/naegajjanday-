@@ -96,6 +96,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         # the privacy page promises page views are kept a year at most (docs/50): enforced at every start
         await retention.purge_old_visits(container.db, settings)
+        await retention.clear_old_ips(container.db, settings)
         try:
             yield
         finally:

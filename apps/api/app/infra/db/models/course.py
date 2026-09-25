@@ -39,6 +39,7 @@ class RecommendationLog(Base, TimestampMixin):
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     selected_courses: Mapped[json_list]
     warnings: Mapped[json_list]
+    ip: Mapped[str | None] = mapped_column(String(45))  # cleared after `ip_retention_days` (docs/50)
 
 
 class Course(Base, TimestampMixin):

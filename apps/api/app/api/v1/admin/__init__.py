@@ -10,6 +10,7 @@ from app.api.v1.admin import (
     database,
     events,
     ingestion,
+    people,
     places,
     quotas,
     regions,
@@ -33,5 +34,6 @@ for module in (
     system,
     quotas,
     database,
+    people,
 ):
     router.include_router(module.router)
