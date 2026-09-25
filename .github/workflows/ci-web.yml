@@ -37,9 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -55,7 +55,7 @@ jobs:
         run: npm run typecheck
 
       - name: Cache Next.js build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/web/.next/cache
           key: next-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/src/**') }}
@@ -79,16 +79,16 @@ jobs:
       E2E_API_URL: http://localhost:8000/v1
       E2E_CHANNEL: chrome # Google Chrome is preinstalled on ubuntu-latest → no browser download
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
           enable-cache: true
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload phone screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobile-screens
           path: apps/web/e2e-screens
@@ -148,7 +148,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
@@ -166,9 +166,9 @@ jobs:
     timeout-minutes: 20
     needs: [verify]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
