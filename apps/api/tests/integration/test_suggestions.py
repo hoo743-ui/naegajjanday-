@@ -146,3 +146,22 @@ class TestTopUp:
         notes = [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]
         assert len(notes) == 1 and "예산이 많이 남아서" in notes[0]["detail"]
         assert course["totals"]["price"] <= 120000
+
+    async def test_an_underspent_night_is_not_filled(
+        self, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # a night out is cut short on purpose (docs/48): its leftover is explained, not filled with karaoke
+        rules = suggestion_rules()
+        monkeypatch.setattr(
+            course_service,
+            "suggestion_rules",
+            lambda: {**rules, "top_up": {**rules["top_up"], "below_stops": 0, "max_added": 2}},
+        )
+        resp = await client.post(
+            "/v1/courses/generate",
+            json={**GENERATE_BODY, "budget_total": 120000, "start_at": "2026-09-22T22:00:00+09:00",
+                  "alternatives": 0},
+        )  # fmt: skip
+        assert resp.status_code == 200, resp.text
+        course = resp.json()["courses"][0]
+        assert not [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]

@@ -1782,14 +1782,18 @@ class CourseService:
         out: dto.CourseOut | None = None
         for _ in range(int(rules.get("max_added", 0))):
             few = len(stops) < int(rules.get("below_stops", 0))
-            # docs/49: a course that spent under 60 % is filled once more before anyone sees it
+            # docs/49: a course that spent under 60 % is filled once more before anyone sees it — by day.
+            # At night little is open and the night was cut short on purpose; the leftover line says why
+            # (2026-09-25: a family night got two coin karaoke rooms after 23:00 this way)
             use = row.total_price / row.budget_total if row.budget_total else 1.0
-            underspent = use < float(rules.get("below_use", 0.0))
+            underspent = use < float(rules.get("below_use", 0.0)) and not is_night(
+                self._out_time(row.start_at)
+            )
             if not (few or underspent):
                 break
-            options = await self._leftover_options(row, stops, user) or await self._leftover_options(
-                row, stops, user, same_role=True
-            )
+            options = await self._leftover_options(row, stops, user)
+            if not options and few:  # a second of a kind only to save a course of one place
+                options = await self._leftover_options(row, stops, user, same_role=True)
             if not options:
                 break
             role, place, _walk_min, _metres = options[0]
