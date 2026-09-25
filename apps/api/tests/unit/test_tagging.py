@@ -38,6 +38,14 @@ def test_name_rules_and_chains() -> None:
     assert "체인점" not in rules.visible(_tags("cafe", "스타벅스", "CAFE"))  # scoring only, never on a card
 
 
+def test_a_grill_is_not_a_group_hall_unless_its_sign_says_so() -> None:
+    """단체석 ≥ 0.8 means '단체석 위주' — the date's never (docs/48 §1). The category alone can't tell."""
+    assert 0 < _tags("food.bbq", "흑돼지생고기")["단체석"] < 0.8  # seats a group; not a 회식 hall
+    assert _tags("food.bbq", "OO갈비 단체회식")["단체석"] >= 0.8
+    assert _tags("food.korean", "OO연회장")["단체석"] >= 0.8
+    assert _tags("food.bbq", "무한리필 고기")["단체석"] >= 0.8
+
+
 def test_measured_price_marks_good_price_shops_only_for_food_roles() -> None:
     assert _tags("food.korean", "삼삼뚝배기", measured=True)["착한가격업소"] == 1.0
     assert "착한가격업소" not in _tags("food.korean", "삼삼뚝배기", measured=False)
