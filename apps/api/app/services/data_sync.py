@@ -6,7 +6,8 @@ Now every shipped file is an *item* with a content hash, and `data_sync` (a tabl
 the persistent disk) remembers the hash last applied. `sync` applies, in order:
 
 1. `seed` — data/seed/{categories,tags,regions,purposes}.json through `load_config` (what `seed-config` does)
-2. `delta/<name>` — every data/bulk/delta/*.json through `delta.load`, sorted by name
+2. `delta/<name>` — every data/bulk/delta/*.json, sorted by name: `delta.load` for new places,
+   `tourapi_hours.load_file` for opening-hour answers (docs/55)
 3. `anchors/universities.json` — `universities.load`
 
 and skips an item whose hash is already recorded. Every loader is idempotent on its own (upserts keyed by
@@ -24,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import hashlib
+import json
 import sys
 import tempfile
 import time
@@ -232,12 +234,29 @@ async def _apply(db: Database, item: Item, log: Log) -> str:
             f"purposes={report.purposes} templates={report.templates}"
         )
     if item.kind == "delta":
-        from app.infra.ingestion.bulk import delta
-
-        return (await delta.load(db, item.paths[0], log=log)).line()
+        return await _apply_delta(db, item.paths[0], log)
     from app.infra.ingestion.bulk import universities
 
     return (await universities.load(db, path=item.paths[0], log=log)).line()
+
+
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+async def _apply_delta(db: Database, path: Path, log: Log) -> str:
+    """data/bulk/delta holds two shapes: new places (`places`, bulk/delta.py) and TourAPI opening-hour
+    answers (`intros`, bulk/tourapi_hours.py `--export`, docs/55). Both loaders are idempotent."""
+    head = _read_json(path)
+    if isinstance(head, dict) and "places" in head:
+        from app.infra.ingestion.bulk import delta
+
+        return (await delta.load(db, path, log=log)).line()
+    if isinstance(head, dict) and "intros" in head:
+        from app.infra.ingestion.bulk import tourapi_hours
+
+        return (await tourapi_hours.load_file(db, path, log=log)).line()
+    raise ValueError(f"{path.name}: neither `places` (a place delta) nor `intros` (opening hours)")
 
 
 async def _record(db: Database, key: str, **values: Any) -> None:

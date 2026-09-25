@@ -11,7 +11,7 @@
 | 항목 (key) | 파일 | 하는 일 (예전 명령) |
 |---|---|---|
 | `seed` | `data/seed/{categories,tags,regions,purposes}.json` | `seed-config` |
-| `delta/<이름>.json` | `data/bulk/delta/*.json` (이름순, 새 파일도 자동으로) | `ingest-bulk delta <파일>` |
+| `delta/<이름>.json` | `data/bulk/delta/*.json` (이름순, 새 파일도 자동으로) | `places` 가 있으면 `ingest-bulk delta <파일>`, `intros` 가 있으면(영업시간 답, docs/55) `ingest-bulk tourapi-hours --from-file <파일>` |
 | `anchors/universities.json` | `data/anchors/universities.json` | `ingest-bulk universities --step load` |
 
 - 무엇을 반영했는지는 같은 DB 의 `data_sync` 테이블(= 영구 디스크)에 파일별 해시 · 시각 · 한 줄 결과 · 마지막 오류로 남는다.
@@ -32,8 +32,9 @@
   잠금도 풀린다(남은 잠금 파일은 무해).
 - 켜짐 조건: `DATA_SYNC_ON_START` 가 없으면 **production(APP_ENV=production)에서만** 돈다. 로컬 전국 DB 는 기본으로 건드리지
   않는다. 끄려면 `DATA_SYNC_ON_START=false`, 로컬에서 켜려면 `true`. 시작 지연은 `DATA_SYNC_DELAY_S`.
-- 걸리는 시간: 전국 DB 사본(1.2 GB)에서 다섯 항목 전부 약 8초(설정 3.8s, 추가분 셋 4s, 캠퍼스 0.5s). 아무것도 안 바뀐 배포는
-  해시만 비교하고 끝.
+- 걸리는 시간: 전국 DB 사본(1.2 GB)에서 여섯 항목 전부 약 15초(설정 3.8s, 장소 추가분 셋 4s, 영업시간 답 6.4s, 캠퍼스 0.5s —
+  사본에는 이미 들어 있던 데이터라 대부분 `unchanged`). 처음 들어가는 행(추가분 약 5천 곳, 영업시간 780건)이 있어도 1분 안쪽.
+  아무것도 안 바뀐 배포는 해시만 비교하고 끝.
 
 ## 관리자 화면
 
@@ -55,7 +56,9 @@ API: `GET /v1/admin/database/data-sync`, `POST /v1/admin/database/data-sync` (20
 - **없음.** 다음 배포부터 자동이다. Render 설정을 바꿀 필요도 없다(`APP_ENV=production` 이 이미 있다).
 - 새 데이터 파일을 추가할 때는 `data/bulk/delta/` 에 넣고 커밋만 하면 된다. 새 카테고리가 필요하면 같은 커밋에
   `data/seed/categories.json` 도 — seed 가 먼저 반영된다.
-- 이 목록에 없는 것은 여전히 손으로: 원본이 필요한 전국 적재(`ingest-bulk semas|all|tourapi …`)와 `ingest-bulk marks`.
+- 이 목록에 없는 것은 여전히 손으로: 원본이 필요한 전국 적재(`ingest-bulk semas|all|tourapi …`), `ingest-bulk marks`,
+  그리고 하루 한도 안에서 TourAPI 를 부르는 `ingest-bulk tourapi-hours`(파일이 아니라 호출이라 자동 반영 대상이 아니다, docs/55).
+  docs/55 의 "Render Shell 에서 `--from-file`" 단계는 이제 필요 없다.
 
 ## 코드
 

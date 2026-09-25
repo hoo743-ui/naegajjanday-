@@ -145,6 +145,21 @@ async def test_a_failed_file_is_recorded_and_tried_again(
     assert _actions(second)["delta/cinemas.json"] == "skipped"
 
 
+async def test_a_file_of_unknown_shape_fails_alone(
+    empty_db: tuple[Database, Settings], sources: data_sync.Sources
+) -> None:
+    db, settings = empty_db
+    (sources.delta_dir / "odd.json").write_text('{"rows": []}', encoding="utf-8")
+    (sources.delta_dir / "hours.json").write_text(
+        '{"provider": "tourapi", "operation": "detailIntro2", "intros": []}', encoding="utf-8"
+    )
+    report = await data_sync.sync(db, settings, sources=sources, log=lambda _m: None)
+    actions = _actions(report)
+    assert actions["delta/odd.json"] == "failed"
+    assert actions["delta/hours.json"] == "applied"  # opening-hour answers (docs/55) go to their own loader
+    assert actions["delta/cinemas.json"] == "applied"
+
+
 async def test_another_process_holding_the_lock_means_nothing_runs(
     empty_db: tuple[Database, Settings], sources: data_sync.Sources
 ) -> None:
