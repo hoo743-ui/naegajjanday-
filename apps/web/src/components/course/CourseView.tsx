@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -14,7 +14,7 @@ import { ApiError } from "@/lib/api/client";
 import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { clock, dateLabel, transportLabel, won } from "@/lib/format";
+import { clock, dateLabel, transportLabel, won, wonCompact } from "@/lib/format";
 import type { Transport } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
@@ -36,6 +36,7 @@ import { RouteIssues } from "./RouteIssues";
 import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
 import { RerollSheet, tweaksToRequest, type Tweak } from "./RerollSheet";
+import { SettingsSheet, type CourseSettings } from "./SettingsSheet";
 import { usePins } from "@/lib/pins";
 import { LAST_AREA_KEY } from "@/components/layout/NotificationBell";
 
@@ -43,6 +44,7 @@ const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: Tr
 const LOADING_STAGES = ["영수증을 꺼내는 중이에요", "지도에 핀을 꽂는 중"];
 const FORK_STAGES = ["친구 코스의 조건을 가져오는 중", "예산 안에 들어오는 조합을 맞추는 중", "짠! 거의 다 됐어요"];
 const REROLL_STAGES = ["다른 곳들로 다시 맞추는 중", "남는 돈까지 계산하고 있어요", "짠! 거의 다 됐어요"];
+const SETTINGS_STAGES = ["바꾼 설정으로 다시 맞추는 중", "남는 돈까지 계산하고 있어요", "짠! 거의 다 됐어요"];
 
 /** 모바일 바텀시트의 세 단계 (docs/25 §5): 지도를 크게 · 절반 · 목록 전체 */
 type SheetStop = "map" | "half" | "full";
@@ -119,6 +121,10 @@ export function CourseView({ id }: { id: string }) {
   // 편집 가능한 초안 (docs/42): 고정한 곳은 다시 짜도 남는다 · 다시 짜기는 방향을 고르는 시트로
   const { pins, toggle: togglePin } = usePins();
   const [rerollOpen, setRerollOpen] = useState(false);
+  // 설정 바꾸기: 열 때마다 지금 코스의 설정으로 새로 시작한다(key)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsKey, setSettingsKey] = useState(0);
+  const [changingSettings, setChangingSettings] = useState(false);
   const mapBoxRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; moved: boolean } | null>(null);
   // 목록을 읽던 중에 단계를 바꾸면 지도 칸의 높이만큼 내용이 밀린다 → 그만큼 되돌려 읽던 카드를 제자리에 둔다
@@ -311,17 +317,58 @@ export function CourseView({ id }: { id: string }) {
   const keep = data.stops.map((s) => s.place.id).filter((pid) => pins.includes(pid));
   const onReroll = (fork = false, focus?: string, tweaks: Tweak[] = []) => {
     setForking(fork);
+    setChangingSettings(false);
     track("reroll_clicked", { course_id: id, ...(fork ? { from_shared: true } : {}), ...(focus ? { focus } : {}) });
+    regenerate({
+      ...baseRequest,
+      ...(focus ? { focus } : {}),
+      ...(tripDay && !fork ? { replaces: id } : {}),
+      ...tweaksToRequest(tweaks, baseRequest.wishes),
+      ...(!fork && keep.length ? { keep_place_ids: keep } : {}),
+      // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
+      preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },
+    });
+  };
+
+  /** 지금 코스의 설정 (설정 바꾸기 시트가 여기서 시작한다) */
+  const currentSettings: CourseSettings = {
+    start_at: request.start_at,
+    duration_min: request.duration_min ?? null,
+    budget_total: request.budget_total,
+    party_size: request.party_size,
+    purpose: request.purpose.code,
+    scene: request.scene ?? "",
+  };
+  /**
+   * 설정 바꾸기: 시간 · 예산 · 인원 · 누구와 · 목적만 바꾸고 나머지(동네 · 출발점 · 가는 김에 · 취향 · 고정한 곳)는 그대로.
+   * 다시 짜기와 달리 지금 장소를 빼지 않는다 — 설정에 맞으면 그 자리에 남아도 된다.
+   */
+  const onChangeSettings = (next: CourseSettings) => {
+    setSettingsOpen(false);
+    setForking(false);
+    setChangingSettings(true);
+    const changed = (Object.keys(next) as (keyof CourseSettings)[]).filter((k) => next[k] !== currentSettings[k]);
+    track("course_settings_changed", { course_id: id, changed: changed.join(",") });
+    // 함께 고른 다른 목적은 두되, 새 첫 목적과 겹치면 뺀다
+    const extras = (baseRequest.purposes ?? []).filter((code) => code !== next.purpose);
+    regenerate({
+      ...baseRequest,
+      purpose: next.purpose,
+      purposes: extras.length ? extras : undefined,
+      scene: next.scene || undefined,
+      party_size: next.party_size,
+      budget_total: next.budget_total,
+      start_at: next.start_at,
+      duration_min: next.duration_min ?? undefined,
+      ...(tripDay ? { replaces: id } : {}),
+      ...(keep.length ? { keep_place_ids: keep } : {}),
+      preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
+    }, "이 설정에 맞는 곳이 모자라요. 시간이나 예산을 조금 바꿔 보세요.");
+  };
+
+  const regenerate = (body: GenerateCourseRequest, emptyDetail = "지금 코스의 장소를 빼면 남는 곳이 모자라요. 예산이나 시간을 바꿔서 새로 짜 보세요.") => {
     reroll.mutate(
-      {
-        ...baseRequest,
-        ...(focus ? { focus } : {}),
-        ...(tripDay && !fork ? { replaces: id } : {}),
-        ...tweaksToRequest(tweaks, baseRequest.wishes),
-        ...(!fork && keep.length ? { keep_place_ids: keep } : {}),
-        // 처음에 고른 취향(좋아요·피할 것)은 그대로, 지금 코스의 장소만 빼고
-        preferences: { ...baseRequest.preferences!, exclude_place_ids: fork ? [] : data.stops.map((s) => s.place.id) },
-      },
+      body,
       {
         onSuccess: (res) => {
           const first = res.courses[0];
@@ -330,7 +377,7 @@ export function CourseView({ id }: { id: string }) {
             return;
           }
           reroll.reset(); // 성공 상태로 두면 전체 화면 로더가 끝나지 않는다
-          fail(new ApiError({ code: "NO_COURSE_AVAILABLE", status: 200, title: "다시 짤 곳이 부족해요", detail: "지금 코스의 장소를 빼면 남는 곳이 모자라요. 예산이나 시간을 바꿔서 새로 짜 보세요." }));
+          fail(new ApiError({ code: "NO_COURSE_AVAILABLE", status: 200, title: "다시 짤 곳이 부족해요", detail: emptyDetail }));
         },
         onError: fail,
       },
@@ -445,7 +492,7 @@ export function CourseView({ id }: { id: string }) {
         onShare={() => void onShare()}
         shared={shared}
       />
-      {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={forking ? FORK_STAGES : REROLL_STAGES} interval={900} /> : null}
+      {reroll.isPending || reroll.isSuccess ? <JjaniLoader fullscreen stages={forking ? FORK_STAGES : changingSettings ? SETTINGS_STAGES : REROLL_STAGES} interval={900} /> : null}
 
       <div inert={reroll.isPending || reroll.isSuccess} className="[overflow-anchor:none] lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)] wide:grid-cols-[minmax(0,1fr)_minmax(0,840px)]">
         {/* 지도 + 바텀시트 손잡이: 모바일 · 태블릿은 헤더 밑에 붙어 있고 목록이 그 아래로 지나간다
@@ -537,8 +584,9 @@ export function CourseView({ id }: { id: string }) {
                     anchor?.festival ? { icon: Tent, text: anchor.festival } : null,
                     request.days && request.days > 1 ? { icon: CalendarRange, text: `${request.day}일차 / ${request.days}일` } : null,
                     // 날짜와 시간은 한 칩: 좁은 화면에서 칩이 두 줄이 되어 첫 일정을 밀어내지 않게
-                    { icon: CalendarDays, text: `${dateLabel(request.start_at)} ${meetWindow(request.start_at, request.duration_min)}` },
-                    { icon: Users, text: `${request.party_size}명` },
+                    // 내 코스면 날짜 · 시간 · 인원은 아래 "설정 바꾸기" 한 줄이 말한다 (두 번 쓰지 않는다)
+                    readOnly ? { icon: CalendarDays, text: `${dateLabel(request.start_at)} ${meetWindow(request.start_at, request.duration_min)}` } : null,
+                    readOnly ? { icon: Users, text: `${request.party_size}명` } : null,
                     { icon: MODE_ICON[request.transport] ?? Footprints, text: transportLabel(request.transport) },
                     request.conditions?.includes("rain") ? { icon: CloudRain, text: "비 오는 날" } : null,
                     tripDay && request.trip_budget_total ? { icon: Wallet, text: `여행 전체 ${won(request.trip_budget_total)}` } : null,
@@ -551,6 +599,28 @@ export function CourseView({ id }: { id: string }) {
                   </li>
                 ))}
               </ul>
+              {/* 설정 바꾸기: 지금 설정 한 줄 → 누르면 시간 · 예산 · 인원 · 누구와 · 목적을 바꿔 그 자리에서 다시 짠다 */}
+              {!readOnly ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsKey((k) => k + 1);
+                    setSettingsOpen(true);
+                  }}
+                  disabled={reroll.isPending}
+                  aria-label={`설정 바꾸기: ${dateLabel(request.start_at)} ${meetWindow(request.start_at, request.duration_min)}, ${request.party_size}명, 예산 ${won(request.budget_total)}`}
+                  className="flex min-h-11 w-full min-w-0 items-center gap-2 rounded-xl border border-line bg-white py-1.5 pr-2 pl-3 text-left transition-colors hover:border-tomato hover:bg-tomato-soft"
+                >
+                  <CalendarDays aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="tabular min-w-0 flex-1 truncate text-body-sm font-semibold text-ink-2">
+                    {dateLabel(request.start_at)} {meetWindow(request.start_at, request.duration_min)} · {request.party_size}명 · {wonCompact(request.budget_total)}
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-body-sm font-bold text-blue-deep">
+                    <SlidersHorizontal aria-hidden className="size-4" />
+                    바꾸기
+                  </span>
+                </button>
+              ) : null}
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>
@@ -753,6 +823,19 @@ export function CourseView({ id }: { id: string }) {
             track("reroll_tweaked", { course_id: id, tweaks: tweaks.join(","), pinned: keep.length });
             onReroll(false, undefined, tweaks);
           }}
+        />
+      ) : null}
+
+      {!readOnly ? (
+        <SettingsSheet
+          key={`${id}-${settingsKey}`}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          initial={currentSettings}
+          university={Boolean(anchor)}
+          lockDay={tripDay}
+          pinned={keep.length}
+          onApply={onChangeSettings}
         />
       ) : null}
 

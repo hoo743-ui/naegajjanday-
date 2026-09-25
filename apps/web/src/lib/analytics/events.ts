@@ -52,6 +52,8 @@ export interface AnalyticsEvents {
   directions_opened: { course_id: string; position: number; from: "here" | "prev" | "other" };
   stop_pinned: { course_id: string; position: number; pinned: boolean };
   reroll_tweaked: { course_id: string; tweaks: string; pinned: number };
+  /** 결과 화면에서 설정(시간 · 예산 · 인원 · 누구와 · 목적)을 바꿔 다시 짰다. changed = 바꾼 설정 이름들 */
+  course_settings_changed: { course_id: string; changed: string };
   // 브랜드 인트로(/intro)를 떠남 (docs/40)
   intro_left: { via: "intro_enter" | "intro_plan" | "intro_skip" };
   // 주변 장소를 코스 지도에 띄움 (docs/36): kind = 카드에 붙은 한 줄
