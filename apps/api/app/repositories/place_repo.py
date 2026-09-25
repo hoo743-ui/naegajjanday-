@@ -6,7 +6,7 @@ from copy import copy
 from datetime import date, time
 from typing import Any
 
-from sqlalchemy import ColumnElement, and_, func, or_, select, update
+from sqlalchemy import ColumnElement, and_, case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -278,15 +278,21 @@ class SqlPlaceRepository:
         )
         return await self._s.scalar(stmt)
 
-    async def search_campuses(self, q: str | None, category: str, limit: int = 20) -> list[Place]:
-        """Campuses by name — "가천", "홍대" (a school called 홍익대학교 is found by 홍익), in name order."""
+    async def search_campuses(
+        self, q: str | None, category: str, limit: int = 20, also: str | None = None
+    ) -> list[Place]:
+        """Campuses by name — "가천"; `also` is the school a nickname stands for ("외대" → 한국외국어대학교),
+        in name order."""
         stmt = (
             select(Place)
             .join(Category, Category.id == Place.category_id)
             .where(Place.status == "approved", Category.code == category)
         )
         if q:
-            stmt = stmt.where(Place.name.contains(q.strip()))
+            match = Place.name.contains(q.strip())
+            stmt = stmt.where(or_(match, Place.name.contains(also)) if also else match)
+            if also:  # the school the nickname means before others that merely contain it ("성대" · 경성대)
+                stmt = stmt.order_by(case((Place.name.contains(also), 0), else_=1))
         stmt = stmt.order_by(func.length(Place.name), Place.name).limit(limit)
         return list((await self._s.scalars(stmt)).all())
 

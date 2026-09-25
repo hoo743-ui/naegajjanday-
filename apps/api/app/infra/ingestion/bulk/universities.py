@@ -43,6 +43,12 @@ from app.infra.ingestion.bulk.writer import BulkWriter
 
 Log = Callable[[str], None]
 DATA_PATH = API_ROOT / "data" / "anchors" / "universities.json"
+# Campus names and campuses the standard data does not list (2026-09-26, see its _note)
+CAMPUSES_PATH = API_ROOT / "data" / "anchors" / "campuses.json"
+# A campus read from a graduate school's address is only another campus when it is this far from the
+# school's other campuses (서울대 치의학대학원 at 대학로 101 is 연건캠퍼스, not a third one)
+MIN_CAMPUS_GAP_M = 1500.0
+DERIVED = ("캠퍼스", "추가")
 RAW_FILENAME = "std_universities.csv"
 PROVIDER = "std_univ"
 CATEGORY = "attraction.campus"
@@ -111,17 +117,99 @@ class School:
     lot_address: str
     homepage: str
     phone: str
+    label: str = ""  # 캠퍼스 이름 (campuses.json): "메디컬캠퍼스"
 
     @property
     def display_name(self) -> str:
-        """본교는 학교 이름 그대로. 다른 캠퍼스는 이름에 캠퍼스가 없으면 시군구를 붙인다
-        ("중앙대학교 (안성시)")."""
+        """캠퍼스 이름을 알면 "가천대학교 메디컬캠퍼스". 모르면 본교는 학교 이름 그대로, 다른 캠퍼스는
+        이름에 캠퍼스가 없으면 시군구를 붙인다 ("홍익대학교 (조치원읍)")."""
+        if self.label:
+            return f"{self.name} {self.label}"
         if self.campus == "본교" or "(" in self.name or "캠퍼스" in self.name:
             return self.name
         return f"{self.name} ({_city(self.road_address) or self.sido})"
 
 
-def read_schools(path: Path) -> list[School]:
+def _clean_address(address: str) -> str:
+    return re.sub(r"\s*\([^)]*\)\s*$", "", address).strip()
+
+
+def campus_label(labels: Mapping[str, Mapping[str, str]], school: str, road_address: str) -> str:
+    for where, label in (labels.get(school) or {}).items():
+        if re.search(re.escape(where) + r"(?!\d)", road_address):
+            return label
+    return ""
+
+
+def load_campuses(path: Path = CAMPUSES_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {"labels": {}, "extra": []}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def other_campuses(
+    rows: Iterable[Mapping[str, str]],
+    kept: Iterable[School],
+    extra: Iterable[Mapping[str, str]],
+    skip: Mapping[str, Any] | None = None,
+) -> list[School]:
+    """Campuses that are not rows of their own: a graduate school of a kept university at an address
+    none of its campuses has (가천대학교 보건대학원 → 함박뫼로 191, the medical campus), and the
+    hand-listed `extra` ones. One per address."""
+    main = {s.name: s for s in kept if s.campus == "본교"}
+    seen = {(s.name, road_key(s.road_address)) for s in kept}
+    found: list[School] = []
+
+    def add(school: School) -> None:
+        key = (school.name, road_key(school.road_address))
+        if key[1] is None or key in seen or not _city(school.road_address).endswith(("시", "군", "구", "읍")):
+            return
+        if any(where in school.road_address for where in (skip or {}).get(school.name) or ()):
+            return
+        seen.add(key)
+        found.append(school)
+
+    for row in rows:
+        if (row.get("대학구분명") or "").strip() != "대학원":
+            continue
+        base = (row.get("학교명") or "").strip().split(" ")[0]
+        if (head := main.get(base)) is None:
+            continue
+        add(
+            School(
+                name=base,
+                eng_name=head.eng_name,
+                campus="캠퍼스",
+                level=head.level,
+                kind=head.kind,
+                sido=(row.get("시도명") or head.sido).strip(),
+                road_address=_clean_address((row.get("소재지도로명주소") or "").strip()),
+                lot_address=(row.get("소재지지번주소") or "").strip(),
+                homepage=head.homepage,
+                phone="",
+            )
+        )
+    for entry in extra:
+        head = main.get(str(entry["school"]))
+        add(
+            School(
+                name=str(entry["school"]),
+                eng_name=str(entry.get("eng_name") or (head.eng_name if head else "")),
+                campus="추가",
+                level=head.level if head else "대학",
+                kind=head.kind if head else "대학교",
+                sido=str(entry.get("sido") or ""),
+                road_address=str(entry["road_address"]),
+                lot_address=str(entry.get("lot_address") or ""),
+                homepage=str(entry.get("homepage") or (head.homepage if head else "")),
+                phone="",
+            )
+        )
+    return found
+
+
+def read_schools(path: Path, campuses: Mapping[str, Any] | None = None) -> list[School]:
+    campuses = load_campuses() if campuses is None else campuses
     if not path.exists():
         raise UniversityIngestError(f"{path} 가 없어요 — `ingest-bulk download --source universities` 먼저")
     with path.open(encoding="utf-8-sig", newline="") as fh:
@@ -150,7 +238,35 @@ def read_schools(path: Path) -> list[School]:
             continue
         if key not in kept or len(school.name) < len(kept[key].name):  # the plain name wins
             kept[key] = school
-    return list(kept.values())
+    schools = list(kept.values())
+    schools += other_campuses(rows, schools, campuses.get("extra") or [], campuses.get("skip"))
+    labels = campuses.get("labels") or {}
+    for school in schools:
+        school.label = campus_label(labels, school.name, school.road_address)
+    return schools
+
+
+def _gap_m(a: tuple[float, float], b: tuple[float, float]) -> float:
+    return (((a[0] - b[0]) * 111_000) ** 2 + ((a[1] - b[1]) * 88_000) ** 2) ** 0.5
+
+
+def drop_close_campuses(
+    located: list[tuple[School, tuple[float, float, str]]],
+) -> tuple[list[tuple[School, tuple[float, float, str]]], list[str]]:
+    """A campus found from a graduate school's address that sits next to another campus of the same
+    school is that campus (a hospital or a building across the road), not a new one."""
+    ordered = sorted(located, key=lambda item: item[0].campus in DERIVED)  # official rows first
+    kept: list[tuple[School, tuple[float, float, str]]] = []
+    dropped: list[str] = []
+    for school, spot in ordered:
+        if school.campus in DERIVED and any(
+            other.name == school.name and _gap_m(spot[:2], where[:2]) < MIN_CAMPUS_GAP_M
+            for other, where in kept
+        ):
+            dropped.append(f"{school.display_name} · {school.road_address}")
+            continue
+        kept.append((school, spot))
+    return kept, dropped
 
 
 def _spread_m(points: list[tuple[float, float]]) -> float:
@@ -206,7 +322,7 @@ async def _kakao_locate(client: httpx.AsyncClient, key: str, school: School) -> 
     """Kakao Local keyword search (official API, docs/34) for a school our own data could not place."""
     resp = await client.get(
         KAKAO_KEYWORD_URL,
-        params={"query": school.name.split("(")[0], "size": 15},
+        params={"query": f"{school.name.split('(')[0]} {school.label}".strip(), "size": 15},
         headers={"Authorization": f"KakaoAK {key}"},
     )
     resp.raise_for_status()
@@ -291,6 +407,7 @@ async def build(
                 missing.append(school.display_name)
             else:
                 located.append((school, spot))
+    located, close = drop_close_campuses(located)
     ids = assign_ids(located, previous_ids(out))
     entries = [
         {
@@ -298,7 +415,7 @@ async def build(
             "name": school.display_name,
             "school": school.name,
             "eng_name": school.eng_name,
-            "campus": CAMPUS_LABEL.get(school.campus, school.campus),
+            "campus": school.label or CAMPUS_LABEL.get(school.campus, school.campus),
             "level": school.level,
             "kind": school.kind,
             "sido": school.sido,
@@ -318,6 +435,7 @@ async def build(
         "category": CATEGORY,
         "universities": sorted(entries, key=lambda e: (e["sido"], e["name"])),
         "unlocated": sorted(missing),
+        "same_as_another_campus": sorted(close),
     }
     write_json(out, payload)
     log(f"universities: {len(schools)} schools · located {len(entries)} · unlocated {len(missing)} → {out}")

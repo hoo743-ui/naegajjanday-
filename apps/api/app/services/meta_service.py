@@ -137,8 +137,10 @@ class MetaService:
         key = f"university:list:{q or ''}:{limit}"
         if (cached := await self._cache.get(key)) is not None:
             return dto.UniversityList.model_validate(cached)
+        rules = university_rules()
+        also = (rules.get("aliases") or {}).get((q or "").strip().replace(" ", ""))
         rows = await SqlPlaceRepository(self._s).search_campuses(
-            q, str(university_rules()["category"]), limit
+            q, str(rules["category"]), limit, also=also if isinstance(also, str) else None
         )
         out = dto.UniversityList(
             items=[
