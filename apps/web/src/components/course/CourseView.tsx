@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, ShoppingBag, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Expand, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, ShoppingBag, Shrink, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -119,6 +119,19 @@ export function CourseView({ id }: { id: string }) {
   const noticeRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const [sheet, setSheet] = useState<SheetStop>("half");
+  // 지도 크게 보기 (2026-09-26 창업자): 모바일 · 데스크톱 모두 한 번에 전체 화면으로. Esc · 닫기로 돌아온다
+  const [mapFull, setMapFull] = useState(false);
+  useEffect(() => {
+    if (!mapFull) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMapFull(false);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mapFull]);
   const [storyOpen, setStoryOpen] = useState(false);
   // 편집 가능한 초안 (docs/42): 고정한 곳은 다시 짜도 남는다 · 다시 짜기는 방향을 고르는 시트로
   const { pins, toggle: togglePin } = usePins();
@@ -503,12 +516,12 @@ export function CourseView({ id }: { id: string }) {
       <div inert={reroll.isPending || reroll.isSuccess} className="[overflow-anchor:none] lg:grid lg:min-h-[calc(100dvh-68px)] lg:grid-cols-[minmax(0,1fr)_minmax(440px,560px)] wide:grid-cols-[minmax(0,1fr)_minmax(0,840px)]">
         {/* 지도 + 바텀시트 손잡이: 모바일 · 태블릿은 헤더 밑에 붙어 있고 목록이 그 아래로 지나간다
             → 장소를 읽는 동안에도 그 장소의 핀이 보인다. 데스크톱은 왼쪽에 고정 */}
-        <div className="sticky top-[68px] z-20 lg:z-0 lg:h-[calc(100dvh-68px)]">
+        <div className={cn("sticky top-[68px] z-20 lg:z-0 lg:h-[calc(100dvh-68px)]", mapFull && "z-[80] lg:z-[80]")}>
           {/* 높이는 바텀시트 단계가 정한다: 지도를 크게 · 절반 · 접음(목록 전체). 데스크톱은 늘 화면 높이 */}
           <div
             ref={mapBoxRef}
             style={{ "--map-h": sheet === "map" ? "calc(100dvh - 68px - 150px)" : sheet === "half" ? "30dvh" : "0px" } as React.CSSProperties}
-            className={cn("relative h-(--map-h) overflow-hidden lg:h-full", !instantSheet && "transition-[height] duration-300 ease-out")}
+            className={cn("relative h-(--map-h) overflow-hidden lg:h-full", !instantSheet && !mapFull && "transition-[height] duration-300 ease-out", mapFull && "!fixed inset-0 z-[80] !h-dvh bg-soft")}
           >
             <RouteMap
               stops={data.stops}
@@ -521,6 +534,18 @@ export function CourseView({ id }: { id: string }) {
               nearby={nearby}
               onNearby={nearby?.id ? () => setNearbyOpen(true) : undefined}
             />
+            <button
+              type="button"
+              onClick={() => {
+                setMapFull((v) => !v);
+                track("map_fullscreen", { open: !mapFull });
+              }}
+              aria-pressed={mapFull}
+              className={cn("absolute right-3 z-[500] inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-white px-3.5 text-body-sm font-semibold text-ink-2 shadow-soft hover:bg-soft hover:text-ink", mapFull ? "bottom-[max(12px,env(safe-area-inset-bottom))]" : "bottom-8 lg:bottom-3")}
+            >
+              {mapFull ? <Shrink aria-hidden className="size-3.5" /> : <Expand aria-hidden className="size-3.5" />}
+              {mapFull ? "지도 닫기" : "지도 크게"}
+            </button>
             {/* 띄운 주변 장소의 이름표: 무엇을 보고 있는지 · 정보는 따로 열기 · 지우기 */}
             {nearby ? (
               <div role="status" className="absolute top-3 left-3 z-[500] flex max-w-[calc(100%-11rem)] items-center gap-1 rounded-xl bg-white py-1 pr-1 pl-3 shadow-soft">
