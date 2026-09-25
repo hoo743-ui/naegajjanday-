@@ -32,6 +32,17 @@ export const planSchema = z
     with_baseball: z.boolean(),
     /** 비 오는 날: 실내 위주로, 산책 대신 전시 · 실내 놀거리 */
     rainy: z.boolean(),
+    /** 가는 김에 (docs/51 B1): 꼭 들를 곳. 노는 곳(region)과 따로 — 먼저 들를지 끝나고 들를지, 거기서 얼마나 */
+    errand: z
+      .object({
+        name: z.string().min(1),
+        lat: z.number(),
+        lng: z.number(),
+        place_id: z.string().nullable().optional(),
+        minutes: z.number().int().min(0).max(240),
+        when: z.enum(["before", "after"]).optional(),
+      })
+      .nullable(),
     /** 몇 박. 0 = 당일 */
     nights: z.number().int().min(0).max(3),
     /** "" = 오늘, 아니면 "YYYY-MM-DD" */
@@ -65,6 +76,7 @@ export const PLAN_DEFAULTS: PlanValues = {
   with_bar: false,
   with_baseball: false,
   rainy: false,
+  errand: null,
   nights: 0,
   meet_day: "",
   start_time: "",
@@ -76,6 +88,6 @@ export const STEPS = [
   { key: "purpose", title: "목적", question: "오늘은 어떤 약속인가요?", fields: ["purpose", "purposes_extra", "scene"] },
   { key: "budget", title: "인원 · 예산 · 시간", question: "몇 명이서, 얼마로, 언제 만나요?", fields: ["party_size", "budget_total", "nights", "meet_day", "start_time", "duration_min"] },
   // 4단계는 그대로 (docs/32 B §10): 취향 단계 안에 짧은 질문 셋(어떤 하루 · 얼마나 이동 · 꼭 원하는 것), 세부 태그는 "더 자세히" 안에
-  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["pace", "style", "move_style", "transport", "wishes", "focus", "rainy", "with_bar", "with_baseball", "liked_tags", "disliked_tags"] },
+  { key: "taste", title: "취향", question: "마지막으로 취향만 알려 주세요", fields: ["pace", "style", "move_style", "transport", "wishes", "focus", "rainy", "with_bar", "with_baseball", "errand", "liked_tags", "disliked_tags"] },
 ] as const satisfies readonly { key: string; title: string; question: string; fields: readonly (keyof PlanValues)[] }[];
 

@@ -51,7 +51,7 @@ from app.domain.recommendation.blend import (
     vetoed_roles,
     without_roles,
 )
-from app.domain.recommendation.budget import SlotBudget, evening_minute, is_night
+from app.domain.recommendation.budget import SlotBudget, evening_minute, is_night, night_window
 from app.domain.recommendation.candidates import FilterContext, area_names_of, compact_name, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
@@ -133,6 +133,10 @@ PREFERENCE_EMA_ALPHA = 0.2
 FOCUS_OFF = "-"  # request.focus value meaning "do not build the course around a local specialty"
 
 
+# 가는 김에: an errand within 1.5 radii of where the day is is part of it; farther, a trip of its own
+ERRAND_NEAR_RADII = 1.5
+ERRAND_DEFAULT_RADIUS_M = 1500.0  # around a campus or a point, no district to measure by
+ERRAND_OPEN_DAY_MIN = 360  # an open-ended day with an errand after it: about half a day
 DARK_BY_THE_END_H = 17  # a course starting from here on ends after dark
 SCENE_CATEGORY_PULL = 0.3  # 누구와: a liked kind of place (+1) adds this much to a place score of 0..1
 
@@ -162,6 +166,8 @@ class CourseService:
         self._anchors: dict[str, dict[str, Any]] = {}
         # the stops pinned for this request (public id → place): read once, handed to every leg / day
         self._kept: dict[str, PlaceCandidate] = {}
+        # 가는 김에: the errand became the centre of the day (the snapshot names the point after it)
+        self._errand_label: str | None = None
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -172,7 +178,7 @@ class CourseService:
         self, req: dto.CourseGenerateRequest, user: User | None
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
-        req, errand = self._with_errand(req)  # first: an errand of ours is pinned like any kept stop
+        req, errand = await self._with_errand(req)  # first: an errand of ours is pinned like any kept stop
         req = await self._with_kept(req)
         req, earlier = self._earlier_for_scene(req)
         days = await self._city_days(req)
@@ -188,7 +194,7 @@ class CourseService:
             self._reads = None
         await self._note_missing_extras(req, planned[3], planned[5])
         self._note_kept(req, planned[3], planned[5])
-        if errand is not None and req.errand is not None and req.errand.place_id:
+        if errand is not None and req.errand is not None and errand["meta"].get("pinned"):
             for course in planned[5].courses:  # pinned but it did not fit the hours or the money: say so
                 if not any(
                     getattr(st.place, "public_id", None) == req.errand.place_id for st in course.stops
@@ -204,27 +210,74 @@ class CourseService:
                     bucket.insert(0, note)
         return planned
 
-    def _with_errand(
+    async def _with_errand(
         self, req: dto.CourseGenerateRequest
     ) -> tuple[dto.CourseGenerateRequest, dict[str, Any] | None]:
-        """가는 김에 (docs/51 B1): the day is planned around the place the user has to go. One of ours with no
-        time given becomes a stop of the course (pinned); otherwise the course starts after the errand."""
+        """가는 김에 (docs/51 B1). Near where the day is (or nowhere else asked for): one of ours becomes a
+        stop (pinned), anything else the point the day starts from. Far from it, the errand is its own trip:
+        before — the course starts after the errand and the ride over; after — it ends early enough for both.
+        The founder (2026-09-26): the place one must go and the place one plays are often not the same."""
         e = req.errand
+        self._errand_label = None
         if e is None:
             return req, None
         update: dict[str, Any] = {}
         start = self._local(req.start_at)
-        if e.place_id and not e.minutes:
-            update["keep_place_ids"] = list(dict.fromkeys([*req.keep_place_ids, e.place_id]))
-            detail = f"{e.name}을(를) 코스에 넣고 그 근처로 짰어요."
-        elif e.minutes:
-            moved = start + timedelta(minutes=e.minutes)
-            update["start_at"] = moved
-            detail = f"{e.name}에서 {e.minutes}분 볼일을 본 뒤, {moved:%H:%M}부터 그 근처로 이어서 짰어요."
+        point = GeoPoint(e.lat, e.lng)
+        centre, radius = await self._errand_centre(req, e.when)
+        meta: dict[str, Any] = {"name": e.name, "minutes": e.minutes, "when": e.when}
+        if centre is None or haversine_m(point, centre) <= ERRAND_NEAR_RADII * radius:
+            if req.origin is None and req.anchor is None and len(req.regions) < 2:
+                update |= {"origin": LatLng(lat=e.lat, lng=e.lng), "origin_label": e.name[:40]}
+                self._errand_label = e.name[:40]
+            if e.place_id:
+                update["keep_place_ids"] = list(dict.fromkeys([*req.keep_place_ids, e.place_id]))
+                meta["pinned"] = True
+                detail = f"{e.name}을(를) 코스에 넣고 그 근처로 짰어요."
+            elif e.minutes and e.when == "after":
+                update["duration_min"] = self._errand_shortened(req, start, e.minutes)
+                detail = f"끝나고 {e.name}에서 {e.minutes}분 볼일 볼 시간을 남겨 뒀어요."
+            elif e.minutes:
+                moved = start + timedelta(minutes=e.minutes)
+                update["start_at"] = moved
+                detail = f"{e.name}에서 {e.minutes}분 볼일을 본 뒤, {moved:%H:%M}부터 그 근처로 짰어요."
+            else:
+                detail = f"{e.name} 근처로 짰어요."
         else:
-            detail = f"{e.name} 근처로 짰어요."
-        note = {"code": "ERRAND", "detail": detail, "meta": {"name": e.name, "minutes": e.minutes}}
+            hop = hop_between(point, centre, req.transport, itinerary_rules())
+            meta |= {"travel_min": hop.minutes, "travel_mode": hop.mode}
+            if e.when == "after":
+                length = self._errand_shortened(req, start, e.minutes + hop.minutes)
+                update["duration_min"] = length
+                end = start + timedelta(minutes=length)
+                detail = (
+                    f"끝나고 {e.name}까지 약 {hop.minutes}분이라, 볼일 볼 시간까지 두고 {end:%H:%M}쯤 끝내요."
+                )
+            else:
+                moved = start + timedelta(minutes=e.minutes + hop.minutes)
+                update["start_at"] = moved
+                detail = f"{e.name}에 먼저 들렀다가 약 {hop.minutes}분 이동해 {moved:%H:%M}에 시작해요."
+        note = {"code": "ERRAND", "detail": detail, "meta": meta}
         return (req.model_copy(update=update) if update else req), note
+
+    async def _errand_centre(
+        self, req: dto.CourseGenerateRequest, when: str
+    ) -> tuple[GeoPoint | None, float]:
+        """Where the day happens, and how far "near" reaches: the point asked for, else the neighbourhood —
+        the first of several for an errand before, the last for one after."""
+        slug = (req.regions[-1] if when == "after" else req.regions[0]) if req.regions else req.region
+        region = await self._regions.get_by_slug(slug) if slug else None
+        radius = float(region.radius_m) if region else ERRAND_DEFAULT_RADIUS_M
+        if req.origin is not None and len(req.regions) < 2:
+            return GeoPoint(req.origin.lat, req.origin.lng), radius
+        return (GeoPoint(region.center_lat, region.center_lng) if region else None), radius
+
+    @staticmethod
+    def _errand_shortened(req: dto.CourseGenerateRequest, start: datetime, reserve: int) -> int:
+        """The day's length with room left at the end for the errand. An open end is read as the engine
+        reads it (a night out ends about 00:30), else a half day."""
+        asked = req.duration_min or night_window(start) or ERRAND_OPEN_DAY_MIN
+        return max(60, asked - reserve)
 
     def _earlier_for_scene(
         self, req: dto.CourseGenerateRequest
@@ -981,7 +1034,7 @@ class CourseService:
                 c for c in self._conditions(req, wishes=False) if not day_conditions()[c].get("auto")
             ],
             # echoed by `get()` so the result page and a reroll stay around the same station / place
-            "origin_label": req.origin_label if req.origin else None,
+            "origin_label": req.origin_label if req.origin else self._errand_label,
             # docs/34: the campus the day was planned around, and the festival that made it into the course
             "anchor": self._anchor_snapshot(req),
             # a whole-city trip: planning this day again must ask for the city, not for the district the

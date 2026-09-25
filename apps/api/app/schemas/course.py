@@ -109,8 +109,8 @@ class CourseGenerateRequest(BaseModel):
     )
     errand: ErrandIn | None = Field(
         default=None,
-        description="가는 김에 (docs/51 B1): 꼭 들를 곳. 코스는 그 곳을 중심으로 짜고, "
-        "minutes 가 있으면 그 볼일 뒤부터",
+        description="가는 김에 (docs/51 B1): 꼭 들를 곳. 지역이 없거나 지역 안이면 그 곳 근처로 짜고, "
+        "지역에서 멀면 before=볼일 + 이동 뒤에 시작 · after=볼일 + 이동만큼 일찍 끝낸다",
     )
     scene: str | None = Field(
         default=None,
@@ -141,8 +141,9 @@ class CourseGenerateRequest(BaseModel):
         elif self.regions:
             self.region = self.region or self.regions[0]
             self.regions = []
-        if self.errand is not None and self.anchor is None and len(self.regions) < 2:
-            # 가는 김에: the place the user has to go is the centre of the day
+        if self.errand is not None and self.anchor is None and not self.region and self.origin is None:
+            # 가는 김에 with nowhere else asked for ("여기 근처에서 놀래요"): the errand is the day's centre.
+            # With a region the service decides — an errand far from it is a trip before or after the day
             self.origin = LatLng(lat=self.errand.lat, lng=self.errand.lng)
             self.origin_label = self.errand.name
         if self.anchor is not None:  # the campus is the centre: a region or a point would only compete
@@ -244,7 +245,12 @@ class ErrandIn(BaseModel):
     place_id: str | None = Field(
         default=None, max_length=40, description="우리 장소면 그 id — 코스에 그대로 넣는다"
     )
-    minutes: int = Field(default=0, ge=0, le=240, description="그곳에서 보낼 시간(분). 코스는 그 뒤부터")
+    minutes: int = Field(default=0, ge=0, le=240, description="그곳에서 보낼 시간(분)")
+    when: Literal["before", "after"] = Field(
+        default="before",
+        description="before=먼저 들르고 시작(코스가 그만큼 늦게) · "
+        "after=끝나고 들르기(코스가 그만큼 일찍 끝남)",
+    )
 
 
 class LeftoverOut(BaseModel):

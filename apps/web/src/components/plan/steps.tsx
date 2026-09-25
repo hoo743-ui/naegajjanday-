@@ -11,6 +11,7 @@ import { PurposeIcon } from "@/components/PurposeIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   decodeCampus,
+  decodeErrand,
   isPointValue,
   usePurposes,
   useRegionName,
@@ -113,9 +114,13 @@ export function RegionStep() {
       ) : null}
       <RegionPicker
         value={selected}
-        onChange={(next) =>
-          setValue("region", next, { shouldValidate: true, shouldDirty: true })
-        }
+        onChange={(next) => {
+          // "여기 근처에서 놀래요"로 정했던 들를 곳: 다른 곳을 고르면 다시 코스의 옵션으로 남긴다
+          const wasErrand = decodeErrand(selected);
+          if (wasErrand && next !== selected)
+            setValue("errand", wasErrand, { shouldDirty: true });
+          setValue("region", next, { shouldValidate: true, shouldDirty: true });
+        }}
       />
       {canAdd ? (
         <button

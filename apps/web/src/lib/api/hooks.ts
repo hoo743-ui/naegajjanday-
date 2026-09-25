@@ -671,6 +671,8 @@ export interface Errand {
   place_id?: string | null;
   /** 그곳에서 보낼 시간(분). 0 이면 볼일 없이 그 근처로 */
   minutes: number;
+  /** before = 먼저 들르고 시작(기본) · after = 끝나고 들르기 */
+  when?: "before" | "after";
 }
 
 export interface Spot {

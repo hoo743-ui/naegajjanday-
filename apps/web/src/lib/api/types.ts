@@ -256,6 +256,18 @@ export interface LocalSignature {
 /** focus 값: 동네 명물을 코스에 넣지 않는다 */
 export const FOCUS_OFF = "-";
 
+/** 가는 김에 (docs/51 B1): 꼭 들를 곳. place_id 는 우리 장소일 때만 */
+export interface ErrandRequest {
+  name: string;
+  lat: number;
+  lng: number;
+  place_id?: string | null;
+  /** 그곳에서 보낼 시간(분) */
+  minutes: number;
+  /** before = 먼저 들르고 시작(기본) · after = 끝나고 들르기 */
+  when?: "before" | "after";
+}
+
 export interface GenerateCourseRequest {
   region?: string;
   origin?: LatLng;
@@ -298,8 +310,8 @@ export interface GenerateCourseRequest {
   wishes?: ("night" | "walk" | "exhibition" | "value" | "romantic" | "quiet" | "indoor" | "photo" | "free")[];
   /** 누구와 (docs/48): 가족 kids · parents · adults, 데이트 new · steady · anniversary */
   scene?: string;
-  /** 가는 김에 (docs/51 B1): 꼭 들를 곳 — 그곳을 중심으로, minutes 가 있으면 그 볼일 뒤부터 */
-  errand?: { name: string; lat: number; lng: number; place_id?: string | null; minutes: number };
+  /** 가는 김에 (docs/51 B1): 꼭 들를 곳. 지역이 없으면 그곳이 하루의 중심, 지역에서 멀면 before=먼저 들르고 시작 · after=끝나고 들르기 */
+  errand?: ErrandRequest;
   /** 고정한 장소(편집 가능한 초안, docs/42): 다시 짜도 코스에 남는다. 최대 6 */
   keep_place_ids?: string[];
 }
@@ -504,7 +516,7 @@ export interface CourseDetail extends Course {
     wishes?: GenerateCourseRequest["wishes"];
     scene?: string | null;
     scene_label?: string | null;
-    errand?: { name: string; lat: number; lng: number; place_id?: string | null; minutes: number } | null;
+    errand?: ErrandRequest | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

@@ -33,10 +33,11 @@ import { ErrorState, EmptyState } from "@/components/mascot/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/lib/analytics";
 import { api } from "@/lib/api/client";
-import { useLocalSignature, useTags } from "@/lib/api/hooks";
+import { decodeErrand, encodeErrand, useLocalSignature, useTags } from "@/lib/api/hooks";
 import { FOCUS_OFF, type Tag, type Transport } from "@/lib/api/types";
 import { localSummary, type InterpretInput, type MoveStyle, type Pace, type SummaryLine, type Wish } from "@/lib/preference";
 import { cn } from "@/lib/utils";
+import { ErrandEditor } from "./ErrandEditor";
 import type { PlanValues } from "./schema";
 
 /*
@@ -445,12 +446,44 @@ function Understood() {
   );
 }
 
+/**
+ * 가는 김에 (docs/51 B1 · 창업자 2026-09-26): 꼭 들를 곳은 코스의 옵션이다 — 노는 동네는 1단계에서 따로 고른다.
+ * 들를 곳이 곧 노는 곳이면 "여기 근처에서 놀래요"로 지역을 그 주변으로 바꾼다(예전 방식).
+ */
+function ErrandQuestion() {
+  const { setValue } = useFormContext<PlanValues>();
+  const errand = useWatch<PlanValues, "errand">({ name: "errand" });
+  const region = useWatch<PlanValues, "region">({ name: "region" });
+  const centre = decodeErrand(region);
+  return (
+    <div role="group" aria-labelledby="errand-q" className={cn(field, "grid gap-3")}>
+      <p id="errand-q" className="text-body font-bold text-ink">
+        가는 김에 들를 곳 <span className="text-body-sm font-medium text-muted-foreground">없으면 넘어가도 돼요</span>
+      </p>
+      {centre ? (
+        <ErrandEditor value={centre} isCentre onChange={(next) => next && setValue("region", encodeErrand(next), { shouldDirty: true })} />
+      ) : (
+        <ErrandEditor
+          value={errand}
+          onChange={(next) => setValue("errand", next, { shouldDirty: true })}
+          onPlayNear={(next) => {
+            setValue("region", encodeErrand(next), { shouldDirty: true, shouldValidate: true });
+            setValue("regions_before", [], { shouldDirty: true });
+            setValue("errand", null, { shouldDirty: true });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export function TasteStep() {
   return (
     <div className="grid gap-7">
       <DayQuestion />
       <MoveQuestion />
       <WishQuestion />
+      <ErrandQuestion />
       <Understood />
     </div>
   );

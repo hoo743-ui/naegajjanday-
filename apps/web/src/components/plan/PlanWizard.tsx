@@ -82,7 +82,7 @@ export function PlanWizard() {
   const region = usePickedRegion(values.region && !isPointValue(values.region) ? values.region : undefined);
   const pickedStation = decodeStation(values.region);
   const pickedErrand = decodeErrand(values.region);
-  const placeLabel = region?.name ?? (pickedErrand ? `${pickedErrand.name} 가는 김에` : pickedStation ? `${pickedStation.name} 주변` : pickedCampus?.name);
+  const placeLabel = region?.name ?? (pickedErrand ? `${pickedErrand.name} 근처` : pickedStation ? `${pickedStation.name} 주변` : pickedCampus?.name);
   const purpose = purposes.data?.items.find((p) => p.code === values.purpose);
   // 대학교 ↔ 동네를 바꾸면 고를 수 있는 목적도 바뀐다(캠퍼스 탐방은 대학교에서만) → 없는 목적은 비운다
   const offered = purposes.data?.items;
@@ -174,19 +174,23 @@ export function PlanWizard() {
     setEmptyError(null);
     const start = resolveStart(data, new Date());
     const station = decodeStation(data.region);
+    // "여기 근처에서 놀래요": 들를 곳이 곧 노는 곳 (API 가 origin 으로 푼다)
     const errand = decodeErrand(data.region);
     const campus = decodeCampus(data.region);
+    // 가는 김에 (창업자 2026-09-26): 노는 곳과 따로 들를 곳 — 먼저 들르고 시작하거나, 끝나고 들른다
+    const errandOption = !errand && data.errand ? { ...data.errand, when: data.errand.when ?? ("before" as const) } : null;
     const body: GenerateCourseRequest = {
       // 대학교를 골랐으면 그 캠퍼스가 하루의 중심(anchor, docs/34). 역을 골랐으면 그 역의 좌표가 출발점
       ...(campus
         ? { anchor: { kind: "university" as const, id: campus.id } }
         : errand
-          ? { errand } // 가는 김에: 그곳이 하루의 중심 (API 가 origin 으로 푼다)
+          ? { errand }
           : station
           ? { origin: { lat: station.lat, lng: station.lng }, origin_label: station.name }
           : { region: data.region }),
       // 여러 동네: 먼저 들를 동네들 → 마지막 동네 순서로 잇는다 (역 · 대학교 주변은 한 동네 코스만)
       ...(!station && !campus && !errand && data.regions_before.length > 0 ? { regions: [...data.regions_before, data.region] } : {}),
+      ...(errandOption ? { errand: errandOption } : {}),
       purpose: data.purpose,
       ...(data.purposes_extra.length > 0 ? { purposes: data.purposes_extra } : {}),
       ...(data.scene ? { scene: data.scene } : {}),

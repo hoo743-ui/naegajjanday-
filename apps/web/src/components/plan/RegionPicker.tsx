@@ -5,13 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { Check, ChevronRight, GraduationCap, MapPin, Search, ShoppingBag, TrainFront } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { decodeCampus, decodeErrand, decodeStation, encodeCampus, encodeErrand, encodeStation, useDebounced, useRegions, useSpots, useStations, useUniversities, type Spot, type University } from "@/lib/api/hooks";
+import { decodeCampus, decodeErrand, decodeStation, encodeCampus, encodeStation, useDebounced, useRegions, useStations, useUniversities, type University } from "@/lib/api/hooks";
 import type { Region } from "@/lib/api/types";
 import { num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface RegionPickerProps {
-  /** 지역 slug · encodeStation() · encodeCampus() · encodeErrand() 값 */
+  /** 지역 slug · encodeStation() · encodeCampus() 값. encodeErrand() 는 취향 단계의 "여기 근처에서 놀래요"가 넣는다 */
   value: string;
   onChange: (value: string) => void;
 }
@@ -27,14 +27,6 @@ interface Node {
 
 /** 동 · 읍 · 면 (구 안의 동네). 구를 열면 그때 불러온다. */
 const DONG_LEVEL = 4;
-
-/** 가는 김에: 그곳에서 보낼 시간. 0 = 볼일 없이 그 근처로만 */
-const ERRAND_MINUTES = [
-  { minutes: 0, label: "근처로만" },
-  { minutes: 30, label: "30분" },
-  { minutes: 60, label: "1시간" },
-  { minutes: 120, label: "2시간" },
-] as const;
 
 // 지역 목록은 카드 격자가 아니라 노선도의 역 목록처럼: 줄 하나에 이름과 숫자 (docs/31 §6)
 const card =
@@ -87,11 +79,10 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
   // 많이 찾는 동네는 여섯 곳만 먼저, 나머지는 "더 보기"
   const [moreHot, setMoreHot] = useState(false);
   // docs/34: 하루의 중심 — 동네 · 역, 또는 대학교(캠퍼스와 학교 앞, 그날의 축제까지)
-  // 가는 김에(docs/51 B1): 꼭 들를 매장 · 가게 · 랜드마크를 중심으로 앞뒤를 짠다
-  const [mode, setMode] = useState<"area" | "campus" | "errand">(() => (decodeErrand(value) ? "errand" : decodeCampus(value) ? "campus" : "area"));
+  // 꼭 들를 곳(가는 김에)은 여기서 고르지 않는다 — 들를 곳과 노는 곳은 다를 때가 많아서 코스의 옵션이다 (창업자 2026-09-26)
+  const [mode, setMode] = useState<"area" | "campus">(() => (decodeCampus(value) ? "campus" : "area"));
   const query = useDebounced(q.trim(), 200);
   const stations = useStations(mode === "area" ? query : "");
-  const spots = useSpots(mode === "errand" ? query : "");
   // 동네 검색에도 학교가 함께 나온다("가천대"를 지역 칸에 쳐도 찾는다)
   const universities = useUniversities(query, mode === "campus" ? query.length >= 1 : query.length >= 2);
   const searchId = useId();
@@ -151,35 +142,6 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
     );
   };
 
-  const spotButton = (sp: Spot) => {
-    const selected = pickedErrand?.name === sp.name && Math.abs(pickedErrand.lat - sp.lat) < 1e-5;
-    return (
-      <button
-        key={`${sp.source}:${sp.name}:${sp.lat}`}
-        type="button"
-        role="radio"
-        aria-checked={selected}
-        onClick={() => {
-          onChange(encodeErrand({ name: sp.name, lat: sp.lat, lng: sp.lng, place_id: sp.place_id, minutes: 30 }));
-          setQ("");
-        }}
-        className={cn(card, selected && "bg-tomato-soft text-tomato-deep")}
-      >
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-paper-2 text-ink">
-          <ShoppingBag aria-hidden className="size-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <b className="block truncate text-body-lg font-semibold">{sp.name}</b>
-          <span className="block truncate text-body-sm text-muted-foreground">{sp.address ?? "주소 정보 없음"}</span>
-        </span>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold", sp.source === "ours" ? "bg-blue-soft text-blue-deep" : "bg-paper-2 text-ink-2")}>
-          {sp.source === "ours" ? "우리 장소" : "지도 검색"}
-        </span>
-        {selected ? <Check aria-hidden className="size-5 shrink-0 text-tomato-deep" /> : null}
-      </button>
-    );
-  };
-
   const regionButton = (r: Region, label = r.name, sub?: string) => {
     const selected = value === r.slug;
     return (
@@ -208,7 +170,6 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           [
             { key: "area", label: "동네 · 역", Icon: MapPin },
             { key: "campus", label: "대학교", Icon: GraduationCap },
-            { key: "errand", label: "꼭 들를 곳", Icon: ShoppingBag },
           ] as const
         ).map(({ key, label, Icon }) => (
           <button
@@ -228,7 +189,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         ))}
       </div>
       <label htmlFor={searchId} className="sr-only">
-        {mode === "campus" ? "대학교 검색" : mode === "errand" ? "꼭 들를 곳 검색" : "지역 · 역 검색"}
+        {mode === "campus" ? "대학교 검색" : "지역 · 역 검색"}
       </label>
       <div className="relative">
         <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -238,11 +199,7 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={
-            mode === "campus"
-              ? "학교 이름으로 찾기 (예: 가천대, 홍익대, 부산대)"
-              : mode === "errand"
-                ? "매장 · 가게 · 랜드마크 이름 (예: 애플 가로수길)"
-                : "동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"
+            mode === "campus" ? "학교 이름으로 찾기 (예: 가천대, 홍익대, 부산대)" : "동네나 역 이름으로 찾기 (예: 신도림, 반포, 성수)"
           }
           autoComplete="off"
           className="h-14 w-full rounded-2xl border border-input bg-white pr-4 pl-12 text-body font-bold shadow-soft placeholder:font-medium placeholder:text-muted-foreground focus-visible:border-tomato"
@@ -265,39 +222,19 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         </div>
       ) : null}
 
+      {/* 취향 단계의 "여기 근처에서 놀래요": 꼭 들를 곳이 곧 노는 곳 */}
       {pickedErrand && !query ? (
-        <div role="status" className="mt-4 grid gap-3 rounded-[20px] border-2 border-tomato bg-tomato-soft p-4 shadow-soft">
-          <div className="flex items-center gap-3.5">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-tomato-deep">
-              <ShoppingBag aria-hidden className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <b className="block truncate text-body-lg font-semibold">{pickedErrand.name} 가는 김에</b>
-              <span className="block truncate text-body-sm text-ink-2">
-                {pickedErrand.minutes > 0 ? "여기서 볼일을 보고, 그 뒤부터 근처로 이어서 짜요" : "이곳을 중심으로 걸어서 다닐 거리로 짜요"}
-              </span>
-            </span>
-            <button type="button" onClick={() => onChange("")} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-body-sm font-semibold text-ink-2 shadow-soft hover:text-ink" aria-label={`${pickedErrand.name} 선택 취소하고 다른 곳 고르기`}>
-              다른 곳 고르기
-            </button>
-          </div>
-          <div role="radiogroup" aria-label="그곳에서 보낼 시간" className="flex flex-wrap gap-2">
-            {ERRAND_MINUTES.map(({ minutes, label }) => {
-              const on = pickedErrand.minutes === minutes;
-              return (
-                <button
-                  key={minutes}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => onChange(encodeErrand({ ...pickedErrand, minutes }))}
-                  className={cn("min-h-11 rounded-full border px-4 text-body-sm", on ? "border-tomato bg-tomato font-bold text-white" : "border-line bg-white font-medium text-ink-2 hover:border-tomato")}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        <div role="status" className="mt-4 flex items-center gap-3.5 rounded-[20px] border-2 border-tomato bg-tomato-soft p-4 shadow-soft">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-tomato-deep">
+            <ShoppingBag aria-hidden className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block truncate text-body-lg font-semibold">{pickedErrand.name} 근처</b>
+            <span className="block truncate text-body-sm text-ink-2">들를 곳 근처에서 걸어서 다닐 거리로 짜요</span>
+          </span>
+          <button type="button" onClick={() => onChange("")} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-body-sm font-semibold text-ink-2 shadow-soft hover:text-ink" aria-label={`${pickedErrand.name} 근처 선택 취소하고 다른 곳 고르기`}>
+            다른 곳 고르기
+          </button>
         </div>
       ) : null}
 
@@ -316,24 +253,8 @@ export function RegionPicker({ value, onChange }: RegionPickerProps) {
         </div>
       ) : null}
 
-      <div className="mt-4" role="radiogroup" aria-label={mode === "campus" ? "대학교 선택" : mode === "errand" ? "꼭 들를 곳 선택" : "지역 선택"} aria-live="polite">
-        {mode === "errand" ? (
-          query.length < 2 ? (
-            pickedErrand ? null : (
-              <p className="text-body-sm text-ink-2">꼭 가야 하는 곳이 있으면 이름을 써 주세요. 그곳에 들르는 김에 앞뒤로 갈 곳을 예산 안에서 짜 드려요.</p>
-            )
-          ) : spots.isPending ? (
-            <div className="grid gap-x-8 sm:grid-cols-2" aria-busy="true">
-              {Array.from({ length: 4 }, (_, i) => (
-                <Skeleton key={i} className="h-[56px] rounded-md" />
-              ))}
-            </div>
-          ) : (spots.data?.items.length ?? 0) === 0 ? (
-            <EmptyState size="sm" mood="think" title={`‘${query}’ 은(는) 찾지 못했어요`} description="매장 이름에 동네를 붙여 다시 찾아볼까요? (예: 애플 가로수길)" />
-          ) : (
-            <div className="grid gap-x-8 sm:grid-cols-2">{(spots.data?.items ?? []).map(spotButton)}</div>
-          )
-        ) : mode === "campus" ? (
+      <div className="mt-4" role="radiogroup" aria-label={mode === "campus" ? "대학교 선택" : "지역 선택"} aria-live="polite">
+        {mode === "campus" ? (
           query && universities.isPending ? (
             <div className="grid gap-x-8 sm:grid-cols-2" aria-busy="true">
               {Array.from({ length: 4 }, (_, i) => (

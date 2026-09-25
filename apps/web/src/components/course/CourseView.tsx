@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Footprints, GraduationCap, Maximize2, Minimize2, PartyPopper, RotateCw, Share2, ShoppingBag, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -38,6 +38,7 @@ import { RouteMap } from "./RouteMap";
 import { RoutePanel } from "./RoutePanel";
 import { RerollSheet, tweaksToRequest, type Tweak } from "./RerollSheet";
 import { SettingsSheet, type CourseSettings } from "./SettingsSheet";
+import { errandLabel } from "@/components/plan/ErrandEditor";
 import { usePins } from "@/lib/pins";
 import { LAST_AREA_KEY } from "@/components/layout/NotificationBell";
 
@@ -339,7 +340,10 @@ export function CourseView({ id }: { id: string }) {
     party_size: request.party_size,
     purpose: request.purpose.code,
     scene: request.scene ?? "",
+    errand: request.errand ?? null,
   };
+  // "여기 근처에서 놀래요"로 짠 코스: 들를 곳이 곧 출발점 (API 가 origin_label 로 그 이름을 돌려준다)
+  const errandIsCentre = Boolean(request.errand && request.origin && request.origin_label === request.errand.name);
   /**
    * 설정 바꾸기: 시간 · 예산 · 인원 · 누구와 · 목적만 바꾸고 나머지(동네 · 출발점 · 가는 김에 · 취향 · 고정한 곳)는 그대로.
    * 다시 짜기와 달리 지금 장소를 빼지 않는다 — 설정에 맞으면 그 자리에 남아도 된다.
@@ -361,6 +365,7 @@ export function CourseView({ id }: { id: string }) {
       budget_total: next.budget_total,
       start_at: next.start_at,
       duration_min: next.duration_min ?? undefined,
+      errand: next.errand ?? undefined,
       ...(tripDay ? { replaces: id } : {}),
       ...(keep.length ? { keep_place_ids: keep } : {}),
       preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
@@ -590,6 +595,8 @@ export function CourseView({ id }: { id: string }) {
                     readOnly ? { icon: Users, text: `${request.party_size}명` } : null,
                     { icon: MODE_ICON[request.transport] ?? Footprints, text: transportLabel(request.transport) },
                     request.conditions?.includes("rain") ? { icon: CloudRain, text: "비 오는 날" } : null,
+                    // 가는 김에 들를 곳 (docs/51 B1): 먼저 들르고 시작 · 끝나고 들르기
+                    request.errand && !errandIsCentre ? { icon: ShoppingBag, text: errandLabel(request.errand) } : null,
                     tripDay && request.trip_budget_total ? { icon: Wallet, text: `여행 전체 ${won(request.trip_budget_total)}` } : null,
                     request.style === "fun" ? { icon: PartyPopper, text: "재미 우선" } : null,
                   ].filter(Boolean) as { icon: LucideIcon; text: string }[]
@@ -839,6 +846,7 @@ export function CourseView({ id }: { id: string }) {
           university={Boolean(anchor)}
           lockDay={tripDay}
           pinned={keep.length}
+          errandIsCentre={errandIsCentre}
           onApply={onChangeSettings}
         />
       ) : null}

@@ -3,13 +3,14 @@
 import { useState, type ReactNode } from "react";
 import { Check, Minus, Plus, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrandEditor } from "@/components/plan/ErrandEditor";
 import { DURATION_PRESETS, START_PRESETS } from "@/components/plan/meet-time";
-import { usePurposes } from "@/lib/api/hooks";
+import { usePurposes, type Errand } from "@/lib/api/hooks";
 import { dateLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BottomSheet } from "./BottomSheet";
 
-/** 결과 화면에서 바꿀 수 있는 설정. 지역 · 출발점 · 볼일 · 취향은 그대로 두고 이것만 바꿔 다시 짠다 */
+/** 결과 화면에서 바꿀 수 있는 설정. 지역 · 출발점 · 취향은 그대로 두고 이것만 바꿔 다시 짠다 */
 export interface CourseSettings {
   /** "+09:00" ISO */
   start_at: string;
@@ -20,6 +21,8 @@ export interface CourseSettings {
   purpose: string;
   /** "" = 목적의 기본 장면 */
   scene: string;
+  /** 가는 김에 들를 곳 (docs/51 B1). null = 없음 */
+  errand: Errand | null;
 }
 
 interface SettingsSheetProps {
@@ -32,6 +35,8 @@ interface SettingsSheetProps {
   lockDay?: boolean;
   /** 고정한 곳의 수 (다시 짜도 남는다) */
   pinned: number;
+  /** 들를 곳이 곧 하루의 중심(여기 근처에서 놀래요)이면: 빼거나 순서를 바꾸지 않는다 — 시간만 */
+  errandIsCentre?: boolean;
   onApply: (next: CourseSettings) => void;
 }
 
@@ -92,10 +97,10 @@ function Stepper({ value, onChange, min, max, step, label, format }: { value: nu
 }
 
 /**
- * 설정 바꾸기: 코스가 나온 뒤에 시간 · 예산 · 인원 · 누구와 · 목적만 바꿔서 그 자리에서 다시 짠다.
- * 지역과 출발점, 가는 김에 들를 곳, 고른 취향은 그대로다. 지역부터 바꾸려면 위저드로 간다(다시 짜기 시트).
+ * 설정 바꾸기: 코스가 나온 뒤에 시간 · 예산 · 인원 · 누구와 · 목적 · 가는 김에 들를 곳을 바꿔서 그 자리에서 다시 짠다.
+ * 지역과 출발점, 고른 취향은 그대로다. 지역부터 바꾸려면 위저드로 간다(다시 짜기 시트).
  */
-export function SettingsSheet({ open, onClose, initial, university, lockDay, pinned, onApply }: SettingsSheetProps) {
+export function SettingsSheet({ open, onClose, initial, university, lockDay, pinned, errandIsCentre, onApply }: SettingsSheetProps) {
   const purposes = usePurposes(university ? "university" : undefined);
   const now = Date.now();
   const today = kstParts(now).day;
@@ -110,6 +115,7 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
   const [party, setParty] = useState(initial.party_size);
   const [purposeCode, setPurposeCode] = useState(initial.purpose);
   const [scene, setScene] = useState(initial.scene);
+  const [errand, setErrand] = useState<Errand | null>(initial.errand);
 
   const purpose = purposes.data?.items.find((p) => p.code === purposeCode);
   const maxParty = purpose?.max_party_size ?? 20;
@@ -121,7 +127,7 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
 
   const start = toIso(day, time);
   const past = new Date(start).getTime() < now - 5 * 60_000;
-  const next: CourseSettings = { start_at: start, duration_min: duration, budget_total: budget, party_size: Math.min(party, maxParty), purpose: purposeCode, scene };
+  const next: CourseSettings = { start_at: start, duration_min: duration, budget_total: budget, party_size: Math.min(party, maxParty), purpose: purposeCode, scene, errand };
   const changed =
     kstParts(next.start_at).day !== first.day ||
     kstParts(next.start_at).time !== first.time ||
@@ -129,7 +135,8 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
     next.budget_total !== initial.budget_total ||
     next.party_size !== initial.party_size ||
     next.purpose !== initial.purpose ||
-    next.scene !== initial.scene;
+    next.scene !== initial.scene ||
+    JSON.stringify(next.errand) !== JSON.stringify(initial.errand);
 
   const budgetStep = budget >= 200_000 ? 10_000 : 5_000;
   const perPerson = Math.round(budget / Math.max(1, next.party_size) / 100) * 100;
@@ -214,6 +221,10 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
               ))}
             </div>
           )}
+        </Section>
+
+        <Section title="가는 김에 들를 곳">
+          <ErrandEditor value={errand} onChange={setErrand} isCentre={errandIsCentre && errand !== null} />
         </Section>
 
         {purpose && scenes.length > 0 ? (
