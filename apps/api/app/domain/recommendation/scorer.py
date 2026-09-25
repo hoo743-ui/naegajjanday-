@@ -68,8 +68,10 @@ class PlaceScorer:
 
     def score(self, x: ScoreInput) -> Score:
         feats = self.features(x)
-        total = sum(self._weights[k] * v for k, v in feats.items()) + trait_pull(
-            x.place, self._ctx.trait_pull
+        total = (
+            sum(self._weights[k] * v for k, v in feats.items())
+            + trait_pull(x.place, self._ctx.trait_pull)
+            + x.place.local_pull  # what the neighbourhood is for, beyond a public listing (signature)
         )
         return Score(total=round(total, 4), breakdown={k: round(v, 4) for k, v in feats.items()})
 

@@ -7,11 +7,13 @@ Fixtures use made-up syllables on purpose — the project forbids real region or
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import replace
 
 from app.domain.models import PlaceCandidate, RequestContext
 from app.domain.signature import (
     Signature,
     SignatureRules,
+    Specialty,
     count_grams,
     focus_pools,
     mark_local,
@@ -153,3 +155,29 @@ def test_signature_payload_round_trip() -> None:
     signature = Signature(specialties=found, sights=rank_sights([(1, "abc hill", True)], [], RULES), shops=50)
     assert Signature.from_payload(signature.to_payload()) == signature
     assert Signature.from_payload(None) == Signature()
+
+
+def test_what_people_come_for_pulls_harder_than_what_the_signs_say() -> None:
+    rules = replace(RULES, local_pull=0.05, draw_pull=0.12)
+    draw, sign, sight, famous = (
+        _cand(1, "원조닭갈비", "MEAL"),
+        _cand(2, f"q{DISH}", "MEAL"),
+        _cand(8, "hill", "ATTRACTION"),
+        _cand(9, "lake", "ATTRACTION"),
+    )
+    ctx = _ctx(
+        local_words=("닭갈비", DISH),
+        landmark_ids=frozenset({8, 9}),
+        draw_words=frozenset({"닭갈비"}),
+        draw_ids=frozenset({9}),
+    )
+    mark_local([draw, sign, sight, famous], ctx, rules)
+    assert (draw.local_pull, sign.local_pull, sight.local_pull, famous.local_pull) == (0.12, 0.05, 0.05, 0.12)
+
+
+def test_a_curated_draw_is_always_strong_and_noise_words_are_dropped() -> None:
+    signature = Signature(
+        specialties=(Specialty("닭갈비", 3, 0.0, curated=True), Specialty("에프엔비", 90, 40.0)),
+    )
+    assert [s.word for s in signature.strong(1_000.0).specialties] == ["닭갈비"]
+    assert [s.word for s in signature.without_words({"에프엔비"}).specialties] == ["닭갈비"]

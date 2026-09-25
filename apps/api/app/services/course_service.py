@@ -630,6 +630,8 @@ class CourseService:
         signature = (await signature_service.load(self._s, region.id)).strong(rules.auto_focus_min_strength)
         ctx.local_words = tuple(s.word for s in signature.specialties)
         ctx.landmark_ids = frozenset(s.place_id for s in signature.sights)
+        ctx.draw_words = frozenset(s.word for s in signature.specialties if s.curated)
+        ctx.draw_ids = frozenset(s.place_id for s in signature.sights if s.curated)
         ctx.focus_request = req.focus if req.focus in ctx.local_words else None  # only what it is known for
         if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
             ctx.auto_focus_words = ctx.local_words

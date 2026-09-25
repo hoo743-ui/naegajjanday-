@@ -16,9 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.domain.models import GeoPoint
+from app.domain.region_draws import Draws, draws_for
 from app.domain.signature import (
+    Sight,
     Signature,
     SignatureRules,
+    Specialty,
     compact,
     count_grams,
     get_signature_rules,
@@ -178,5 +181,60 @@ async def build_all(db: Database, only: list[str] | None = None) -> BuildReport:
 
 
 async def load(session: AsyncSession, region_id: int) -> Signature:
+    """The stored signature, without the sign fragments known to be noise, and — for a neighbourhood
+    people come to on purpose — led by what they come for (data/regions/draws.json)."""
+    rules = get_signature_rules()
     row = await session.get(RegionSignature, region_id)
-    return Signature.from_payload(row.payload if row else None)
+    signature = Signature.from_payload(row.payload if row else None).without_words(rules.not_specialties)
+    region = await session.get(Region, region_id)
+    draws = draws_for(region.slug) if region is not None else None
+    if region is None or draws is None:
+        return signature
+    return await curate(session, region, signature, draws, rules)
+
+
+async def curate(
+    session: AsyncSession, region: Region, signature: Signature, draws: Draws, rules: SignatureRules
+) -> Signature:
+    """Puts the neighbourhood's draws ahead of what the signs say — only those it really has: a dish on
+    at least one shop sign here, a sight that a place within reach is called."""
+    center = GeoPoint(region.center_lat, region.center_lng)
+    radius = float(max(region.radius_m, 800))
+    dlat = radius / M_PER_DEG
+    dlng = radius / (M_PER_DEG * max(0.2, math.cos(math.radians(center.lat))))
+    stmt = (
+        select(Place.id, Place.name, Category.course_role)
+        .join(Category, Category.id == Place.category_id)
+        .where(Place.status == "approved")
+        .where(Place.lat.between(center.lat - dlat, center.lat + dlat))
+        .where(Place.lng.between(center.lng - dlng, center.lng + dlng))
+        .where(Category.course_role.in_(rules.specialty_roles | rules.sight_roles))
+    )
+    shops: list[str] = []
+    sights: list[tuple[int, str]] = []
+    for place_id, name, role in (await session.execute(stmt)).all():
+        if role in rules.specialty_roles:
+            shops.append(compact(name))
+        else:
+            sights.append((place_id, name))
+    eat = [
+        Specialty(word, n, 0.0, curated=True)
+        for word in draws.eat
+        if (n := sum(1 for shop in shops if compact(word) in shop))
+    ]
+    seen: set[int] = set()
+    see: list[Sight] = []
+    for needle in draws.see:
+        key = compact(needle)
+        named = sorted(
+            (n for n in sights if key in compact(n[1]) and n[0] not in seen), key=lambda n: len(n[1])
+        )
+        if named:
+            seen.add(named[0][0])
+            see.append(Sight(named[0][0], named[0][1], 0, curated=True))
+    words = [s for s in signature.specialties if not any(s.word in e.word or e.word in s.word for e in eat)]
+    return Signature(
+        specialties=tuple([*eat, *words][: max(rules.max_specialties, len(eat))]),
+        sights=tuple([*see, *(s for s in signature.sights if s.place_id not in seen)]),
+        shops=signature.shops,
+    )

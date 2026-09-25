@@ -71,6 +71,9 @@ class PlaceCandidate:
     buzz: float = 0.0  # set per request by style.assign_buzz
     local_score: float = 0.0  # set per request by signature.mark_local: what this neighbourhood is known for
     local_word: str | None = None
+    # added to the score as it stands: what people come to this neighbourhood for (data/regions/draws.json)
+    # pulls hardest, a specialty read from the signs a little less (signature.mark_local)
+    local_pull: float = 0.0
     is_event: bool = False
     category_name: str | None = None  # display label only; never used for scoring
 
@@ -270,6 +273,9 @@ class RequestContext:
     # one specialty the user asked to build the course around
     local_words: tuple[str, ...] = ()
     landmark_ids: frozenset[int] = frozenset()
+    # the part of the above that is why people come here at all (data/regions/draws.json)
+    draw_words: frozenset[str] = frozenset()
+    draw_ids: frozenset[int] = frozenset()
     focus: str | None = None  # the specialty the course was actually built around (set by the engine)
     focus_request: str | None = None  # the one the user picked
     purpose_codes: tuple[str, ...] = ()  # every purpose chosen for this meeting, first one first

@@ -59,6 +59,11 @@ class SignatureRules:
     auto_focus_min_strength: float = 30.0
     auto_focus_min_pool: int = 2
     focus_avoid_categories: tuple[str, ...] = ()
+    # sign fragments that are a company or a building, not a dish ("에프엔비", "코퍼레이션"): dropped when a
+    # stored signature is read, so fixing one needs no rebuild
+    not_specialties: frozenset[str] = frozenset()
+    local_pull: float = 0.0  # score added to a shop with the area's specialty on its sign
+    draw_pull: float = 0.0  # … and to one of the things people come here for (draws.json)
 
     @classmethod
     def from_data(cls, data: Mapping[str, Any]) -> SignatureRules:
@@ -66,7 +71,7 @@ class SignatureRules:
         for key in ("gram_lengths", "levels", "drop_suffixes", "admin_suffixes", "focus_avoid_categories"):
             if key in known:
                 known[key] = tuple(known[key])
-        for key in ("specialty_roles", "sight_roles", "stopwords"):
+        for key in ("specialty_roles", "sight_roles", "stopwords", "not_specialties"):
             if key in known:
                 known[key] = frozenset(known[key])
         return cls(**known)
@@ -130,10 +135,13 @@ class Specialty:
     word: str
     count: int  # shops here whose sign carries the word
     lift: float  # how many times denser than the country as a whole
+    curated: bool = False  # why people come here (data/regions/draws.json), not a count of signs
 
     @property
     def strength(self) -> float:
         """Evidence that this is what the place is known for: many signs, and far denser than elsewhere."""
+        if self.curated:
+            return math.inf
         return self.count * math.log(max(self.lift, 1.0))
 
 
@@ -142,6 +150,7 @@ class Sight:
     place_id: int
     name: str
     mentions: int  # nearby shops named after it
+    curated: bool = False  # what people come here to see (data/regions/draws.json)
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +163,13 @@ class Signature:
         """Only the specialties with enough evidence to be said out loud and to steer a course. A weak
         one is as likely a slice of a brand name as a dish, and a busy district has plenty of those."""
         kept = tuple(s for s in self.specialties if s.strength >= floor)
+        return Signature(specialties=kept, sights=self.sights, shops=self.shops)
+
+    def without_words(self, noise: Iterable[str]) -> Signature:
+        drop = set(noise)
+        if not drop:
+            return self
+        kept = tuple(s for s in self.specialties if s.word not in drop)
         return Signature(specialties=kept, sights=self.sights, shops=self.shops)
 
     def to_payload(self) -> dict[str, Any]:
@@ -284,8 +300,10 @@ def mark_local(candidates: Iterable[PlaceCandidate], ctx: RequestContext, rules:
             word = next((w for w in ctx.local_words if w in flat), None)
             if word is not None:
                 cand.local_score, cand.local_word = rules.specialty_score, word
+                cand.local_pull = rules.draw_pull if word in ctx.draw_words else rules.local_pull
         elif cand.id in ctx.landmark_ids:
             cand.local_score = rules.landmark_score
+            cand.local_pull = rules.draw_pull if cand.id in ctx.draw_ids else rules.local_pull
         if cand.local_score > 0 and rules.tag:
             cand.tags = {**cand.tags, rules.tag: 1.0}
 
