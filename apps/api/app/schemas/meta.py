@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, computed_field
 
 from app.domain.image_ref import ImageRef, resolve_image
@@ -158,10 +160,21 @@ class HotPlaces(BaseModel):
     items: list[HotPlace] = Field(default_factory=list)
 
 
+class RegionIntroOut(BaseModel):
+    text: str
+    keywords: list[str] = Field(default_factory=list)
+    source: Literal["editorial", "data"] = Field(
+        description="editorial = 짠이가 쓴 소개, data = 간판 통계로 만든 한 문장"
+    )
+
+
 class LocalSignature(BaseModel):
     """이 동네가 무엇으로 알려져 있는지. 사람이 적은 글이 아니라 장소 이름에서 계산한 값이다."""
 
     region: str
+    intro: RegionIntroOut | None = Field(
+        default=None, description="이런 동네예요: 그 동네의 성격을 두세 문장으로"
+    )
     shops: int = 0
     specialties: list[LocalSpecialty] = Field(default_factory=list)
     sights: list[LocalSight] = Field(default_factory=list)

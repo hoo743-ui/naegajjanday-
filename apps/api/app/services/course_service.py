@@ -99,6 +99,7 @@ from app.domain.recommendation.style import (
     with_optional_after,
     with_role,
 )
+from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
 from app.domain.signature import get_signature_rules
 from app.infra.analytics.base import AnalyticsEvent, EventTracker
@@ -748,9 +749,9 @@ class CourseService:
         """What the neighbourhood is known for. None when nothing stands out: the page says nothing then."""
         floor = get_signature_rules().auto_focus_min_strength
         signature = (await signature_service.load(self._s, region.id)).strong(floor)
-        if not signature.specialties and not signature.sights:
+        if not signature.specialties and not signature.sights and region.slug not in editorial_intros():
             return None
-        return await local_signature_out(self._s, region.name, signature)
+        return await local_signature_out(self._s, region.name, signature, region.slug)
 
     async def _with_anchor(self, req: dto.CourseGenerateRequest) -> dto.CourseGenerateRequest:
         """docs/34: a campus as the anchor of the day becomes the existing "around a point" request —

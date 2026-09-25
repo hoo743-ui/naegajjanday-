@@ -12,6 +12,7 @@ from app.core.cache import Cache
 from app.domain.anchors import context_purposes, university_rules
 from app.domain.models import GeoPoint
 from app.domain.recommendation.style import scene_rules
+from app.domain.region_intro import intro_for
 from app.domain.signature import Sight, Signature, get_signature_rules
 from app.infra.db.base import utcnow
 from app.infra.db.models import Banner, Place, Region
@@ -55,7 +56,7 @@ class MetaService:
             raise errors.RegionNotFound(f"'{slug}' 지역을 찾을 수 없어요.")
         signature = await signature_service.load(self._s, region.id)
         return await local_signature_out(
-            self._s, region.name, signature.strong(get_signature_rules().auto_focus_min_strength)
+            self._s, region.name, signature.strong(get_signature_rules().auto_focus_min_strength), region.slug
         )
 
     async def hot_places(self, slug: str, limit: int) -> dto.HotPlaces:
@@ -251,7 +252,7 @@ def _per_person(total_min: int | None, total_max: int | None, party: int) -> dto
 
 
 async def local_signature_out(
-    session: AsyncSession, region_name: str, signature: Signature
+    session: AsyncSession, region_name: str, signature: Signature, slug: str | None = None
 ) -> dto.LocalSignature:
     """The sights carry their place id and point, so the page can show them on its own map
     instead of sending people out to a map app."""
@@ -269,8 +270,12 @@ async def local_signature_out(
             return dto.LocalSight(name=s.name, mentions=s.mentions)
         return dto.LocalSight(name=s.name, mentions=s.mentions, id=found[0], lat=found[1], lng=found[2])
 
+    intro = intro_for(slug, signature)
     return dto.LocalSignature(
         region=region_name,
+        intro=dto.RegionIntroOut(text=intro.text, keywords=list(intro.keywords), source=intro.source)
+        if intro
+        else None,
         shops=signature.shops,
         specialties=[
             dto.LocalSpecialty(word=s.word, count=s.count, lift=s.lift) for s in signature.specialties

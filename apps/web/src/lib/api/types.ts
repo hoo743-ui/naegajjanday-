@@ -244,6 +244,8 @@ export type SwapStrategy = "cheaper" | "closer" | "higher_rated" | "random_top";
 /** 이 동네가 무엇으로 알려져 있는지. 사람이 쓴 글이 아니라 간판 통계에서 계산한 값이다 (API: domain/signature) */
 export interface LocalSignature {
   region: string;
+  /** 이런 동네예요: editorial = 짠이가 쓴 소개(핫스팟 55곳), data = 간판 통계 · 명소로 만든 한 문장 */
+  intro?: { text: string; keywords: string[]; source: "editorial" | "data" } | null;
   shops: number;
   /** count = 이 동네에서 간판에 그 말이 들어간 가게 수, lift = 전국 평균 대비 몇 배 */
   specialties: { word: string; count: number; lift: number }[];
