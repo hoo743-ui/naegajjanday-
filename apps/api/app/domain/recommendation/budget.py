@@ -28,6 +28,19 @@ def is_night(start_at: datetime) -> bool:
     return start_at.hour >= NIGHT_FROM_H or start_at.hour < NIGHT_UNTIL_H
 
 
+NIGHT_WRAP_MIN = 24 * 60 + 30  # a night out without a set end wraps up around half past midnight
+NIGHT_WINDOW_MIN, NIGHT_WINDOW_MAX = 120, 180
+
+
+def night_window(start_at: datetime) -> int | None:
+    """How long a night out runs when the user left the end open (docs/48): until about 00:30, two to
+    three hours. A 21:30 start used to run the whole night template and end at 01:30 or later."""
+    if not is_night(start_at):
+        return None
+    left = NIGHT_WRAP_MIN - evening_minute(start_at)
+    return max(NIGHT_WINDOW_MIN, min(NIGHT_WINDOW_MAX, left))
+
+
 def evening_minute(at: datetime) -> int:
     """Minutes since midnight, where the small hours belong to the evening before: 01:00 is 1500, not 60.
     A rule such as "a drink, from 17:00" (1020) must still hold at 1 a.m. — 00:01 is not a morning."""

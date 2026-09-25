@@ -191,6 +191,11 @@
       "name": "무인매장",
       "group": "feature",
       "is_selectable": false
+    },
+    {
+      "name": "술자리",
+      "group": "feature",
+      "is_selectable": false
     }
   ]
 }

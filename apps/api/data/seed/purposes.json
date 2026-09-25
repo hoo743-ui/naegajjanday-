@@ -1279,10 +1279,37 @@
             "단체석": 0.6,
             "주차가능": 0.5,
             "실내": 0.3
+          },
+          "styles": {
+            "efficient": {
+              "never_tags": {
+                "술자리": [
+                  "MEAL",
+                  "CAFE",
+                  "DESSERT"
+                ],
+                "매운맛": [
+                  "MEAL"
+                ]
+              }
+            },
+            "fun": {
+              "never_tags": {
+                "술자리": [
+                  "MEAL",
+                  "CAFE",
+                  "DESSERT"
+                ],
+                "매운맛": [
+                  "MEAL"
+                ]
+              }
+            }
           }
         },
         "_weights_note": "v2 (2026-09-21): 공공 벌크 데이터에는 평점·리뷰가 없어 rating·sentiment 가 모든 장소에서 0.5 상수였다. 그 비중을 실제로 장소를 가르는 purpose_fit(업종·상호에서 도출한 태그 × 목적 선호)과 preference(사용자가 고른 취향)로 옮겼다. 자체 피드백 평점이 충분히 쌓이면 rating 을 0.14~0.2 로 되돌린다.",
-        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다."
+        "_note_v3": "rating·sentiment 는 데이터가 없어 변별력이 0 → 절반을 curated(한국관광공사 관광정보에 실린 곳)로 옮김. 평점 데이터가 생기면 되돌린다.",
+        "_note_never": "가족은 어느 스타일에서도 술자리(포차 · 호프 · 주점 — 업종이 음식점이어도 이름이 말한다)와 매운 집을 식사로 두지 않는다(never_tags: 후보가 없으면 자리를 비운다). 2026-09-25 홍대 밤 가족 코스의 식사가 '매운불닭발포장마차'였다(docs/48 §2)."
       },
       "tag_affinities": {
         "키즈프렌들리": 0.9,
@@ -1305,7 +1332,8 @@
         "매운맛": -0.3,
         "가성비": 0.3,
         "관광공사 소개": 0.6,
-        "간편식": -0.5
+        "간편식": -0.5,
+        "술자리": -0.9
       },
       "templates": [
         {
@@ -2351,15 +2379,6 @@
               "min_slot_budget": 3000
             },
             {
-              "course_role": "MEAL",
-              "budget_share": 0.2,
-              "is_optional": true,
-              "is_order_flexible": false,
-              "earliest_start": null,
-              "latest_start": null,
-              "min_slot_budget": null
-            },
-            {
               "course_role": "ATTRACTION",
               "budget_share": 0.02,
               "is_optional": true,
@@ -2367,9 +2386,18 @@
               "earliest_start": null,
               "latest_start": null,
               "min_slot_budget": null
+            },
+            {
+              "course_role": "MEAL",
+              "budget_share": 0.2,
+              "is_optional": true,
+              "is_order_flexible": false,
+              "earliest_start": null,
+              "latest_start": null,
+              "min_slot_budget": null
             }
           ],
-          "_note": "밤 9시~새벽 5시, 친구의 밤은 활기찬 쪽(docs/48 §3): 한잔(포차 · 호프 · 이자카야) → (노래방 · 오락) → (야식) → (밤거리). 데이트의 밤(한잔 → 조용히 걷기)과 다르다."
+          "_note": "밤 9시~새벽 5시, 친구의 밤은 활기찬 쪽(docs/48 §3): 한잔(포차 · 호프 · 이자카야) → (노래방 · 오락) → (밤거리) → (야식). 끝을 정하지 않은 밤은 00:30 쯤 끝나므로(night_window) 줄일 때는 뒤에서부터 — 야식이 먼저 빠진다."
         }
       ]
     },

@@ -133,7 +133,8 @@ class RecommendationEngine:
         start_min = ctx.start_at.hour * 60 + ctx.start_at.minute
         slot_budgets, trimmed = B.fit_to_duration(
             slot_budgets,
-            ctx.duration_min,
+            # an open-ended night still ends: how many stops fit until about 00:30 (no hard window)
+            ctx.duration_min or B.night_window(ctx.start_at),
             b,
             per_stop_min=B.SLOT_MIN_PER_STOP * ctx.slot_min_scale,  # a relaxed day: fewer, longer stops
             start_min=start_min,
