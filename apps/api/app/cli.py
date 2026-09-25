@@ -11,6 +11,7 @@ python -m app.cli ingest-bulk semas [--path store.zip] [--sido 서울 --sido 부
 python -m app.cli ingest-bulk goodprice [--path goodprice.csv] [--store-path store.zip]
 python -m app.cli ingest-bulk std --kind parks|museums|tourist|markets|festivals [--path file.csv]
 python -m app.cli ingest-bulk tourapi [--force]              # TourAPI nationwide (TOURAPI_SERVICE_KEY)
+python -m app.cli ingest-bulk tourapi-hours [--limit 900]    # real opening hours, daily (docs/55)
 python -m app.cli ingest-bulk all                            # semas → goodprice → every std kind
 python -m app.cli ingest-bulk marks [--kind all|centurystore|…]  # 백년가게·모범음식점·인허가 → 태그/숨김
 python -m app.cli ingest-bulk cinemas                        # 영화상영관 → data/bulk/delta/cinemas.json
@@ -364,6 +365,52 @@ def bulk_tourapi(
     try:
         _run(job)
     except bulk.BulkIngestError as exc:
+        raise _fail(str(exc)) from exc
+
+
+@bulk_cli.command("tourapi-hours")
+def bulk_tourapi_hours(
+    limit: Annotated[int, typer.Option(help="at most this many detailIntro2 calls this run")] = 900,
+    reserve: Annotated[int, typer.Option(help="leave this many of today's TourAPI calls for the site")] = 100,
+    from_file: Annotated[
+        Path | None, typer.Option(help="store answers from an --export file instead of calling (0 calls)")
+    ] = None,
+    export: Annotated[
+        Path | None, typer.Option(help="write every stored answer to this JSON, no calls")
+    ] = None,
+    reapply: Annotated[
+        bool, typer.Option(help="re-parse every stored answer (after a parser change)")
+    ] = False,
+    status: Annotated[bool, typer.Option(help="only show how far the queue is")] = False,
+) -> None:
+    """관광지 · 문화시설 실제 영업시간 (TourAPI detailIntro2, docs/55). 하루 한도 안에서 이어받기."""
+    from app.infra.ingestion.bulk import tourapi_hours as hours
+
+    async def job(db: Database, settings: Settings) -> None:
+        if status:
+            async with db.sessionmaker() as session:
+                all_ = await hours.targets(session, with_intro=None)
+                left = await hours.quota_left(session)
+            done = hours.summarize(all_)
+            hot = hours.summarize(t for t in all_ if t.hotspot)
+            typer.echo(f"all {len(all_)}: {dict(done)}")
+            typer.echo(f"hotspots {sum(hot.values())}: {dict(hot)}")
+            typer.echo(f"TourAPI calls left today: {left}")
+        elif export is not None:
+            await hours.export(db, export, log=typer.echo)
+        elif from_file is not None:
+            await hours.load_file(db, from_file, log=typer.echo)
+        elif reapply:
+            await hours.reapply(db, log=typer.echo)
+        else:
+            report = await hours.run(
+                db, settings.tourapi_service_key, limit=limit, reserve=reserve, log=typer.echo
+            )
+            typer.echo(f"[tourapi-hours] {report.line()}")
+
+    try:
+        _run(job)
+    except hours.HoursIngestError as exc:
         raise _fail(str(exc)) from exc
 
 
