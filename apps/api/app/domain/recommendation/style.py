@@ -306,6 +306,48 @@ def with_kept(
     return out
 
 
+def with_optional_after(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[Template]:
+    """An "if it fits" slot of `extra.role` right after the `extra.after` slot, where the template has one and
+    not the role yet — the day keeps what it had (the walk) and gains the scene's kind of place when near."""
+    role, after, share = str(extra["role"]), str(extra.get("after") or ""), float(extra["share"])
+    out: list[Template] = []
+    for template in templates:
+        slots = list(template.slots)
+        at = next((i for i, s in enumerate(slots) if s.course_role == after), None)
+        if at is None or any(s.course_role == role for s in slots):
+            out.append(template)
+            continue
+        slots = [replace(s, budget_share=s.budget_share * (1.0 - share)) for s in slots]
+        added = Slot(position=0, course_role=role, budget_share=share, is_optional=True)
+        slots.insert(at + 1, added)
+        slots = [replace(s, position=i + 1) for i, s in enumerate(slots)]
+        out.append(replace(template, slots=tuple(slots)))
+    return out
+
+
+def one_sweet_stop(templates: Sequence[Template]) -> list[Template]:
+    """A café and then a dessert shop is the same sitting twice (the eval's REPEATED_KIND, 79 of 448 date
+    and family days, 2026-09-25): when the two slots are next to each other, the café takes the dessert's
+    share."""
+    out: list[Template] = []
+    for template in templates:
+        slots = list(template.slots)
+        for i in range(len(slots) - 1):
+            pair = {slots[i].course_role, slots[i + 1].course_role}
+            if pair == {"CAFE", "DESSERT"}:
+                cafe, sweet = (i, i + 1) if slots[i].course_role == "CAFE" else (i + 1, i)
+                slots[cafe] = replace(
+                    slots[cafe],
+                    budget_share=slots[cafe].budget_share + slots[sweet].budget_share,
+                    is_optional=slots[cafe].is_optional and slots[sweet].is_optional,
+                )
+                del slots[sweet]
+                slots = [replace(s, position=n + 1) for n, s in enumerate(slots)]
+                break
+        out.append(replace(template, slots=tuple(slots)))
+    return out
+
+
 def with_role(templates: Sequence[Template], extra: Mapping[str, Any]) -> list[Template]:
     """The user asked for a role by name ("a drink, please"): every template gets that slot for certain.
 

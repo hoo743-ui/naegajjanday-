@@ -1,5 +1,5 @@
 {
-  "_comment": "누구와 (docs/48 §1 · §2): 같은 목적이라도 함께 가는 사람이 하루를 바꾼다. 목적마다 장면 몇 개, 고르지 않으면 default(가족 = 아이와, 데이트 = 없음 = 지금과 같다). 각 장면은 스타일과 같은 손잡이로만 움직인다: affinity_add(태그 선호), never_tags(자리마다 절대 안 됨 — 후보가 없으면 비운다), allow_tags(목적이 막아 둔 것을 이 장면에서는 푼다), blocked_categories(업종 통째로 빼기), role_share(예산 비중 배수), night_notice(밤에 짤 때 한 줄). 고치면 API 재시작. category_weights: 업종 선호(-1~1), 장소 점수에 직접 더한다(× 0.3). 태그만으로는 같은 업종 안의 가게가 갈리지 않아 장면이 코스를 거의 바꾸지 못했다(2026-09-25). swap_roles: 스타일과 같은 자리 바꾸기 — 설레는 사이는 걷기 자리를 전시로, 오래 만난 사이는 체험으로(업종 선호만으로는 템플릿에 없는 자리가 생기지 않는다). earlier_start: 밤(21시~새벽 5시)에 짜면 그날 저녁 이 시각으로 당긴다(창업자 결정 2026-09-25: 아이와의 밤 코스는 만들지 않는다) — earlier_notice 로 그렇게 했다고 말한다.",
+  "_comment": "누구와 (docs/48 §1 · §2): 같은 목적이라도 함께 가는 사람이 하루를 바꾼다. 목적마다 장면 몇 개, 고르지 않으면 default(가족 = 아이와, 데이트 = 없음 = 지금과 같다). 각 장면은 스타일과 같은 손잡이로만 움직인다: affinity_add(태그 선호), never_tags(자리마다 절대 안 됨 — 후보가 없으면 비운다), allow_tags(목적이 막아 둔 것을 이 장면에서는 푼다), blocked_categories(업종 통째로 빼기), role_share(예산 비중 배수), night_notice(밤에 짤 때 한 줄). 고치면 API 재시작. category_weights: 업종 선호(-1~1), 장소 점수에 직접 더한다(× 0.3). 태그만으로는 같은 업종 안의 가게가 갈리지 않아 장면이 코스를 거의 바꾸지 못했다(2026-09-25). swap_roles: 스타일과 같은 자리 바꾸기 — 설레는 사이는 걷기 자리를 전시로, 오래 만난 사이는 체험으로(업종 선호만으로는 템플릿에 없는 자리가 생기지 않는다). earlier_start: 밤(21시~새벽 5시)에 짜면 그날 저녁 이 시각으로 당긴다(창업자 결정 2026-09-25: 아이와의 밤 코스는 만들지 않는다) — earlier_notice 로 그렇게 했다고 말한다. end_by: 끝을 정하지 않은 하루가 이 시각쯤 끝나게 장소 수를 줄인다(아이와 20:30). params: 점수 매개변수(아이 · 부모님: lambda_travel 두 배 — 긴 구간을 더 싫어한다). add_optional: 있으면 넣는 자리를 더한다(설레는 사이: 걷기 뒤에 전시 · 공연 — 바꾸기로 하면 근처에 없을 때 자리가 비었다). 2026-09-25 개념 점검 448코스에서 나온 것.",
   "family": {
     "question": "누구와 가나요?",
     "default": "kids",
@@ -24,7 +24,11 @@
           "bar": -1.0
         },
         "earlier_start": "17:30",
-        "earlier_notice": "아이와 함께라서 밤 대신 저녁 {time}부터로 당겨 짰어요."
+        "earlier_notice": "아이와 함께라서 밤 대신 저녁 {time}부터로 당겨 짰어요.",
+        "end_by": "20:30",
+        "params": {
+          "lambda_travel": 0.03
+        }
       },
       "parents": {
         "label": "부모님과",
@@ -64,6 +68,9 @@
           "food.snack": -0.8,
           "activity": -0.8,
           "cafe.coffee": -0.2
+        },
+        "params": {
+          "lambda_travel": 0.03
         }
       },
       "adults": {
@@ -112,13 +119,14 @@
           "food.bbq": -0.5,
           "bar.pocha": -0.5
         },
-        "swap_roles": {
-          "ATTRACTION": {
-            "role": "CULTURE",
-            "share": 0.14,
-            "take_from": "MEAL"
-          }
-        }
+        "add_optional": {
+          "role": "CULTURE",
+          "share": 0.12,
+          "after": "ATTRACTION"
+        },
+        "blocked_categories": [
+          "activity.karaoke"
+        ]
       },
       "steady": {
         "label": "오래 만난 사이",
@@ -156,7 +164,8 @@
           "간편식": -0.5
         },
         "role_share": {
-          "MEAL": 1.6
+          "MEAL": 1.6,
+          "BAR": 1.4
         },
         "category_weights": {
           "food.western": 0.7,

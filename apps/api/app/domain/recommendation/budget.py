@@ -41,6 +41,14 @@ def night_window(start_at: datetime) -> int | None:
     return max(NIGHT_WINDOW_MIN, min(NIGHT_WINDOW_MAX, left))
 
 
+def soft_window(start_at: datetime, end_min: int | None, floor: int = 90) -> int | None:
+    """Minutes from the start to an evening end the company sets (end_min = minutes since midnight)."""
+    if end_min is None:
+        return None
+    left = end_min - evening_minute(start_at)
+    return max(floor, left) if left < 12 * 60 else None
+
+
 def evening_minute(at: datetime) -> int:
     """Minutes since midnight, where the small hours belong to the evening before: 01:00 is 1500, not 60.
     A rule such as "a drink, from 17:00" (1020) must still hold at 1 a.m. — 00:01 is not a morning."""

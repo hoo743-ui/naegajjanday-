@@ -85,6 +85,7 @@ from app.domain.recommendation.style import (
     extra_roles,
     extra_unavailable,
     night_notice,
+    one_sweet_stop,
     opt_in_categories,
     resolve_scene,
     resolve_style,
@@ -95,6 +96,7 @@ from app.domain.recommendation.style import (
     styled_templates,
     suggestion_rules,
     with_kept,
+    with_optional_after,
     with_role,
 )
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
@@ -613,6 +615,7 @@ class CourseService:
         # "조용하게": no pub and no karaoke room, unless a drink was asked for by name
         asked_roles = {str(extra_roles()[r]["role"]) for r in req.extras if r in extra_roles()}
         templates = without_roles(templates, understood.avoid_roles - asked_roles)
+        templates = one_sweet_stop(templates)  # a café and a dessert shop in a row is one sitting
         ctx.blocked_categories = ctx.blocked_categories | understood.blocked_categories
         self._apply_conditions(ctx, conditions)
         for name in conditions:  # a rainy day: indoors, and a gallery instead of a walk
@@ -1473,6 +1476,13 @@ class CourseService:
                 ctx.trait_pull.get(f"cat:{code}", 0.0) + SCENE_CATEGORY_PULL * float(weight), 3
             )
         templates = styled_templates(reweight_templates(templates, scene.get("role_share") or {}), scene)
+        if scene.get("add_optional"):
+            templates = with_optional_after(templates, scene["add_optional"])
+        if scene.get("end_by"):  # "아이와": an open-ended day wraps up in the early evening
+            hh, mm = (int(x) for x in str(scene["end_by"]).split(":"))
+            ctx.soft_end_min = hh * 60 + mm
+        if scene.get("params"):  # shorter legs with children or parents
+            profile = styled_profile(profile, {"params": scene["params"]})
         return profile, templates
 
     @staticmethod

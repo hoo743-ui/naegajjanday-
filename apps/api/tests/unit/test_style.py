@@ -153,3 +153,42 @@ def test_a_mountain_top_view_is_not_a_night_walk() -> None:
     assert rejection_reason(peak, fc, params) == "avoided_name"
     assert rejection_reason(ridge, fc, params) == "avoided_name"
     assert rejection_reason(river, fc, params) != "avoided_name"
+
+
+def test_a_cafe_then_a_dessert_shop_is_one_sitting() -> None:
+    from app.domain.recommendation.style import one_sweet_stop
+
+    day = template(
+        Slot(1, "MEAL", 0.5),
+        Slot(2, "CAFE", 0.2),
+        Slot(3, "DESSERT", 0.1, is_optional=True),
+        Slot(4, "BAR", 0.2),
+    )
+    [merged] = one_sweet_stop([day])
+    assert [s.course_role for s in merged.slots] == ["MEAL", "CAFE", "BAR"]
+    assert merged.slots[1].budget_share == pytest.approx(0.3) and merged.slots[1].is_optional is False
+    apart = template(Slot(1, "CAFE", 0.2), Slot(2, "MEAL", 0.6), Slot(3, "DESSERT", 0.2))
+    assert one_sweet_stop([apart]) == [apart]  # an afternoon coffee and an after-dinner sweet are two moments
+
+
+def test_a_scene_adds_its_kind_of_place_without_losing_the_walk() -> None:
+    from app.domain.recommendation.style import with_optional_after
+
+    [day] = with_optional_after([DATE_EVENING], {"role": "CULTURE", "share": 0.12, "after": "ATTRACTION"})
+    roles = [s.course_role for s in day.slots]
+    assert roles.index("CULTURE") == roles.index("ATTRACTION") + 1
+    culture = next(s for s in day.slots if s.course_role == "CULTURE")
+    assert culture.is_optional and sum(s.budget_share for s in day.slots) == pytest.approx(
+        sum(s.budget_share for s in DATE_EVENING.slots)
+    )
+
+
+def test_with_children_an_open_day_wraps_up_early() -> None:
+    from datetime import datetime
+
+    from app.domain.recommendation.budget import soft_window
+
+    assert soft_window(datetime(2026, 9, 26, 18, 30), 20 * 60 + 30) == 120
+    assert soft_window(datetime(2026, 9, 26, 19, 45), 20 * 60 + 30) == 90  # at least one sitting and a walk
+    assert soft_window(datetime(2026, 9, 26, 12, 0), 20 * 60 + 30) == 510
+    assert soft_window(datetime(2026, 9, 26, 12, 0), None) is None
