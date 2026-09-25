@@ -297,6 +297,8 @@ export function CourseView({ id }: { id: string }) {
         ...(request.move_style ? { move_style: request.move_style } : {}),
         ...(request.wishes?.length ? { wishes: request.wishes } : {}),
         ...(request.scene ? { scene: request.scene } : {}),
+        // 가는 김에: 그곳이 하루의 중심, 볼일 시간 그대로 (API 가 처음 물은 시작 시각을 돌려준다 — 두 번 밀리지 않는다)
+        ...(request.errand ? { errand: request.errand } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
