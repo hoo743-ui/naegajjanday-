@@ -71,11 +71,27 @@
     "activity.stadium": 15000,
     "culture": 5000,
     "activity.photo": 5000,
-    "activity.fortune": 15000
+    "activity.fortune": 15000,
+    "activity.cinema": 10000,
+    "activity.escape": 22000,
+    "activity.craft": 38000,
+    "activity.boardgame": 5000
   },
+  "_a3_note": "2026-09-26 (docs/53) — 1인 '예상' 값, 공식 가격 API 없음. activity.cinema 10,000 = 작은영화관 · 독립영화관 일반 관람료(대개 6,000~10,000원), 체인 3사는 name_rules 로 15,000(주말 2D 일반 기준, 할인 전). activity.escape 22,000 = 2인 기준 1인 요금(대개 20,000~25,000원). activity.craft 38,000 = 반지 · 향수 · 도자기 원데이 클래스 1인(대개 30,000~60,000원, 재료비 포함) — 데이트 예산이 적으면 가격 상한에 걸려 나오지 않는 것이 맞다. activity.boardgame 5,000 = 1인 이용료(시간제 3,000~6,000원).",
   "_stadium_note": "activity.stadium = KBO 1군 경기 1인 입장권의 '예상' 값: 주말 기준 외야·일반석(구단·요일에 따라 대략 9,000~20,000원)의 중간값. 테이블석·프리미엄석, 먹거리는 포함하지 않는다. 업종 평균(activity 12,000원)이 아니라 이 값을 쓴다. 공식 가격 API 가 없어 실측가가 아니며 price_is_estimated=true 로 저장된다.",
   "_name_rules_note": "상호로 가격대를 알 수 있는 곳은 업종 평균보다 상호 규칙이 먼저다(위에서부터 첫 일치). 2026-09-21: 코인노래방이 일반 노래연습장 평균(8,000원)을 받아 2인 16,000원으로 나온 것을 사용자가 지적 — 코인노래방은 1인 3,000원 선이다. categories 는 접두어 일치(생략하면 전체), contains 는 공백을 뺀 상호의 부분 문자열.",
   "name_rules": [
+    {
+      "contains": [
+        "CGV",
+        "메가박스",
+        "롯데시네마"
+      ],
+      "categories": [
+        "activity.cinema"
+      ],
+      "price": 15000
+    },
     {
       "contains": [
         "코인노래",

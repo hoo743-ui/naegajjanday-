@@ -48,6 +48,10 @@
       "open": "10:00",
       "close": "23:30"
     },
+    "activity.cinema": {
+      "open": "09:00",
+      "close": "24:00"
+    },
     "culture.bookstore": {
       "open": "11:00",
       "close": "21:00"

@@ -636,6 +636,15 @@
       "provider_mapping": {}
     },
     {
+      "code": "activity.cinema",
+      "name": "영화관",
+      "parent": "activity",
+      "course_role": "ACTIVITY",
+      "default_stay_min": 130,
+      "provider_mapping": {},
+      "_note": "멀티플렉스 · 작은영화관(전국영화상영관표준데이터, docs/53). 영화 한 편 + 광고 · 입퇴장 ≈ 130분 — 120분 이상 머무는 곳은 요청 시간에 맞춰 늘이거나 줄이지 않는다(composer.FIXED_STAY_MIN). 공연장 · 문화회관은 culture.cinema(영화·공연)에 그대로 둔다."
+    },
+    {
       "code": "culture",
       "name": "문화·전시",
       "parent": null,

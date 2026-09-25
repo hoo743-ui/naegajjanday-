@@ -60,13 +60,40 @@ def code_to_category(categories: Iterable[tuple[str, Mapping[str, Any]]]) -> dic
     return out
 
 
+def _compact_upper(text: str) -> str:
+    return text.replace(" ", "").upper()
+
+
+@dataclass(frozen=True, slots=True)
+class NameGate:
+    """A code kept (or moved) only for names that say what it is: 사진촬영업 → 셀프 사진관 when the name has
+    "인생네컷". `exclude` words veto a match (an academy named "…도예공방" is not a one-day class)."""
+
+    category: str
+    names: tuple[str, ...]
+    override: bool = False
+    exclude: tuple[str, ...] = ()
+
+    def matches(self, compact_name: str) -> bool:
+        return any(w in compact_name for w in self.names) and not any(w in compact_name for w in self.exclude)
+
+    @classmethod
+    def from_data(cls, g: Mapping[str, Any]) -> NameGate:
+        return cls(
+            category=str(g["category"]),
+            names=tuple(_compact_upper(str(w)) for w in g.get("names") or ()),
+            override=bool(g.get("override")),
+            exclude=tuple(_compact_upper(str(w)) for w in g.get("exclude") or ()),
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class SemasMapper:
     categories: Mapping[str, str]
     exclude_keywords: tuple[str, ...]
     prior: PricePrior
-    # a code kept only for names that say what it is (사진촬영업 → 셀프 사진관): {code: (category, words)}
-    gated: Mapping[str, tuple[str, tuple[str, ...], bool]] = field(default_factory=dict)
+    # {code: gates}; one code may lead to several kinds by name (기타 오락장 → 방탈출 · 보드게임카페)
+    gated: Mapping[str, tuple[NameGate, ...]] = field(default_factory=dict)
 
     @classmethod
     def from_data(
@@ -74,23 +101,24 @@ class SemasMapper:
     ) -> SemasMapper:
         keywords = tuple(rules.get("semas", {}).get("exclude_name_keywords", []))
         gated = {
-            str(code): (
-                str(g["category"]),
-                tuple(str(w).upper() for w in g.get("names") or ()),
-                bool(g.get("override")),
-            )
-            for code, g in (rules.get("semas", {}).get("name_gated_codes") or {}).items()
+            str(code): tuple(NameGate.from_data(g) for g in (spec if isinstance(spec, list) else [spec]))
+            for code, spec in (rules.get("semas", {}).get("name_gated_codes") or {}).items()
+            if not str(code).startswith("_")
         }
         return cls(categories=categories, exclude_keywords=keywords, prior=prior, gated=gated)
 
+    def gate_for(self, row: Mapping[str, str]) -> NameGate | None:
+        gates = self.gated.get(row.get(COL_CODE, ""))
+        if not gates:
+            return None
+        name = _compact_upper(row.get(COL_NAME, "") or "")
+        return next((g for g in gates if g.matches(name)), None)
+
     def category_for(self, row: Mapping[str, str]) -> str | None:
-        code = row.get(COL_CODE, "")
-        gate = self.gated.get(code)
+        gate = self.gate_for(row)
         if gate is not None:
-            name = (row.get(COL_NAME, "") or "").replace(" ", "").upper()
-            if any(w.replace(" ", "") in name for w in gate[1]):
-                return gate[0]  # 셀프 사진관 · 타로 카페: the name says what the code does not
-        return self.categories.get(code)
+            return gate.category  # 셀프 사진관 · 타로 카페: the name says what the code does not
+        return self.categories.get(row.get(COL_CODE, ""))
 
     def skip_reason(self, row: Mapping[str, str]) -> str | None:
         if self.category_for(row) is None:

@@ -20,6 +20,7 @@ from app.domain.recommendation.scorer import PlaceScorer, Score, ScoreInput
 from app.domain.routing.travel_time import HaversineEstimator, Leg
 
 MIN_OPEN_BUFFER_MIN = 30
+FIXED_STAY_MIN = 120  # a show (film, ball game) — its length does not follow the requested window
 WINDOW_GRACE_MIN = 15  # a course may end this much after the requested window (v2)
 ON_PLAN_SEATS_DIVISOR = 4  # a quarter of the beam is kept for partials that have not overspent
 MIN_CATEGORIES_IN_TOP_K = 4  # a slot's shortlist spans at least this many categories when the pool allows
@@ -54,6 +55,11 @@ class Partial:
 
 
 def stay_minutes(place: PlaceCandidate, stay_scale: float) -> int:
+    """A stay stretched or shrunk to the requested window — except a show: a film (130) or a ball game (180)
+    lasts as long as it lasts, so a place staying FIXED_STAY_MIN or more keeps its length. A short window
+    then simply has no room for it (the window check in `extend` drops it) instead of a 65-minute film."""
+    if place.default_stay_min >= FIXED_STAY_MIN:
+        return place.default_stay_min
     return max(15, round(place.default_stay_min * stay_scale))
 
 

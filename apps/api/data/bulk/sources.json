@@ -49,6 +49,13 @@
       "title": "전국전통시장표준데이터",
       "filename": "std_markets.csv"
     },
+    "cinemas": {
+      "kind": "localdata",
+      "public_data_pk": "15107749",
+      "slug": "movie_theaters",
+      "title": "전국영화상영관표준데이터",
+      "filename": "std_cinemas.csv"
+    },
     "centurystore": {
       "kind": "file",
       "public_data_pk": "15132695",

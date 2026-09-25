@@ -63,6 +63,7 @@ QUERIES: dict[str, str] = {
     "activity.sports": "bowling alley lanes",
     "activity.photo": "photo booth",
     "activity.karaoke": "noraebang",
+    "activity.cinema": "movie theater interior seats",
     "culture": "museum exhibition hall",
     "culture.museum": "National Museum of Korea interior",
     "culture.gallery": "art gallery interior",

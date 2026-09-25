@@ -13,6 +13,9 @@ python -m app.cli ingest-bulk std --kind parks|museums|tourist|markets|festivals
 python -m app.cli ingest-bulk tourapi [--force]              # TourAPI nationwide (TOURAPI_SERVICE_KEY)
 python -m app.cli ingest-bulk all                            # semas → goodprice → every std kind
 python -m app.cli ingest-bulk marks [--kind all|centurystore|…]  # 백년가게·모범음식점·인허가 → 태그/숨김
+python -m app.cli ingest-bulk cinemas                        # 영화상영관 → data/bulk/delta/cinemas.json
+python -m app.cli ingest-bulk delta-export --category activity.craft --out data/bulk/delta/x.json
+python -m app.cli ingest-bulk delta data/bulk/delta/x.json    # load a delta file (here and in production)
 python -m app.cli ingest-bulk stats
 python -m app.cli create-admin --email me@example.com [--print-token]
 ADMIN_PASSWORD=… python -m app.cli create-admin --login-id <id> [--role admin]   # id/password admin
@@ -239,13 +242,33 @@ def bulk_delta_export(
         "data/bulk/delta/semas_gated.json"
     ),
     path: Annotated[Path | None, typer.Option(help="소상공인 zip (default: the raw folder)")] = None,
+    category: Annotated[
+        list[str] | None,
+        typer.Option(help="only gates leading to this category (activity.craft …); repeatable"),
+    ] = None,
 ) -> None:
     """name-gated 소상공인 codes (사진촬영업 → 셀프 사진관) → a small JSON production can load (docs/51)."""
     source = _raw_file("semas", path)
 
     async def job(db: Database, _settings: Settings) -> None:
-        n = await delta.export_semas_gated(db, source, out, log=typer.echo)
+        n = await delta.export_semas_gated(db, source, out, categories=category or (), log=typer.echo)
         typer.echo(f"{n} places → {out}")
+
+    _run(job)
+
+
+@bulk_cli.command("cinemas")
+def bulk_cinemas(
+    path: Annotated[Path | None, typer.Option(help="전국영화상영관표준데이터 CSV")] = None,
+    out: Annotated[Path, typer.Option(help="delta JSON to write")] = Path("data/bulk/delta/cinemas.json"),
+) -> None:
+    """Cinemas (screens folded into theaters, EPSG:5174 → WGS84) → a delta JSON for `delta` (docs/53)."""
+    from app.infra.ingestion.bulk import cinemas
+
+    source = _raw_file("cinemas", path)
+
+    async def job(db: Database, _settings: Settings) -> None:
+        await cinemas.build(db, source, out=out, log=typer.echo)
 
     _run(job)
 
