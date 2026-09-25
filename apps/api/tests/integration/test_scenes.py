@@ -43,3 +43,25 @@ def test_family_defaults_to_kids_and_parents_keep_away_from_karaoke() -> None:
     assert key == "parents" and "activity.karaoke" in parents["blocked_categories"]
     assert resolve_scene("date", None) == (None, {})
     assert resolve_scene("friends", "kids") == (None, {})
+
+
+async def test_with_children_a_night_is_planned_for_that_evening(client: httpx.AsyncClient) -> None:
+    # 창업자 결정 (2026-09-25): 아이와의 밤 코스는 만들지 않고 그날 저녁으로 당긴다 — 그렇게 했다고 말한다
+    night = {**GENERATE_BODY, "purpose": "family", "party_size": 3, "budget_total": 90000,
+             "start_at": "2026-09-26T22:00:00+09:00", "alternatives": 0}  # fmt: skip
+    kids = await client.post("/v1/courses/generate", json=night)
+    assert kids.status_code == 200, kids.text
+    course = kids.json()["courses"][0]
+    assert course["stops"][0]["arrive_at"].startswith("2026-09-26T17:") or course["stops"][0][
+        "arrive_at"
+    ].startswith("2026-09-26T18:")
+    notes = [w for w in course["warnings"] if w["code"] == "SCENE_EARLIER"]
+    assert notes and "17시 30분" in notes[0]["detail"]
+    detail = (await client.get(f"/v1/courses/{course['id']}")).json()
+    assert detail["request"]["start_at"].startswith("2026-09-26T17:30")
+
+    parents = await client.post(
+        "/v1/courses/generate", json={**night, "scene": "parents", "budget_total": 91000}
+    )
+    assert parents.status_code == 200, parents.text
+    assert not [w for w in parents.json()["courses"][0]["warnings"] if w["code"] == "SCENE_EARLIER"]

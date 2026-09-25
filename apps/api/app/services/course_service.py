@@ -170,6 +170,7 @@ class CourseService:
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
         req = await self._with_kept(req)
+        req, earlier = self._earlier_for_scene(req)
         days = await self._city_days(req)
         # one plan asks for the same candidates again and again (rescale passes, the v2 structure
         # alternative, each day of a trip): read once, per plan only
@@ -183,7 +184,29 @@ class CourseService:
             self._reads = None
         await self._note_missing_extras(req, planned[3], planned[5])
         self._note_kept(req, planned[3], planned[5])
+        if earlier is not None:
+            for bucket in (planned[5].warnings, *(c.warnings for c in planned[5].courses)):
+                bucket.insert(0, earlier)
         return planned
+
+    def _earlier_for_scene(
+        self, req: dto.CourseGenerateRequest
+    ) -> tuple[dto.CourseGenerateRequest, dict[str, Any] | None]:
+        """누구와 (docs/48): a day with children is not a night out. Asked for at night, it is planned for
+        that evening instead (founder, 2026-09-25) — and the course says so."""
+        _key, scene = resolve_scene(req.purpose, req.scene)
+        start = self._local(req.start_at)
+        if req.nights > 0 or not scene.get("earlier_start") or not is_night(start):
+            return req, None
+        hh, mm = (int(x) for x in str(scene["earlier_start"]).split(":"))
+        moved = start.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        label = f"{hh}시" + (f" {mm}분" if mm else "")
+        notice = {
+            "code": "SCENE_EARLIER",
+            "detail": str(scene.get("earlier_notice") or "").format(time=label),
+            "meta": {"asked": start.isoformat(), "planned": moved.isoformat()},
+        }
+        return req.model_copy(update={"start_at": moved}), notice
 
     async def _with_kept(self, req: dto.CourseGenerateRequest) -> dto.CourseGenerateRequest:
         """The stops the user pinned (the course is a draft they edit): read them once, and a pinned place is
