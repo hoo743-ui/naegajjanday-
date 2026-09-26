@@ -41,8 +41,18 @@ def test_family_defaults_to_kids_and_parents_keep_away_from_karaoke() -> None:
     assert resolve_scene("family", "nonsense")[0] == "kids"
     key, parents = resolve_scene("family", "parents")
     assert key == "parents" and "activity.karaoke" in parents["blocked_categories"]
-    assert resolve_scene("date", None) == (None, {})
     assert resolve_scene("friends", "kids") == (None, {})
+
+
+def test_a_dates_base_kinds_hold_whatever_the_scene() -> None:
+    # docs/59 #8: a date's meal is not a 고깃집 unless the town is known for it — asked scene or none
+    key, plain = resolve_scene("date", None)
+    assert key is None and set(plain) == {"category_weights"} and plain["category_weights"]["food.bbq"] < 0
+    _key, new = resolve_scene("date", "new")
+    assert new["category_weights"]["food.bbq"] == -0.5  # the scene's own weight for the kind wins
+    assert new["category_weights"]["cafe"] == 0.3 and "label" in new
+    _key, anniversary = resolve_scene("date", "anniversary")
+    assert anniversary["category_weights"]["food.bbq"] < 0 and anniversary["category_weights"]["bar.wine"] > 0
 
 
 async def test_with_children_a_night_is_planned_for_that_evening(client: httpx.AsyncClient) -> None:

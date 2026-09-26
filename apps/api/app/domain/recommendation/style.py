@@ -140,11 +140,17 @@ def scene_rules(path: Path = SCENES_PATH) -> dict[str, dict[str, Any]]:
 
 def resolve_scene(purpose_code: str, asked: str | None) -> tuple[str | None, dict[str, Any]]:
     """The scene this day is planned for: the one asked if the purpose has it, else the purpose's default.
-    (None, {}) for a purpose without scenes — the day is planned as it always was."""
+    (None, {}) for a purpose without scenes — the day is planned as it always was.
+    The purpose's `base` kinds of place (category_weights) hold whatever the scene, a scene's own weight for
+    the same kind winning (docs/59 #8: a date's meal is not a 고깃집 unless it is what the town is for)."""
     rules = scene_rules().get(purpose_code) or {}
     scenes: dict[str, Any] = rules.get("scenes") or {}
     key = asked if asked in scenes else rules.get("default")
-    return (key, dict(scenes[key])) if key in scenes else (None, {})
+    scene = dict(scenes[key]) if key in scenes else {}
+    base = (rules.get("base") or {}).get("category_weights") or {}
+    if base:
+        scene["category_weights"] = {**base, **(scene.get("category_weights") or {})}
+    return (key if key in scenes else None), scene
 
 
 EXTRA_ROLES_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "extra_roles.json"

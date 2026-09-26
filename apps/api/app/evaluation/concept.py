@@ -298,6 +298,20 @@ def _chains(purpose: str, roles: frozenset[str] = FOOD_ROLES) -> Count:
     return count
 
 
+def _stops(
+    applies: Callable[[Record], bool], counted: Callable[[Stop], bool], hit: Callable[[Stop], bool]
+) -> Count:
+    """A stop-level rate: of the `counted` stops of the courses it `applies` to, those that `hit`."""
+
+    def count(r: Record) -> tuple[float, float] | None:
+        if not r.ok or not applies(r):
+            return None
+        stops = [s for s in r.stops if counted(s)]
+        return (float(sum(1 for s in stops if hit(s))), float(len(stops))) if stops else None
+
+    return count
+
+
 def _mean_stops(r: Record) -> tuple[float, float] | None:
     return (float(len(r.stops)), 1.0) if _day(r) else None
 
@@ -358,6 +372,11 @@ METRICS: tuple[Metric, ...] = (
     Metric("solo_late_bar_rate", "혼자의 늦은 저녁(20시대 시작)에 한잔할 곳", "higher", 0.80,
            _course(lambda r: r.ok and r.case.purpose == "solo" and r.case.start.startswith("20:"),
                    lambda r: any(s.role == "BAR" for s in r.stops))),
+    # docs/59 #8 · docs/48 §1 "고깃집(데이트 식사로)": a date's meal at a 고깃집 that is not what the
+    # neighbourhood is known for (대구 막창 · 제주 흑돼지 are the draw, not the default)
+    Metric("date_bbq_meal_rate", "데이트 식사 중 동네 명물이 아닌 고깃집", "lower", 0.15,
+           _stops(lambda r: r.case.purpose == "date", lambda s: s.role == "MEAL",
+                  lambda s: s.category.startswith("food.bbq") and not s.draw)),
     Metric("date_scene_flag_rate", "데이트의 '절대 안 됨'(단체석 · 키즈 · 무인 · 힘 안 준 기념일)", "lower",
            0.05, _course(lambda r: r.ok and r.case.purpose == "date", _has(DATE_FLAGS)), DATE_FLAGS),
     Metric("family_scene_flag_rate", "가족의 '절대 안 됨'(술 · 매운맛 · 늦은 끝 · 긴 구간 · 소음)", "lower",

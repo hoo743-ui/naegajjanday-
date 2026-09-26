@@ -352,6 +352,17 @@ def _regular(stops: list[C.Stop], *, pair_draw: bool | None, draw_eligible: bool
     return C.Record(case, stops=stops, draw_eligible=draw_eligible, pair_draw=pair_draw)
 
 
+def test_a_dates_bbq_meal_counts_unless_it_is_the_draw() -> None:
+    bbq = [
+        rec("date", [stop("MEAL", "고깃집", category="food.bbq")]),
+        rec("date", [stop("MEAL", "막창", category="food.bbq", draw=True)]),  # what the town is for
+        rec("date", [stop("MEAL", "파스타", category="food.western")]),
+        rec("friends", [stop("MEAL", "고깃집", category="food.bbq")]),  # not a date
+    ]
+    result = {r.id: r for r in C.evaluate_all(bbq)}["date_bbq_meal_rate"]
+    assert result.value == pytest.approx(1 / 3, abs=1e-4) and result.n == 3
+
+
 def test_paired_metrics_count_only_the_regular_half() -> None:
     first = [rec("date", [stop("MEAL", draw=True)], draw_eligible=True) for _ in range(4)]
     regular = [
