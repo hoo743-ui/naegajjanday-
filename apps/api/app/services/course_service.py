@@ -8,7 +8,7 @@ import random
 import time
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -56,6 +56,8 @@ from app.domain.recommendation.budget import SlotBudget, evening_minute, is_nigh
 from app.domain.recommendation.candidates import FilterContext, area_names_of, compact_name, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
+from app.domain.recommendation.familiarity import FIRST, REGULAR, familiarity_rules
+from app.domain.recommendation.familiarity import infer as infer_familiarity
 from app.domain.recommendation.features import is_open
 from app.domain.recommendation.itinerary import (
     Area,
@@ -142,6 +144,16 @@ DARK_BY_THE_END_H = 17  # a course starting from here on ends after dark
 SCENE_CATEGORY_PULL = 0.3  # 누구와: a liked kind of place (+1) adds this much to a place score of 0..1
 
 
+@dataclass(frozen=True, slots=True)
+class Familiar:
+    """처음 · 자주 for this request: which, why (asked · history · None = the default), and — for a regular
+    who is signed in — the places of their past courses around here, left out."""
+
+    value: str = FIRST
+    source: str | None = None
+    been: frozenset[int] = frozenset()
+
+
 class CourseService:
     def __init__(
         self,
@@ -169,6 +181,7 @@ class CourseService:
         self._kept: dict[str, PlaceCandidate] = {}
         # 가는 김에: the errand became the centre of the day (the snapshot names the point after it)
         self._errand_label: str | None = None
+        self._familiar = Familiar()  # 처음 · 자주 of the request under way (see `_familiarity_for`)
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -181,6 +194,7 @@ class CourseService:
         """Everything up to and including the engine run — no cache, no rows, no tracking."""
         req, errand = await self._with_errand(req)  # first: an errand of ours is pinned like any kept stop
         req = await self._with_kept(req)
+        self._familiar = await self._familiarity_for(req, user)
         req, earlier = self._earlier_for_scene(req)
         days = await self._city_days(req)
         # one plan asks for the same candidates again and again (rescale passes, the v2 structure
@@ -210,6 +224,31 @@ class CourseService:
                 for bucket in (planned[5].warnings, *(c.warnings for c in planned[5].courses)):
                     bucket.insert(0, note)
         return planned
+
+    async def _familiarity_for(self, req: dto.CourseGenerateRequest, user: User | None) -> Familiar:
+        """처음 오는 사람 · 자주 오는 사람 (docs/59 #1). Asked for: that. Not asked and signed in: read off
+        their own past — a day planned here (or in the district above) on two different days of the last 180
+        is a regular. Anonymous and not asked: a first visit (the result page offers the other in one tap)."""
+        if user is None:
+            return Familiar(req.familiarity or FIRST, "asked" if req.familiarity else None)
+        rules = familiarity_rules()
+        region = await self._regions.get_by_slug(req.region) if req.region else None
+        if region is None and req.origin is not None:
+            region = await self._regions.nearest_active(GeoPoint(req.origin.lat, req.origin.lng))
+        if region is None:
+            return Familiar(req.familiarity or FIRST, "asked" if req.familiarity else None)
+        area = set(await self._regions.ids_under(region.id))
+        if region.parent_id:
+            area.add(region.parent_id)
+        since = datetime.now(self._tz) - timedelta(days=rules.window_days)
+        when, shown, own = await self._courses.history_in(user.id, sorted(area), since)
+        value = req.familiarity or infer_familiarity(self._local(at).date() for at in when)
+        source = "asked" if req.familiarity else ("history" if value == REGULAR else None)
+        if value != REGULAR:
+            return Familiar(value, source)
+        shown_ids = await self._places.ids_by_public_ids(list(dict.fromkeys(shown)))
+        been = [*own, *(i for i in shown_ids if i not in set(own))][: rules.max_been_places]
+        return Familiar(value, source, frozenset(been))
 
     async def _with_errand(
         self, req: dto.CourseGenerateRequest
@@ -687,8 +726,13 @@ class CourseService:
         ctx.draw_words = frozenset(s.word for s in signature.specialties if s.curated)
         ctx.draw_ids = frozenset(s.place_id for s in signature.sights if s.curated)
         ctx.focus_request = req.focus if req.focus in ctx.local_words else None  # only what it is known for
-        if req.focus != FOCUS_OFF:  # "상관없어요": the user asked for a plain course
-            ctx.auto_focus_words = ctx.local_words
+        # 자주 (docs/59 #1): "what haven't I done here yet" — no specialty claimed unasked, been places out
+        regular = self._familiar.value == REGULAR
+        if regular:
+            ctx.familiarity = REGULAR
+            ctx.exclude_place_ids |= set(self._familiar.been)
+        if req.focus != FOCUS_OFF and not (regular and not familiarity_rules().regular.auto_focus):
+            ctx.auto_focus_words = ctx.local_words  # "상관없어요" (FOCUS_OFF): asked for a plain course
         # docs/30: the few answers of the wizard, read into the engine's own knobs
         understood = interpret(
             pace=req.pace,
@@ -1022,6 +1066,9 @@ class CourseService:
             "pace": list(req.pace),
             "wishes": list(req.wishes),
             "scene": ctx.scene,
+            # 처음 · 자주 (docs/59 #1): the page says why, and 다시 짜기 sends an asked-for one back
+            "familiarity": self._familiar.value,
+            "familiarity_source": self._familiar.source,
             # 가는 김에: kept as asked — a reroll sends it back and must not shift the start twice
             "errand": req.errand.model_dump() | {"asked_start_at": self._local(req.start_at).isoformat()}
             if req.errand
@@ -1467,6 +1514,8 @@ class CourseService:
                 scene_label=resolve_scene(purpose.code, (row.request or {}).get("scene"))[1].get("label")
                 if (row.request or {}).get("scene")
                 else None,
+                familiarity=REGULAR if snapshot.get("familiarity") == REGULAR else FIRST,
+                familiarity_source=snapshot.get("familiarity_source"),
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[
@@ -1531,6 +1580,8 @@ class CourseService:
         profile, _ = self._apply_understood(ctx, profile, [], understood)
         ctx.scene, scene = resolve_scene(ctx.purpose_code, (row.request or {}).get("scene"))
         profile, _ = self._apply_scene(ctx, profile, [], scene)
+        # 처음 · 자주: a replacement for a regular's stop leans the same way the course did
+        ctx.familiarity = REGULAR if (row.request or {}).get("familiarity") == REGULAR else FIRST
         # the day as it was said to be (rain, or "실내 위주"), and the night the clock says: a replacement
         # must not bring back the walk the rainy day took out
         said = [*((row.request or {}).get("conditions") or []), *understood.conditions]
@@ -2312,6 +2363,8 @@ def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
         line: str | None = None
         if code == "LOCAL_SIGNIFICANCE":
             line = f"이 동네 명물 {place.local_word}" if place.local_word else "이 동네에서 이름난 곳"
+        elif code == "NEWLY_OPENED" and place.opened_on is not None:
+            line = f"{place.opened_on.year}년에 새로 문 연 곳"
         elif code == "WORTH_THE_TRIP":
             line = "조금 멀어도 들를 만한 곳"
         elif code == "UNIQUE_EXPERIENCE":

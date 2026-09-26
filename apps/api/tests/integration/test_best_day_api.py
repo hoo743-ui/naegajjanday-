@@ -7,6 +7,7 @@ from tests.conftest import GENERATE_BODY, BrowserLikeClient
 KNOWN_REASONS = {
     "PURPOSE_MATCH",
     "LOCAL_SIGNIFICANCE",
+    "NEWLY_OPENED",
     "WORTH_THE_TRIP",
     "UNIQUE_EXPERIENCE",
     "USER_PREFERENCE",

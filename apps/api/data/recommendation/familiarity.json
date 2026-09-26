@@ -1,0 +1,27 @@
+{
+  "_comment": "처음 오는 사람 · 자주 오는 사람 (창업자 2026-09-26, docs/59 #1). 같은 동네에 두 질문: 처음은 '이 동네는 뭐로 알려졌지?'(지금 그대로 — draws · 명물이 세게 당긴다), 자주는 '여기서 아직 안 해 본 건?'. 자주 모드에서만 이 파일의 값이 쓰인다. 다른 규칙(장면 · 밤 · 예산 · 체인)은 그대로다.",
+  "infer": {
+    "_note": "familiarity 를 말하지 않은 로그인 사용자: 최근 window_days 일 동안 이 동네(또는 그 상위 구)에서 코스를 만든 날이 min_days 일 이상이면 자주. 같은 날 다시 짜기는 한 번으로 센다(날짜 단위) — 처음 온 날 세 번 다시 짜면 '자주'가 되는 일이 없게.",
+    "window_days": 180,
+    "min_days": 2,
+    "max_been_places": 300
+  },
+  "regular": {
+    "_note": "signature_rules.json 의 local_pull · draw_pull 을 이 요청에서만 바꾼다(명물 · 대표 볼거리의 당김을 뺀다). known_scale: 점수의 curated(공공 소개 · 티맵 인기 · 동네 명물)를 이만큼만 친다. 명물 자동 초점은 끈다(focus 를 직접 고르면 그대로). 대신 새로 생긴 곳(인허가일자가 new_days 일 안)과 덜 알려진 독립 가게(체인 · 공공 소개 · 티맵 인기 · 동네 명물이 아닌 곳)를 당긴다.",
+    "local_pull": 0.0,
+    "draw_pull": 0.0,
+    "known_scale": 0.3,
+    "auto_focus": false,
+    "new_days": 730,
+    "new_pull": 0.1,
+    "lesser_known_pull": 0.06,
+    "not_independent_tags": ["체인점", "무인매장"],
+    "known_popularity": 0.0
+  },
+  "opened_on_sources": {
+    "_note": "개업(인허가) 날짜가 있는 원천과 그 키 — place_source.raw. 있는 곳에서만 쓴다(없으면 '새로 생긴 곳'이 아닐 뿐 벌점 없음).",
+    "lic_cafe": "인허가일자",
+    "lic_restaurant": "인허가일자",
+    "std_cinema": "licensed_on"
+  }
+}

@@ -34,6 +34,7 @@ from itertools import pairwise
 from typing import TYPE_CHECKING
 
 from app.domain.models import PlaceCandidate, RequestContext, ScoringParams, Template
+from app.domain.recommendation.familiarity import familiarity_rules, is_regular, newly_opened
 from app.domain.recommendation.features import is_open
 from app.domain.routing.travel_time import haversine_m
 
@@ -87,6 +88,7 @@ REPEATABLE = {DINING: 2}  # lunch and dinner are two meals, not a repetition
 REASONS = (
     "PURPOSE_MATCH",
     "LOCAL_SIGNIFICANCE",
+    "NEWLY_OPENED",  # 자주 오는 사람: opened lately (licence date · recommendation.familiarity)
     "WORTH_THE_TRIP",
     "UNIQUE_EXPERIENCE",
     "USER_PREFERENCE",
@@ -229,6 +231,8 @@ def reason_codes(
         found.add("PURPOSE_MATCH")
     if place.local_score > 0 or place.id in ctx.landmark_ids:
         found.add("LOCAL_SIGNIFICANCE")
+    if is_regular(ctx) and newly_opened(place, ctx.start_at, familiarity_rules().regular):
+        found.add("NEWLY_OPENED")
     if (place.is_event, place.id) in ctx.ring_keys:
         found.add("WORTH_THE_TRIP")
     if unique and kind in (ACTIVITY, CULTURE, VIEW, WALK):

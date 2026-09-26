@@ -15,6 +15,7 @@ MoveStyle = Literal["local", "balanced", "explorer"]
 Pace = Literal["relaxed", "packed", "foodie", "special"]
 Wish = Literal["night", "walk", "exhibition", "value", "romantic", "quiet", "indoor", "photo", "free"]
 SwapStrategy = Literal["cheaper", "closer", "higher_rated", "random_top"]
+Familiarity = Literal["first", "regular"]
 
 
 class Preferences(BaseModel):
@@ -125,6 +126,13 @@ class CourseGenerateRequest(BaseModel):
         "exclude_place_ids 보다 우선한다. 시간 · 예산 때문에 못 넣으면 KEPT_PLACE_DROPPED 경고, "
         "모르는 id 도 같은 경고로 알리고 빼고 짠다",
     )
+    familiarity: Familiarity | None = Field(
+        default=None,
+        description="처음 오는 동네 first(그 동네가 알려진 것 — 명물 · 대표 볼거리) · "
+        "자주 오는 동네 regular(안 가 본 곳 · 새로 생긴 곳 · 덜 알려진 곳, 명물 자동 초점 없음). "
+        "생략하면 로그인 사용자는 지난 코스로 추론(180일 안에 이 동네나 그 상위 구에서 "
+        "코스를 만든 날이 이틀 이상이면 regular), 비로그인은 first",
+    )
     alternatives: int = Field(default=2, ge=0, le=3)
     replaces: str | None = Field(
         default=None,
@@ -232,8 +240,8 @@ class StopOut(BaseModel):
     )
     reason_codes: list[str] = Field(
         default_factory=list,
-        description="왜 여기인지 (PURPOSE_MATCH · LOCAL_SIGNIFICANCE · WORTH_THE_TRIP · UNIQUE_EXPERIENCE · "
-        "USER_PREFERENCE · HIGH_PLACE_QUALITY · BUDGET_FIT · DIVERSITY · ROUTE_BALANCE)",
+        description="왜 여기인지 (PURPOSE_MATCH · LOCAL_SIGNIFICANCE · NEWLY_OPENED · WORTH_THE_TRIP · "
+        "UNIQUE_EXPERIENCE · USER_PREFERENCE · HIGH_PLACE_QUALITY · BUDGET_FIT · DIVERSITY · ROUTE_BALANCE)",
     )
     congestion: Congestion | None = None
 
@@ -486,6 +494,15 @@ class CourseRequestEcho(BaseModel):
     scene: str | None = None
     errand: ErrandIn | None = None
     scene_label: str | None = Field(default=None, description="누구와의 이름: 아이와 · 기념일 …")
+    familiarity: Familiarity = Field(
+        default="first",
+        description="이 코스를 짠 기준: first=처음(대표 코스) · regular=자주(안 가 본 곳 위주)",
+    )
+    familiarity_source: Literal["asked", "history"] | None = Field(
+        default=None,
+        description="asked=요청에 있었다(다시 짤 때 familiarity 로 그대로 보낸다) · "
+        "history=지난 코스에서 추론 · 없음=기본(처음)",
+    )
 
 
 class SiblingRef(BaseModel):

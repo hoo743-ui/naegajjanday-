@@ -24,7 +24,7 @@ import os
 import subprocess
 import time as _time
 from collections.abc import Awaitable, Callable, Iterable, Sequence
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from functools import partial
 from itertools import pairwise
@@ -87,12 +87,23 @@ class Case:
     budget: int
     start: str  # "HH:MM"
     scene: str | None = None
-    group: str = "hotspot"  # hotspot | solo_night | date_scene | family_scene | night
+    group: str = "hotspot"  # hotspot | solo_night | date_scene | family_scene | night | regular
+    # 처음 · 자주 (docs/59 #1): "regular" = the same hotspot request by someone who has been — its pair is
+    # the first-visit course of `first_key`, whose places they are taken to have been to
+    familiarity: str | None = None
+
+    @property
+    def first_key(self) -> str:
+        who = f"{self.purpose}/{self.scene}" if self.scene else self.purpose
+        return f"{self.region}|{who}|{self.start}|{self.budget}"
 
     @property
     def key(self) -> str:
-        who = f"{self.purpose}/{self.scene}" if self.scene else self.purpose
-        return f"{self.region}|{who}|{self.start}|{self.budget}"
+        return self.first_key + ("|자주" if self.regular else "")
+
+    @property
+    def regular(self) -> bool:
+        return self.familiarity == "regular"
 
     @property
     def night(self) -> bool:
@@ -114,6 +125,9 @@ class Stop:
     kind: str | None = None  # day_score.experience_kind
     tags: dict[str, float] = field(default_factory=dict)
     draw: bool = False  # one of the things people come to this neighbourhood for (draws.json, curated)
+    place_id: str = ""  # public id — the paired sample compares a regular's course with the first one
+    novel: bool = False  # newly opened or a lesser-known independent (recommendation.familiarity)
+    shared: bool = False  # a regular's stop that was already in the first-visit course
 
     @property
     def chain(self) -> bool:
@@ -132,6 +146,7 @@ class Record:
     stops: list[Stop] = field(default_factory=list)
     flags: list[str] = field(default_factory=list)  # "CODE" or "CODE:detail"
     draw_eligible: bool = False  # the neighbourhood really has a draw within reach
+    pair_draw: bool | None = None  # a regular's course: did the first-visit course of the pair have a draw
 
     @property
     def ok(self) -> bool:
@@ -147,7 +162,10 @@ class Record:
         if self.error:
             return f"{c.key} → 코스 없음 ({self.error})"
         path = " → ".join(
-            f"{s.at} {s.role} {s.name}" + ("ⓒ" if s.chain else "") + ("★" if s.draw else "")
+            f"{s.at} {s.role} {s.name}"
+            + ("ⓒ" if s.chain else "")
+            + ("★" if s.draw else "")
+            + ("✧" if self.case.regular and s.novel else "")
             for s in self.stops
         )
         wanted = set(codes)
@@ -223,6 +241,9 @@ class Metric:
     kind: str = "rate"  # rate (0..1) | mean
     scale: float = 0.25  # the miss that counts as 1.0 in the ranking (25 points for a rate)
     weight: float = 1.0
+    # counted on the "regular" half of the paired sample only; every other metric never sees that half, so
+    # the first-visit numbers stay comparable with runs from before it existed
+    paired: bool = False
 
     def bad(self, value: float) -> float:
         """How far `value` is past the target, in the metric's own units (≤ 0: on target)."""
@@ -268,6 +289,23 @@ def _mean_stops(r: Record) -> tuple[float, float] | None:
 
 def _code(*codes: str) -> frozenset[str]:
     return frozenset(codes)
+
+
+def _regular_draws(r: Record) -> tuple[float, float] | None:
+    """Per pair: (the regular's course has a draw, the first-visit course had one). Summed, the ratio is the
+    regular's draw rate over the first's on the same requests."""
+    if not r.ok or not r.case.regular or not r.draw_eligible or r.pair_draw is None:
+        return None
+    return (1.0 if any(s.draw for s in r.stops) else 0.0, 1.0 if r.pair_draw else 0.0)
+
+
+def _regular_stops(hit: Callable[[Stop], bool]) -> Count:
+    def count(r: Record) -> tuple[float, float] | None:
+        if not r.ok or not r.case.regular:
+            return None
+        return float(sum(1 for s in r.stops if hit(s))), float(len(r.stops))
+
+    return count
 
 
 METRICS: tuple[Metric, ...] = (
@@ -316,6 +354,13 @@ METRICS: tuple[Metric, ...] = (
            _course(_ok, _has(_code("VAGUE_SIGHT", "NOT_A_SIGN"))), _code("VAGUE_SIGHT", "NOT_A_SIGN")),
     Metric("clean_rate", "어떤 규칙에도 걸리지 않은 코스", "higher", 0.50,
            _course(_ok, lambda r: not r.flags), kind="rate", weight=0.5),
+    # 처음 · 자주 (docs/59 #1): the paired sample — the same hotspot requests by someone who has been
+    Metric("regular_draw_rate", "자주 모드의 명물 코스 ÷ 처음 모드의 명물 코스(같은 요청 짝)", "lower",
+           0.50, _regular_draws, paired=True),
+    Metric("regular_overlap_rate", "자주 모드 코스의 장소 중 처음 모드 코스와 겹치는 곳", "lower", 0.20,
+           _regular_stops(lambda s: s.shared), paired=True),
+    Metric("regular_novelty_rate", "자주 모드 코스의 장소 중 새로 생긴 곳 · 덜 알려진 독립 가게", "higher",
+           0.50, _regular_stops(lambda s: s.novel), paired=True),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -346,7 +391,9 @@ def noise_band(metric: Metric, value: float | None, units: float, spread: float 
 
 
 def evaluate(metric: Metric, records: Sequence[Record], *, examples: int = 4) -> Result:
-    counted = [(r, c) for r in records if (c := metric.count(r)) is not None]
+    counted = [
+        (r, c) for r in records if r.case.regular == metric.paired and (c := metric.count(r)) is not None
+    ]
     num = sum(c[0] for _r, c in counted)
     den = sum(c[1] for _r, c in counted)
     value = num / den if den else None
@@ -499,6 +546,8 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
             Case(region, "family", 3, 120000, t, scene=s, group="family_scene") for s, t in family_scenes
         ]
         cases += [Case(region, p, n, b, "21:30", group="night") for p, n, b in night]
+    # 처음 · 자주 (docs/59 #1): each hotspot request again, by someone who has been (last, after its pair)
+    cases += [replace(c, group="regular", familiarity="regular") for c in cases if c.group == "hotspot"]
     return cases
 
 
@@ -556,10 +605,16 @@ def _compact(text: str) -> str:
     return compact(text)
 
 
-def record_from(case: Case, region: Any, ctx: Any, course: Any, rules: dict[str, Any]) -> Record:
+def record_from(
+    case: Case, region: Any, ctx: Any, course: Any, rules: dict[str, Any], pair: Record | None = None
+) -> Record:
     from app.domain.recommendation.budget import evening_minute
     from app.domain.recommendation.day_score import experience_kind
+    from app.domain.recommendation.familiarity import novel
     from app.evaluation.harness import Scenario, judge
+
+    # the same place under a second record (a duplicate listing) is still the same place: id or sign name
+    before = {s.place_id for s in pair.stops} | {_compact(s.name) for s in pair.stops} if pair else set()
 
     words = [w for w in (_compact(w) for w in ctx.draw_words) if w]
     stops = []
@@ -581,6 +636,9 @@ def record_from(case: Case, region: Any, ctx: Any, course: Any, rules: dict[str,
                 kind=experience_kind(p),
                 tags={k: float(v) for k, v in p.tags.items() if k in KEPT_TAGS and v},
                 draw=draw,
+                place_id=p.public_id,
+                novel=novel(p, ctx.start_at),
+                shared=p.public_id in before or _compact(p.name) in before,
             )
         )
     scenario = Scenario(case.region, case.purpose, case.start, "efficient", case.party, case.budget)
@@ -595,6 +653,7 @@ def record_from(case: Case, region: Any, ctx: Any, course: Any, rules: dict[str,
         stops=stops,
         flags=found,
         draw_eligible=bool(ctx.draw_words or ctx.draw_ids),
+        pair_draw=any(s.draw for s in pair.stops) if pair is not None and pair.ok else None,
     )
 
 
@@ -609,6 +668,7 @@ async def collect(
     """Every case through `CourseService.dry_run` — one session, one service for the whole sample."""
     from app.core import errors
     from app.core.cache import MemoryCache
+    from app.domain.recommendation.familiarity import REGULAR
     from app.evaluation.harness import load_spec
     from app.infra.analytics.base import NoopTracker
     from app.schemas import course as dto
@@ -618,6 +678,7 @@ async def collect(
     tz = ZoneInfo(settings.timezone)
     rules = load_spec()["rules"]
     records: list[Record] = []
+    firsts: dict[str, Record] = {}  # the first-visit course of each hotspot request (the regular's pair)
     async with db.sessionmaker() as session:
         service = CourseService(
             settings=settings,
@@ -628,6 +689,9 @@ async def collect(
         )
         for i, case in enumerate(cases, 1):
             h, m = (int(x) for x in case.start.split(":"))
+            pair = firsts.get(case.first_key) if case.regular else None
+            # "has been before": the places of the first-visit course, as a past course of theirs would be
+            been = [s.place_id for s in pair.stops if s.place_id] if pair is not None else []
             req = dto.CourseGenerateRequest(
                 region=case.region,
                 purpose=case.purpose,
@@ -636,10 +700,14 @@ async def collect(
                 start_at=datetime.combine(day, time(h, m), tzinfo=tz),
                 alternatives=0,
                 scene=case.scene,
+                familiarity=REGULAR if case.regular else None,
+                preferences=dto.Preferences(exclude_place_ids=been[:100]),
             )
             try:
                 region, ctx, out = await with_retries(partial(service.dry_run, req), session)
-                records.append(record_from(case, region, ctx, out.courses[0], rules))
+                records.append(record_from(case, region, ctx, out.courses[0], rules, pair))
+                if case.group == "hotspot":
+                    firsts[case.key] = records[-1]
             except errors.AppError as exc:
                 records.append(Record(case, error=exc.code))
             except Exception as exc:  # a broken case is a finding of the run, not the end of it

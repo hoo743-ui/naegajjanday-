@@ -10,7 +10,7 @@
 
 ```bash
 cd apps/api
-uv run python -m app.cli eval-concept                       # quick: 약 80코스, 6~8분 (전국 로컬 DB)
+uv run python -m app.cli eval-concept                       # quick: 약 120코스(자주 짝 39 포함), 3~8분 (전국 로컬 DB)
 uv run python -m app.cli eval-concept --sample full         # full: 약 350코스, 25분 안팎
 uv run python -m app.cli eval-concept --save baseline       # 이 이름으로도 저장
 uv run python -m app.cli eval-concept --compare baseline    # 직전 실행 대신 baseline 과 비교
@@ -34,8 +34,11 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | date_scene | 4곳 × 설레는 사이 21:30 · 오래 만난 사이 15:00 · 기념일 18:30(10만) | 8곳 × 세 장면 × 18:30 · 21:30 | 데이트 장면 |
 | family_scene | 4곳 × 아이와 18:30 · 부모님과 12:00 · 어른끼리 21:30 (셋 12만) | 8곳 × 넷(+ 아이와 12:00) | 가족 장면 |
 | night | 4곳 × 데이트 · 친구 21:30 | 8곳 × 데이트 · 친구 · 여행 | 밤 규칙 |
+| regular | hotspot 요청 하나하나를 `familiarity=regular` 로 한 번 더(짝). "가 본 적 있음" = 짝인 처음 코스의 장소를 뺀다 | 같음 | 처음 · 자주 (docs/59 #1) |
 
 ## 2. 지표 — 무엇을 지키려는 숫자인가
+
+`regular_*` 셋은 **짝 표본의 자주 쪽에서만** 세고, 나머지 지표는 자주 쪽을 보지 않는다(처음 모드 숫자는 짝 표본이 생기기 전과 그대로 비교된다).
 
 값이 목표 쪽에 있으면 ✓. **방향**: ≥ 는 높을수록, ≤ 는 낮을수록 좋다. 코스를 못 만든 요청은 `no_course_rate` 만 세고 나머지 지표의 분모에서 빠진다.
 목표는 **지금 값에 맞춘 것이 아니라 문서가 약속한 것**에서 왔다 — 처음엔 여럿이 ✗ 인 게 정상이다. 목표를 바꾸려면 이 표와 `METRICS` 를 같이 고치고 이유를 적는다.
@@ -65,6 +68,9 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | `same_kind_twice_rate` | ≤ 10% | 같은 원칙, 업종 코드 단위 — 점심 · 저녁 한식 두 번처럼 괜찮은 경우가 있어 느슨하게 | `SAME_KIND_TWICE` |
 | `naming_rate` | ≤ 2% | "지어내지 않는다 … 간판" (docs/54 §5) — 이름이 모호하면 사람이 찾아가지 못한다 | `VAGUE_SIGHT` · `NOT_A_SIGN` |
 | `clean_rate` | ≥ 50% | 모든 규칙을 합친 한 숫자 | 어떤 플래그도 없는 코스. 가중치 0.5 — 다른 지표를 고치면 따라 오른다. 직접 고칠 대상이 아니다 |
+| `regular_draw_rate` | ≤ 50% | "처음 오는 사람은 그 지역의 특색 … 많이 오는 사람들은 어차피 거기서 거기" (창업자 2026-09-26, docs/59 #1) | **짝 표본**. 자주 모드 코스 중 명물(★)이 든 코스 수 ÷ 짝인 처음 모드 코스 중 명물이 든 코스 수 — 처음의 절반 아래로 |
+| `regular_overlap_rate` | ≤ 20% | 같은 원칙: 자주 오는 사람에게 같은 곳을 다시 내밀지 않는다 | 자주 모드 코스의 장소 중 짝인 처음 코스와 겹치는 곳(같은 id 또는 같은 간판 — 중복 등록도 같은 곳) |
+| `regular_novelty_rate` | ≥ 50% | 같은 원칙: 안 가 본 곳 · 새로 생긴 곳 · 덜 알려진 곳 | 자주 모드 코스의 장소 중 새로 생긴 독립 가게(인허가일자 2년 안) 또는 덜 알려진 독립 가게(체인 · 무인 · 공공 소개 · 티맵 인기 · 동네 명물이 아닌 곳). 예시 줄의 `✧` |
 
 ### 순위 — "가장 나쁜" 지표
 

@@ -40,6 +40,7 @@ from app.domain.recommendation.diversify import (
     mmr_pick,
     variant_profile,
 )
+from app.domain.recommendation.familiarity import is_regular, mark_opened
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     assign_buzz,
@@ -290,6 +291,10 @@ class RecommendationEngine:
         every = [p for group in (*pools.values(), *rings.values()) for p in group]
         assign_buzz([*every, *ctx.kept_places])
         mark_local([*every, *ctx.kept_places], ctx, get_signature_rules())
+        if is_regular(ctx):  # a regular is pulled toward what opened lately (the licence date, where known)
+            opened = getattr(self._source, "opened_on", None)
+            if opened is not None:
+                mark_opened(every, await opened([p.id for p in every if not p.is_event]))
         if rings:
             pools = self._admit_rings(ctx, pools, rings, params)
         unfiltered = [p for found in cache.values() for p in found]

@@ -314,7 +314,11 @@ export interface GenerateCourseRequest {
   errand?: ErrandRequest;
   /** 고정한 장소(편집 가능한 초안, docs/42): 다시 짜도 코스에 남는다. 최대 6 */
   keep_place_ids?: string[];
+  /** 처음 · 자주 (docs/59 #1): first = 대표 코스(명물 · 볼거리) · regular = 안 가 본 곳 위주. 생략 = 로그인이면 지난 코스로 추론, 아니면 처음 */
+  familiarity?: Familiarity;
 }
+
+export type Familiarity = "first" | "regular";
 
 export type CourseStyle = "efficient" | "fun";
 
@@ -390,6 +394,7 @@ export interface Stop {
 export type ReasonCode =
   | "PURPOSE_MATCH"
   | "LOCAL_SIGNIFICANCE"
+  | "NEWLY_OPENED"
   | "WORTH_THE_TRIP"
   | "UNIQUE_EXPERIENCE"
   | "USER_PREFERENCE"
@@ -517,6 +522,10 @@ export interface CourseDetail extends Course {
     scene?: string | null;
     scene_label?: string | null;
     errand?: ErrandRequest | null;
+    /** 이 코스를 짠 기준: 처음(대표 코스) · 자주(안 가 본 곳 위주) */
+    familiarity?: Familiarity;
+    /** asked = 요청에 있었다(다시 짤 때 그대로 보낸다) · history = 지난 코스에서 추론 · 없음 = 기본(처음) */
+    familiarity_source?: "asked" | "history" | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

@@ -12,9 +12,20 @@ from sqlalchemy.orm import selectinload
 
 from app.domain.anchors import AnchoredEvent, event_window
 from app.domain.models import GeoPoint, OpeningPeriod, PlaceCandidate
+from app.domain.recommendation.familiarity import familiarity_rules, parse_opened_on
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.base import as_utc
-from app.infra.db.models import Category, Event, OpeningHour, Place, PlaceStats, PlaceTag, Region, Tag
+from app.infra.db.models import (
+    Category,
+    Event,
+    OpeningHour,
+    Place,
+    PlaceSource,
+    PlaceStats,
+    PlaceTag,
+    Region,
+    Tag,
+)
 from app.infra.default_hours import get_default_hours
 from app.infra.tagging import get_tag_rules, merge_tags
 from app.repositories.geo import nearest_first, within
@@ -159,6 +170,9 @@ FULL_LOAD = (
 )
 
 
+OPENED_ON_CHUNK = 500  # ids per IN (...) — SQLite allows 999 bound values
+
+
 class SqlPlaceRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._s = session
@@ -226,6 +240,26 @@ class SqlPlaceRepository:
                 cand = event_to_candidate(event)
                 if cand.course_role == role:
                     out.append(cand)
+        return out
+
+    async def opened_on(self, place_ids: Sequence[int]) -> dict[int, date]:
+        """When each business opened, where a licence record says so (인허가일자 ·
+        recommendation.familiarity): the earliest date a place's sources give. Places without one are
+        simply absent."""
+        sources = dict(familiarity_rules().opened_on_sources or {})
+        ids = sorted(set(place_ids))
+        out: dict[int, date] = {}
+        if not sources or not ids:
+            return out
+        for i in range(0, len(ids), OPENED_ON_CHUNK):
+            stmt = select(PlaceSource.place_id, PlaceSource.provider, PlaceSource.raw).where(
+                PlaceSource.place_id.in_(ids[i : i + OPENED_ON_CHUNK]),
+                PlaceSource.provider.in_(sorted(sources)),
+            )
+            for place_id, provider, raw in (await self._s.execute(stmt)).all():
+                found = parse_opened_on(raw if isinstance(raw, dict) else None, sources[provider])
+                if place_id is not None and found is not None:
+                    out[place_id] = min(found, out.get(place_id, found))
         return out
 
     async def fetch_standouts(
@@ -558,6 +592,7 @@ class CandidateReads:
     def __init__(self, repo: SqlPlaceRepository) -> None:
         self._repo = repo
         self._seen: dict[tuple[Any, ...], list[PlaceCandidate]] = {}
+        self._opened: dict[int, date | None] = {}
 
     async def fetch(
         self, role: str, origin: GeoPoint, radius_m: float, on_date: date, name_words: Sequence[str] = ()
@@ -568,6 +603,14 @@ class CandidateReads:
         if found is None:
             found = self._seen[key] = await self._repo.fetch(role, origin, radius_m, on_date, name_words)
         return [copy(c) for c in found]
+
+    async def opened_on(self, place_ids: Sequence[int]) -> dict[int, date]:
+        """Each place's opening date is read once per plan; only the ones not asked about yet go out."""
+        missing = [i for i in dict.fromkeys(place_ids) if i not in self._opened]
+        if missing:
+            found = await self._repo.opened_on(missing)
+            self._opened.update({i: found.get(i) for i in missing})
+        return {i: d for i in place_ids if (d := self._opened.get(i)) is not None}
 
     async def fetch_standouts(
         self,

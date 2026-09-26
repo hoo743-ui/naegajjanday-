@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const REASON_TEXT: Record<ReasonCode, string> = {
   PURPOSE_MATCH: "이번 목적에 잘 맞는 곳이에요",
   LOCAL_SIGNIFICANCE: "이 동네가 알려진 곳이에요",
+  NEWLY_OPENED: "최근에 새로 문 연 곳이에요",
   WORTH_THE_TRIP: "조금 더 가야 하지만, 그만큼 갈 만한 곳이라 넣었어요",
   UNIQUE_EXPERIENCE: "오늘 하루에 다른 결의 경험을 더해 줘요",
   USER_PREFERENCE: "고른 취향과 맞아요",

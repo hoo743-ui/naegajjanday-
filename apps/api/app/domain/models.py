@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 TransportMode = Literal["walk", "transit", "car"]
@@ -79,6 +79,9 @@ class PlaceCandidate:
     local_pull: float = 0.0
     is_event: bool = False
     category_name: str | None = None  # display label only; never used for scoring
+    # the licence date of the business (인허가일자, place_source.raw) — read per request, only for a regular
+    # (recommendation.familiarity): "newly opened" where the data has it, nothing where it does not
+    opened_on: date | None = None
 
     @property
     def point(self) -> GeoPoint:
@@ -332,6 +335,9 @@ class RequestContext:
     # the stops the user pinned when asking for the course again (the course is a draft they edit): each is
     # the only candidate of a slot of its own role, in the order given, and never excluded
     kept_places: tuple[PlaceCandidate, ...] = ()
+    # 처음 · 자주 (recommendation.familiarity): "first" = what the neighbourhood is known for (the default),
+    # "regular" = what this person has not done here yet
+    familiarity: str = "first"
 
     @property
     def kept_keys(self) -> frozenset[tuple[bool, int]]:

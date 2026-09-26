@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
-import type { CourseWarning, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
+import type { CourseWarning, Familiarity, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, obj, transportLabel, won, wonCompact } from "@/lib/format";
 import type { Transport } from "@/lib/api/types";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { BudgetTools } from "./BudgetTools";
 import { DaySummary } from "./DaySummary";
+import { FamiliarityLine } from "./FamiliarityLine";
 import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
 import { ScenicStrip } from "./ScenicStrip";
@@ -320,6 +321,8 @@ export function CourseView({ id }: { id: string }) {
         ...(request.scene ? { scene: request.scene } : {}),
         // 가는 김에: 그곳이 하루의 중심, 볼일 시간 그대로 (API 가 처음 물은 시작 시각을 돌려준다 — 두 번 밀리지 않는다)
         ...(request.errand ? { errand: request.errand } : {}),
+        // 처음 · 자주 (docs/59 #1): 직접 고른 것만 그대로 보낸다. 지난 코스로 알아챈 것은 서버가 다시 알아챈다
+        ...(request.familiarity_source === "asked" && request.familiarity ? { familiarity: request.familiarity } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
@@ -383,6 +386,27 @@ export function CourseView({ id }: { id: string }) {
       ...(keep.length ? { keep_place_ids: keep } : {}),
       preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
     }, "이 설정에 맞는 곳이 모자라요. 시간이나 예산을 조금 바꿔 보세요.");
+  };
+
+  /**
+   * 처음 · 자주 (docs/59 #1): "자주 오는 동네예요" → 지금 코스도 가 본 곳으로 치고 안 가 본 곳 위주로.
+   * "처음처럼 대표 코스로" → 명물 · 대표 볼거리 쪽으로(겹쳐도 된다). 명물 초점은 서버가 다시 정한다.
+   */
+  const onFamiliarity = (next: Familiarity) => {
+    setForking(false);
+    setChangingSettings(false);
+    track("familiarity_changed", { course_id: id, to: next });
+    const { focus: _focus, ...rest } = baseRequest;
+    regenerate(
+      {
+        ...rest,
+        familiarity: next,
+        ...(tripDay ? { replaces: id } : {}),
+        ...(keep.length ? { keep_place_ids: keep } : {}),
+        preferences: { ...baseRequest.preferences!, exclude_place_ids: next === "regular" ? data.stops.map((s) => s.place.id) : [] },
+      },
+      next === "regular" ? "이 조건에서는 안 가 본 곳이 모자라요. 예산이나 시간을 조금 바꿔 보세요." : undefined,
+    );
   };
 
   const regenerate = (body: GenerateCourseRequest, emptyDetail = "지금 코스의 장소를 빼면 남는 곳이 모자라요. 예산이나 시간을 바꿔서 새로 짜 보세요.") => {
@@ -646,6 +670,8 @@ export function CourseView({ id }: { id: string }) {
                   </span>
                 </button>
               ) : null}
+              {/* 처음 · 자주: 위저드에 묻지 않고 여기 한 줄 (docs/59 #1) */}
+              {!readOnly ? <FamiliarityLine familiarity={request.familiarity ?? "first"} source={request.familiarity_source} busy={reroll.isPending} onChange={onFamiliarity} /> : null}
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>

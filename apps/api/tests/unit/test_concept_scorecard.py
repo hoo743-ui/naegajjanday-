@@ -267,8 +267,14 @@ def test_compare_marks_moves_beyond_the_noise_band() -> None:
 def test_quick_sample_size_and_groups() -> None:
     spots = [f"r{i}" for i in range(55)]
     quick = C.build_sample("quick", spots)
-    assert 60 <= len(quick) <= 100
-    assert {c.group for c in quick} == {"hotspot", "solo_night", "date_scene", "family_scene", "night"}
+    assert 90 <= len(quick) <= 140
+    groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular"}
+    assert {c.group for c in quick} == groups
+    # 처음 · 자주: every hotspot request has its regular twin, planned after it
+    hot = [c.key for c in quick if c.group == "hotspot"]
+    regular = [c for c in quick if c.group == "regular"]
+    assert [c.first_key for c in regular] == hot and all(c.regular for c in regular)
+    assert max(i for i, c in enumerate(quick) if c.group == "hotspot") < quick.index(regular[0])
     assert all(c.night for c in quick if c.group == "solo_night")
     full = C.build_sample("full", spots)
     assert len(full) > 2 * len(quick)
@@ -330,3 +336,62 @@ def test_record_from_marks_draws_and_chains() -> None:
     assert r.draw_eligible and [x.draw for x in r.stops] == [True, True]
     assert r.stops[0].chain and r.stops[0].tags == {"체인점": 1.0}
     assert "WEAK_ENDING" not in r.codes  # ends on the sight
+
+
+# ── 처음 · 자주: the paired sample (docs/59 #1) ─────────────────────────────────────────────────
+
+
+def _regular(stops: list[C.Stop], *, pair_draw: bool | None, draw_eligible: bool = True) -> C.Record:
+    case = C.Case("seoul-hongdae", "date", 2, 60000, "12:00", group="regular", familiarity="regular")
+    return C.Record(case, stops=stops, draw_eligible=draw_eligible, pair_draw=pair_draw)
+
+
+def test_paired_metrics_count_only_the_regular_half() -> None:
+    first = [rec("date", [stop("MEAL", draw=True)], draw_eligible=True) for _ in range(4)]
+    regular = [
+        _regular([stop("MEAL", draw=True), stop("CAFE", position=2)], pair_draw=True),
+        _regular([stop("MEAL"), stop("CAFE", position=2)], pair_draw=True),
+        _regular([stop("MEAL"), stop("CAFE", position=2)], pair_draw=True),
+        _regular([stop("MEAL"), stop("CAFE", position=2)], pair_draw=False),  # nothing to drop from
+    ]
+    regular[0].stops[1].shared = True
+    for r in regular[1:]:
+        for x in r.stops:
+            x.novel = True
+    results = {r.id: r for r in C.evaluate_all([*first, *regular])}
+    # the first-visit numbers never see the regular half
+    assert results["draw_rate"].value == 1.0 and results["draw_rate"].n == 4
+    assert results["clean_rate"].n == 4
+    # one regular course of the three whose pair had a draw still has one: 1/3 of the first's
+    assert results["regular_draw_rate"].value == pytest.approx(1 / 3, abs=1e-4)
+    assert results["regular_draw_rate"].passed
+    assert results["regular_overlap_rate"].value == pytest.approx(1 / 8)
+    assert results["regular_novelty_rate"].value == pytest.approx(6 / 8)
+    assert regular[1].case.key.endswith("|자주") and regular[1].case.first_key == first[0].case.key
+
+
+def test_a_regular_record_marks_what_is_new_and_what_it_shares() -> None:
+    at = SUNDAY_6PM
+    fresh = place(name="새가게", opened_on=date(2026, 3, 1))
+    listed = place(name="관광식당", is_curated=True)
+
+    def s(position: int, p: PlaceCandidate) -> StopResult:
+        return StopResult(
+            position=position, role=p.course_role, place=p, arrive_at=at, leave_at=at + timedelta(minutes=60),
+            est_price=20000, travel_min_from_prev=5, distance_m_from_prev=300, score=0.7, score_breakdown={},
+            congestion=None, slot_budget=20000.0,
+        )  # fmt: skip
+
+    course = CourseResult(
+        label="추천", template_id=1, stops=[s(1, fresh), s(2, listed)], total_price=40000, total_travel_min=5,
+        total_distance_m=300, duration_min=120, score=0.7, objective=0.7, optimizer="none",
+    )  # fmt: skip
+    pair = rec("date", [stop("MEAL", "관광 식당")])
+    pair.stops[0].place_id = "another-record"
+    case = C.Case("seoul-hongdae", "date", 2, 60000, "18:00", group="regular", familiarity="regular")
+    ctx = context(60000, familiarity="regular")
+    r = C.record_from(case, SimpleNamespace(name="홍대"), ctx, course, RULES, pair)
+    assert [x.novel for x in r.stops] == [True, False]
+    # the same sign under another record is still the place they have been to
+    assert [x.shared for x in r.stops] == [False, True]
+    assert r.pair_draw is False

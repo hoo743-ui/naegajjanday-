@@ -21,6 +21,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app.domain.recommendation.familiarity import REGULAR, familiarity_rules
+
 if TYPE_CHECKING:
     from app.domain.models import PlaceCandidate, RequestContext
 
@@ -292,6 +294,10 @@ def mark_local(candidates: Iterable[PlaceCandidate], ctx: RequestContext, rules:
     sights the neighbourhood is organised around. Feeds the `curated` feature and the visible tag."""
     if not ctx.local_words and not ctx.landmark_ids:
         return
+    local_pull, draw_pull = rules.local_pull, rules.draw_pull
+    if ctx.familiarity == REGULAR:  # a regular already knows what the town is for: no extra pull toward it
+        regular = familiarity_rules().regular
+        local_pull, draw_pull = regular.local_pull, regular.draw_pull
     for cand in candidates:
         if cand.is_event:
             continue
@@ -300,10 +306,10 @@ def mark_local(candidates: Iterable[PlaceCandidate], ctx: RequestContext, rules:
             word = next((w for w in ctx.local_words if w in flat), None)
             if word is not None:
                 cand.local_score, cand.local_word = rules.specialty_score, word
-                cand.local_pull = rules.draw_pull if word in ctx.draw_words else rules.local_pull
+                cand.local_pull = draw_pull if word in ctx.draw_words else local_pull
         elif cand.id in ctx.landmark_ids:
             cand.local_score = rules.landmark_score
-            cand.local_pull = rules.draw_pull if cand.id in ctx.draw_ids else rules.local_pull
+            cand.local_pull = draw_pull if cand.id in ctx.draw_ids else local_pull
         if cand.local_score > 0 and rules.tag:
             cand.tags = {**cand.tags, rules.tag: 1.0}
 

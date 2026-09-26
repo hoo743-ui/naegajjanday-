@@ -7,6 +7,7 @@ from datetime import datetime
 
 from app.domain.models import PlaceCandidate, RequestContext, ScoringProfile
 from app.domain.recommendation import features as F
+from app.domain.recommendation.familiarity import familiarity_rules, is_regular, novelty_pull
 from app.domain.signature import get_signature_rules
 
 
@@ -34,6 +35,8 @@ class PlaceScorer:
         self._weights = profile.normalized_weights()
         self._ctx = ctx
         self._listed_score = get_signature_rules().listed_score
+        # a regular (recommendation.familiarity): what everyone is sent to here counts for less
+        self._known_scale = familiarity_rules().regular.known_scale if is_regular(ctx) else 1.0
 
     @property
     def profile(self) -> ScoringProfile:
@@ -62,7 +65,8 @@ class PlaceScorer:
             # tourism-board listing a little less
             # vouched for (a public mark), what the district is known for, or simply where people
             # really go (measured navigation rank, 1.0 = first in its district): the best of the three
-            "curated": max(p.local_score, self._listed_score if p.is_curated else 0.0, p.popularity),
+            "curated": self._known_scale
+            * max(p.local_score, self._listed_score if p.is_curated else 0.0, p.popularity),
             "buzz": p.buzz,
         }
 
@@ -72,6 +76,7 @@ class PlaceScorer:
             sum(self._weights[k] * v for k, v in feats.items())
             + trait_pull(x.place, self._ctx.trait_pull)
             + x.place.local_pull  # what the neighbourhood is for, beyond a public listing (signature)
+            + novelty_pull(x.place, self._ctx)  # a regular: newly opened · lesser-known (familiarity)
         )
         return Score(total=round(total, 4), breakdown={k: round(v, 4) for k, v in feats.items()})
 
