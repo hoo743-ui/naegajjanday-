@@ -77,14 +77,14 @@ export function ConfirmSheet({ open, onClose, stops, fixed, saved, saving, onSav
               </span>
               <span className="min-w-0 flex-1">
                 <b className="block truncate text-body-sm font-bold text-ink">{s.place.name}</b>
-                <span className="tabular flex items-center gap-1 text-caption text-muted-foreground">
+                <span className="tabular block text-caption text-muted-foreground">
                   {clock(s.arrive_at)} ~ {clock(s.leave_at)}
-                  {booking ? (
-                    <span className="inline-flex items-center gap-0.5 font-semibold text-pink-deep">
-                      · <TriangleAlert aria-hidden className="size-3" /> 예약 · 예매가 필요할 수 있어요
-                    </span>
-                  ) : null}
                 </span>
+                {booking ? (
+                  <span className="flex items-center gap-1 text-caption font-semibold text-pink-deep">
+                    <TriangleAlert aria-hidden className="size-3 shrink-0" /> 예약 · 예매가 필요할 수 있어요
+                  </span>
+                ) : null}
               </span>
               {s.place.kind !== "event" ? (
                 <a

@@ -601,7 +601,7 @@ export function CourseView({ id }: { id: string }) {
           type="button"
           variant={confirmed ? "soft" : "brand"}
           size="xl"
-          className={cn("min-w-0 flex-1 wide:order-first", confirmed && "border-[1.5px] border-tomato bg-tomato-soft text-tomato-deep hover:bg-tomato-soft")}
+          className={cn("min-w-0 flex-1 max-sm:px-3 wide:order-first", confirmed && "border-[1.5px] border-tomato bg-tomato-soft text-tomato-deep hover:bg-tomato-soft")}
           onClick={onConfirm}
           aria-label={confirmed ? "오늘 코스 확정 · 다음 할 일 보기" : "이 코스로 할게요"}
         >
@@ -615,23 +615,23 @@ export function CourseView({ id }: { id: string }) {
         </Button>
       )}
       {readOnly ? null : data.is_saved ? (
-        <Button asChild variant="soft" size="xl" className="-order-1 max-sm:px-4 wide:order-none">
+        <Button asChild variant="soft" size="xl" className="-order-1 max-sm:w-12 max-sm:shrink-0 max-sm:px-0 wide:order-none">
           <Link href="/my" aria-label="저장됨 · 내 코스 보기">
             <BookmarkCheck aria-hidden /> <span className="max-lg:sr-only">저장됨 · 내 코스 보기</span>
           </Link>
         </Button>
       ) : (
-        <Button type="button" variant="soft" size="xl" className="-order-1 max-sm:px-4 wide:order-none" onClick={onSave} disabled={save.isPending} aria-label="코스 저장하기">
+        <Button type="button" variant="soft" size="xl" className="-order-1 max-sm:w-12 max-sm:shrink-0 max-sm:px-0 wide:order-none" onClick={onSave} disabled={save.isPending} aria-label="코스 저장하기">
           <Bookmark aria-hidden /> <span className="max-lg:sr-only">{save.isPending ? "저장하는 중…" : "코스 저장하기"}</span>
         </Button>
       )}
       {readOnly ? null : (
-        <Button type="button" variant="soft" size="xl" onClick={() => setRerollOpen(true)} disabled={reroll.isPending} className="-order-2 max-sm:px-4 wide:order-none" aria-label="다시 짜기">
+        <Button type="button" variant="soft" size="xl" onClick={() => setRerollOpen(true)} disabled={reroll.isPending} className="-order-2 max-sm:w-12 max-sm:shrink-0 max-sm:px-0 wide:order-none" aria-label="다시 짜기">
           <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
         </Button>
       )}
       {/* 데스크톱의 공유는 결과 헤더에 있다 */}
-      <Button type="button" variant="soft" size="xl" onClick={() => void onShare()} className="-order-1 max-sm:px-4 lg:hidden" aria-label="코스 공유하기">
+      <Button type="button" variant="soft" size="xl" onClick={() => void onShare()} className="-order-1 max-sm:w-12 max-sm:shrink-0 max-sm:px-0 lg:hidden" aria-label="코스 공유하기">
         {shared ? <Check aria-hidden /> : <Share2 aria-hidden />} <span className="max-sm:sr-only">{shared ? "링크 복사됨" : "공유"}</span>
       </Button>
     </>
