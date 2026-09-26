@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, RotateCcw } from "lucide-react";
-import { EmptyState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
-import { Button } from "@/components/ui/button";
 import { useFeatures } from "@/lib/api/hooks";
 import { Composer } from "./Composer";
 import { MessageBubble } from "./MessageBubble";
@@ -21,8 +19,15 @@ const SUGGESTIONS = [
 export function ChatWindow() {
   const { messages, streaming, send, retry, stop, reset } = useChat();
   const features = useFeatures();
+  const router = useRouter();
+  const chatOn = features.data?.chat === true;
+  const settledOff = features.isError || (features.data !== undefined && !chatOn);
   const endRef = useRef<HTMLDivElement>(null);
   const empty = messages.length === 0;
+
+  useEffect(() => {
+    if (settledOff) router.replace("/home");
+  }, [settledOff, router]);
 
   // 새 토큰이 올 때마다 맨 아래로. 사용자가 위로 올려 읽는 중이면 방해하지 않는다.
   useEffect(() => {
@@ -32,23 +37,10 @@ export function ChatWindow() {
     if (nearBottom || messages[messages.length - 1]?.role === "user") el.scrollIntoView({ block: "end" });
   }, [messages]);
 
-  // 이 환경에 대화 기능이 없으면(LLM 미설정) 세션을 만들다 실패하게 두지 않고, 같은 일을 할 수 있는 길을 바로 보여 준다
-  if (features.data?.chat === false) {
-    return (
-      <div className="mx-auto flex min-h-[calc(100dvh-68px)] w-full max-w-3xl flex-col px-4 sm:px-6">
-        <h1 className="pt-6 pb-2 text-h1 font-bold">짠이와 대화</h1>
-        <EmptyState mood="hi" size="lg" title="짠이와 대화는 준비 중이에요" description="코스는 지금도 바로 짤 수 있어요. 지역 · 목적 · 예산만 골라 주세요." className="flex-1">
-          <Button asChild variant="brand" size="xl">
-            <Link href="/plan">
-              코스 짜러 가기 <ArrowRight aria-hidden />
-            </Link>
-          </Button>
-          <Button asChild variant="soft" size="xl">
-            <Link href="/explore">볼거리 둘러보기</Link>
-          </Button>
-        </EmptyState>
-      </div>
-    );
+  // 대화 기능이 켜졌다고 확인되기 전에는 대화 화면을 그리지 않는다. 꺼져 있거나(LLM 미설정) 확인에 실패하면
+  // 홈으로 돌려보낸다 — 주소로 바로 들어와도 멈춘 채팅 화면을 보지 않게(2026-09-26 창업자 제보).
+  if (!chatOn) {
+    return <div aria-busy="true" className="min-h-[calc(100dvh-68px)]" />;
   }
 
   return (

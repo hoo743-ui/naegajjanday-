@@ -122,7 +122,7 @@ async function main() {
     { key: "explore", ready: "section[aria-labelledby='explore-list-heading'] li article", url: "/explore", dynamic: ["article", "[aria-label*='이벤트']", "ul"] },
     { key: "login", url: "/login", dynamic: [], ready: "main h1, main h2" },
     { key: "my", url: "/my", dynamic: [], ready: "main h1, main h2" },
-    { key: "chat", url: "/chat", dynamic: [], ready: "main h1, main h2" },
+    // /chat 은 채팅이 꺼진 환경에서 홈으로 돌려보낸다(2026-09-26) — 기록할 화면이 없다
     { key: "terms", url: "/terms", dynamic: [] },
     { key: "privacy", url: "/privacy", dynamic: [] },
   ].filter((s) => only.length === 0 || only.some((o) => s.key.startsWith(o)));

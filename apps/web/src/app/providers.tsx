@@ -40,6 +40,14 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void initAnalytics();
+    // 이 앱은 서비스 워커를 쓰지 않는다. 목 모드(MSW)로 연 적이 있는 브라우저에 남은 워커는 걷어 낸다 —
+    // 옛 워커가 요청을 가로채 옛 화면 · 가짜 응답(채팅 켜짐 등)을 보이지 않게.
+    if (process.env.NEXT_PUBLIC_API_MOCKING !== "enabled" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => void r.unregister()))
+        .catch(() => undefined);
+    }
   }, []);
 
   return (

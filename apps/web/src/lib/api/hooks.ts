@@ -142,8 +142,9 @@ export function useBanners(placement: string, region?: string) {
 
 /**
  * 이 환경에서 실제로 되는 기능. 화면은 안 되는 기능을 약속하지 않는다(예: LLM 키가 없으면 챗봇 입구를 접는다).
- * 아직 모를 때(data === undefined)는 입구를 숨기지도, 실패시키지도 말고 기다린다.
- * 옛 API(엔드포인트 없음)나 네트워크 오류면 "된다"로 두고 실제 호출의 오류 처리에 맡긴다.
+ * 확인되기 전(로딩 중)이나 확인에 실패하면(옛 API · 네트워크 오류 · API 가 깨어나는 중) "안 된다"로 둔다 —
+ * 켜졌다고 확인된 기능만 입구를 보인다. 예전엔 실패를 "된다"로 두어서, API 가 늦게 깨어난 날엔
+ * 꺼진 채팅(/chat) 입구가 헤더 · 탭에 나타났다(2026-09-26 창업자 제보).
  */
 export function useFeatures() {
   return useQuery<Features, ApiError>({
@@ -153,12 +154,17 @@ export function useFeatures() {
         return await api.get<Features>("/meta/features", { signal });
       } catch (error) {
         if (signal.aborted) throw error;
-        return { chat: true };
+        return { chat: false, performances: false };
       }
     },
     staleTime: META_STALE,
     retry: false,
   });
+}
+
+/** 챗봇 입구를 보여도 되는지: 기능 목록이 chat: true 라고 확인된 뒤에만 true. 로딩 · 실패 · false 는 전부 false. */
+export function useChatOn(): boolean {
+  return useFeatures().data?.chat === true;
 }
 
 // ── 코스 ────────────────────────────────────────────────────

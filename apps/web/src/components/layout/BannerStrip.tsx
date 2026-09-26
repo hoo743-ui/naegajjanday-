@@ -3,15 +3,21 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { track } from "@/lib/analytics";
-import { useBanners } from "@/lib/api/hooks";
+import { useBanners, useChatOn } from "@/lib/api/hooks";
 
 /**
  * 운영자가 관리자 화면(/admin/banners)에서 올린 소식. 없으면 아무것도 그리지 않는다.
  * 광고판이 아니라 한 줄 소식이다: 그림 없이 제목과 한 줄 설명만, 화면의 주인공(예산)을 가리지 않는다.
  */
+function isChatLink(url: string): boolean {
+  return url === "/chat" || url.startsWith("/chat/") || url.startsWith("/chat?") || url.startsWith("/chat#");
+}
+
 export function BannerStrip({ placement }: { placement: string }) {
   const banners = useBanners(placement);
-  const items = banners.data?.items ?? [];
+  const chatOn = useChatOn();
+  // 꺼진 채팅으로 보내는 소식은 걸지 않는다(기능이 켜졌다고 확인된 뒤에만)
+  const items = (banners.data?.items ?? []).filter((b) => chatOn || !isChatLink(b.link_url));
   if (items.length === 0) return null;
 
   return (

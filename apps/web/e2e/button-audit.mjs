@@ -49,7 +49,6 @@ const SCENES = [
   { key: "explore", url: "/explore", ready: "main article" },
   { key: "login", url: "/login" },
   { key: "my", url: "/my" },
-  { key: "chat", url: "/chat" },
   { key: "terms", url: "/terms" },
   { key: "not-found", url: "/no-such-page" },
   ...(tokenFile ? ["", "/regions", "/places", "/attractions", "/events", "/banners", "/scoring", "/recommendations", "/users"].map((s) => ({ key: `admin${s.replace("/", "-")}`, url: `/admin${s}`, admin: true })) : []),

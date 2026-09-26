@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useFeatures } from "@/lib/api/hooks";
+import { useChatOn } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { Jjani } from "@/components/mascot/Jjani";
 import { Wordmark } from "@/components/brand/Wordmark";
@@ -25,7 +25,7 @@ const COLUMNS = [
 ];
 
 export function SiteFooter() {
-  const chatOff = useFeatures().data?.chat !== true; // 헤더와 같은 규칙: 확인된 뒤에만 보인다
+  const chatOff = !useChatOn(); // 헤더와 같은 규칙: 확인된 뒤에만 보인다
   const signedIn = useAuth().status === "authenticated"; // 로그인한 사람에게 "로그인"을 권하지 않는다
   return (
     <footer className="mt-16 border-t bg-soft/60 text-body-sm text-muted-foreground">

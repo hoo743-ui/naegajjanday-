@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bookmark, Compass, House, MessageCircle, Route, type LucideIcon } from "lucide-react";
 import { track } from "@/lib/analytics";
-import { useFeatures } from "@/lib/api/hooks";
+import { useChatOn } from "@/lib/api/hooks";
 import { cn } from "@/lib/utils";
 
 interface Tab {
@@ -37,7 +37,7 @@ const TABS: Tab[] = [
 export function TabBar() {
   const pathname = usePathname();
   // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 (헤더와 같은 규칙: 떴다가 사라지는 탭이 없게)
-  const chatOn = useFeatures().data?.chat === true;
+  const chatOn = useChatOn();
   const tabs = TABS.filter((t) => t.href !== "/chat" || chatOn);
   const current = (href: string) => pathname.startsWith(href);
   // 넓은 화면의 알약: 헤더가 화면 밖으로 나갈 만큼 내려왔을 때만

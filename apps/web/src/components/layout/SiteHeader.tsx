@@ -7,7 +7,7 @@ import { LogOut, Menu, X } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Jjani } from "@/components/mascot/Jjani";
 import { track } from "@/lib/analytics";
-import { useFeatures } from "@/lib/api/hooks";
+import { useChatOn } from "@/lib/api/hooks";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 import { TAB_DOCK_AT } from "./TabBar";
@@ -31,7 +31,7 @@ interface SiteHeaderProps {
 export function SiteHeader({ overlay = false, tabBar = true }: SiteHeaderProps) {
   // 채팅 입구는 쓸 수 있다고 확인된 뒤에만 보인다. 확인 전에 보여 주면, LLM 이 없는 환경(지금의 실제 환경)에서는
   // 입구가 떴다가 1~2초 뒤에 사라진다 — 누르려던 버튼이 손 밑에서 바뀐다(버튼 전수 검사가 잡았다).
-  const chatOff = useFeatures().data?.chat !== true;
+  const chatOff = !useChatOn();
   const LINKS = chatOff
     ? ALL_LINKS.filter((l) => l.href !== "/chat")
     : ALL_LINKS;
