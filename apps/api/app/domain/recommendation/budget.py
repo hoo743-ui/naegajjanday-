@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 
 from app.domain.models import BudgetTooLowError, NoTemplateError, Slot, Template
 
@@ -88,6 +91,100 @@ def select_template(
     return max(pool, key=lambda t: (t.min_budget_per_person, -t.id))
 
 
+SLOT_FLOORS_PATH = Path(__file__).resolve().parents[3] / "data" / "recommendation" / "slot_floors.json"
+
+
+@dataclass(frozen=True, slots=True)
+class SlotFloors:
+    per_person: Mapping[str, float]  # role → what a stop of that kind costs a head, where one sits down
+    max_share: float = 0.25  # a floor never takes more than this share of the budget
+    yield_to: frozenset[str] = frozenset()  # a short slot's day is also tried without it, for these
+
+
+@lru_cache(maxsize=1)
+def slot_floors(path: Path = SLOT_FLOORS_PATH) -> SlotFloors:
+    if not path.exists():
+        return SlotFloors({})
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return SlotFloors(
+        {str(k): float(v) for k, v in (data.get("per_person") or {}).items() if not str(k).startswith("_")},
+        float(data.get("max_share", 0.25)),
+        frozenset(str(r) for r in data.get("yield_to") or ()),
+    )
+
+
+def without_short(
+    template: Template,
+    budget_per_person: float,
+    include_roles: Sequence[str] | None = None,
+    floors: SlotFloors | None = None,
+) -> Template | None:
+    """The same day without the slots whose share buys less than their floor — offered only when a slot
+    they yield to (a bar) is planned too. 27,000원 a head buys dinner and a bar, or dinner and a café worth
+    the name, not all three: with the café lifted to its floor the friends' evening lost its second round in
+    4 of 13 courses. None when nothing is short or nothing to yield to."""
+    f = floors or slot_floors()
+    if not f.yield_to:
+        return None
+    plain = allocate(template, budget_per_person, include_roles, floors=SlotFloors({}))
+    short = {
+        sb.slot.position
+        for sb in plain
+        if (floor := f.per_person.get(sb.slot.course_role))
+        and 0 < sb.budget < min(floor, f.max_share * budget_per_person)
+    }
+    if not short or not any(
+        sb.slot.course_role in f.yield_to for sb in plain if sb.slot.position not in short
+    ):
+        return None
+    return replace(template, slots=tuple(s for s in template.slots if s.position not in short))
+
+
+MANDATORY_KEEP = 0.8  # any other slot gives at most a fifth of its plan to a floor (optional: to its minimum)
+
+
+def with_floors(
+    slots: Sequence[Slot], budget_per_person: float, floors: SlotFloors | None = None
+) -> list[Slot]:
+    """A café costs what a café costs (docs/59 #4). The friends' evening gave its café 10% of 27,000원 —
+    2,700원, under the price cap of every café but a 2,000원 chain, so 54% of those cafés were one.
+    A slot whose share buys less than its floor gets the floor (at most `max_share` of the budget), paid for
+    by the other paid slots in proportion — an optional slot never below its own minimum (it would be
+    dropped), one that must be there never below `MANDATORY_KEEP` of its plan. Not enough room: as planned.
+    Shares only (of the slots that will be planned): every later step renormalizes from them."""
+    f = floors or slot_floors()
+    total = sum(s.budget_share for s in slots)
+    if not f.per_person or total <= 0 or budget_per_person <= 0:
+        return list(slots)
+    shares = {s.position: s.budget_share / total for s in slots}
+    wanted: dict[int, float] = {}
+    for s in slots:
+        floor = f.per_person.get(s.course_role)
+        if floor and shares[s.position] > 0:  # a free slot (a walk) stays free
+            want = min(floor / budget_per_person, f.max_share)
+            if shares[s.position] < want:
+                wanted[s.position] = want
+    if not wanted:
+        return list(slots)
+    need = sum(w - shares[p] for p, w in wanted.items())
+    room = {
+        s.position: shares[s.position]
+        - (
+            s.min_slot_budget / budget_per_person
+            if s.is_optional and s.min_slot_budget
+            else shares[s.position] * MANDATORY_KEEP
+        )
+        for s in slots
+        if s.position not in wanted and shares[s.position] > 0
+    }
+    room = {p: r for p, r in room.items() if r > 0}
+    if sum(room.values()) < need:
+        return list(slots)  # too small a budget for a café worth the name: the plan as it was
+    give = need / sum(room.values())
+    new = {p: wanted.get(p, shares[p] - room.get(p, 0.0) * give) for p in shares}
+    return [replace(s, budget_share=new[s.position]) for s in slots]
+
+
 def _normalize(slots: Sequence[Slot]) -> list[tuple[Slot, float]]:
     total = sum(s.budget_share for s in slots)
     if total <= 0:
@@ -96,10 +193,14 @@ def _normalize(slots: Sequence[Slot]) -> list[tuple[Slot, float]]:
 
 
 def allocate(
-    template: Template, budget_per_person: float, include_roles: Sequence[str] | None = None
+    template: Template,
+    budget_per_person: float,
+    include_roles: Sequence[str] | None = None,
+    floors: SlotFloors | None = None,
 ) -> list[SlotBudget]:
     """b_s = b × share. Optional slots whose b_s falls below their `min_slot_budget` are dropped
-    from the back and the remaining shares renormalized. Share-0 (free) slots stay at 0."""
+    from the back and the remaining shares renormalized. Share-0 (free) slots stay at 0. Then a slot
+    whose share buys less than a stop of its kind costs is lifted to its floor (`with_floors`)."""
     slots = [s for s in template.slots if not include_roles or s.course_role in include_roles]
     if not slots:
         slots = list(template.slots)
@@ -116,6 +217,7 @@ def allocate(
         if victim is None or len(slots) <= 1:
             break
         slots = [s for s in slots if s is not victim]
+    slots = with_floors(slots, budget_per_person, floors)
     return [
         SlotBudget(slot=s, share=share, budget=budget_per_person * share) for s, share in _normalize(slots)
     ]

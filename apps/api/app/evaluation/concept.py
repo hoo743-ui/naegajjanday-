@@ -288,11 +288,11 @@ def _full_length(r: Record) -> bool:
     return r.ok and not (kids and int(r.case.start.split(":")[0]) >= 17)
 
 
-def _chains(purpose: str) -> Count:
+def _chains(purpose: str, roles: frozenset[str] = FOOD_ROLES) -> Count:
     def count(r: Record) -> tuple[float, float] | None:
         if not r.ok or r.case.purpose != purpose:
             return None
-        paid = [s for s in r.stops if s.role in FOOD_ROLES]
+        paid = [s for s in r.stops if s.role in roles]
         return (float(sum(1 for s in paid if s.chain)), float(len(paid))) if paid else None
 
     return count
@@ -345,6 +345,9 @@ METRICS: tuple[Metric, ...] = (
                    lambda r: any(s.draw for s in r.stops))),
     Metric("chain_rate_date", "데이트의 식사 · 카페 · 술집 중 체인", "lower", 0.10, _chains("date")),
     Metric("chain_rate_friends", "친구 모임의 식사 · 카페 · 술집 중 체인", "lower", 0.25, _chains("friends")),
+    # docs/59 #4: the friends' café was a 2,000원 chain in 44% of courses — the café is where they talk
+    Metric("chain_rate_friends_cafe", "친구 모임의 카페 · 디저트 중 체인", "lower", 0.25,
+           _chains("friends", frozenset({"CAFE", "DESSERT"}))),
     Metric("chain_rate_travel", "여행의 식사 · 카페 · 술집 중 체인", "lower", 0.05, _chains("travel")),
     Metric("chain_ending_rate", "체인 · 무인 매장으로 끝나는 코스", "lower", 0.05,
            _course(_ok, _has(_code("WEAK_ENDING"))), _code("WEAK_ENDING")),

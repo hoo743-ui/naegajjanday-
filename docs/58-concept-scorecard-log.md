@@ -15,3 +15,4 @@
 | 2026-09-26 14:30 | quick | a302c6f | 118 | 26/26 | – | – | docs/59 #2 옵션을 결과 화면으로(엔진 변경 없음) |
 | 2026-09-26 14:24 | quick | 959da44 | 144 | 28/28 | – | – | docs/59 #7 꼭 들를 곳: errand_leg · 끝나고 들르기 end pull (errand_toward_rate 69.2% → 92.3% vs errand7-before) |
 | 2026-09-26 14:49 | quick | 959da44 | 118 | 28/28 | – | – | A: 자주 모드 긴 도보 · 닫힌 곳을 짝 표본에서 센다(regular_long_walk_rate · regular_schedule_rate). 지난 장소는 가까이 다른 곳이 없을 때만 다시(been_penalty 0.18), 간판 영업시간(롯데월드몰)을 채점기도 믿는다 |
+| 2026-09-26 15:37 | quick | b36f48b | 144 | 31/31 | – | ▲chain_rate_friends_cafe ▲chain_rate_friends | B (docs/59 #4): 체인 목록에 저가 커피 브랜드 · 메머드, 카페 칸 1인 4,800원 바닥(slot_floors.json), 카페 때문에 술집을 잃는 날은 카페 없이 한 번 더(yield_to BAR) |

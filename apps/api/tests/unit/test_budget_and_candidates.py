@@ -35,6 +35,33 @@ class TestAllocation:
         assert B.effective_budget(4000, 4000) == 8000
         assert B.effective_budget(4000, -9000) == 0  # earlier overspend shrinks the slot, never below 0
 
+    def test_a_cafe_share_buys_a_cafe(self) -> None:
+        """docs/59 #4: the friends' evening gave its café 2,700원 — a chain's price, nobody else's."""
+        friends = template(
+            Slot(1, "MEAL", 0.42),
+            Slot(2, "CAFE", 0.10),
+            Slot(3, "ATTRACTION", 0.02),
+            Slot(4, "BAR", 0.46, is_optional=True, min_slot_budget=12000),
+        )
+        floors = B.SlotFloors({"CAFE": 4800.0}, max_share=0.25)
+        budget = {s.slot.course_role: s.budget for s in B.allocate(friends, 27000, floors=floors)}
+        assert budget["CAFE"] == pytest.approx(4800)
+        assert budget["BAR"] >= 12000  # the optional bar is never squeezed out
+        assert budget["MEAL"] >= 0.8 * 0.42 * 27000  # nor the dinner cut to the bone
+        assert sum(budget.values()) == pytest.approx(27000)
+        assert budget["ATTRACTION"] < 540  # every paid slot gives its part
+        # a small budget (the bar is dropped first): never more than max_share of it
+        small = {s.slot.course_role: s.budget for s in B.allocate(friends, 12000, floors=floors)}
+        assert "BAR" not in small and small["CAFE"] == pytest.approx(3000)
+        # a café already worth one is left alone
+        assert B.with_floors(friends.slots, 60000, floors) == list(friends.slots)
+        # money for dinner and a bar, or dinner and a café worth the name: the day without the café, too
+        yielding = B.SlotFloors({"CAFE": 4800.0}, max_share=0.25, yield_to=frozenset({"BAR"}))
+        lean = B.without_short(friends, 27000, floors=yielding)
+        assert lean is not None and [s.course_role for s in lean.slots] == ["MEAL", "ATTRACTION", "BAR"]
+        assert B.without_short(friends, 60000, floors=yielding) is None  # nothing short
+        assert B.without_short(friends, 12000, floors=yielding) is None  # no bar planned to yield to
+
     def test_drop_slot_hands_share_to_the_rest(self) -> None:
         slots = B.drop_slot(B.allocate(DATE_EVENING, 100_000), position=4, budget_per_person=100_000)
         assert sum(s.budget for s in slots) == pytest.approx(100_000)

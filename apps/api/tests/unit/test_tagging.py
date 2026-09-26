@@ -34,6 +34,15 @@ def test_name_rules_and_chains() -> None:
     assert "체인점" in _tags("cafe", "스타벅스 강남R점", "CAFE")
     assert "체인점" in _tags("cafe", "메가엠지씨커피 신촌점", "CAFE")
     assert "체인점" not in _tags("cafe", "동네 로스터리", "CAFE")
+    # 2026-09-26 (docs/59 #4): the low-price brands price_prior already knew, and the sign's own spelling
+    for sign in (
+        "메머드익스프레스연남점",
+        "백억커피 울산삼산점",
+        "우지커피창천점",
+        "더리터남문로점",
+        "커피에반하다",
+    ):
+        assert "체인점" in _tags("cafe", sign, "CAFE"), sign
     rules = get_tag_rules()
     assert "체인점" not in rules.visible(_tags("cafe", "스타벅스", "CAFE"))  # scoring only, never on a card
 

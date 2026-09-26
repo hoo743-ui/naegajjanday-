@@ -122,6 +122,21 @@ class RecommendationEngine:
                 and other.courses[0].objective > out.courses[0].objective
             ):
                 out = other
+        # docs/59 #4: a café lifted to what a café costs can cost the day its bar. Then the same day without
+        # the café is tried, and taken when it keeps the bar the other lost (dinner → a walk → a drink).
+        lean = B.without_short(template, b, ctx.include_roles) if ctx.is_v2 else None
+        if lean is not None and not _has_role(out, B.slot_floors().yield_to):
+            try:
+                other = await self._generate_with(ctx, lean, profile)
+            except NoCourseError:
+                other = None
+            if (
+                other is not None
+                and _has_role(other, B.slot_floors().yield_to)
+                and len(other.courses[0].stops) >= len(out.courses[0].stops)
+                and _kept_count(other, ctx) >= _kept_count(out, ctx)
+            ):
+                out = other
         return out
 
     async def _generate_with(
@@ -630,6 +645,10 @@ def _kept_count(out: EngineOutput, ctx: RequestContext) -> int:
 
 def _empty_slots(out: EngineOutput) -> int:
     return sum(1 for w in out.courses[0].warnings if w.get("code") == "SLOT_EMPTY")
+
+
+def _has_role(out: EngineOutput, roles: frozenset[str]) -> bool:
+    return any(s.role in roles for s in out.courses[0].stops)
 
 
 def _no_worse_filled(other: EngineOutput, out: EngineOutput) -> bool:
