@@ -132,6 +132,7 @@ RANDOM_TOP_N = 5
 CANDIDATE_LINE_MAX = 40  # the one line under a replacement option (and reason_short) fits a card subtitle
 RECOMPUTED_WARNINGS = frozenset({"BUDGET_OVER", "STOP_CLOSED"})  # read off the stops: redone on every replan
 PREFERENCE_EMA_ALPHA = 0.2
+MIN_STOPS_AFTER_REMOVE = 2  # 빼기: a course keeps at least this many places
 
 
 FOCUS_OFF = "-"  # request.focus value meaning "do not build the course around a local specialty"
@@ -2195,6 +2196,32 @@ class CourseService:
         ]
         row.optimizer = "manual"
         return await self._finish_replan(row, partial, ctx, profile, warnings)
+
+    async def remove_stop(self, public_id: str, position: int, user: User | None) -> dto.CourseOut:
+        """빼기 (2026-09-26 창업자 "눌렀을 때 선택이 있어야"): one stop leaves, the rest keep their order and
+        the times and totals are worked out again — the same replan `reorder` does, one place shorter.
+        Two places are the least a course keeps (one place is not a course — see `_top_up`)."""
+        row, stops, _origin = await self._load(public_id)
+        self._check_owner(row, user)
+        if self._target(stops, position) is None:
+            raise errors.ValidationFailed(f"{position}번째 장소가 없어요.")
+        if len(stops) <= MIN_STOPS_AFTER_REMOVE:
+            raise errors.ValidationFailed(
+                f"코스에는 적어도 {MIN_STOPS_AFTER_REMOVE}곳이 남아야 해요. 빼는 대신 바꿔 보세요."
+            )
+        ctx, profile, composer = await self._replan_tools(row, user)
+        sequence = [
+            (s.place, SlotBudget(s.slot, s.slot_share, s.slot_base_budget))  # type: ignore[arg-type]
+            for s in stops
+            if s.position != position
+        ]
+        partial = composer.replan(sequence, strict=False)
+        assert partial is not None
+        out = await self._finish_replan(row, partial, ctx, profile, [])
+        await self._tracker.track(
+            AnalyticsEvent("stop_removed", user.public_id if user else row.public_id, {"position": position})
+        )
+        return out
 
     # --- ownership / saved courses -----------------------------------------------------------
 

@@ -477,6 +477,22 @@ export function reorder(id: string, order: number[]): Course {
   return course;
 }
 
+/** 빼기: 그 자리만 빼고 나머지 순서 그대로 다시 계산 (API 처럼 2곳은 남긴다) */
+export function removeStop(id: string, position: number): Course {
+  const s = getStored(id);
+  if (!s.course.stops.some((st) => st.position === position)) throw new MockProblem(422, "VALIDATION_ERROR", `${position}번째 장소가 없어요.`);
+  if (s.course.stops.length <= 2) throw new MockProblem(422, "VALIDATION_ERROR", "코스에는 적어도 2곳이 남아야 해요. 빼는 대신 바꿔 보세요.");
+  const slots = templateFor(s.req.purpose, s.req.budget_total / s.req.party_size);
+  const chosen = s.course.stops
+    .filter((st) => st.position !== position)
+    .map((st) => ({ slot: slots.find((sl) => sl.role === st.role) ?? { role: st.role, share: 0.2 }, place: priced(st.place) }));
+  const ctx = { req: s.req, regionSlug: s.regionSlug };
+  const course = { ...finalize(id, s.course.label, ctx, buildStops(ctx, chosen), s.course.warnings), route: { polyline: null, optimizer: "manual" } };
+  memory.set(id, { ...s, course });
+  persist();
+  return course;
+}
+
 export function markSaved(id: string, saved: boolean) {
   const s = getStored(id);
   memory.set(id, { ...s, saved });

@@ -125,6 +125,32 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expectHealthyLayout(page);
   });
 
+  test("결과 화면: 장소를 누르면 고르는 시트, 이 코스로 할게요 → 오늘 코스 확정", async ({ page }) => {
+    const id = await createCourse(page);
+    await page.goto(`/course/${id}`);
+    // 장소 이름 → 정보가 아니라 결정: 이 곳으로 할게요 · 다른 곳 보기 · 빼기 · 예약 · 메뉴 보기 (2026-09-26 창업자)
+    const opener = page.getByLabel("코스 일정").locator("article h3 button").first();
+    await opener.click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByRole("button", { name: "이 곳으로 할게요" })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: /다른 곳 보기/ })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "빼기" })).toBeVisible();
+    await expect(sheet.getByRole("link", { name: /예약 · 메뉴 보기/ })).toHaveAttribute("href", /^https:\/\/(place\.map\.kakao\.com\/|map\.kakao\.com\/link\/search\/)/);
+    await sheet.getByRole("button", { name: "이 곳으로 할게요" }).click();
+    await expect(sheet.getByRole("button", { name: "이 곳으로 정했어요" })).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toHaveCount(0);
+    // 코스 전체: 아래 바의 "이 코스로 할게요" → 확정 시트(캘린더 · 공유 · 저장 · 예약 확인)
+    await page.getByRole("button", { name: "이 코스로 할게요" }).first().click();
+    const confirm = page.getByRole("dialog", { name: "오늘 코스 확정" });
+    await expect(confirm).toBeVisible();
+    await expect(confirm.getByRole("button", { name: "캘린더에 넣기" })).toBeVisible();
+    await expect(confirm.getByText(/곳 중 \d+곳 확정/)).toBeVisible();
+    await confirm.getByRole("button", { name: "닫기" }).click();
+    await expect(page.getByRole("button", { name: /오늘 코스 확정/ }).first()).toBeVisible();
+    await expectHealthyLayout(page);
+  });
+
   test("결과 화면: 합계가 예산을 넘지 않고 스톱 금액의 합과 같다", async ({ page }) => {
     const id = await createCourse(page);
     const res = await page.request.get(`${process.env.E2E_API_URL ?? "http://localhost:8000/v1"}/courses/${id}`);

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Expand, Footprints, GraduationCap, PartyPopper, RotateCw, Share2, ShoppingBag, Shrink, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Bookmark, BookmarkCheck, CalendarDays, CalendarRange, Car, Check, Clock, CloudRain, CopyPlus, Expand, Footprints, GraduationCap, PartyPopper, RotateCw, Share2, ShoppingBag, Shrink, SlidersHorizontal, Tent, TrainFront, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -11,7 +11,7 @@ import { JjaniLoader } from "@/components/mascot/JjaniLoader";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
-import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
+import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useRemoveStop, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
 import type { CourseWarning, Familiarity, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, obj, transportLabel, won, wonCompact } from "@/lib/format";
@@ -43,6 +43,10 @@ import { RerollSheet, tweaksToRequest, type Tweak } from "./RerollSheet";
 import { SettingsSheet, type CourseSettings } from "./SettingsSheet";
 import { errandLabel } from "@/components/plan/ErrandEditor";
 import { usePins } from "@/lib/pins";
+import { useConfirmed } from "@/lib/confirmed";
+import { courseIcs, downloadIcs } from "@/lib/ics";
+import { ConfirmSheet } from "./ConfirmSheet";
+import { kakaoSearchUrl } from "./stop-links";
 import { LAST_AREA_KEY } from "@/components/layout/NotificationBell";
 
 const MODE_ICON: Record<Transport, LucideIcon> = { walk: Footprints, transit: TrainFront, car: Car };
@@ -82,6 +86,7 @@ export function CourseView({ id }: { id: string }) {
   const course = useCourse(id);
   const swap = useSwapStop(id);
   const reorder = useReorderStops(id);
+  const remove = useRemoveStop(id);
   const save = useSaveCourse(id);
   const reroll = useGenerateCourse();
   const narrative = useCourseNarrative(course.data ? id : undefined);
@@ -137,7 +142,10 @@ export function CourseView({ id }: { id: string }) {
   }, [mapFull]);
   const [storyOpen, setStoryOpen] = useState(false);
   // 편집 가능한 초안 (docs/42): 고정한 곳은 다시 짜도 남는다 · 다시 짜기는 방향을 고르는 시트로
-  const { pins, toggle: togglePin } = usePins();
+  const { pins, toggle: togglePinRaw, set: setPins } = usePins();
+  // 이 코스로 할게요 (2026-09-26 창업자): 확정한 코스 · 그때의 장소. 장소 고정(pins)과 합쳐 "확정한 곳"이다
+  const confirmation = useConfirmed(id);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [rerollOpen, setRerollOpen] = useState(false);
   // 설정 바꾸기: 열 때마다 지금 코스의 설정으로 새로 시작한다(key)
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -180,7 +188,16 @@ export function CourseView({ id }: { id: string }) {
 
   const data = course.data;
   const { request } = data;
-  const busy = swap.isPending || reorder.isPending;
+  const busy = swap.isPending || reorder.isPending || remove.isPending;
+  // 확정한 곳 = 이 곳으로 할게요(고정) + 이 코스로 할게요 때의 장소
+  const fixedIds = data.stops.map((s) => s.place.id).filter((pid) => pins.includes(pid) || confirmation.placeIds.includes(pid));
+  const confirmed = confirmation.confirmed || (data.stops.length > 0 && fixedIds.length === data.stops.length);
+  const togglePin = (placeId: string) => {
+    if (fixedIds.includes(placeId)) {
+      if (pins.includes(placeId)) togglePinRaw(placeId);
+      confirmation.release(placeId);
+    } else togglePinRaw(placeId);
+  };
   // 남이 만든 코스(공유 링크): 서버가 403 을 낼 조작은 버튼째 숨기고, 같은 조건으로 내 코스를 만드는 길만 남긴다
   const readOnly = data.can_edit === false;
   // 새로고침 직후 세션을 복원하는 동안에는 "내 코스"인지 아직 모른다 → 그동안은 친구 코스라고 단정하지 않는다
@@ -254,6 +271,47 @@ export function CourseView({ id }: { id: string }) {
     setNotice(null);
     track("stop_reordered", { course_id: id, position, delta });
     reorder.mutate({ order }, { onSuccess: () => setNotice({ mood: "think", title: "순서를 바꿔서 이동 시간을 다시 계산했어요" }), onError: fail });
+  };
+
+  /** 빼기: 그 자리만 빼고 나머지 순서 그대로 다시 계산한다 (두 곳은 남는다) */
+  const onRemove = (position: number) => {
+    const gone = data.stops.find((s) => s.position === position);
+    setNotice(null);
+    remove.mutate(position, {
+      onSuccess: (next) => {
+        track("stop_removed", { course_id: id, position });
+        if (gone && fixedIds.includes(gone.place.id)) togglePin(gone.place.id);
+        setNotice({ mood: "wink", title: gone ? `${obj(gone.place.name)} 뺐어요` : "뺐어요", body: `총액 ${won(next.totals.price)} · ${won(next.totals.budget_left)} 남아요.` });
+        requestAnimationFrame(() => noticeRef.current?.scrollIntoView({ block: "center" }));
+      },
+      onError: fail,
+    });
+  };
+
+  /** 이 코스로 할게요: 모든 곳을 확정하고 다음 할 일(캘린더 · 공유 · 저장 · 예약 확인)을 연다 */
+  const onConfirm = () => {
+    if (!confirmed) {
+      const all = data.stops.map((s) => s.place.id);
+      setPins(all, true);
+      confirmation.confirm(all);
+      track("course_confirmed", { course_id: id, stops: all.length, fixed: fixedIds.length });
+    }
+    setConfirmOpen(true);
+  };
+  /** 캘린더에 넣기: 장소마다 일정 하나(.ics), 브라우저에서 만든다 */
+  const onCalendar = () => {
+    const title = [placeLabel, purposeLabel].filter(Boolean).join(" · ") || "내가짠데이 코스";
+    const url = window.location.href;
+    const events = data.stops.map((s) => ({
+      name: s.place.name,
+      start: s.arrive_at,
+      end: s.leave_at,
+      address: s.place.address,
+      note: [s.reason_short ?? "", s.place.kind === "event" ? "" : `예약 · 메뉴: ${kakaoSearchUrl(s.place)}`, `코스: ${url}`].filter(Boolean).join("\n"),
+      url,
+    }));
+    downloadIcs(`naegajjanday-${request.start_at.slice(0, 10)}.ics`, courseIcs(id, title, events));
+    track("outbound_link", { course_id: id, kind: "calendar" });
   };
 
   const onSave = () => {
@@ -334,7 +392,7 @@ export function CourseView({ id }: { id: string }) {
   };
 
   // 이 코스에 들어 있는 고정한 곳만 (다른 코스에서 고정한 것은 보내지 않는다)
-  const keep = data.stops.map((s) => s.place.id).filter((pid) => pins.includes(pid));
+  const keep = fixedIds.slice(0, 6); // 서버는 6곳까지 받는다
   const onReroll = (fork = false, focus?: string, tweaks: Tweak[] = []) => {
     setForking(fork);
     setChangingSettings(false);
@@ -532,24 +590,43 @@ export function CourseView({ id }: { id: string }) {
   /** 다시 짜기 · (모바일) 공유 · 저장: 좁은 화면은 아래 고정 바, 넓은 화면은 영수증 아래 — 같은 버튼 한 벌 */
   const actionButtons = (
     <>
-      {/* 넓은 화면(영수증 칸)에서는 저장이 먼저, 한 줄에 하나씩 */}
+      {/* 넓은 화면(영수증 칸)에서는 확정이 먼저, 한 줄에 하나씩 */}
       {readOnly ? (
         <Button type="button" variant="brand" size="xl" className="flex-1 wide:order-first" onClick={() => onReroll(true)} disabled={reroll.isPending || !viewerKnown}>
           <CopyPlus aria-hidden /> 이 코스로 내 코스 만들기
         </Button>
-      ) : data.is_saved ? (
-        <Button asChild variant="brand" size="xl" className="flex-1 wide:order-first">
-          <Link href="/my">
-            <BookmarkCheck aria-hidden /> 저장됨 · 내 코스 보기
+      ) : (
+        // 고르는 자리 (2026-09-26 창업자 "사용자가 선택을 하는 개념이 없다"): 이 코스로 할게요 → 오늘 코스 확정 · 다음 할 일
+        <Button
+          type="button"
+          variant={confirmed ? "soft" : "brand"}
+          size="xl"
+          className={cn("min-w-0 flex-1 wide:order-first", confirmed && "border-[1.5px] border-tomato bg-tomato-soft text-tomato-deep hover:bg-tomato-soft")}
+          onClick={onConfirm}
+          aria-label={confirmed ? "오늘 코스 확정 · 다음 할 일 보기" : "이 코스로 할게요"}
+        >
+          {confirmed ? <BadgeCheck aria-hidden /> : <Check aria-hidden />}
+          <span className="truncate">{confirmed ? "오늘 코스 확정" : "이 코스로 할게요"}</span>
+          {!confirmed && fixedIds.length > 0 ? (
+            <span aria-hidden className="tabular rounded-full bg-white/25 px-1.5 text-caption font-bold">
+              {fixedIds.length}/{data.stops.length}
+            </span>
+          ) : null}
+        </Button>
+      )}
+      {readOnly ? null : data.is_saved ? (
+        <Button asChild variant="soft" size="xl" className="-order-1 max-sm:px-4 wide:order-none">
+          <Link href="/my" aria-label="저장됨 · 내 코스 보기">
+            <BookmarkCheck aria-hidden /> <span className="max-lg:sr-only">저장됨 · 내 코스 보기</span>
           </Link>
         </Button>
       ) : (
-        <Button type="button" variant="brand" size="xl" className="flex-1 wide:order-first" onClick={onSave} disabled={save.isPending}>
-          <Bookmark aria-hidden /> {save.isPending ? "저장하는 중…" : "코스 저장하기"}
+        <Button type="button" variant="soft" size="xl" className="-order-1 max-sm:px-4 wide:order-none" onClick={onSave} disabled={save.isPending} aria-label="코스 저장하기">
+          <Bookmark aria-hidden /> <span className="max-lg:sr-only">{save.isPending ? "저장하는 중…" : "코스 저장하기"}</span>
         </Button>
       )}
       {readOnly ? null : (
-        <Button type="button" variant="soft" size="xl" onClick={() => setRerollOpen(true)} disabled={reroll.isPending} className="-order-1 max-sm:px-4 wide:order-none" aria-label="다시 짜기">
+        <Button type="button" variant="soft" size="xl" onClick={() => setRerollOpen(true)} disabled={reroll.isPending} className="-order-2 max-sm:px-4 wide:order-none" aria-label="다시 짜기">
           <RotateCw aria-hidden /> <span className="max-sm:sr-only">다시 짜기</span>
         </Button>
       )}
@@ -788,7 +865,8 @@ export function CourseView({ id }: { id: string }) {
                 onSwap={onSwap}
                 onSwapTo={(position, placeId) => onSwap(position, { placeId })}
                 onMove={onMove}
-                pins={pins}
+                onRemove={readOnly ? undefined : onRemove}
+                pins={fixedIds}
                 onTogglePin={readOnly ? undefined : togglePin}
                 along={alongTheWay.data?.legs}
                 onShowPlace={showNearby}
@@ -931,6 +1009,26 @@ export function CourseView({ id }: { id: string }) {
             setRerollOpen(false);
             track("reroll_tweaked", { course_id: id, tweaks: tweaks.join(","), pinned: keep.length });
             onReroll(false, undefined, tweaks);
+          }}
+        />
+      ) : null}
+
+      {!readOnly ? (
+        <ConfirmSheet
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          stops={data.stops}
+          fixed={fixedIds}
+          saved={Boolean(data.is_saved)}
+          saving={save.isPending}
+          onSave={onSave}
+          onShare={() => void onShare()}
+          onCalendar={onCalendar}
+          onOutbound={(position) => track("outbound_link", { course_id: id, position, kind: "kakao" })}
+          onCancel={() => {
+            setConfirmOpen(false);
+            setPins(fixedIds, false);
+            confirmation.cancel();
           }}
         />
       ) : null}

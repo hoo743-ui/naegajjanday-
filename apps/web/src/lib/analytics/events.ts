@@ -86,6 +86,17 @@ export interface AnalyticsEvents {
   // 아이디로 가입 (이메일 인증 없음)
   signup_completed: { method: "password" };
   error_shown: { code: string; where: string };
+  /**
+   * 고르는 흐름 (2026-09-26 창업자 "눌렀을 때 선택이 있어야"): 장소를 누르면 여는 결정 시트 · 이 곳으로 확정 ·
+   * 다른 곳 보기 · 시트에서 바꾸기 · 빼기 · 코스 확정 · 밖으로 나간 링크(무엇으로)
+   */
+  stop_sheet_opened: { course_id: string; position: number };
+  stop_fixed: { course_id: string; position: number; fixed: boolean };
+  stop_alternative_viewed: { course_id: string; position: number; count: number };
+  stop_swapped_from_sheet: { course_id: string; position: number };
+  stop_removed: { course_id: string; position: number };
+  course_confirmed: { course_id: string; stops: number; fixed: number };
+  outbound_link: { course_id: string; position?: number; kind: "kakao" | "naver" | "official" | "phone" | "directions" | "calendar" };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

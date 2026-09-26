@@ -287,6 +287,15 @@ export function useReorderStops(courseId: string) {
   });
 }
 
+/** 빼기: 한 곳을 빼고 나머지 순서 그대로 시각 · 합계를 다시 계산한다 (2곳은 남는다) */
+export function useRemoveStop(courseId: string) {
+  const client = useQueryClient();
+  return useMutation<Course, ApiError, number>({
+    mutationFn: (position) => api.delete<Course>(`/courses/${encodeURIComponent(courseId)}/stops/${position}`),
+    onSuccess: (course) => mergeCourse(client, courseId, course),
+  });
+}
+
 export function useSaveCourse(courseId: string) {
   const client = useQueryClient();
   return useMutation<{ id: string }, ApiError, void>({

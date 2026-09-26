@@ -46,5 +46,10 @@ export function usePins() {
     // 서버는 최대 6곳까지 받는다
     write(now.includes(placeId) ? now.filter((id) => id !== placeId) : [...now, placeId].slice(-6));
   }, []);
-  return { pins, toggle };
+  /** 여러 곳을 한 번에 확정하거나 푼다 ("이 코스로 할게요" = 코스의 모든 곳) */
+  const set = useCallback((placeIds: string[], on: boolean) => {
+    const now = read().filter((id) => !placeIds.includes(id));
+    write(on ? [...now, ...placeIds].slice(-6) : now);
+  }, []);
+  return { pins, toggle, set };
 }

@@ -155,7 +155,7 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
       open={open}
       onClose={onClose}
       title="설정 바꾸기"
-      description={pinned > 0 ? `동네와 취향, 고정한 ${pinned}곳은 그대로 두고 다시 짜요.` : "동네와 취향은 그대로, 바꾼 것만 맞춰 다시 짜요."}
+      description={pinned > 0 ? `동네와 취향, 확정한 ${pinned}곳은 그대로 두고 다시 짜요.` : "동네와 취향은 그대로, 바꾼 것만 맞춰 다시 짜요."}
       footer={
         <Button type="button" variant="brand" size="xl" className="w-full" disabled={!changed || past} onClick={() => onApply(next)}>
           <RotateCw aria-hidden /> {past ? "이미 지난 시간이에요" : changed ? "이 설정으로 다시 짜기" : "바꾸고 싶은 걸 골라 주세요"}

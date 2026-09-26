@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { BadgeCheck, ChevronDown, ChevronUp, ExternalLink, Eye, History, MapPinned, MessageSquareText, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Star, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Check, ChevronDown, ChevronUp, ExternalLink, Eye, History, MapPinned, MessageSquareText, MinusCircle, MoreHorizontal, Navigation, Pin, PinOff, RefreshCw, Sparkles, Star, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useCategoryImages } from "@/lib/api/hooks";
 import type { PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
@@ -15,9 +15,10 @@ import { cn } from "@/lib/utils";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DirectionsSheet } from "./DirectionsSheet";
-import { SwapSheet } from "./SwapSheet";
+import { CandidateList, SwapSheet } from "./SwapSheet";
 import { PlaceSheet } from "./PlaceSheet";
 import { RoadviewPeek } from "./RoadviewPeek";
+import { placeQuery as searchQuery } from "./stop-links";
 
 interface StopCardProps {
   courseId: string;
@@ -49,6 +50,8 @@ interface StopCardProps {
   /** false 면 그 방향으로는 옮길 수 없다 (다른 동네로 넘어가는 경계) */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  /** 빼기 (없으면 뺄 수 없다: 친구 코스 · 두 곳만 남은 코스) */
+  onRemove?: () => void;
 }
 
 const SIGNAL_ICON: Record<PlaceSignal["kind"], LucideIcon> = { visited: TrendingUp, designated: BadgeCheck, long_run: History, blog: MessageSquareText };
@@ -74,13 +77,16 @@ const STADIUM = "activity.stadium";
 const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const KBO_SCHEDULE = "https://www.koreabaseball.com/schedule/schedule.aspx";
 
-export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onSwapTo, onMove, stops, transport, pinned = false, onTogglePin, signals = [], canMoveUp = true, canMoveDown = true }: StopCardProps) {
+export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = [], active, swapping, busy, editable = true, onHover, onFocusStop, onSwap, onSwapTo, onMove, stops, transport, pinned = false, onTogglePin, signals = [], canMoveUp = true, canMoveDown = true, onRemove }: StopCardProps) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [street, setStreet] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [directions, setDirections] = useState(false);
   const [swapOpen, setSwapOpen] = useState(false);
+  // 결정 시트 안: 다른 곳 보기를 펼쳤는지 · 빼기를 한 번 눌렀는지(한 번 더 눌러야 빠진다)
+  const [altOpen, setAltOpen] = useState(false);
+  const [removeAsk, setRemoveAsk] = useState(false);
   const panelId = useId();
   const { place } = stop;
   // 0원이라고 다 무료는 아니다: 요금 자료가 없는 곳도 0원으로 계산돼 온다 → "무료"는 무료라고 확인된 곳에만 쓴다
@@ -91,7 +97,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   // 그림 한 장 (docs/43): 서버가 고른 것 — 실제 사진 → 분위기 이미지 → 브랜드 그림
   const image = resolvePlaceImage({ image: place.image, thumbnailUrl: place.thumbnail_url, category: place.category, kind: stop.role, categoryImages: useCategoryImages().data?.items });
   // 같은 상호가 전국에 많다 → 주소의 시·구까지 붙여 검색해야 그 지점이 나온다
-  const placeQuery = [place.address?.split(" ").slice(1, 3).join(" "), place.name].filter(Boolean).join(" ");
+  const placeQuery = searchQuery(place);
   const estimated = !free && place.price_is_estimated === true;
   const toggleDetail = () => {
     if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
@@ -102,7 +108,104 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   const LeadIcon = !stop.reason_short && signals[0] ? SIGNAL_ICON[signals[0].kind] : null;
   const openSheet = () => {
     setSheet(true);
-    track("place_sheet_opened", { course_id: courseId, position: stop.position });
+    setAltOpen(false);
+    setRemoveAsk(false);
+    track("stop_sheet_opened", { course_id: courseId, position: stop.position });
+  };
+  const closeSheet = () => setSheet(false);
+  const why = stop.reason_short ?? stop.reason ?? (signals[0] ? signals[0].label : null);
+
+  /**
+   * 장소를 눌렀을 때 (2026-09-26 창업자 "그 장소의 정보만 보인다 — 눌렀을 때 선택이 있어야"): 왜 여기 한 줄 →
+   * 이 곳으로 할게요 · 다른 곳 보기(이 자리의 후보 2~3곳, 고르면 그 자리만 바뀐다) · 빼기 → 예약 · 메뉴 · 길찾기 · 전화.
+   */
+  const decision = {
+    why: (
+      <div className="grid gap-1.5">
+        {why ? (
+          <p className="flex items-start gap-2 rounded-2xl bg-tomato-soft px-3.5 py-2.5 text-body-sm font-semibold text-tomato-deep">
+            <Sparkles aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <span>{why}</span>
+          </p>
+        ) : null}
+        <p className="tabular text-body-sm text-ink-2">
+          {roleLabel(stop.role)} · {clock(stop.arrive_at)} ~ {clock(stop.leave_at)} · {free ? "무료" : priceUnknown ? "가격 정보 없음" : `${estimated ? "≈" : ""}${won(stop.est_price)}${partySize > 1 ? ` (${partySize}명)` : ""}`}
+        </p>
+      </div>
+    ),
+    actions: editable ? (
+      <div className="grid gap-2">
+        {onTogglePin ? (
+          <button
+            type="button"
+            aria-pressed={pinned}
+            onClick={() => {
+              track("stop_fixed", { course_id: courseId, position: stop.position, fixed: !pinned });
+              onTogglePin();
+            }}
+            className={cn(
+              "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-body font-bold",
+              pinned ? "border-[1.5px] border-tomato bg-tomato-soft text-tomato-deep" : "bg-tomato text-white hover:brightness-95",
+            )}
+          >
+            {pinned ? <Check aria-hidden className="size-5" /> : <Pin aria-hidden className="size-4" />}
+            {pinned ? "이 곳으로 정했어요" : "이 곳으로 할게요"}
+          </button>
+        ) : null}
+        {pinned ? <p className="-mt-1 text-center text-caption text-muted-foreground">다시 짜도 이 곳은 남아요. 한 번 더 누르면 풀려요.</p> : null}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-expanded={altOpen}
+            onClick={() => setAltOpen((v) => !v)}
+            disabled={swapping}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-ink/20 bg-white px-3 text-body-sm font-semibold text-ink hover:border-tomato hover:bg-tomato-soft disabled:opacity-50"
+          >
+            <RefreshCw aria-hidden className="size-4" /> 다른 곳 보기
+            <ChevronDown aria-hidden className={cn("size-3.5 transition-transform", altOpen && "rotate-180")} />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!removeAsk) return setRemoveAsk(true);
+              closeSheet();
+              onRemove?.();
+            }}
+            disabled={!onRemove || busy}
+            title={onRemove ? undefined : "코스에는 적어도 두 곳이 남아야 해요"}
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-body-sm font-semibold disabled:opacity-40",
+              removeAsk ? "border-pink-deep bg-pink-soft text-pink-deep" : "border-ink/20 bg-white text-ink hover:border-ink-2",
+            )}
+          >
+            <MinusCircle aria-hidden className="size-4" /> {removeAsk ? "한 번 더 누르면 빼요" : "빼기"}
+          </button>
+        </div>
+        {altOpen ? (
+          <div className="grid gap-2 rounded-2xl bg-soft p-3">
+            <p className="text-body-sm font-semibold text-ink-2">이 자리에 대신 갈 곳 · 고르면 이 자리만 바뀌어요</p>
+            <CandidateList
+              courseId={courseId}
+              position={stop.position}
+              enabled={altOpen}
+              emptyDescription="이 시간 · 예산 안에서는 대신할 곳이 없어요. 예산을 조금 넓혀 다시 짜 보세요."
+              onShown={(count) => track("stop_alternative_viewed", { course_id: courseId, position: stop.position, count })}
+              onPick={(placeId) => {
+                track("stop_swapped_from_sheet", { course_id: courseId, position: stop.position });
+                closeSheet();
+                onSwapTo(placeId);
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
+    ) : undefined,
+    onDirections: () => {
+      closeSheet();
+      setDirections(true);
+      track("outbound_link", { course_id: courseId, position: stop.position, kind: "directions" });
+    },
+    onOutbound: (kind: "kakao" | "naver" | "official" | "phone" | "directions") => track("outbound_link", { course_id: courseId, position: stop.position, kind }),
   };
 
   return (
@@ -150,7 +253,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             {roleLabel(stop.role)}
             {pinned ? (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-tomato-soft px-2 py-0.5 text-tomato-deep">
-                <Pin aria-hidden className="size-3" /> 고정됨
+                <Pin aria-hidden className="size-3" /> 확정
               </span>
             ) : null}
             {/* 시각은 일정 왼쪽 칸에 있다. 읽는 사람에게는 여기서도 한 번 */}
@@ -259,7 +362,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
                 }}
                 className="min-h-11 gap-2 rounded-lg text-body-sm"
               >
-                {pinned ? <PinOff aria-hidden className="size-4" /> : <Pin aria-hidden className="size-4" />} {pinned ? "고정 풀기" : "이 장소 고정"}
+                {pinned ? <PinOff aria-hidden className="size-4" /> : <Pin aria-hidden className="size-4" />} {pinned ? "확정 풀기" : "이 곳으로 확정"}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -394,7 +497,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         ) : null}
       </AnimatePresence>
 
-      {sheet ? <PlaceSheet place={stop.place} partySize={partySize} onClose={() => setSheet(false)} /> : null}
+      {sheet ? <PlaceSheet place={stop.place} partySize={partySize} onClose={closeSheet} decision={decision} /> : null}
       {directions ? <DirectionsSheet open onClose={() => setDirections(false)} courseId={courseId} stops={stops} to={stop} mode={transport} /> : null}
       {swapOpen ? (
         <SwapSheet

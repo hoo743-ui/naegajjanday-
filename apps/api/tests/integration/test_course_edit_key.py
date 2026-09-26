@@ -26,6 +26,7 @@ async def test_a_stranger_with_the_link_cannot_change_the_course(client: Browser
     assert swap.status_code == 403
     reorder = await client.post(f"/v1/courses/{course['id']}/reorder", json={"order": [2, 1, 3]})
     assert reorder.status_code == 403
+    assert (await client.delete(f"/v1/courses/{course['id']}/stops/2")).status_code == 403
     wrong = await client.post(
         f"/v1/courses/{course['id']}/swap",
         json={"position": 1, "strategy": "random_top"},

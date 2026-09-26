@@ -36,6 +36,8 @@ interface CourseTimelineProps {
   onSwap: (position: number, strategy: SwapStrategy) => void;
   onSwapTo: (position: number, placeId: string) => void;
   onMove: (position: number, delta: -1 | 1) => void;
+  /** 빼기 (장소 결정 시트). 없으면 뺄 수 없다. 두 곳만 남으면 더 빼지 않는다 */
+  onRemove?: (position: number) => void;
   /** 고정한 장소 id (다시 짜도 남는다) */
   pins?: string[];
   onTogglePin?: (placeId: string) => void;
@@ -105,7 +107,7 @@ function AlongLine({ items, onShow }: { items: AlongLeg["items"]; onShow?: (pin:
   );
 }
 
-export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, pins = [], onTogglePin, along, onShowPlace, signals }: CourseTimelineProps) {
+export function CourseTimeline({ course, transport, style, partySize, activeStop, swappingPosition, busy, editable = true, route, access, onHover, onView, onFocusStop, onSwap, onSwapTo, onMove, onRemove, pins = [], onTogglePin, along, onShowPlace, signals }: CourseTimelineProps) {
   const listRef = useRef<HTMLOListElement>(null);
   const onViewRef = useRef(onView);
   useEffect(() => {
@@ -240,6 +242,7 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
                 signals={signals?.[stop.place.id]}
                 onTogglePin={onTogglePin ? () => onTogglePin(stop.place.id) : undefined}
                 onMove={(delta) => onMove(stop.position, delta)}
+                onRemove={onRemove && course.stops.length > 2 ? () => onRemove(stop.position) : undefined}
               />
               </div>
             </li>

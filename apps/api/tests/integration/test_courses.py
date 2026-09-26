@@ -308,6 +308,24 @@ class TestFollowUps:
         bad = await client.post(f"/v1/courses/{course['id']}/reorder", json={"order": [1, 1, 3]})
         assert bad.status_code == 422
 
+    async def test_remove_stop_keeps_the_rest_in_order(self, client: httpx.AsyncClient) -> None:
+        course = (await generate(client, alternatives=0)).json()["courses"][0]
+        assert len(course["stops"]) == 3
+        resp = await client.delete(f"/v1/courses/{course['id']}/stops/2")
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert [s["place"]["id"] for s in body["stops"]] == [
+            course["stops"][i]["place"]["id"] for i in (0, 2)
+        ]
+        assert [s["position"] for s in body["stops"]] == [1, 2]
+        assert body["totals"]["price"] == course["totals"]["price"] - course["stops"][1]["est_price"]
+        # the course of record changed, not just this response
+        again = (await client.get(f"/v1/courses/{course['id']}")).json()["course"]
+        assert [s["place"]["id"] for s in again["stops"]] == [s["place"]["id"] for s in body["stops"]]
+        # two places are the least a course keeps; a position that is not there is a clear no
+        assert (await client.delete(f"/v1/courses/{course['id']}/stops/1")).status_code == 422
+        assert (await client.delete(f"/v1/courses/{course['id']}/stops/9")).status_code == 422
+
     async def test_narrative_sse_uses_template_without_llm(self, client: httpx.AsyncClient) -> None:
         course = (await generate(client, alternatives=0)).json()["courses"][0]
         resp = await client.get(f"/v1/courses/{course['id']}/narrative")

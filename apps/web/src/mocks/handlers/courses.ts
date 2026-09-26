@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type { GenerateCourseRequest, ReorderRequest, SwapRequest } from "@/lib/api/types";
-import { generate, getDetail, markSaved, reorder, swap } from "../fixtures/course-engine";
+import { generate, getDetail, markSaved, removeStop, reorder, swap } from "../fixtures/course-engine";
 import { guard, latency, problem, sse, tokenFrames, u } from "./utils";
 
 export const courseHandlers = [
@@ -45,6 +45,11 @@ export const courseHandlers = [
     const body = (await request.json()) as ReorderRequest;
     await latency(400);
     return guard(() => reorder(String(params.id), body.order));
+  }),
+
+  http.delete(u("/courses/:id/stops/:position"), async ({ params }) => {
+    await latency(400);
+    return guard(() => removeStop(String(params.id), Number(params.position)));
   }),
 
   http.post(u("/courses/:id/save"), async ({ params }) => {

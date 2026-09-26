@@ -56,7 +56,7 @@ export function RerollSheet({ open, onClose, pinned, changeHref, onReroll }: Rer
       open={open}
       onClose={onClose}
       title="다시 짜 볼까요?"
-      description={pinned > 0 ? `고정한 ${pinned}곳은 그대로 두고 나머지를 바꿔요.` : "지금 코스의 장소는 빼고 새로 짜요."}
+      description={pinned > 0 ? `확정한 ${pinned}곳은 그대로 두고 나머지를 바꿔요.` : "지금 코스의 장소는 빼고 새로 짜요."}
       footer={
         <div className="grid gap-2">
           <Button type="button" variant="brand" size="xl" className="w-full" onClick={() => onReroll(tweaks)}>
@@ -90,7 +90,7 @@ export function RerollSheet({ open, onClose, pinned, changeHref, onReroll }: Rer
       </div>
       {pinned === 0 ? (
         <p className="mt-4 flex items-start gap-2 text-caption text-muted-foreground">
-          <Pin aria-hidden className="mt-0.5 size-3.5 shrink-0" /> 마음에 드는 곳은 카드의 ⋯ 에서 &lsquo;이 장소 고정&rsquo;을 누르면 다시 짜도 남아요.
+          <Pin aria-hidden className="mt-0.5 size-3.5 shrink-0" /> 마음에 드는 곳은 장소 이름을 눌러 &lsquo;이 곳으로 할게요&rsquo;를 누르면 다시 짜도 남아요.
         </p>
       ) : null}
     </BottomSheet>

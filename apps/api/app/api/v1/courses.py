@@ -176,6 +176,19 @@ async def add_stop(
     return await service.add_stop(course_id, body, user)
 
 
+@router.delete(
+    "/{course_id}/stops/{position}",
+    response_model=dto.CourseOut,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(403, 404, 422),
+    summary="한 곳을 빼고 나머지 순서 그대로 시각 · 합계를 다시 계산 (2곳은 남는다)",
+)
+async def remove_stop(
+    course_id: str, position: int, service: CourseServiceDep, user: OptionalUser
+) -> dto.CourseOut:
+    return await service.remove_stop(course_id, position, user)
+
+
 @router.post(
     "/{course_id}/reorder",
     response_model=dto.CourseOut,
