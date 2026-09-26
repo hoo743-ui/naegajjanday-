@@ -25,7 +25,7 @@ from app.domain.models import (
 from app.domain.recommendation import budget as B
 from app.domain.recommendation import day_score
 from app.domain.recommendation import features as F
-from app.domain.recommendation.candidates import FilterContext, hard_filter, never_tags
+from app.domain.recommendation.candidates import FilterContext, been_places, hard_filter, never_tags
 from app.domain.recommendation.composer import (
     MIN_OPEN_BUFFER_MIN,
     CourseComposer,
@@ -263,6 +263,7 @@ class RecommendationEngine:
             # opening hours are filtered on the estimated arrival here and re-checked exactly in the beam
             radius = float(ctx.radius_m)
             pool: list[PlaceCandidate] = []
+            back: list[PlaceCandidate] = []  # a regular's past places let back in (see below)
             for _attempt in range(params.radius_expand_max + 1):
                 key = (sb.slot.course_role, radius)
                 if key not in cache:
@@ -270,6 +271,12 @@ class RecommendationEngine:
                         sb.slot.course_role, ctx.origin, radius, ctx.start_at.date(), ctx.local_words
                     )
                 pool = hard_filter(cache[key], fc, params)
+                if ctx.been_place_ids and not pool and not back:
+                    # 자주: when nothing else is this near, a place they have been to beats a longer walk to
+                    # one they have not (2026-09-26: a 32-minute walk to the next pub past the one they
+                    # knew). Let back in, it stays in the pool as the search goes further.
+                    back = been_places(cache[key], fc, ctx, params)
+                pool = [*pool, *back]
                 if not pool and ctx.avoid_tags_by_role:
                     # "no chains" is a preference of the style, not the user's veto: a 2,700원 café budget
                     # only buys a chain, and an empty café stop is worse than a Mega Coffee

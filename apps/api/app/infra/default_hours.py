@@ -73,7 +73,9 @@ class DefaultHours:
         """The address names a floor ("1층" · "B2"): the place is inside a building, which has a door."""
         return bool(address and self._floor and self._floor.search(address))
 
-    def _by_name_or_category(self, category_code: str, name: str) -> tuple[OpeningPeriod, ...]:
+    def for_sign(self, category_code: str, name: str) -> tuple[OpeningPeriod, ...] | None:
+        """The hours the sign itself says ("24시", "롯데월드몰"), or None when no name rule matches.
+        `()` = open at all hours."""
         for words, categories, periods in self._by_name:
             if categories and not any(
                 category_code == c or category_code.startswith(f"{c}.") for c in categories
@@ -81,7 +83,11 @@ class DefaultHours:
                 continue
             if any(word in name for word in words):
                 return periods
-        return self.for_category(category_code)
+        return None
+
+    def _by_name_or_category(self, category_code: str, name: str) -> tuple[OpeningPeriod, ...]:
+        found = self.for_sign(category_code, name)
+        return found if found is not None else self.for_category(category_code)
 
     def for_category(self, category_code: str) -> tuple[OpeningPeriod, ...]:
         parts = category_code.split(".")

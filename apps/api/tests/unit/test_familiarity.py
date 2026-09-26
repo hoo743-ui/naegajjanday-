@@ -56,6 +56,13 @@ def test_the_novelty_pull_is_for_regulars_only() -> None:
     assert rules.new_pull > rules.lesser_known_pull > 0
 
 
+def test_a_past_place_let_back_in_counts_for_less() -> None:
+    known = place()
+    regular = context(familiarity=F.REGULAR, been_place_ids={known.id})
+    assert F.novelty_pull(known, regular) == -F.familiarity_rules().regular.been_penalty < 0
+    assert F.novelty_pull(known, context(been_place_ids={known.id})) == 0.0  # a first visit: no such thing
+
+
 def test_the_draw_stops_pulling_for_a_regular() -> None:
     rules = SignatureRules(local_pull=0.05, draw_pull=0.12, specialty_roles=frozenset({"MEAL"}))
     for familiarity, want in ((F.FIRST, 0.12), (F.REGULAR, F.familiarity_rules().regular.draw_pull)):

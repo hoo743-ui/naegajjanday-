@@ -16,7 +16,9 @@
     "new_pull": 0.1,
     "lesser_known_pull": 0.06,
     "not_independent_tags": ["체인점", "무인매장"],
-    "known_popularity": 0.0
+    "known_popularity": 0.0,
+    "_note_been": "지난 코스 · 저장 · 다녀옴의 장소는 빼되, 그 자리에 가까운 다른 곳이 하나도 없으면 다시 넣는다(엔진 _collect). 다시 넣은 곳은 점수에서 been_penalty 만큼 깎는다 — 새 곳까지 한참(15분 남짓 더) 걸어야 할 때만 이긴다. 2026-09-26: 자주 모드에서 아는 술집을 빼느라 32분을 걸었다.",
+    "been_penalty": 0.18
   },
   "opened_on_sources": {
     "_note": "개업(인허가) 날짜가 있는 원천과 그 키 — place_source.raw. 있는 곳에서만 쓴다(없으면 '새로 생긴 곳'이 아닐 뿐 벌점 없음).",

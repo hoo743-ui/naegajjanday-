@@ -341,6 +341,9 @@ class RequestContext:
     # 꼭 들를 곳 · 끝나고 들르기 (recommendation.errand): where the user goes after the day — its last stop is
     # pulled toward that side
     end_point: GeoPoint | None = None
+    # a regular's past places here: left out while the neighbourhood has enough else within reach — not a
+    # veto like exclude_place_ids (a 35-minute walk to avoid the pub they know is the worse day)
+    been_place_ids: set[int] = field(default_factory=set)
 
     @property
     def kept_keys(self) -> frozenset[tuple[bool, int]]:

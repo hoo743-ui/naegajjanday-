@@ -185,6 +185,7 @@ class CourseService:
         # 끝나고 들르기 (docs/59 #7): where the user goes after the day — the engine ends the day on its side
         self._errand_end: GeoPoint | None = None
         self._familiar = Familiar()  # 처음 · 자주 of the request under way (see `_familiarity_for`)
+        self._dry_been: tuple[str, ...] = ()  # dry_run: a regular's past places, given (no signed-in user)
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -233,7 +234,10 @@ class CourseService:
         their own past — a day planned here (or in the district above) on two different days of the last 180
         is a regular. Anonymous and not asked: a first visit (the result page offers the other in one tap)."""
         if user is None:
-            return Familiar(req.familiarity or FIRST, "asked" if req.familiarity else None)
+            value = req.familiarity or FIRST
+            given = self._dry_been if value == REGULAR else ()
+            given_ids = await self._places.ids_by_public_ids(list(given)) if given else set()
+            return Familiar(value, "asked" if req.familiarity else None, frozenset(given_ids))
         rules = familiarity_rules()
         region = await self._regions.get_by_slug(req.region) if req.region else None
         if region is None and req.origin is not None:
@@ -741,7 +745,7 @@ class CourseService:
         regular = self._familiar.value == REGULAR
         if regular:
             ctx.familiarity = REGULAR
-            ctx.exclude_place_ids |= set(self._familiar.been)
+            ctx.been_place_ids = set(self._familiar.been)
         if req.focus != FOCUS_OFF and not (regular and not familiarity_rules().regular.auto_focus):
             ctx.auto_focus_words = ctx.local_words  # "상관없어요" (FOCUS_OFF): asked for a plain course
         # docs/30: the few answers of the wizard, read into the engine's own knobs
@@ -785,6 +789,7 @@ class CourseService:
             ctx.kept_places = tuple(kept)
             ctx.keep_roles = ctx.keep_roles | {p.course_role for p in kept}
             ctx.exclude_place_ids -= {p.id for p in kept if not p.is_event}
+            ctx.been_place_ids -= {p.id for p in kept if not p.is_event}
         engine = RecommendationEngine(self._reads or self._places, self._travel)
         try:
             try:
@@ -1013,8 +1018,13 @@ class CourseService:
             "festival": festival.title if festival is not None and state["festival_in_course"] else None,
         }
 
-    async def dry_run(self, req: dto.CourseGenerateRequest) -> tuple[Region, RequestContext, EngineOutput]:
-        """The exact production pipeline with nothing persisted — what `eval-courses` measures."""
+    async def dry_run(
+        self, req: dto.CourseGenerateRequest, *, been: Sequence[str] = ()
+    ) -> tuple[Region, RequestContext, EngineOutput]:
+        """The exact production pipeline with nothing persisted — what `eval-courses` measures.
+        `been`: public ids of the places a regular has been to — what a signed-in regular's own history
+        gives (`_familiarity_for`); the concept scorecard's paired sample (docs/58)."""
+        self._dry_been = tuple(been)
         req = await self._with_anchor(req)
         region, _origin, _purpose, ctx, _profile, out = await self._plan(req, None)
         return region, ctx, out

@@ -390,6 +390,12 @@ METRICS: tuple[Metric, ...] = (
            _regular_stops(lambda s: s.shared), half="regular"),
     Metric("regular_novelty_rate", "자주 모드 코스의 장소 중 새로 생긴 곳 · 덜 알려진 독립 가게", "higher",
            0.50, _regular_stops(lambda s: s.novel), half="regular"),
+    # the same breakage checks as long_walk_rate · day_schedule_conflict_rate, on the regular half: leaving
+    # out the places they have been must not buy a 35-minute walk or a closed door
+    Metric("regular_long_walk_rate", "자주 모드: 한 구간을 너무 오래 걷는 코스", "lower", 0.10,
+           _course(_ok, _has(_code("LONG_WALK"))), _code("LONG_WALK"), half="regular"),
+    Metric("regular_schedule_rate","자주 모드: 낮 코스의 닫힌 곳 · 이른 술집", "lower", 0.03,
+           _course(_day, _has(SCHEDULE_FLAGS)), SCHEDULE_FLAGS, half="regular"),
     # 꼭 들를 곳 · 끝나고 들르기 (docs/59 #7): the paired sample — the hotspot requests with an errand after
     Metric("errand_toward_rate", "끝나고 들르기: 그곳에 가장 가까운 장소 쪽(300m)에서 끝남", "higher",
            0.80, _errand_toward, half="errand"),
@@ -772,7 +778,6 @@ async def collect(
                 alternatives=0,
                 scene=case.scene,
                 familiarity=REGULAR if case.regular else None,
-                preferences=dto.Preferences(exclude_place_ids=been[:100]),
                 errand=dto.ErrandIn(
                     name="볼일",
                     lat=errand[0],
@@ -784,7 +789,9 @@ async def collect(
                 else None,
             )
             try:
-                region, ctx, out = await with_retries(partial(service.dry_run, req), session)
+                # as a signed-in regular's history gives them (not the user's own "not this place" veto)
+                run = partial(service.dry_run, req, been=been)
+                region, ctx, out = await with_retries(run, session)
                 records.append(record_from(case, region, ctx, out.courses[0], rules, pair, errand))
                 if case.group == "hotspot":
                     firsts[case.key] = records[-1]

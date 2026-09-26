@@ -37,6 +37,7 @@ from app.domain.routing.travel_time import haversine_m
 from app.infra.analytics.base import NoopTracker
 from app.infra.db.models import PlaceImage
 from app.infra.db.session import Database
+from app.infra.default_hours import get_default_hours
 from app.infra.tagging import get_tag_rules
 from app.repositories.place_repo import SqlPlaceRepository
 from app.schemas import course as dto
@@ -196,6 +197,7 @@ def judge(
         if w.get("code") == "SLOT_EMPTY":
             found.append(Finding("EMPTY_SLOT", str((w.get("meta") or {}).get("role"))))
     closed_after = {k: v for k, v in rules["closed_after"].items() if not k.startswith("_")}
+    signs = get_default_hours()
     seen_kinds: Counter[str] = Counter()
     for s in stops:
         code, name, at = s.place.category_code, s.place.name, s.arrive_at.time()
@@ -206,6 +208,13 @@ def judge(
             # the place's own hours (TourAPI · docs/55) are evidence; the category rule below is a guess
             if not is_open(s.place.opening_hours, s.arrive_at):
                 found.append(Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (영업시간 밖)"))
+        elif (sign := signs.for_sign(code, name)) is not None:
+            # what the sign says (a mall, "24시", a museum by name — data/hours/default_hours.json › by_name)
+            # beats the trade's guess below: '롯데월드몰' is a landmark by category and open until 22:00
+            if not is_open(sign, s.arrive_at):
+                found.append(
+                    Finding("CLOSED_AT_ARRIVAL", f"{name} [{code}] {at:%H:%M} 도착 (간판 영업시간 밖)")
+                )
         elif (
             not no_door
             and (limit := _prefix_lookup(closed_after, code))

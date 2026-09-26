@@ -214,3 +214,25 @@ class TestEngine:
             meal.id,
         ]  # MEAL stays last (precedence)
         assert ORIGIN is not None
+
+    async def test_a_regular_goes_back_to_a_known_place_only_when_nothing_else_is_near(self) -> None:
+        """자주 (docs/59): past places are left out — but not at the price of a long walk to a new one."""
+        t = template(Slot(1, "MEAL", 1.0), min_budget=5000)
+        hours = all_week(10 * 60, 23 * 60)
+        known = place("MEAL", "food.korean", 15000, dlat=0.001, opening_hours=hours)
+        far = place("MEAL", "food.noodle", 15000, dlat=0.02, opening_hours=hours)  # ≈ 2.2 km
+        regular = {
+            "alternatives": 0,
+            "algorithm": "v2",
+            "familiarity": "regular",
+            "been_place_ids": {known.id},
+        }
+        out = await RecommendationEngine(FakeSource([known, far])).generate(
+            context(**regular), [t], profile(min_candidates=1)
+        )
+        assert [s.place.id for s in out.courses[0].stops] == [known.id]
+        new = place("MEAL", "food.western", 15000, dlat=0.002, opening_hours=hours)
+        out = await RecommendationEngine(FakeSource([known, far, new])).generate(
+            context(**regular), [t], profile(min_candidates=1)
+        )
+        assert [s.place.id for s in out.courses[0].stops] == [new.id]

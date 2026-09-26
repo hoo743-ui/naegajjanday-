@@ -25,6 +25,13 @@ def test_most_specific_category_wins_and_unknown_means_no_restriction() -> None:
     assert hours.for_category("attraction.park") == ()  # nothing known → always open
 
 
+def test_the_sign_rule_is_told_apart_from_the_trades_guess() -> None:
+    table = get_default_hours()
+    assert table.for_sign("attraction.landmark", "어느 누각") is None  # the category's guess applies
+    mall = table.for_sign("attraction.landmark", "롯데월드몰")  # a mall by name: open into the evening
+    assert mall and is_open(mall, TUE_2030)
+
+
 def test_shipped_table_blocks_the_evening_museum_but_not_the_street() -> None:
     table = get_default_hours()
     museum, street, market = (

@@ -14,3 +14,4 @@
 | 2026-09-26 14:29 | quick | be32dac | 118 | 26/26 | – | – | backlog 6 · 10: 합쳐진 이름 정리 · 매일 영업시간 (Δ 0 — 이름은 배포 때 rules/place_names 가 바꾼다) |
 | 2026-09-26 14:30 | quick | a302c6f | 118 | 26/26 | – | – | docs/59 #2 옵션을 결과 화면으로(엔진 변경 없음) |
 | 2026-09-26 14:24 | quick | 959da44 | 144 | 28/28 | – | – | docs/59 #7 꼭 들를 곳: errand_leg · 끝나고 들르기 end pull (errand_toward_rate 69.2% → 92.3% vs errand7-before) |
+| 2026-09-26 14:49 | quick | 959da44 | 118 | 28/28 | – | – | A: 자주 모드 긴 도보 · 닫힌 곳을 짝 표본에서 센다(regular_long_walk_rate · regular_schedule_rate). 지난 장소는 가까이 다른 곳이 없을 때만 다시(been_penalty 0.18), 간판 영업시간(롯데월드몰)을 채점기도 믿는다 |

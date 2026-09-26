@@ -76,6 +76,13 @@ def test_a_place_with_its_own_hours_is_judged_by_them_not_by_its_category() -> N
     assert "CLOSED_AT_ARRIVAL" in _codes([hall])
 
 
+def test_what_the_sign_says_beats_the_trades_guess() -> None:
+    # 2026-09-26: '롯데월드몰' is a landmark by category (closed from 20:30) but a mall by name (to 22:00)
+    mall = "롯데월드타워&롯데월드몰"
+    assert "CLOSED_AT_ARRIVAL" not in _codes([_stop(1, "ATTRACTION", "attraction.landmark", mall, 21, 0)])
+    assert "CLOSED_AT_ARRIVAL" in _codes([_stop(1, "ATTRACTION", "attraction.landmark", mall, 23, 0)])
+
+
 def test_matrix_size_and_filters() -> None:
     assert len(H.build_scenarios(SPEC, "quick", {})) == 4 * 5 * 4 * 2  # 12:00 · 15:00 · 18:30 · 21:30
     only = H.build_scenarios(

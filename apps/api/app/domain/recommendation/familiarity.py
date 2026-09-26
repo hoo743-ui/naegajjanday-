@@ -34,6 +34,7 @@ class RegularRules:
     lesser_known_pull: float = 0.06
     not_independent_tags: frozenset[str] = frozenset()
     known_popularity: float = 0.0  # a measured navigation rank above this = a place everyone goes to
+    been_penalty: float = 0.18  # a past place let back in (nothing else near) — only a long walk loses to it
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +121,10 @@ def novelty_pull(place: PlaceCandidate, ctx: RequestContext) -> float:
     if not is_regular(ctx):
         return 0.0
     rules = familiarity_rules().regular
+    if not place.is_event and place.id in ctx.been_place_ids:
+        # let back in only when nothing else was near (engine._collect): it still has to be worth more than
+        # the walk to somewhere new — about a quarter of an hour more, spread over the day's stops
+        return -rules.been_penalty
     if newly_opened(place, ctx.start_at, rules):
         return rules.new_pull
     if lesser_known(place, rules):

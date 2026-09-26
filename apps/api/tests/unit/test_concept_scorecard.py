@@ -372,6 +372,13 @@ def test_paired_metrics_count_only_the_regular_half() -> None:
     assert results["regular_overlap_rate"].value == pytest.approx(1 / 8)
     assert results["regular_novelty_rate"].value == pytest.approx(6 / 8)
     assert regular[1].case.key.endswith("|자주") and regular[1].case.first_key == first[0].case.key
+    # the same breakage checks as the first-visit metrics, on the regular half only
+    assert results["regular_long_walk_rate"].value == 0.0 and results["regular_long_walk_rate"].n == 4
+    regular[1].flags = ["LONG_WALK:→ 먼 술집 35분", "CLOSED_AT_ARRIVAL:어느 누각"]
+    again = {r.id: r for r in C.evaluate_all([*first, *regular])}
+    assert again["regular_long_walk_rate"].value == pytest.approx(1 / 4)
+    assert again["regular_schedule_rate"].value == pytest.approx(1 / 4)
+    assert again["long_walk_rate"].value == 0.0  # the first-visit number never sees it
 
 
 def test_a_regular_record_marks_what_is_new_and_what_it_shares() -> None:

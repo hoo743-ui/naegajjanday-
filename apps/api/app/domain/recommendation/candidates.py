@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 from app.domain.models import PlaceCandidate, RequestContext, ScoringParams
@@ -47,7 +47,8 @@ class FilterContext:
             disliked_tags=frozenset(ctx.disliked_tags)
             | frozenset(t for t, roles in ctx.avoid_tags_by_role.items() if role in roles)
             | never_tags(ctx, role),
-            exclude_place_ids=frozenset(ctx.exclude_place_ids),
+            # a regular's past places too (the engine lets them back in when little else is near)
+            exclude_place_ids=frozenset(ctx.exclude_place_ids | ctx.been_place_ids),
             area_names=ctx.area_names,
             blocked_categories=ctx.blocked_categories,
             allowed_place_ids=ctx.anchor_place_ids,
@@ -99,3 +100,11 @@ def hard_filter(
     places: Iterable[PlaceCandidate], fc: FilterContext, params: ScoringParams
 ) -> list[PlaceCandidate]:
     return [p for p in places if rejection_reason(p, fc, params) is None]
+
+
+def been_places(
+    places: Iterable[PlaceCandidate], fc: FilterContext, ctx: RequestContext, params: ScoringParams
+) -> list[PlaceCandidate]:
+    """A regular's past places (ctx.been_place_ids) among `places` that pass every other hard filter."""
+    again = replace(fc, exclude_place_ids=frozenset(ctx.exclude_place_ids))
+    return [p for p in hard_filter(places, again, params) if not p.is_event and p.id in ctx.been_place_ids]
