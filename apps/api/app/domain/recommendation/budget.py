@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -99,6 +99,18 @@ class SlotFloors:
     per_person: Mapping[str, float]  # role → what a stop of that kind costs a head, where one sits down
     max_share: float = 0.25  # a floor never takes more than this share of the budget
     yield_to: frozenset[str] = frozenset()  # a short slot's day is also tried without it, for these
+    late_from_min: int | None = None  # from this minute of the evening on (until the small hours end) …
+    late_keep: Mapping[str, float] = field(default_factory=dict)  # … these optional slots are kept (a head)
+    late_yield: frozenset[str] = frozenset()  # … and these give way to them
+
+    def is_late(self, start_at: datetime) -> bool:
+        return self.late_from_min is not None and evening_minute(start_at) >= self.late_from_min
+
+    def keep_at(self, start_at: datetime) -> Mapping[str, float]:
+        """The optional slots `allocate` keeps for a day starting then, with what they should get a head
+        (docs/59 #5: a solo 20:30 evening at 30,000원 dropped its bar for being 2,100원 short of the slot's
+        minimum, and was 곱창 + a walk)."""
+        return self.late_keep if self.is_late(start_at) else {}
 
 
 @lru_cache(maxsize=1)
@@ -106,10 +118,15 @@ def slot_floors(path: Path = SLOT_FLOORS_PATH) -> SlotFloors:
     if not path.exists():
         return SlotFloors({})
     data = json.loads(path.read_text(encoding="utf-8"))
+    late = data.get("late_evening") or {}
+    h, m = (int(x) for x in str(late.get("from", "0:0")).split(":"))
     return SlotFloors(
         {str(k): float(v) for k, v in (data.get("per_person") or {}).items() if not str(k).startswith("_")},
         float(data.get("max_share", 0.25)),
         frozenset(str(r) for r in data.get("yield_to") or ()),
+        h * 60 + m if late.get("from") else None,
+        {str(k): float(v) for k, v in (late.get("keep") or {}).items()},
+        frozenset(str(r) for r in late.get("yield") or ()),
     )
 
 
@@ -118,26 +135,35 @@ def without_short(
     budget_per_person: float,
     include_roles: Sequence[str] | None = None,
     floors: SlotFloors | None = None,
+    start_at: datetime | None = None,
 ) -> Template | None:
-    """The same day without the slots whose share buys less than their floor — offered only when a slot
-    they yield to (a bar) is planned too. 27,000원 a head buys dinner and a bar, or dinner and a café worth
-    the name, not all three: with the café lifted to its floor the friends' evening lost its second round in
-    4 of 13 courses. None when nothing is short or nothing to yield to."""
+    """The same day without the slots that stand in the way of the one it closes on (a bar), offered only
+    when that one is planned too:
+    - slots whose share buys less than their floor — 27,000원 a head buys dinner and a bar, or dinner and a
+      café worth the name, not all three (with the café lifted, the friends' evening lost its second round
+      in 4 of 13 courses);
+    - late in the evening, the kinds that give way (`late_yield`): after a 20:30 dinner the café is shut or
+      a 24-hour unmanned one, and it pushed the drink past the hour it could start.
+    None when nothing stands in the way or nothing is planned to close on."""
     f = floors or slot_floors()
-    if not f.yield_to:
+    late = start_at is not None and f.is_late(start_at)
+    closers = f.yield_to | (frozenset(f.keep_at(start_at)) if late and start_at is not None else frozenset())
+    if not closers:
         return None
-    plain = allocate(template, budget_per_person, include_roles, floors=SlotFloors({}))
-    short = {
+    keep = f.keep_at(start_at) if late and start_at is not None else {}
+    plain = allocate(template, budget_per_person, include_roles, floors=SlotFloors({}), keep=keep)
+    out = {
         sb.slot.position
         for sb in plain
-        if (floor := f.per_person.get(sb.slot.course_role))
-        and 0 < sb.budget < min(floor, f.max_share * budget_per_person)
+        if (
+            (floor := f.per_person.get(sb.slot.course_role))
+            and 0 < sb.budget < min(floor, f.max_share * budget_per_person)
+        )
+        or (late and sb.slot.course_role in f.late_yield)
     }
-    if not short or not any(
-        sb.slot.course_role in f.yield_to for sb in plain if sb.slot.position not in short
-    ):
+    if not out or not any(sb.slot.course_role in closers for sb in plain if sb.slot.position not in out):
         return None
-    return replace(template, slots=tuple(s for s in template.slots if s.position not in short))
+    return replace(template, slots=tuple(s for s in template.slots if s.position not in out))
 
 
 MANDATORY_KEEP = 0.8  # any other slot gives at most a fifth of its plan to a floor (optional: to its minimum)
@@ -164,8 +190,18 @@ def with_floors(
             want = min(floor / budget_per_person, f.max_share)
             if shares[s.position] < want:
                 wanted[s.position] = want
-    if not wanted:
-        return list(slots)
+    # too small a budget for a café worth the name: the plan as it was
+    return _lend(slots, wanted, budget_per_person) or list(slots)
+
+
+def _lend(slots: Sequence[Slot], wanted: Mapping[int, float], budget_per_person: float) -> list[Slot] | None:
+    """Slots at `wanted` shares (of the whole), paid by the other paid slots in proportion to what each can
+    spare — an optional one down to its own minimum, any other to `MANDATORY_KEEP` of its plan. None when
+    they cannot spare it."""
+    total = sum(s.budget_share for s in slots)
+    if not wanted or total <= 0 or budget_per_person <= 0:
+        return None
+    shares = {s.position: s.budget_share / total for s in slots}
     need = sum(w - shares[p] for p, w in wanted.items())
     room = {
         s.position: shares[s.position]
@@ -179,7 +215,7 @@ def with_floors(
     }
     room = {p: r for p, r in room.items() if r > 0}
     if sum(room.values()) < need:
-        return list(slots)  # too small a budget for a café worth the name: the plan as it was
+        return None
     give = need / sum(room.values())
     new = {p: wanted.get(p, shares[p] - room.get(p, 0.0) * give) for p in shares}
     return [replace(s, budget_share=new[s.position]) for s in slots]
@@ -197,10 +233,14 @@ def allocate(
     budget_per_person: float,
     include_roles: Sequence[str] | None = None,
     floors: SlotFloors | None = None,
+    keep: Mapping[str, float] | None = None,
 ) -> list[SlotBudget]:
     """b_s = b × share. Optional slots whose b_s falls below their `min_slot_budget` are dropped
-    from the back and the remaining shares renormalized. Share-0 (free) slots stay at 0. Then a slot
-    whose share buys less than a stop of its kind costs is lifted to its floor (`with_floors`)."""
+    from the back and the remaining shares renormalized — unless their role is one to `keep` (the point of
+    the hour: a late evening's drink) and the others can lend it what one costs a head (`keep[role]`), or
+    else its minimum. Share-0 (free) slots stay at 0. Then a slot whose share buys less than a stop of its
+    kind costs is lifted to its floor."""
+    keep = keep or {}
     slots = [s for s in template.slots if not include_roles or s.course_role in include_roles]
     if not slots:
         slots = list(template.slots)
@@ -216,6 +256,17 @@ def allocate(
         )
         if victim is None or len(slots) <= 1:
             break
+        if victim.course_role in keep and victim.min_slot_budget:
+            lent = None
+            for head in dict.fromkeys(
+                (max(keep[victim.course_role], victim.min_slot_budget), victim.min_slot_budget)
+            ):
+                lent = _lend(slots, {victim.position: head / budget_per_person + 1e-9}, budget_per_person)
+                if lent is not None:
+                    break
+            if lent is not None:
+                slots = lent
+                continue
         slots = [s for s in slots if s is not victim]
     slots = with_floors(slots, budget_per_person, floors)
     return [

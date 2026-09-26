@@ -30,7 +30,7 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | 묶음 | quick | full | 재는 것 |
 |---|---|---|---|
 | hotspot | draws.json 명소 동네(먹거리 · 볼거리가 적힌 52곳) 중 13곳 × (데이트 점심 6만 · 친구 넷 저녁 10.8만 · 여행 오전 7.8만) | 52곳 × 넷(+ 데이트 저녁 8만) | 명물 · 체인 |
-| solo_night | 8곳 × 혼자 3만 21:30 | 18곳 × 21:30 · 23:00 | 혼자의 밤 한잔 |
+| solo_night | 8곳 × 혼자 3만 20:30 · 21:30 | 18곳 × 20:30 · 21:30 · 23:00 | 혼자의 늦은 저녁 · 밤 한잔 |
 | date_scene | 4곳 × 설레는 사이 21:30 · 오래 만난 사이 15:00 · 기념일 18:30(10만) | 8곳 × 세 장면 × 18:30 · 21:30 | 데이트 장면 |
 | family_scene | 4곳 × 아이와 18:30 · 부모님과 12:00 · 어른끼리 21:30 (셋 12만) | 8곳 × 넷(+ 아이와 12:00) | 가족 장면 |
 | night | 4곳 × 데이트 · 친구 21:30 | 8곳 × 데이트 · 친구 · 여행 | 밤 규칙 |
@@ -53,6 +53,7 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | `chain_rate_travel` | ≤ 5% | "전국 체인 거의 금지 … 체인 카페 · 체인 음식점(대안이 있으면)" (docs/48 §5) | 여행의 식사 · 카페 · 술집 중 체인 |
 | `chain_ending_rate` | ≤ 5% | "닫기: 여운 … **가장 약한 장소로 끝내지 않는다**" (docs/48 §0-1) · 7-5 닫기 규칙 | 마지막 장소가 체인 · 무인 매장(`WEAK_ENDING`) |
 | `solo_night_bar_rate` | ≥ 80% | "혼자 — **밤:** 혼술바 · 심야 영화 · 야경 산책" (docs/48 §4) · "혼자의 밤: 술집이 가격 상한에 걸려 0곳 → 걷기만" (docs/51 B3) | 혼자 · 21시 이후 코스 중 술집(BAR)이 있는 비율 |
+| `solo_late_bar_rate` | ≥ 80% | 같은 원칙 — 엔진의 밤(21시~)이 되기 전인 20시대도 혼자의 저녁은 "닫기: 한잔"(docs/48 §4). "20:30 · 3만 원: 곱창 + 산책뿐"(docs/59 #5) | solo_night 묶음의 20:30 코스 중 술집(BAR)이 있는 비율 |
 | `date_scene_flag_rate` | ≤ 5% | "절대 안 됨: 무인매장, 단체석 위주 대형 호프 · 고깃집, … 키즈 시설" · "기념일: 예산의 절반 이상을 한 끼(또는 한 잔)에" · 설레는 사이: 시끄러운 곳 피함 (docs/48 §1) | `DATE_GROUP_SPOT`(단체석 ≥ 0.8 인 식사 · 술집) · `DATE_KIDS_SPOT` · `DATE_UNMANNED` · `ANNIV_NO_SPLURGE`(가장 비싼 식사 · 술집 < 총액 35%) · `ANNIV_SNACK_MEAL` · `NEW_KARAOKE` 중 하나라도 |
 | `family_scene_flag_rate` | ≤ 5% | "가장 체력이 약한 사람에게 속도를 맞추고 … 술집(아이와 · 부모님과), 긴 도보 구간, 오락실 · 노래방(부모님과), 밤 21시 이후 코스(아이와)" (docs/48 §2) | `FAMILY_DRINK` · `FAMILY_BAR` · `KIDS_SPICY` · `KIDS_LATE`(마지막 장소를 21시 넘어 떠남) · `PARENTS_NOISY` · `LONG_LEG_KIDS/PARENTS`(20분 넘는 구간). 장면이 없으면 아이와(§9 결정) |
 | `night_violation_rate` | ≤ 3% | "밤(21시~): 한잔 → 걷기. 2곳이 정상" · "닫힌 곳, 밤의 산길" (docs/48 §1 · 7-6) · "밤 데이트 = 술집"(팀원 피드백 2026-09-24) | 21시 이후 시작한 코스 중 `CLOSED_AT_ARRIVAL` · `NIGHT_TRAIL` · `TOO_EARLY` · `NIGHT_NO_DRINK`(데이트 · 친구의 밤에 술집 없음) · `DATE_UNMANNED` · `FAMILY_DRINK` |

@@ -279,7 +279,9 @@ def test_quick_sample_size_and_groups() -> None:
     regular = [c for c in quick if c.group == "regular"]
     assert [c.first_key for c in regular] == hot and all(c.regular for c in regular)
     assert max(i for i, c in enumerate(quick) if c.group == "hotspot") < quick.index(regular[0])
-    assert all(c.night for c in quick if c.group == "solo_night")
+    solo = [c for c in quick if c.group == "solo_night"]
+    # docs/59 #5: the evening just before the engine's night, and the night itself
+    assert {c.start for c in solo} == {"20:30", "21:30"} and any(c.night for c in solo)
     full = C.build_sample("full", spots)
     assert len(full) > 2 * len(quick)
     assert len({c.key for c in full}) == len(full)  # every case distinct

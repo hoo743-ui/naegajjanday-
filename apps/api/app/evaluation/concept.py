@@ -354,6 +354,10 @@ METRICS: tuple[Metric, ...] = (
     Metric("solo_night_bar_rate", "혼자의 밤에 한잔할 곳", "higher", 0.80,
            _course(lambda r: r.ok and r.case.purpose == "solo" and r.case.night,
                    lambda r: any(s.role == "BAR" for s in r.stops))),
+    # docs/59 #5: 20:30 is not the engine's night yet, but it is the solo evening's "닫기: 한잔" (docs/48 §4)
+    Metric("solo_late_bar_rate", "혼자의 늦은 저녁(20시대 시작)에 한잔할 곳", "higher", 0.80,
+           _course(lambda r: r.ok and r.case.purpose == "solo" and r.case.start.startswith("20:"),
+                   lambda r: any(s.role == "BAR" for s in r.stops))),
     Metric("date_scene_flag_rate", "데이트의 '절대 안 됨'(단체석 · 키즈 · 무인 · 힘 안 준 기념일)", "lower",
            0.05, _course(lambda r: r.ok and r.case.purpose == "date", _has(DATE_FLAGS)), DATE_FLAGS),
     Metric("family_scene_flag_rate", "가족의 '절대 안 됨'(술 · 매운맛 · 늦은 끝 · 긴 구간 · 소음)", "lower",
@@ -547,7 +551,7 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
     """quick ≈ 80 courses (about 6 minutes on the nationwide DB), full ≈ 350 (about 25 minutes).
 
     hotspot   — per hotspot: date lunch · friends evening · travel morning (+ date dinner in full)
-    solo_night — one person, 30,000 won, 21:30 (+ 23:00 in full): does the night get its bar
+    solo_night — one person, 30,000 won, 20:30 · 21:30 (+ 23:00 in full): does the late evening get its bar
     date_scene — 설레는 사이 · 오래 만난 사이 · 기념일, day and night
     family_scene — 아이와 · 부모님과 · 어른끼리, including an evening with the kids
     night     — a date and friends at 21:30 without a scene
@@ -565,7 +569,8 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
         cases += [Case(region, p, n, b, t, group="hotspot") for p, n, b, t in hot]
     solo_regions = spots[::3] if full else spots[::7]
     for region in solo_regions:
-        for start in ("21:30", "23:00") if full else ("21:30",):
+        # 20:30: the evening before the engine's night (docs/59 #5: 곱창 + a walk and nothing to drink)
+        for start in ("20:30", "21:30", "23:00") if full else ("20:30", "21:30"):
             cases.append(Case(region, "solo", 1, 30000, start, group="solo_night"))
     scene_slugs = scene_regions(sample)
     date_scenes = (

@@ -62,6 +62,31 @@ class TestAllocation:
         assert B.without_short(friends, 60000, floors=yielding) is None  # nothing short
         assert B.without_short(friends, 12000, floors=yielding) is None  # no bar planned to yield to
 
+    def test_a_late_evening_keeps_its_drink(self) -> None:
+        """docs/59 #5: solo, 20:30, 30,000원 — the bar was 2,100원 short of its minimum and dropped out."""
+        solo = template(
+            Slot(1, "MEAL", 0.5),
+            Slot(2, "CAFE", 0.15),
+            Slot(3, "ATTRACTION", 0.02),
+            Slot(4, "BAR", 0.33, is_optional=True, min_slot_budget=12000),
+        )
+        assert "BAR" not in {s.slot.course_role for s in B.allocate(solo, 30000)}
+        kept = {s.slot.course_role: s.budget for s in B.allocate(solo, 30000, keep={"BAR": 15200})}
+        # what a bar costs does not fit next to dinner and a café: its minimum, lent by the others
+        assert kept["BAR"] == pytest.approx(12000) and kept["MEAL"] >= 0.8 * 15000
+        late = B.SlotFloors(
+            {}, late_from_min=20 * 60, late_keep={"BAR": 15200}, late_yield=frozenset({"CAFE"})
+        )
+        at = SUNDAY_6PM.replace(hour=20, minute=30)
+        assert late.keep_at(at) == {"BAR": 15200} and late.keep_at(SUNDAY_6PM) == {}
+        assert late.keep_at(SUNDAY_6PM.replace(hour=0, minute=30)) == {"BAR": 15200}  # the small hours too
+        lean = B.without_short(solo, 30000, floors=late, start_at=at)
+        assert lean is not None and [s.course_role for s in lean.slots] == ["MEAL", "ATTRACTION", "BAR"]
+        # without the café, the bar gets what a bar costs
+        bar = {s.slot.course_role: s.budget for s in B.allocate(lean, 30000, keep={"BAR": 15200})}["BAR"]
+        assert bar == pytest.approx(15200)
+        assert B.without_short(solo, 30000, floors=late, start_at=SUNDAY_6PM) is None  # 18:00 is not late
+
     def test_drop_slot_hands_share_to_the_rest(self) -> None:
         slots = B.drop_slot(B.allocate(DATE_EVENING, 100_000), position=4, budget_per_person=100_000)
         assert sum(s.budget for s in slots) == pytest.approx(100_000)

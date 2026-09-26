@@ -122,17 +122,20 @@ class RecommendationEngine:
                 and other.courses[0].objective > out.courses[0].objective
             ):
                 out = other
-        # docs/59 #4: a café lifted to what a café costs can cost the day its bar. Then the same day without
-        # the café is tried, and taken when it keeps the bar the other lost (dinner → a walk → a drink).
-        lean = B.without_short(template, b, ctx.include_roles) if ctx.is_v2 else None
-        if lean is not None and not _has_role(out, B.slot_floors().yield_to):
+        # docs/59 #4 · #5: a café lifted to what a café costs, or a late evening's café (shut, or a 24-hour
+        # unmanned one), can cost the day its bar. Then the same day without the café is tried, and taken
+        # when it has the bar the other lost (dinner → a walk → a drink).
+        floors = B.slot_floors()
+        closers = floors.yield_to | frozenset(floors.keep_at(ctx.start_at))
+        lean = B.without_short(template, b, ctx.include_roles, start_at=ctx.start_at) if ctx.is_v2 else None
+        if lean is not None and not _has_role(out, closers):
             try:
                 other = await self._generate_with(ctx, lean, profile)
             except NoCourseError:
                 other = None
             if (
                 other is not None
-                and _has_role(other, B.slot_floors().yield_to)
+                and _has_role(other, closers)
                 and len(other.courses[0].stops) >= len(out.courses[0].stops)
                 and _kept_count(other, ctx) >= _kept_count(out, ctx)
             ):
@@ -144,7 +147,8 @@ class RecommendationEngine:
     ) -> EngineOutput:
         params = profile.params
         b = ctx.budget_per_person
-        slot_budgets = B.allocate(template, b, ctx.include_roles)
+        # a late evening keeps its drink when the others can lend it the slot's minimum (slot_floors.json)
+        slot_budgets = B.allocate(template, b, ctx.include_roles, keep=B.slot_floors().keep_at(ctx.start_at))
         # a short meeting window gets fewer stops, not the same stops with every stay cut in half
         start_min = ctx.start_at.hour * 60 + ctx.start_at.minute
         slot_budgets, trimmed = B.fit_to_duration(
