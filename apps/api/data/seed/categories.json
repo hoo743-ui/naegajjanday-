@@ -773,6 +773,46 @@
       }
     },
     {
+      "code": "shop",
+      "name": "구경하는 가게",
+      "parent": null,
+      "course_role": "ATTRACTION",
+      "default_stay_min": 30,
+      "provider_mapping": {}
+    },
+    {
+      "code": "shop.character",
+      "name": "캐릭터·굿즈샵",
+      "parent": "shop",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 30,
+      "provider_mapping": {}
+    },
+    {
+      "code": "shop.vintage",
+      "name": "빈티지·구제",
+      "parent": "shop",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 35,
+      "provider_mapping": {}
+    },
+    {
+      "code": "shop.goods",
+      "name": "소품·문구",
+      "parent": "shop",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 25,
+      "provider_mapping": {}
+    },
+    {
+      "code": "shop.select",
+      "name": "편집숍·플래그십",
+      "parent": "shop",
+      "course_role": "ATTRACTION",
+      "default_stay_min": 30,
+      "provider_mapping": {}
+    },
+    {
       "code": "bar",
       "name": "술집",
       "parent": null,

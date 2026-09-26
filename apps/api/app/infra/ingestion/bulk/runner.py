@@ -16,7 +16,7 @@ from app.infra.db.base import utcnow
 from app.infra.db.models import Category, Event, Place, PlaceSource, PlaceTag, Region, Tag
 from app.infra.db.session import Database
 from app.infra.ingestion import dedupe
-from app.infra.ingestion.bulk import goodprice, official_marks, semas_store, std_datasets, tourapi_bulk
+from app.infra.ingestion.bulk import goodprice, official_marks, semas_store, shops, std_datasets, tourapi_bulk
 from app.infra.ingestion.bulk.common import (
     BulkEvent,
     BulkPlace,
@@ -51,7 +51,10 @@ async def _semas_mapper(session: AsyncSession, spec: dict[str, Any]) -> semas_st
     if not mapping:
         raise BulkIngestError("no category has provider_mapping.semas — run `seed-config` first")
     prior = PricePrior.from_data(load_json("price_prior.json"), spec)
-    return semas_store.SemasMapper.from_data(mapping, load_json("bulk_rules.json"), prior)
+    # 구경하는 가게: retail codes, by name only (docs/62)
+    return semas_store.SemasMapper.from_data(
+        mapping, load_json("bulk_rules.json"), prior, extra_gates=shops.gates()
+    )
 
 
 async def _finish(session: AsyncSession) -> None:

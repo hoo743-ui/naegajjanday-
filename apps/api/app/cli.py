@@ -290,12 +290,18 @@ def bulk_delta_export(
         list[str] | None,
         typer.Option(help="only gates leading to this category (activity.craft …); repeatable"),
     ] = None,
+    dedupe_m: Annotated[
+        float, typer.Option(help="write one row for the same name within this many metres (0 = off)")
+    ] = 0.0,
+    note: Annotated[str, typer.Option(help="a _note written at the top of the file")] = "",
 ) -> None:
     """name-gated 소상공인 codes (사진촬영업 → 셀프 사진관) → a small JSON production can load (docs/51)."""
     source = _raw_file("semas", path)
 
     async def job(db: Database, _settings: Settings) -> None:
-        n = await delta.export_semas_gated(db, source, out, categories=category or (), log=typer.echo)
+        n = await delta.export_semas_gated(
+            db, source, out, categories=category or (), dedupe_m=dedupe_m, note=note, log=typer.echo
+        )
         typer.echo(f"{n} places → {out}")
 
     _run(job)

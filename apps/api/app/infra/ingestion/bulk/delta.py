@@ -24,15 +24,24 @@ from app.infra.ingestion.base import NormalizedHour, NormalizedMenu
 from app.infra.ingestion.bulk import semas_store
 from app.infra.ingestion.bulk.common import BulkPlace, BulkReport, chunked, iter_csv, load_json
 from app.infra.ingestion.bulk.regions import RegionIndex
+from app.infra.ingestion.bulk.shops import dedupe_rows
 from app.infra.ingestion.bulk.writer import BulkWriter
 
 Log = Callable[[str], None]
 
 
 async def export_semas_gated(
-    db: Database, zip_path: Path, out: Path, *, categories: Sequence[str] = (), log: Log = print
+    db: Database,
+    zip_path: Path,
+    out: Path,
+    *,
+    categories: Sequence[str] = (),
+    dedupe_m: float = 0.0,
+    note: str = "",
+    log: Log = print,
 ) -> int:
-    """`categories`: only the gated codes that lead to these categories (a small file per new kind)."""
+    """`categories`: only the gated codes that lead to these categories (a small file per new kind).
+    `dedupe_m`: one store listed twice under two ids (same name, this close) is written once."""
     from app.infra.ingestion.bulk.runner import _semas_mapper  # the full load's mapper, same rules
 
     spec = load_json("regions_kr.json")
@@ -54,7 +63,12 @@ async def export_semas_gated(
             place = mapper.build(row)
             rows.append({k: v for k, v in asdict(place).items() if k != "raw"})
         log(f"  {member}: {len(rows)}")
-    _write(out, {"provider": semas_store.PROVIDER, "places": rows})
+    if dedupe_m > 0:
+        before = len(rows)
+        rows = [dict(r) for r in dedupe_rows(rows, dedupe_m)]
+        log(f"  same name within {dedupe_m:.0f} m: {before - len(rows)} dropped")
+    payload: dict[str, Any] = {"provider": semas_store.PROVIDER, "places": rows}
+    _write(out, {"_note": note, **payload} if note else payload)
     return len(rows)
 
 

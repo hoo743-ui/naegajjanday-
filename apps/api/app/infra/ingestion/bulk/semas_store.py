@@ -98,14 +98,21 @@ class SemasMapper:
 
     @classmethod
     def from_data(
-        cls, categories: Mapping[str, str], rules: Mapping[str, Any], prior: PricePrior
+        cls,
+        categories: Mapping[str, str],
+        rules: Mapping[str, Any],
+        prior: PricePrior,
+        extra_gates: Mapping[str, Sequence[NameGate]] | None = None,
     ) -> SemasMapper:
+        """`extra_gates`: more gates per code, tried after bulk_rules' own (구경하는 가게, shops.py)."""
         keywords = tuple(rules.get("semas", {}).get("exclude_name_keywords", []))
         gated = {
             str(code): tuple(NameGate.from_data(g) for g in (spec if isinstance(spec, list) else [spec]))
             for code, spec in (rules.get("semas", {}).get("name_gated_codes") or {}).items()
             if not str(code).startswith("_")
         }
+        for code, more in (extra_gates or {}).items():
+            gated[code] = (*gated.get(code, ()), *more)
         return cls(categories=categories, exclude_keywords=keywords, prior=prior, gated=gated)
 
     def gate_for(self, row: Mapping[str, str]) -> NameGate | None:
@@ -177,9 +184,19 @@ class SemasMapper:
 NOT_A_BRANCH = frozenset({"코리아", "주", "(주)", "㈜", "주식회사", "유한회사", "본사", "법인"})
 
 
+def undoubled(name: str, min_len: int = 3) -> str:
+    """A shop filed under its company, then its sign: "무신사무신사스탠다드" → "무신사스탠다드"."""
+    for k in range(min_len, len(name) // 2 + 1):
+        if name[:k] == name[k : 2 * k]:
+            return name[k:]
+    return name
+
+
 def display_name(name: str, branch: str, category_code: str = "") -> str:
     # the file writes a comma in a store name as ";" — and several stores at one address the same way
     name, branch = place_names.display_name(name.strip(), category_code), branch.strip()
+    if category_code.startswith("shop."):  # retail rows carry the company in front (docs/62)
+        name = undoubled(name)
     if branch and branch not in name and branch not in NOT_A_BRANCH:
         return f"{name} {branch}"
     return name
