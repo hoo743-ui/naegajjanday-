@@ -1,4 +1,7 @@
-/** 이벤트 카탈로그 — 이름과 속성을 여기서만 정의한다. track() 은 이 타입으로만 호출할 수 있다. */
+/**
+ * 이벤트 카탈로그 — 이름과 속성을 여기서만 정의한다. track() 은 이 타입으로만 호출할 수 있다.
+ * 새 이벤트 · 속성은 API 허용 목록(apps/api/app/services/event_catalog.py)에도 더한다 — 없으면 1자 수집(docs/62)이 버린다.
+ */
 export interface AnalyticsEvents {
   plan_started: { entry: "landing_hero" | "landing_cta" | "nav" | "result_reroll" | "direct" | "chat" | "home_ticket" | "home_budget" | "home_purpose" | "intro" };
   plan_step_completed: { step: 1 | 2 | 3 | 4; step_name: "region" | "purpose" | "budget" | "taste"; value?: string };
@@ -72,6 +75,8 @@ export interface AnalyticsEvents {
   map_fullscreen: { open: boolean };
   performance_clicked: { performance_id: string };
   course_feedback_sent: { course_id: string; rating: number };
+  /** "다녀왔어요"를 눌렀다 — 사용 지표(docs/62)의 확정 신호 */
+  visit_marked: { course_id: string; rating: number };
   banner_clicked: { banner_id: string; placement: string };
   share_clicked: { course_id: string; method: "web_share" | "clipboard" };
   event_clicked: { event_id: string; from: "course" | "explore" };

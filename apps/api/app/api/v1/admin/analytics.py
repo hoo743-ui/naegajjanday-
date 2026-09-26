@@ -10,6 +10,7 @@ from app.core import errors
 from app.core.deps import ContainerDep, SessionDep
 from app.schemas import admin as dto
 from app.services.analytics_service import AnalyticsService
+from app.services.usage_metrics import UsageMetricsService
 from app.services.usage_service import UsageService
 
 router = APIRouter(prefix="/analytics", tags=["admin:analytics"])
@@ -34,6 +35,17 @@ async def users(
     if (end - start).days > 180:
         raise errors.ValidationFailed("기간은 180일까지 볼 수 있어요.")
     return await UsageService(session, container.settings.timezone).users(start, end)
+
+
+@router.get(
+    "/usage-metrics",
+    response_model=dto.UsageMetrics,
+    summary="사용 지표: '쓰인 코스' 비율(주간 8주) · 첫 코스 채택 · 칸별 바꾸기 · 옵션 · 바깥 링크 (docs/62)",
+)
+async def usage_metrics(
+    session: SessionDep, container: ContainerDep, days: int = Query(default=28, ge=1, le=180)
+) -> dto.UsageMetrics:
+    return await UsageMetricsService(session, container.settings.timezone).report(days)
 
 
 @router.get(

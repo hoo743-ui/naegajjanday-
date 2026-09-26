@@ -44,7 +44,13 @@ export function VisitedCard({ courseId, visited }: { courseId: string; visited: 
           type="button"
           size="sm"
           disabled={rating === 0 || feedback.isPending}
-          onClick={() => feedback.mutate({ rating, visited: true }, { onSuccess: () => track("course_feedback_sent", { course_id: courseId, rating }) })}
+          onClick={() => feedback.mutate({ rating, visited: true }, {
+              onSuccess: () => {
+                track("course_feedback_sent", { course_id: courseId, rating });
+                track("visit_marked", { course_id: courseId, rating });
+              },
+            })
+          }
         >
           {feedback.isPending ? "기록하는 중…" : "다녀왔어요"}
         </Button>

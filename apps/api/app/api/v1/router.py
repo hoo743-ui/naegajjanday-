@@ -8,6 +8,7 @@ from app.api.v1 import (
     chat,
     courses,
     directions,
+    events,
     extras,
     me,
     media,
@@ -33,4 +34,5 @@ api_router.include_router(auth.router)
 api_router.include_router(me.router)
 api_router.include_router(chat.router)
 api_router.include_router(visits.router)
+api_router.include_router(events.router)
 api_router.include_router(admin_router)

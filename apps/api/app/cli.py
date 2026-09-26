@@ -23,6 +23,7 @@ python -m app.cli create-admin --email me@example.com [--print-token]
 ADMIN_PASSWORD=… python -m app.cli create-admin --login-id <id> [--role admin]   # id/password admin
 python -m app.cli purge-courses [--dry-run]                  # never-saved courses older than 24 h
 python -m app.cli purge-accounts [--dry-run]                 # accounts 30 d after DELETE /v1/me
+python -m app.cli usage-report [--days 28]                    # '쓰인 코스' 비율 · 사용자 가치 지표 (docs/62)
 python -m app.cli eval-concept [--sample quick|full] [--save N] [--compare N] [--focus METRIC]  # docs/58
 """
 
@@ -719,6 +720,22 @@ def api_usage_report() -> None:
                 typer.echo(
                     f"{r['status']:>9}  {r['name']:<28} {r['used']:>7,} / {limit:>8} ({share}, {r['period']})"
                 )
+
+    _run(job)
+
+
+@cli.command("usage-report")
+def usage_report(
+    days: Annotated[int, typer.Option(min=1, max=180, help="첫 코스 채택 · 바꾸기 · 옵션을 셀 기간")] = 28,
+) -> None:
+    """사용 지표 (docs/62): '쓰인 코스' 비율 주간 8주 + 사용자 가치 지표. 관리자 '사용 지표'와 같은 숫자."""
+    from app.services.usage_metrics import UsageMetricsService, format_report
+
+    async def job(db: Database, settings: Settings) -> None:
+        async with db.sessionmaker() as session:
+            report = await UsageMetricsService(session, settings.timezone).report(days)
+        for line in format_report(report):
+            typer.echo(line)
 
     _run(job)
 

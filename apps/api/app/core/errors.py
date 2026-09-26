@@ -99,6 +99,10 @@ class CandidateNotEligible(AppError):
     status, code, title = 422, "CANDIDATE_NOT_ELIGIBLE", "지금은 이 자리에 넣을 수 없는 곳이에요"
 
 
+class PayloadTooLarge(AppError):
+    status, code, title = 413, "PAYLOAD_TOO_LARGE", "보낸 내용이 너무 커요"
+
+
 class RateLimited(AppError):
     status, code, title = 429, "RATE_LIMITED", "요청이 너무 많아요. 잠시 후 다시 시도해 주세요"
 

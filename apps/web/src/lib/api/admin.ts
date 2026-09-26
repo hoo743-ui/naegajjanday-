@@ -849,6 +849,49 @@ export function useUserAnalytics(range: DateRange = {}) {
   });
 }
 
+// ── 사용 지표 (docs/61 §6 · docs/62): API `UsageMetrics` 그대로 ──
+export interface RateCount {
+  count: number;
+  total: number;
+  rate: number | null;
+}
+export interface NorthStarWeek {
+  week: string;
+  generated: number;
+  used: number;
+  rate: number | null;
+  signals: { saved: number; shared: number; outbound: number; confirmed: number };
+  complete: boolean;
+}
+export interface UsageMetrics {
+  days: number;
+  generated_at: string;
+  collecting_since: string | null;
+  north_star: NorthStarWeek[];
+  generated: number;
+  used: RateCount;
+  with_events: RateCount;
+  first_course_accepted: RateCount;
+  outbound: RateCount;
+  swap_by_category: { category: string; name: string; stops: number; swaps: number; rate: number | null }[];
+  options: { option: string; on: number; off: number; chip: number; text: number; settings: number }[];
+  option_text: RateCount;
+  share_opened: RateCount;
+  visited: RateCount;
+  spend_within_20: RateCount;
+  events: { name: string; count: number; devices: number }[];
+}
+
+export function useUsageMetrics(days = 28) {
+  return useQuery<UsageMetrics, ApiError>({
+    queryKey: ["admin", "analytics", "usage-metrics", days] as const,
+    queryFn: ({ signal }) => api.get("/admin/analytics/usage-metrics", { query: { days }, signal }),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+    retry: (count, error) => !isNotReady(error) && error.retryable && count < 1,
+  });
+}
+
 /** API `RecommendationStats` 는 평평하고 일별·분포 시계열이 없다 → 없는 것은 null */
 function toRecAnalytics(raw: Raw, labels: AdminLabels): RecommendationAnalytics {
   if (isRecord(raw.totals)) return raw as unknown as RecommendationAnalytics; // 목

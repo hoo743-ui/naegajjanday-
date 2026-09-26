@@ -157,3 +157,25 @@ class Visit(Base):
     # for spotting abuse only; cleared after `ip_retention_days` (the privacy page says so)
     ip: Mapped[str | None] = mapped_column(String(45))
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
+
+
+class AppEvent(Base):
+    """One product event from the web's `track()` (docs/62), first-party: an event name from the catalog
+    (`services/event_catalog.py`), a few whitelisted short properties, the course it was about. `device` is
+    the same keyed hash of the browser's random id as `visit.visitor`; no IP, no user agent, no free text."""
+
+    __tablename__ = "app_event"
+    __table_args__ = (
+        Index("ix_app_event_created", "created_at"),
+        Index("ix_app_event_name_created", "name", "created_at"),
+    )
+
+    id: Mapped[pk]
+    name: Mapped[str] = mapped_column(String(48))
+    device: Mapped[str] = mapped_column(String(32), index=True)
+    user_id: Mapped[int | None] = mapped_column(BigIntPK, ForeignKey("user.id", ondelete="SET NULL"))
+    course_id: Mapped[str | None] = mapped_column(String(36), index=True)  # the course's public id
+    path: Mapped[str | None] = mapped_column(String(200))
+    props: Mapped[json_dict]
+    # when it happened: the browser's clock, clamped to [now − 1 day, now]
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)

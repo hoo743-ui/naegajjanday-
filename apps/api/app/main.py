@@ -99,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         # the privacy page promises page views are kept a year at most (docs/50): enforced at every start
         await retention.purge_old_visits(container.db, settings)
+        await retention.purge_old_events(container.db, settings)  # docs/62: 180 days
         await retention.clear_old_ips(container.db, settings)
         # docs/57: shipped data files (seed config, bulk deltas, anchors) the DB has not applied yet — in the
         # background, so the server answers its health check right away. Render's preDeploy has no disk.

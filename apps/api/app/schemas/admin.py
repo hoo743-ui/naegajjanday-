@@ -525,3 +525,74 @@ class UserAnalytics(BaseModel):
     providers: list[ProviderCount]
     devices: list[DeviceCount]
     cohorts: list[Cohort]
+
+
+# --- 사용 지표 (docs/61 §6 · docs/62) ---------------------------------------------------------------
+
+
+class UsedSignals(BaseModel):
+    saved: int = 0
+    shared: int = 0
+    outbound: int = Field(default=0, description="길찾기 · 장소 페이지 · 바깥 링크")
+    confirmed: int = Field(default=0, description="확정 · 다녀옴")
+
+
+class NorthStarWeek(BaseModel):
+    week: date = Field(description="그 주 월요일 (한국 날짜)")
+    generated: int = Field(description="그 주에 코스를 만든 번 (recommendation_log 한 줄 = 한 번)")
+    used: int = Field(
+        description="만든 지 7일 안에 저장 · 공유 · 길찾기/바깥 링크 · 확정 중 하나라도 일어난 번"
+    )
+    rate: float | None
+    signals: UsedSignals
+    complete: bool = Field(description="그 주 마지막 코스의 7일이 다 지났는가 (아니면 아직 오를 수 있다)")
+
+
+class RateCount(BaseModel):
+    count: int
+    total: int
+    rate: float | None
+
+
+class CategorySwap(BaseModel):
+    category: str
+    name: str
+    stops: int = Field(description="이벤트가 잡힌 코스에 놓인 이 업종의 칸 수")
+    swaps: int
+    rate: float | None
+
+
+class OptionUsage(BaseModel):
+    option: str
+    on: int
+    off: int
+    chip: int
+    text: int
+    settings: int
+
+
+class EventCount(BaseModel):
+    name: str
+    count: int
+    devices: int
+
+
+class UsageMetrics(BaseModel):
+    days: int
+    generated_at: datetime
+    collecting_since: datetime | None = Field(
+        description="첫 1자 이벤트 — 그 전의 '쓰임'은 저장(상태)만 센다"
+    )
+    north_star: list[NorthStarWeek]
+    generated: int
+    used: RateCount
+    with_events: RateCount = Field(description="이벤트가 하나라도 잡힌 번 ÷ 만든 번 (수집이 도는가)")
+    first_course_accepted: RateCount = Field(description="쓰인 번 중 다시 짜기 · 바꾸기 없이 쓰인 비율")
+    outbound: RateCount = Field(description="길찾기 · 장소 링크가 열린 번 ÷ 만든 번")
+    swap_by_category: list[CategorySwap]
+    options: list[OptionUsage]
+    option_text: RateCount = Field(description="한 줄 말: 옵션을 하나라도 알아들은 비율")
+    share_opened: RateCount = Field(description="공유된 코스 중 다른 브라우저에서 열린 비율")
+    visited: RateCount = Field(description="피드백 중 다녀옴")
+    spend_within_20: RateCount = Field(description="실제 지출이 코스 금액 ±20% 안")
+    events: list[EventCount]

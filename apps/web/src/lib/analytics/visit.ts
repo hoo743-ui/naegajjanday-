@@ -8,7 +8,8 @@ import { api } from "@/lib/api/client";
 const KEY = "njd.visitor";
 let memoryId: string | null = null;
 
-function visitorId(): string {
+/** 이 브라우저의 임의 id. 방문 기록과 1자 이벤트(docs/62)가 같은 번호를 쓴다 — 서버는 둘 다 같은 해시로 저장 */
+export function visitorId(): string {
   try {
     const saved = window.localStorage.getItem(KEY);
     if (saved) return saved;

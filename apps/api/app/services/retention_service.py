@@ -20,6 +20,7 @@ from app.core.config import Settings
 from app.core.logging import get_logger
 from app.infra.db.base import as_utc, utcnow
 from app.infra.db.models import (
+    AppEvent,
     AuditLog,
     ChatSession,
     Course,
@@ -133,6 +134,7 @@ async def purge_user(session: AsyncSession, user: User) -> tuple[int, int]:
     for log in logs:
         log.user_id = None
         log.request = {k: v for k, v in (log.request or {}).items() if k not in LOG_PERSONAL_KEYS}
+    await session.execute(update(AppEvent).where(AppEvent.user_id == uid).values(user_id=None))
     await session.execute(update(PlaceRevision).where(PlaceRevision.admin_id == uid).values(admin_id=None))
     await session.execute(
         update(AuditLog).where(AuditLog.actor_id == uid).values(actor_id=None, ip=None, user_agent=None)
@@ -183,6 +185,20 @@ async def purge_old_visits(db: Database, settings: Settings, *, now: datetime | 
         return 0
     if deleted:
         logger.info("retention.visits_purged", retention_days=settings.visit_retention_days, deleted=deleted)
+    return deleted
+
+
+async def purge_old_events(db: Database, settings: Settings, *, now: datetime | None = None) -> int:
+    """Product events (docs/62) older than `event_retention_days`. Never fails the caller."""
+    cutoff = (now or utcnow()) - timedelta(days=settings.event_retention_days)
+    try:
+        async with db.session() as session:
+            deleted = _rowcount(await session.execute(delete(AppEvent).where(AppEvent.created_at < cutoff)))
+    except Exception:
+        logger.exception("retention.events_purge_failed")
+        return 0
+    if deleted:
+        logger.info("retention.events_purged", retention_days=settings.event_retention_days, deleted=deleted)
     return deleted
 
 

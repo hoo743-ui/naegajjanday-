@@ -1,8 +1,10 @@
 /**
  * 통합 분석 레이어. 화면 코드는 track()/page() 만 알면 되고, 어떤 도구로 나가는지는 환경변수가 정한다.
+ * track() 은 늘 우리 API(`POST /v1/events`, docs/62)로도 간다 — first-party.ts.
  * 어댑터는 해당 NEXT_PUBLIC_* 키가 있을 때만 동적 import 된다 → 키가 없으면 SDK 코드도 내려가지 않는다.
  */
 import type { AnalyticsAdapter, AnalyticsEventName, AnalyticsEvents } from "./events";
+import { recordFirstParty } from "./first-party";
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -64,6 +66,14 @@ export function trackedWithin(event: AnalyticsEventName, ms: number): boolean {
 export function track<E extends AnalyticsEventName>(event: E, props: AnalyticsEvents[E]): void {
   lastTracked.set(event, Date.now());
   if (process.env.NODE_ENV === "development") console.debug("[analytics]", event, props);
+  // 우리 API 로도 (docs/62): 외부 도구 키가 없어도 쌓인다. 외부 어댑터는 키가 있을 때 그대로 받는다
+  if (typeof window !== "undefined") {
+    try {
+      recordFirstParty(event, props as Record<string, unknown>);
+    } catch {
+      // 분석 실패가 화면을 깨면 안 된다
+    }
+  }
   dispatch((a) => a.track(event, props as Record<string, unknown>));
 }
 

@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     unsaved_course_ttl_hours: int = Field(default=24, ge=1)  # never-saved courses are removed after this
     visit_retention_days: int = Field(default=365, ge=30)  # page views (docs/50) older than this are removed
     ip_retention_days: int = Field(default=90, ge=1)  # IPs on page views / course requests are cleared after
+    event_retention_days: int = Field(
+        default=180, ge=30
+    )  # product events (docs/62) older than this are removed
     account_purge_grace_days: int = Field(default=30, ge=0)  # DELETE /v1/me → hard purge after this
 
     # --- OAuth2 (official endpoints are in core/security.py) ---
@@ -83,6 +86,9 @@ class Settings(BaseSettings):
     rl_chat: str = "30/3600"
     rl_read: str = "300/60"
     rl_auth: str = "20/600"  # POST /auth/signup · /auth/login, per IP (password guessing)
+    # POST /v1/events batches (docs/62): per browser, and per IP (a campus network is many browsers)
+    rl_events_device: str = "60/60"
+    rl_events_ip: str = "600/60"
 
     # --- LLM ---
     llm_provider: Literal["anthropic", "openai", "gemini", "none"] = "none"

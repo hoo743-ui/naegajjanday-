@@ -16,6 +16,7 @@ from app.infra.db.models.course import (
 from app.infra.db.models.ops import (
     ApiKey,
     ApiUsage,
+    AppEvent,
     AuditLog,
     Banner,
     DataSync,
@@ -42,6 +43,7 @@ from app.infra.db.models.user import OAuthAccount, RefreshToken, User, UserPrefe
 __all__ = [
     "ApiKey",
     "ApiUsage",
+    "AppEvent",
     "AuditLog",
     "Banner",
     "Category",

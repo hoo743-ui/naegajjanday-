@@ -23,6 +23,7 @@ ADMIN_GETS = [
     "/v1/admin/analytics/places/top",
     "/v1/admin/system/health",
     "/v1/admin/analytics/users",
+    "/v1/admin/analytics/usage-metrics",
     "/v1/admin/database",
     "/v1/admin/members",
     "/v1/admin/visits",

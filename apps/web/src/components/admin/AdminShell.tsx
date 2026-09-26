@@ -18,6 +18,7 @@ import {
   Contact,
   ScrollText,
   Route,
+  Sparkles,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -58,6 +59,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
   {
     title: "분석",
     items: [
+      { href: "/admin/usage", label: "사용 지표", icon: Sparkles },
       { href: "/admin/users", label: "사용자 분석", icon: Users },
       { href: "/admin/members", label: "회원 목록", icon: Contact },
       { href: "/admin/visits", label: "방문 로그", icon: ScrollText },

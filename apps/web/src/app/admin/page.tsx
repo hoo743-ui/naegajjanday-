@@ -9,8 +9,18 @@ import { BarsChart, TrendChart } from "@/components/admin/charts";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isNotReady, useAdminPlaces, useAdminRegions, useRecommendationAnalytics, useSystemHealth, useUserAnalytics } from "@/lib/api/admin";
+import { isNotReady, useAdminPlaces, useAdminRegions, useRecommendationAnalytics, useSystemHealth, useUsageMetrics, useUserAnalytics } from "@/lib/api/admin";
 import { num, percent } from "@/lib/format";
+
+function UsageFigure({ label, value, hint }: { label: string; value: number | null; hint: string }) {
+  return (
+    <div className="rounded-2xl bg-soft px-4 py-3">
+      <p className="text-caption font-semibold text-muted-foreground">{label}</p>
+      <p className="money mt-0.5 text-h3 font-extrabold text-ink">{value === null ? "-" : percent(value, 1)}</p>
+      <p className="truncate text-caption text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const users = useUserAnalytics();
@@ -18,6 +28,8 @@ export default function AdminDashboardPage() {
   const pending = useAdminPlaces({ status: "pending", limit: 1 });
   const regions = useAdminRegions();
   const health = useSystemHealth();
+  const usage = useUsageMetrics(28);
+  const lastWeek = usage.data?.north_star.filter((w) => w.complete && w.generated > 0).at(-1);
 
   const t = recs.data?.totals;
   // 전체 개수: 목록이 total 을 주면 그 값, 아니면 지역별 승인 대기 수의 합 (실제 API). 둘 다 없을 때만 "1+" 식으로 보여준다
@@ -53,6 +65,30 @@ export default function AdminDashboardPage() {
         />
         <StatCard label="수집 중인 지역" icon={Activity} loading={regions.isPending} value={regions.data ? num(collecting) : "-"} hint={regions.data ? `전체 ${num(regions.data.items.length)}개 지역` : undefined} />
       </div>
+
+      <Panel
+        title="사용 지표 — 쓰인 코스"
+        description="만든 코스 중 7일 안에 저장 · 공유 · 길찾기/장소 링크 · 확정 중 하나라도 된 비율 (docs/61 north star)"
+        className="mt-5"
+        actions={
+          <Link href="/admin/usage" className="text-body-sm font-extrabold text-blue-deep underline-offset-4 hover:underline">
+            자세히
+          </Link>
+        }
+      >
+        {usage.isPending ? (
+          <Skeleton className="h-16 rounded-2xl" />
+        ) : usage.isError ? (
+          <ErrorState error={usage.error} onRetry={() => void usage.refetch()} size="sm" />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <UsageFigure label="쓰인 코스 (28일)" value={usage.data.used.rate} hint={`${num(usage.data.used.count)} / ${num(usage.data.used.total)}번`} />
+            <UsageFigure label="지난 완결 주" value={lastWeek?.rate ?? null} hint={lastWeek ? `${lastWeek.week.slice(5).replace("-", ".")} 주 · ${num(lastWeek.generated)}번` : "아직 없음"} />
+            <UsageFigure label="첫 코스 채택" value={usage.data.first_course_accepted.rate} hint="다시 짜기 · 바꾸기 없이" />
+            <UsageFigure label="길찾기 · 장소 링크" value={usage.data.outbound.rate} hint={usage.data.collecting_since ? `이벤트 수집 ${usage.data.collecting_since.slice(0, 10)}부터` : "이벤트 수집 전"} />
+          </div>
+        )}
+      </Panel>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <Panel title="일별 활성 사용자" description="DAU 와 신규 가입">
