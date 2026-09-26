@@ -71,8 +71,10 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.getByRole("heading", { name: "좋아요. 이렇게 이해했어요." })).toBeVisible();
     await expect(page.getByText("특별한 경험").last()).toBeVisible();
     // 세부 태그는 "더 자세히" 안에. 그룹명이 API 원시 코드(activity/feature/…)로 새지 않아야 한다
+    // 술 한잔 · 영화 · 야구 · 비 · 꼭 들를 곳은 위저드가 아니라 결과 화면의 "이것도 넣어 볼까요?"에서 (docs/59 #2)
+    await expect(page.getByText(/코스를 본 뒤에 “이것도 넣어 볼까요\?”에서/)).toBeVisible();
     await page.getByRole("button", { name: /더 자세히/ }).click();
-    await expect(page.getByText("술 한잔 포함", { exact: true })).toBeVisible();
+    await expect(page.getByText("술 한잔 포함", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("group", { name: /^(activity|feature|food|mood)$/ })).toHaveCount(0);
     await expectHealthyLayout(page);
 
@@ -91,6 +93,9 @@ test.describe("핵심 여정 (실제 API)", () => {
 
     const stops = page.getByLabel("코스 일정").getByRole("article");
     await expect(stops.first()).toBeVisible();
+    // 위저드에서 옮겨 온 옵션 (docs/59 #2): 칩 넷 + 꼭 들를 곳 + 한 줄 말
+    await expect(page.getByRole("heading", { name: "이것도 넣어 볼까요?" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "넣을 것" }).getByRole("button")).toHaveCount(5);
     const count = await stops.count();
     expect(count).toBeGreaterThanOrEqual(2);
 

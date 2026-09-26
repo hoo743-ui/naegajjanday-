@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
+import { FormProvider, useForm, type FieldErrors, type Path, type PathValue } from "react-hook-form";
 import { ArrowLeft, ArrowRight, ReceiptText, RotateCw } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/mascot/EmptyState";
 import { JjaniBubble } from "@/components/mascot/JjaniBubble";
@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { track, trackedWithin } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { decodeCampus, decodeErrand,
-  decodeStation, isPointValue, useGenerateCourse, usePickedRegion, usePurposes } from "@/lib/api/hooks";
+  decodeStation, isPointValue, useGenerateCourse, useLastChoices, usePickedRegion, usePurposes } from "@/lib/api/hooks";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import type { GenerateCourseRequest } from "@/lib/api/types";
 import { toKstIso, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,8 @@ import { BudgetStep, PurposeStep, RegionStep } from "./steps";
 import { MOVE_LABEL, PACE_LABEL } from "@/lib/preference";
 
 const MIN_LOADER_MS = 2400;
+/** 위저드가 고를 수 있는 "꼭 원하는 것" (API 는 더 많이 안다 — 지난 선택에서 이것만 들고 온다) */
+const WIZARD_WISHES = ["night", "walk", "exhibition", "value", "romantic"] as const;
 const TRANSPORT_LABEL = { walk: "걸어서", transit: "대중교통", car: "자동차" } as const;
 
 /**
@@ -76,6 +79,49 @@ export function PlanWizard() {
   });
   const values = form.watch();
   const generate = useGenerateCourse();
+
+  // 로그인 사용자는 지난번에 고른 것에서 시작한다 (docs/59 #2): 링크로 들고 온 값 · 이미 만진 칸은 건드리지 않는다
+  const auth = useAuth();
+  const last = useLastChoices(auth.status === "authenticated");
+  const lastApplied = useRef(false);
+  useEffect(() => {
+    if (lastApplied.current || !last.data) return;
+    lastApplied.current = true;
+    if (form.formState.isDirty) return;
+    const d = last.data;
+    let fields = 0;
+    const put = <K extends Path<PlanValues>>(name: K, value: PathValue<PlanValues, K>) => {
+      form.setValue(name, value);
+      fields += 1;
+    };
+    if (d.region && !params.get("region")) put("region", d.region);
+    if (d.purpose && !params.get("purpose")) {
+      put("purpose", d.purpose);
+      if (d.scene) put("scene", d.scene);
+    }
+    if (d.budget_total && fromBudget === undefined && d.budget_total >= 5000 && d.budget_total <= 5_000_000) {
+      put("budget_total", d.budget_total);
+      budgetTouched.current = true; // 목적의 기본 예산으로 덮어쓰지 않는다
+    }
+    if (d.party_size && fromParty === undefined) put("party_size", Math.min(20, Math.max(1, d.party_size)));
+    if (d.transport) put("transport", d.transport);
+    if (d.move_style) put("move_style", d.move_style);
+    if (d.pace.length) {
+      put("pace", d.pace.slice(0, 2));
+      form.setValue("style", d.pace.includes("special") ? "fun" : "efficient");
+    }
+    const wishes = d.wishes.filter((w): w is PlanValues["wishes"][number] => (WIZARD_WISHES as readonly string[]).includes(w));
+    if (wishes.length) put("wishes", wishes);
+    const extras = { with_bar: "BAR", with_movie: "MOVIE", with_baseball: "BASEBALL" } as const;
+    let carried = 0;
+    for (const [name, code] of Object.entries(extras) as [keyof typeof extras, string][]) {
+      if (d.extras.includes(code)) {
+        form.setValue(name, true);
+        carried += 1;
+      }
+    }
+    if (fields + carried > 0) track("plan_last_choices_applied", { fields, extras: carried });
+  }, [last.data, form, params, fromBudget, fromParty]);
 
   const pickedCampus = decodeCampus(values.region);
   const purposes = usePurposes(pickedCampus ? "university" : undefined);

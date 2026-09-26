@@ -27,6 +27,7 @@ import { ScenicStrip } from "./ScenicStrip";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
 import { VisitedCard } from "./VisitedCard";
+import { AddOptions, type OptionChange } from "./AddOptions";
 import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
@@ -357,6 +358,8 @@ export function CourseView({ id }: { id: string }) {
     purpose: request.purpose.code,
     scene: request.scene ?? "",
     errand: request.errand ?? null,
+    extras: request.extras ?? [],
+    conditions: request.conditions ?? [],
   };
   // "여기 근처에서 놀래요"로 짠 코스: 들를 곳이 곧 출발점 (API 가 origin_label 로 그 이름을 돌려준다)
   const errandIsCentre = Boolean(request.errand && request.origin && request.origin_label === request.errand.name);
@@ -368,8 +371,15 @@ export function CourseView({ id }: { id: string }) {
     setSettingsOpen(false);
     setForking(false);
     setChangingSettings(true);
-    const changed = (Object.keys(next) as (keyof CourseSettings)[]).filter((k) => next[k] !== currentSettings[k]);
+    const changed = (Object.keys(next) as (keyof CourseSettings)[]).filter((k) => JSON.stringify(next[k]) !== JSON.stringify(currentSettings[k]));
     track("course_settings_changed", { course_id: id, changed: changed.join(",") });
+    // 옵션별 사용률 (docs/59 #2): 설정 시트에서 넣고 뺀 것도 옵션 하나하나로 센다
+    for (const key of ["BAR", "MOVIE", "BASEBALL", "rain"]) {
+      const was = currentSettings.extras.includes(key) || currentSettings.conditions.includes(key);
+      const now = next.extras.includes(key) || next.conditions.includes(key);
+      if (was !== now) track("course_option_toggled", { course_id: id, option: key, on: now, via: "settings" });
+    }
+    if (Boolean(next.errand) !== Boolean(currentSettings.errand)) track("course_option_toggled", { course_id: id, option: "ERRAND", on: Boolean(next.errand), via: "settings" });
     // 함께 고른 다른 목적은 두되, 새 첫 목적과 겹치면 뺀다
     const extras = (baseRequest.purposes ?? []).filter((code) => code !== next.purpose);
     regenerate({
@@ -382,10 +392,34 @@ export function CourseView({ id }: { id: string }) {
       start_at: next.start_at,
       duration_min: next.duration_min ?? undefined,
       errand: next.errand ?? undefined,
+      extras: next.extras.length ? next.extras : undefined,
+      conditions: next.conditions.length ? next.conditions : undefined,
       ...(tripDay ? { replaces: id } : {}),
       ...(keep.length ? { keep_place_ids: keep } : {}),
       preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
     }, "이 설정에 맞는 곳이 모자라요. 시간이나 예산을 조금 바꿔 보세요.");
+  };
+
+  /**
+   * 이것도 넣어 볼까요? (docs/59 #2): 칩 · 한 줄 말로 옵션을 넣거나 빼서 다시 짠다. 설정 바꾸기처럼 지금 장소를 빼지 않는다 —
+   * 옵션에 맞으면 그 자리에 남아도 된다. 나머지(동네 · 시간 · 예산 · 취향 · 고정한 곳)는 그대로.
+   */
+  const onOptions = (change: OptionChange) => {
+    setForking(false);
+    setChangingSettings(true);
+    for (const t of change.toggled) track("course_option_toggled", { course_id: id, option: t.option, on: t.on, via: change.via });
+    regenerate(
+      {
+        ...baseRequest,
+        extras: change.extras.length ? change.extras : undefined,
+        conditions: change.conditions.length ? change.conditions : undefined,
+        ...(change.errand ? { errand: change.errand } : {}),
+        ...(tripDay ? { replaces: id } : {}),
+        ...(keep.length ? { keep_place_ids: keep } : {}),
+        preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
+      },
+      "이걸 넣으면 맞는 곳이 모자라요. 시간이나 예산을 조금 바꿔 보세요.",
+    );
   };
 
   /**
@@ -758,6 +792,21 @@ export function CourseView({ id }: { id: string }) {
                 onShowPlace={showNearby}
                 signals={placeSignals.data?.items}
               />
+              {/* 위저드에서 옮겨 온 옵션 (docs/59 #2): 코스를 다 읽은 자리에서 "이것도" */}
+              {!readOnly ? (
+                <AddOptions
+                  courseId={id}
+                  extras={request.extras ?? []}
+                  conditions={request.conditions ?? []}
+                  hasErrand={Boolean(request.errand)}
+                  busy={reroll.isPending}
+                  onChange={onOptions}
+                  onErrand={() => {
+                    setSettingsKey((k) => k + 1);
+                    setSettingsOpen(true);
+                  }}
+                />
+              ) : null}
               </div>
 
               {/* 오늘의 영수증: 오늘 하루의 요약 한 장. 저장 · 공유하는 것이 이것이다 */}

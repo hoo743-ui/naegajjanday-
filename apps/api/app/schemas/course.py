@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validat
 
 from app.domain.image_ref import ImageRef, resolve_image
 from app.schemas.common import LatLng
-from app.schemas.meta import LocalSignature
+from app.schemas.meta import LocalSignature, SpotOut
 
 Transport = Literal["walk", "transit", "car"]
 Algorithm = Literal["v1", "v2"]
@@ -184,6 +184,52 @@ class SummaryLine(BaseModel):
 class InterpretResponse(BaseModel):
     summary: list[SummaryLine]
     layers: dict[str, list[str]] = Field(description="style · preference · avoid 로 나눈 해석 (화면용 아님)")
+
+
+class ParseOptionsRequest(BaseModel):
+    """docs/59 #2: one line from the result page ("애플스토어 들렀다가 영화 보고 싶어")."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=120)
+
+
+class ParsedErrand(BaseModel):
+    query: str = Field(description="말한 그대로의 장소 이름")
+    when: Literal["before", "after"]
+    spots: list[SpotOut] = Field(
+        default_factory=list, description="그 이름으로 찾은 곳 (첫 번째가 가장 그럴듯)"
+    )
+
+
+class ParsedOption(BaseModel):
+    key: str = Field(description="BAR · MOVIE · BASEBALL (extras) · rain (conditions) · ERRAND")
+    label: str
+    words: str = Field(description="그렇게 읽은 말")
+    declined: bool = False
+
+
+class ParseOptionsResponse(BaseModel):
+    extras: list[str] = Field(default_factory=list, description="요청의 extras 에 더할 것")
+    conditions: list[str] = Field(default_factory=list, description="요청의 conditions 에 더할 것")
+    declined: list[str] = Field(default_factory=list, description="'빼고 · 말고': 요청에서 뺄 옵션")
+    errand: ParsedErrand | None = None
+    matched: list[ParsedOption] = Field(default_factory=list, description="읽은 순서대로 (화면의 되읽기)")
+
+
+class LastChoices(BaseModel):
+    """docs/59 #2: a signed-in user's last request — the wizard starts from it. Everything optional."""
+
+    region: str | None = Field(default=None, description="한 동네로 짠 코스였을 때만 그 slug")
+    purpose: str | None = None
+    scene: str | None = None
+    party_size: int | None = None
+    budget_total: int | None = None
+    transport: Transport | None = None
+    move_style: MoveStyle | None = None
+    pace: list[Pace] = Field(default_factory=list)
+    wishes: list[Wish] = Field(default_factory=list)
+    extras: list[str] = Field(default_factory=list, description="지난번에 넣은 술 한잔 · 영화 · 야구")
 
 
 class PlaceBrief(BaseModel):

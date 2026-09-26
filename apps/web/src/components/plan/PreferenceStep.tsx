@@ -7,7 +7,6 @@ import {
   Car,
   Check,
   ChevronDown,
-  CloudRain,
   Compass,
   Footprints,
   Heart,
@@ -22,11 +21,8 @@ import {
   Ticket,
   TrainFront,
   Trees,
-  Trophy,
-  Clapperboard,
   Utensils,
   Wallet,
-  Wine,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -34,11 +30,10 @@ import { ErrorState, EmptyState } from "@/components/mascot/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/lib/analytics";
 import { api } from "@/lib/api/client";
-import { decodeErrand, encodeErrand, useLocalSignature, useTags } from "@/lib/api/hooks";
+import { useLocalSignature, useTags } from "@/lib/api/hooks";
 import { FOCUS_OFF, type Tag, type Transport } from "@/lib/api/types";
 import { localSummary, type InterpretInput, type MoveStyle, type Pace, type SummaryLine, type Wish } from "@/lib/preference";
 import { cn } from "@/lib/utils";
-import { ErrandEditor } from "./ErrandEditor";
 import type { PlanValues } from "./schema";
 
 /*
@@ -258,39 +253,22 @@ function WishQuestion() {
         className="-ml-1 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-body-sm font-semibold text-tomato-deep"
       >
         {open ? <ChevronDown aria-hidden className="size-4" /> : <Plus aria-hidden className="size-4" />}
-        {open ? "자세한 설정 접기" : "더 자세히 (비 · 술 한잔 · 야구 · 동네 명물 · 세부 취향)"}
+        {open ? "자세한 설정 접기" : "더 자세히 (동네 명물 · 세부 취향)"}
       </button>
       {open ? <Details /> : null}
     </div>
   );
 }
 
-function Toggle({ on, onChange, icon: Icon, title, hint }: { on: boolean; onChange: (v: boolean) => void; icon: LucideIcon; title: string; hint: string }) {
-  return (
-    <label className="flex cursor-pointer items-center gap-3.5 border-b border-dashed border-line py-3.5 last:border-b-0">
-      <input type="checkbox" className="peer sr-only" checked={on} onChange={(e) => onChange(e.target.checked)} />
-      <Icon aria-hidden className="size-5 shrink-0 text-tomato-deep" />
-      <span className="min-w-0 flex-1">
-        <b className="block text-body font-semibold text-ink">{title}</b>
-        <span className="block text-caption text-muted-foreground">{hint}</span>
-      </span>
-      <span aria-hidden className={cn("grid size-6 shrink-0 place-items-center rounded-md border peer-focus-visible:ring-2 peer-focus-visible:ring-tomato", on ? "border-tomato bg-tomato text-white" : "border-line bg-white text-transparent")}>
-        <Check className="size-3.5" />
-      </span>
-    </label>
-  );
-}
-
-/** "더 자세히": 예전 취향 화면의 모든 것 — 그날의 사정 · 동네 명물 · 세부 태그(좋아요/피할래요). 지운 것은 없다 */
+/**
+ * "더 자세히": 동네 명물 · 세부 태그(좋아요/피할래요). 그날의 사정(비 · 술 한잔 · 야구 · 영화)과 꼭 들를 곳은
+ * 결과 화면의 "이것도 넣어 볼까요?"로 옮겼다 (docs/59 #2 — 위저드는 어디 · 누구와 · 얼마 · 언제에 집중)
+ */
 function Details() {
   const { setValue } = useFormContext<PlanValues>();
   const liked = useWatch<PlanValues, "liked_tags">({ name: "liked_tags" });
   const disliked = useWatch<PlanValues, "disliked_tags">({ name: "disliked_tags" });
   const focus = useWatch<PlanValues, "focus">({ name: "focus" });
-  const withBar = useWatch<PlanValues, "with_bar">({ name: "with_bar" });
-  const rainy = useWatch<PlanValues, "rainy">({ name: "rainy" });
-  const withBaseball = useWatch<PlanValues, "with_baseball">({ name: "with_baseball" });
-  const withMovie = useWatch<PlanValues, "with_movie">({ name: "with_movie" });
   const region = useWatch<PlanValues, "region">({ name: "region" });
   const tags = useTags();
   // 이 동네가 무엇으로 알려져 있는지 — 뚜렷한 명물이 없는 동네면 이 칸은 아예 안 나온다
@@ -316,14 +294,6 @@ function Details() {
 
   return (
     <div id="plan-details" className="grid gap-5 border-l-2 border-line pl-4">
-      <section>
-        <h3 className="sr-only">그날의 사정</h3>
-        <Toggle on={rainy} onChange={(v) => setValue("rainy", v, { shouldDirty: true })} icon={CloudRain} title="비 오는 날이에요" hint="실내 위주로 짜요. 산책 대신 전시 · 실내 놀거리를 넣어요." />
-        <Toggle on={withBar} onChange={(v) => setValue("with_bar", v, { shouldDirty: true })} icon={Wine} title="술 한잔 포함" hint="저녁 5시 이후에 술집 한 곳을 꼭 넣어요. 예산도 떼어 둘게요." />
-        <Toggle on={withBaseball} onChange={(v) => setValue("with_baseball", v, { shouldDirty: true })} icon={Trophy} title="야구 보러 가요" hint="1군 구장이 있는 동네면 넣어요. 경기 일정은 직접 확인해 주세요." />
-        <Toggle on={withMovie} onChange={(v) => setValue("with_movie", v, { shouldDirty: true })} icon={Clapperboard} title="영화 한 편 봐요" hint="근처 영화관을 두 시간 남짓 넣어요. 상영 시간표는 직접 확인해 주세요." />
-      </section>
-
       {specialties.length > 0 ? (
         <fieldset>
           <legend className="float-left mb-1 w-full text-body-sm font-semibold text-ink-2">{local.data?.region}에 왔다면</legend>
@@ -449,34 +419,26 @@ function Understood() {
   );
 }
 
+const LAST_EXTRA_LABEL = { with_bar: "술 한잔", with_movie: "영화 한 편", with_baseball: "야구" } as const;
+
 /**
- * 가는 김에 (docs/51 B1 · 창업자 2026-09-26): 꼭 들를 곳은 코스의 옵션이다 — 노는 동네는 1단계에서 따로 고른다.
- * 들를 곳이 곧 노는 곳이면 "여기 근처에서 놀래요"로 지역을 그 주변으로 바꾼다(예전 방식).
+ * 옵션은 결과 화면에서 (docs/59 #2). 로그인 사용자가 지난번에 넣은 것(술 한잔 · 영화 · 야구)은 기본으로 들고 오되,
+ * 여기서 한 번에 뺄 수 있게 한 줄로 보여 준다. 없으면 "코스를 본 뒤에 넣을 수 있어요" 한 줄.
  */
-function ErrandQuestion() {
+function OptionsNote() {
   const { setValue } = useFormContext<PlanValues>();
-  const errand = useWatch<PlanValues, "errand">({ name: "errand" });
-  const region = useWatch<PlanValues, "region">({ name: "region" });
-  const centre = decodeErrand(region);
+  const values = useWatch<PlanValues>();
+  const carried = (Object.keys(LAST_EXTRA_LABEL) as (keyof typeof LAST_EXTRA_LABEL)[]).filter((k) => values[k]);
+  if (carried.length === 0) {
+    return <p className="text-body-sm text-muted-foreground">술 한잔 · 영화 · 야구 · 비 오는 날 · 꼭 들를 곳은 코스를 본 뒤에 “이것도 넣어 볼까요?”에서 넣을 수 있어요.</p>;
+  }
   return (
-    <div role="group" aria-labelledby="errand-q" className={cn(field, "grid gap-3")}>
-      <p id="errand-q" className="text-body font-bold text-ink">
-        가는 김에 들를 곳 <span className="text-body-sm font-medium text-muted-foreground">없으면 넘어가도 돼요</span>
-      </p>
-      {centre ? (
-        <ErrandEditor value={centre} isCentre onChange={(next) => next && setValue("region", encodeErrand(next), { shouldDirty: true })} />
-      ) : (
-        <ErrandEditor
-          value={errand}
-          onChange={(next) => setValue("errand", next, { shouldDirty: true })}
-          onPlayNear={(next) => {
-            setValue("region", encodeErrand(next), { shouldDirty: true, shouldValidate: true });
-            setValue("regions_before", [], { shouldDirty: true });
-            setValue("errand", null, { shouldDirty: true });
-          }}
-        />
-      )}
-    </div>
+    <p className="flex flex-wrap items-center gap-x-2 border-l-2 border-tomato pl-3 text-body-sm font-semibold text-ink-2">
+      <span className="py-1">지난번처럼 {carried.map((k) => LAST_EXTRA_LABEL[k]).join(" · ")}도 넣을게요</span>
+      <button type="button" onClick={() => carried.forEach((k) => setValue(k, false, { shouldDirty: true }))} className="inline-flex min-h-11 items-center rounded-lg px-2 font-bold text-blue-deep hover:bg-blue-soft">
+        이번엔 빼기
+      </button>
+    </p>
   );
 }
 
@@ -486,7 +448,7 @@ export function TasteStep() {
       <DayQuestion />
       <MoveQuestion />
       <WishQuestion />
-      <ErrandQuestion />
+      <OptionsNote />
       <Understood />
     </div>
   );

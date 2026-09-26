@@ -6,9 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.responses import PROBLEMS
 from app.core.deps import CurrentUser, SessionDep, rate_limit
-from app.infra.db.models import OAuthAccount, User
+from app.domain.recommendation.option_text import last_choices
+from app.domain.recommendation.style import extra_roles
+from app.infra.db.models import OAuthAccount, RecommendationLog, User
 from app.schemas import auth as dto
-from app.schemas.course import CourseListResponse
+from app.schemas.course import CourseListResponse, LastChoices
 from app.services.factory import AuthServiceDep, CourseServiceDep
 
 router = APIRouter(
@@ -54,6 +56,22 @@ async def put_preferences(
     body: dto.PreferencesBody, user: CurrentUser, service: AuthServiceDep
 ) -> dto.PreferencesBody:
     return await service.put_preferences(user, body)
+
+
+@router.get("/last-choices", response_model=LastChoices, summary="지난번에 고른 것 (위저드의 기본값)")
+async def my_last_choices(user: CurrentUser, session: SessionDep) -> LastChoices:
+    body = await session.scalar(
+        select(RecommendationLog.request)
+        .where(RecommendationLog.user_id == user.id)
+        .order_by(RecommendationLog.id.desc())
+        .limit(1)
+    )
+    if not isinstance(body, dict):
+        return LastChoices()
+    try:
+        return LastChoices.model_validate(last_choices(body, extra_roles()))
+    except ValueError:  # an old request shape the wizard no longer speaks: start fresh rather than fail
+        return LastChoices()
 
 
 @router.get("/courses", response_model=CourseListResponse)

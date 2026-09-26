@@ -54,6 +54,8 @@ import type {
   StopCandidate,
   SwapRequest,
   Tag,
+  Transport,
+  MoveStyle,
 } from "./types";
 
 const META_STALE = 10 * 60_000;
@@ -692,6 +694,49 @@ export function useSpots(q: string) {
     enabled: q.length >= 2,
     staleTime: 60 * 60_000,
     placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/**
+ * 선택지가 늘어도 어지럽지 않게 (docs/59 #2): 결과 화면의 한 줄 말 → 코스 옵션.
+ * 규칙 기반(LLM 아님). 꼭 들를 곳은 꼭 들를 곳 검색과 같은 검색으로 찾은 곳까지 온다
+ */
+export interface ParsedOptions {
+  extras: string[];
+  conditions: string[];
+  /** "빼고 · 말고": 요청에서 뺄 옵션 */
+  declined: string[];
+  errand: { query: string; when: "before" | "after"; spots: Spot[] } | null;
+  matched: { key: string; label: string; words: string; declined: boolean }[];
+}
+
+export function useParseOptions() {
+  return useMutation<ParsedOptions, ApiError, string>({
+    mutationFn: (text) => api.post("/courses/options/parse", { text }, { timeoutMs: 10_000 }),
+  });
+}
+
+/** 로그인 사용자의 지난 요청 — 위저드가 여기서 시작한다. 한 동네로 짠 코스였을 때만 region */
+export interface LastChoices {
+  region: string | null;
+  purpose: string | null;
+  scene: string | null;
+  party_size: number | null;
+  budget_total: number | null;
+  transport: Transport | null;
+  move_style: MoveStyle | null;
+  pace: ("relaxed" | "packed" | "foodie" | "special")[];
+  wishes: NonNullable<GenerateCourseRequest["wishes"]>;
+  extras: string[];
+}
+
+export function useLastChoices(enabled: boolean) {
+  return useQuery<LastChoices, ApiError>({
+    queryKey: ["me", "last-choices"],
+    queryFn: ({ signal }) => api.get("/me/last-choices", { signal, timeoutMs: 5000 }),
+    enabled,
+    staleTime: 60_000,
     retry: false,
   });
 }

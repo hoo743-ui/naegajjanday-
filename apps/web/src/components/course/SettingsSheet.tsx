@@ -8,6 +8,7 @@ import { DURATION_PRESETS, START_PRESETS } from "@/components/plan/meet-time";
 import { usePurposes, type Errand } from "@/lib/api/hooks";
 import { dateLabel, won } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { COURSE_OPTIONS } from "./AddOptions";
 import { BottomSheet } from "./BottomSheet";
 
 /** 결과 화면에서 바꿀 수 있는 설정. 지역 · 출발점 · 취향은 그대로 두고 이것만 바꿔 다시 짠다 */
@@ -23,6 +24,10 @@ export interface CourseSettings {
   scene: string;
   /** 가는 김에 들를 곳 (docs/51 B1). null = 없음 */
   errand: Errand | null;
+  /** 위저드에서 옮겨 온 옵션 (docs/59 #2): 술 한잔 · 영화 · 야구 (요청의 extras) */
+  extras: string[];
+  /** 그날의 사정: 비 오는 날 (요청의 conditions) */
+  conditions: string[];
 }
 
 interface SettingsSheetProps {
@@ -116,6 +121,8 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
   const [purposeCode, setPurposeCode] = useState(initial.purpose);
   const [scene, setScene] = useState(initial.scene);
   const [errand, setErrand] = useState<Errand | null>(initial.errand);
+  const [extras, setExtras] = useState<string[]>(initial.extras);
+  const [conditions, setConditions] = useState<string[]>(initial.conditions);
 
   const purpose = purposes.data?.items.find((p) => p.code === purposeCode);
   const maxParty = purpose?.max_party_size ?? 20;
@@ -127,7 +134,7 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
 
   const start = toIso(day, time);
   const past = new Date(start).getTime() < now - 5 * 60_000;
-  const next: CourseSettings = { start_at: start, duration_min: duration, budget_total: budget, party_size: Math.min(party, maxParty), purpose: purposeCode, scene, errand };
+  const next: CourseSettings = { start_at: start, duration_min: duration, budget_total: budget, party_size: Math.min(party, maxParty), purpose: purposeCode, scene, errand, extras, conditions };
   const changed =
     kstParts(next.start_at).day !== first.day ||
     kstParts(next.start_at).time !== first.time ||
@@ -136,7 +143,9 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
     next.party_size !== initial.party_size ||
     next.purpose !== initial.purpose ||
     next.scene !== initial.scene ||
-    JSON.stringify(next.errand) !== JSON.stringify(initial.errand);
+    JSON.stringify(next.errand) !== JSON.stringify(initial.errand) ||
+    [...next.extras].sort().join() !== [...initial.extras].sort().join() ||
+    [...next.conditions].sort().join() !== [...initial.conditions].sort().join();
 
   const budgetStep = budget >= 200_000 ? 10_000 : 5_000;
   const perPerson = Math.round(budget / Math.max(1, next.party_size) / 100) * 100;
@@ -225,6 +234,21 @@ export function SettingsSheet({ open, onClose, initial, university, lockDay, pin
 
         <Section title="가는 김에 들를 곳">
           <ErrandEditor value={errand} onChange={setErrand} isCentre={errandIsCentre && errand !== null} />
+        </Section>
+
+        <Section title="이것도 넣을까요?">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="넣을 것">
+            {COURSE_OPTIONS.map((o) => {
+              const list = o.kind === "extra" ? extras : conditions;
+              const set = o.kind === "extra" ? setExtras : setConditions;
+              const on = list.includes(o.key);
+              return (
+                <Chip key={o.key} on={on} onClick={() => set(on ? list.filter((k) => k !== o.key) : [...list, o.key])}>
+                  {o.label}
+                </Chip>
+              );
+            })}
+          </div>
         </Section>
 
         {purpose && scenes.length > 0 ? (

@@ -54,6 +54,15 @@ export interface AnalyticsEvents {
   reroll_tweaked: { course_id: string; tweaks: string; pinned: number };
   /** 결과 화면에서 설정(시간 · 예산 · 인원 · 누구와 · 목적)을 바꿔 다시 짰다. changed = 바꾼 설정 이름들 */
   course_settings_changed: { course_id: string; changed: string };
+  /**
+   * 선택지가 늘어도 어지럽지 않게 (docs/59 #2): 옵션(BAR · MOVIE · BASEBALL · rain · ERRAND)을 넣거나 빼서 다시 짰다.
+   * via = 결과 화면 칩 · 한 줄 말 · 설정 바꾸기 시트. 옵션별 사용률로 안 쓰는 것은 치운다
+   */
+  course_option_toggled: { course_id: string; option: string; on: boolean; via: "chip" | "text" | "settings" };
+  /** 한 줄 말을 읽었다: 말 자체는 보내지 않는다(개인정보) — 길이와 읽은 옵션만. matched 0 = 못 알아들음 */
+  course_option_text_parsed: { course_id: string; length: number; matched: number; options: string };
+  /** 로그인 사용자의 지난 선택으로 위저드를 채웠다 (fields = 채운 칸 수) */
+  plan_last_choices_applied: { fields: number; extras: number };
   /** 처음 · 자주 (docs/59 #1): 결과 화면의 한 줄로 바꿔 다시 짰다 */
   familiarity_changed: { course_id: string; to: "first" | "regular" };
   // 브랜드 인트로(/intro)를 떠남 (docs/40)

@@ -8,13 +8,16 @@ from fastapi.responses import StreamingResponse
 
 from app.api.v1.responses import PROBLEMS
 from app.core.course_key import capture_course_key
-from app.core.deps import CurrentUser, OptionalUser, client_ip, rate_limit
+from app.core.deps import ContainerDep, CurrentUser, OptionalUser, SessionDep, client_ip, rate_limit
 from app.core.sse import SSE_HEADERS, sse, with_heartbeat
+from app.domain.recommendation.option_text import option_label, parse_options
 from app.domain.recommendation.preference import interpret
 from app.schemas import course as dto
+from app.schemas import meta as meta_dto
 from app.schemas import route as route_dto
 from app.schemas.common import Ok
 from app.services.factory import CourseServiceDep
+from app.services.spot_service import SpotService
 
 # X-Course-Key (the anonymous creator's edit key) is read once per request for the ownership check (docs/28)
 router = APIRouter(prefix="/courses", tags=["courses"], dependencies=[Depends(capture_course_key)])
@@ -55,6 +58,44 @@ async def interpret_preferences(body: dto.InterpretRequest) -> dto.InterpretResp
     )
     return dto.InterpretResponse(
         summary=[dto.SummaryLine.model_validate(line) for line in got.summary], layers=got.layers()
+    )
+
+
+@router.post(
+    "/options/parse",
+    response_model=dto.ParseOptionsResponse,
+    dependencies=[Depends(rate_limit("read"))],
+    responses=PROBLEMS(422, 429),
+    summary="한 줄 말 → 코스 옵션 (술 한잔 · 영화 · 야구 · 비 · 꼭 들를 곳, 규칙 기반)",
+)
+async def parse_course_options(
+    body: dto.ParseOptionsRequest, session: SessionDep, container: ContainerDep
+) -> dto.ParseOptionsResponse:
+    got = parse_options(body.text)
+    errand: dto.ParsedErrand | None = None
+    if got.errand is not None:
+        # the same search the "꼭 들를 곳" box uses — the page shows what was found before generating
+        found = await SpotService(session, container.settings, container.cache).lookup(got.errand.query, 3)
+        errand = dto.ParsedErrand(
+            query=got.errand.query,
+            when=got.errand.when,
+            spots=[meta_dto.SpotOut.model_validate(f) for f in found],
+        )
+    declined = set(got.declined)
+    return dto.ParseOptionsResponse(
+        extras=got.extras,
+        conditions=got.conditions,
+        declined=got.declined,
+        errand=errand,
+        matched=[
+            dto.ParsedOption(
+                key=key,
+                label=got.errand.query if key == "ERRAND" and got.errand else option_label(key),
+                words=words,
+                declined=key in declined,
+            )
+            for key, words in got.matched
+        ],
     )
 
 
