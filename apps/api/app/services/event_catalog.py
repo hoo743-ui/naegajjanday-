@@ -14,7 +14,7 @@ from typing import Any
 MAX_STR = 64
 MAX_PROPS = 12
 
-# events another change is adding (the stop sheet, course confirm): accepted now with a generic set
+# the stop decision sheet's events share one set of short props
 _SHEET = frozenset(
     {"position", "category", "role", "to", "from", "via", "kind", "pinned", "fixed", "rank", "strategy"}
 )
@@ -62,11 +62,12 @@ EVENT_PROPS: dict[str, frozenset[str]] = {
     "nearby_shown": frozenset({"kind"}),
     "map_fullscreen": frozenset({"open"}),
     "stay_clicked": frozenset({"day"}),
-    # the stop sheet and course confirm (being added in parallel)
+    # the stop decision sheet and course confirm (1086c5c); the generic set covers props added later
     "stop_sheet_opened": _SHEET,
     "stop_fixed": _SHEET,
-    "stop_alternative_viewed": _SHEET,
+    "stop_alternative_viewed": _SHEET | {"count"},
     "stop_swapped_from_sheet": _SHEET,
+    "stop_removed": _SHEET,
     "course_confirmed": _SHEET | {"stops", "price"},
     "outbound_link": _SHEET,
     # elsewhere

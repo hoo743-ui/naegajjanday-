@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import pytest
+
+from app.core.config import API_ROOT
 from app.services import event_catalog
 from app.services.usage_metrics import Ev, Feedback, Gen, Inputs, compute, format_report
 
@@ -34,6 +38,17 @@ class TestCatalog:
         assert event_catalog.clean_props("course_viewed", long) == {"shared": True}
         nested = {"position": {"a": 1}, "strategy": ["x"], "from": "prev"}
         assert event_catalog.clean_props("directions_opened", nested) == {"from": "prev"}
+
+    def test_every_web_event_is_accepted(self) -> None:
+        """A name in the web catalog but not here would be thrown away by POST /v1/events."""
+        events_ts = API_ROOT.parent / "web" / "src" / "lib" / "analytics" / "events.ts"
+        if not events_ts.exists():
+            pytest.skip("web app not checked out")
+        body = events_ts.read_text(encoding="utf-8").split("export interface AnalyticsEvents {", 1)[1]
+        body = body.split("\n}\n", 1)[0]
+        names = set(re.findall(r"^  ([a-z_]+): ", body, re.M))
+        assert len(names) > 40
+        assert sorted(n for n in names if not event_catalog.is_known(n)) == []
 
     def test_stop_sheet_events_are_already_accepted(self) -> None:
         for name in (
