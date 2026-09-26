@@ -113,7 +113,11 @@ test.describe("핵심 여정 (실제 API)", () => {
     await expect(page.getByRole("radio", { name: /이전 장소/ })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("button", { name: /네이버지도 열기/ })).toBeVisible();
     await page.getByRole("button", { name: "닫기" }).click();
-    // 코스 전체: 오늘의 이동 · 전체 코스 보기 · 네이버 지도에서 길찾기
+    // 장소 목록 뒤의 블록들은 "이 동네 더 보기" 한 줄 안에 (docs/59 #3) → 펼치면 오늘의 이동 · 네이버 지도에서 길찾기
+    const more = page.getByRole("button", { name: /^이 동네 더 보기/ });
+    await expect(page.getByRole("heading", { name: "오늘의 이동" })).toHaveCount(0);
+    await more.click();
+    await expect(more).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByRole("heading", { name: "오늘의 이동" })).toBeVisible();
     const route = page.getByRole("button", { name: /오늘의 이동/ });
     if ((await route.getAttribute("aria-expanded")) !== "true") await route.click();

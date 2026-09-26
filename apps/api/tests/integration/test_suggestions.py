@@ -144,7 +144,10 @@ class TestTopUp:
         )  # fmt: skip
         course = resp.json()["courses"][0]
         notes = [w for w in course["warnings"] if w["code"] == "TOPPED_UP"]
-        assert len(notes) == 1 and "예산이 많이 남아서" in notes[0]["detail"]
+        # 돈 이야기는 결과 화면의 숫자 칸이 한 번만 한다 (docs/59 #3): 이 안내는 넣은 곳만 말한다
+        assert (
+            len(notes) == 1 and "한 곳 더 넣었어요" in notes[0]["detail"] and "예산" not in notes[0]["detail"]
+        )
         assert course["totals"]["price"] <= 120000
 
     async def test_an_underspent_night_is_not_filled(

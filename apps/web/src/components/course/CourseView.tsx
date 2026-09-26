@@ -23,6 +23,7 @@ import { DaySummary } from "./DaySummary";
 import { FamiliarityLine } from "./FamiliarityLine";
 import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
+import { MoreHere } from "./MoreHere";
 import { ScenicStrip } from "./ScenicStrip";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
@@ -737,8 +738,7 @@ export function CourseView({ id }: { id: string }) {
                 travelMin={courseRoute.data?.totals.travel_min ?? data.totals.travel_min}
                 distanceM={courseRoute.data?.totals.distance_m ?? data.totals.distance_m}
                 mood={mood}
-                line={over ? "조금 넘었어요. 한 곳만 바꿔 볼까요?" : undefined}
-                summary={data.summary}
+                line={over ? "비싼 곳 한 곳만 바꿔 볼까요?" : undefined}
                 stops={data.stops.length}
                 editable={!readOnly}
                 bubbleKey={`${id}-${data.totals.price}`}
@@ -746,7 +746,8 @@ export function CourseView({ id }: { id: string }) {
               {/* 좁은 화면에서는 첫 장소가 첫 화면에 들어오게 구멍 줄을 뺀다 */}
               <hr aria-hidden className="tear-line my-1 max-lg:hidden" />
 
-              {uniqueWarnings(data.warnings).map((w, i) => (
+              {/* 돈 이야기는 첫 화면에 한 번 — 위의 남은 돈 숫자가 한다 (docs/59 #3). 예산 초과 알림은 거기서 이미 분홍 숫자다 */}
+              {uniqueWarnings(data.warnings).filter((w) => w.code !== "BUDGET_OVER").map((w, i) => (
                 <p
                   key={`${w.code}-${w.role ?? ""}-${i}`}
                   role="status"
@@ -829,6 +830,16 @@ export function CourseView({ id }: { id: string }) {
 
               <div className="grid min-w-0 gap-4">
 
+              {/* 저장한 내 코스: 다녀온 뒤 별점 하나 → ‘다녀옴’ 표시 + 다음 추천의 취향 학습 */}
+              {data.is_saved && !readOnly ? <VisitedCard courseId={id} visited={data.status === "completed"} /> : null}
+
+              {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 (예약이 걸려 있어 접지 않는다) */}
+              {lastStop && request.day && request.days && request.day < request.days ? (
+                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} startAt={request.start_at} adults={request.party_size} onShow={showNearby} />
+              ) : null}
+
+              {/* 장소 목록 · 영수증 뒤의 나머지는 한 줄로 접는다 (docs/59 #3 · "한 문장 + 펼침") */}
+              <MoreHere summary={data.local?.intro?.text ?? "오늘 이동, 지나갈 길 사진, 남은 돈으로 갈 곳, 근처 공연과 축제를 모아 뒀어요."}>
               <RoutePanel
                 stops={data.stops}
                 transport={request.transport}
@@ -886,17 +897,11 @@ export function CourseView({ id }: { id: string }) {
                 <p className="skeleton-shimmer h-[68px] rounded-2xl" aria-label="짠이가 코스 설명을 쓰는 중" />
               ) : null}
 
-              {/* 저장한 내 코스: 다녀온 뒤 별점 하나 → ‘다녀옴’ 표시 + 다음 추천의 취향 학습 */}
-              {data.is_saved && !readOnly ? <VisitedCard courseId={id} visited={data.status === "completed"} /> : null}
-
-              {/* 여행 일정의 마지막 날이 아니면: 그날 동선이 끝나는 곳 근처의 숙소 */}
-              {lastStop && request.day && request.days && request.day < request.days ? (
-                <StayCard at={{ lat: lastStop.place.lat, lng: lastStop.place.lng }} day={request.day} startAt={request.start_at} adults={request.party_size} onShow={showNearby} />
-              ) : null}
               {firstStop ? (
                 <PerformanceCard at={{ lat: firstStop.place.lat, lng: firstStop.place.lng }} startAt={request.start_at} durationMin={request.duration_min ?? Math.max(120, data.totals.duration_min ?? 240)} />
               ) : null}
               <NearbyEvents events={data.nearby_events} region={request.region?.slug} startAt={request.start_at} />
+              </MoreHere>
 
               </div>
             </div>
