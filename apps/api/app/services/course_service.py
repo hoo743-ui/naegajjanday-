@@ -56,6 +56,7 @@ from app.domain.recommendation.budget import SlotBudget, evening_minute, is_nigh
 from app.domain.recommendation.candidates import FilterContext, area_names_of, compact_name, hard_filter
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
+from app.domain.recommendation.errand import errand_leg
 from app.domain.recommendation.familiarity import FIRST, REGULAR, familiarity_rules
 from app.domain.recommendation.familiarity import infer as infer_familiarity
 from app.domain.recommendation.features import is_open
@@ -181,6 +182,8 @@ class CourseService:
         self._kept: dict[str, PlaceCandidate] = {}
         # 가는 김에: the errand became the centre of the day (the snapshot names the point after it)
         self._errand_label: str | None = None
+        # 끝나고 들르기 (docs/59 #7): where the user goes after the day — the engine ends the day on its side
+        self._errand_end: GeoPoint | None = None
         self._familiar = Familiar()  # 처음 · 자주 of the request under way (see `_familiarity_for`)
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
@@ -259,6 +262,7 @@ class CourseService:
         The founder (2026-09-26): the place one must go and the place one plays are often not the same."""
         e = req.errand
         self._errand_label = None
+        self._errand_end = None
         if e is None:
             return req, None
         update: dict[str, Any] = {}
@@ -297,6 +301,8 @@ class CourseService:
                 moved = start + timedelta(minutes=e.minutes + hop.minutes)
                 update["start_at"] = moved
                 detail = f"{e.name}에 먼저 들렀다가 약 {hop.minutes}분 이동해 {moved:%H:%M}에 시작해요."
+        if e.when == "after" and not meta.get("pinned"):
+            self._errand_end = point
         note = {"code": "ERRAND", "detail": detail, "meta": meta}
         return (req.model_copy(update=update) if update else req), note
 
@@ -533,6 +539,7 @@ class CourseService:
                     "alternatives": 0,
                     "preferences": req.preferences.model_copy(update={"exclude_place_ids": excluded}),
                     "keep_place_ids": kept_by_day[d],
+                    "errand": req.errand if d == 0 else None,  # the errand is on the first day
                 }
             )
             planned = await self._plan_day(day_req, user, city_days[d] if d < len(city_days) else None)
@@ -620,6 +627,8 @@ class CourseService:
                     # two karaoke rooms in a row because the neighbourhood changed is not a plan
                     "skip_roles": [*req.skip_roles, *repeat],
                     "keep_place_ids": kept_by_leg[k],
+                    # 끝나고 들르기 follows the last neighbourhood only
+                    "errand": req.errand if k == len(spots) - 1 else None,
                 }
             )
             pinned = areas[k].place_ids[: int(city.get("pin_top", 3))] if areas else ()
@@ -727,6 +736,8 @@ class CourseService:
         ctx.draw_ids = frozenset(s.place_id for s in signature.sights if s.curated)
         ctx.focus_request = req.focus if req.focus in ctx.local_words else None  # only what it is known for
         # 자주 (docs/59 #1): "what haven't I done here yet" — no specialty claimed unasked, been places out
+        if req.errand is not None:  # only the leg / day the errand follows still carries it (_plan_across)
+            ctx.end_point = self._errand_end
         regular = self._familiar.value == REGULAR
         if regular:
             ctx.familiarity = REGULAR
@@ -1368,6 +1379,39 @@ class CourseService:
                 polyline=encode_polyline([origin, *(s.place.point for s in stops)]), optimizer=row.optimizer
             ),
             warnings=[dto.Warning.model_validate(w) for w in row.warnings or []],
+            errand_leg=self._errand_leg(row, stops),
+        )
+
+    @staticmethod
+    def _errand_leg(row: Course, stops: Sequence[StopResult]) -> dto.ErrandLegOut | None:
+        """꼭 들를 곳 (docs/59 #7): the ride from the errand to the first stop (before) or from the last stop
+        to it (after), measured on the course as it is now (a swap or reorder moves it). A trip's errand
+        belongs to its first day; an errand that is one of the stops has no leg of its own."""
+        request = row.request or {}
+        e = request.get("errand")
+        if not e or (request.get("day") or 1) > 1:
+            return None
+        if e.get("place_id") and any(getattr(s.place, "public_id", None) == e["place_id"] for s in stops):
+            return None
+        when = "after" if e.get("when") == "after" else "before"
+        hop = errand_leg(
+            GeoPoint(float(e["lat"]), float(e["lng"])),
+            when,
+            [s.place.point for s in stops],
+            row.transport,
+            itinerary_rules(),
+        )
+        if hop is None:
+            return None
+        return dto.ErrandLegOut(
+            name=str(e["name"]),
+            lat=float(e["lat"]),
+            lng=float(e["lng"]),
+            when=when,
+            minutes=int(e.get("minutes") or 0),
+            travel_min=hop.minutes,
+            distance_m=hop.distance_m,
+            mode=hop.mode,
         )
 
     def _leftover(self, row: Course, stops: Sequence[StopResult]) -> dto.LeftoverOut:

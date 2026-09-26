@@ -5,10 +5,10 @@ import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2 } from "lucide-react";
 import type { AccessHint } from "@/lib/api/hooks";
-import type { Stop } from "@/lib/api/types";
+import type { ErrandLeg, Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
+import { ERRAND_COLOR, errandChipAt, errandHtml, errandSegment, escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
 
 interface LeafletRouteMapProps {
   stops: Stop[];
@@ -25,6 +25,8 @@ interface LeafletRouteMapProps {
   nearby?: NearbyPin | null;
   /** 주변 장소 핀을 눌렀을 때 (장소 상세 열기) */
   onNearby?: () => void;
+  /** 꼭 들를 곳과 코스 사이의 구간 (docs/59 #7): 회색 점선 + 번호 없는 핀 */
+  errand?: ErrandLeg | null;
   /** 타일을 하나도 받지 못하면 호출 → 부모가 SVG 약도로 되돌린다 */
   onError: () => void;
 }
@@ -46,7 +48,7 @@ const MAX_FIT_ZOOM = 18;
  * OpenStreetMap 타일 + Leaflet. API 키가 필요 없어 어디서든 바로 뜬다.
  * Leaflet 은 window 를 만지므로 effect 안에서 동적으로 불러온다.
  */
-export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, onError }: LeafletRouteMapProps) {
+export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, errand, onError }: LeafletRouteMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const landingRef = useRef(landingClock());
@@ -141,6 +143,28 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
       }
     });
 
+    // 꼭 들를 곳: 그곳 ↔ 첫(마지막) 장소를 곧은 회색 점선으로, 코스 쪽 끝에 방향 · 시간, 그곳에 번호 없는 핀
+    const segment = errand ? errandSegment(errand, stops) : null;
+    if (errand && segment) {
+      const [from, to] = [toPx(segment.from), toPx(segment.to)];
+      stroke([from, to], 5, ERRAND_COLOR, "1 10");
+      const chip = errandChipAt(from, to, errand.when);
+      if (errand.travel_min > 0) {
+        L.marker(toCoords(chip), {
+          icon: L.divIcon({ className: "", html: legChipHtml(`${transportLabel(errand.mode)} ${minutes(errand.travel_min)}`, ERRAND_COLOR, chip.angle), iconSize: [0, 0] }),
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -200,
+        }).addTo(layer);
+      }
+      L.marker([errand.lat, errand.lng], {
+        icon: L.divIcon({ className: "", html: errandHtml(errand), iconSize: [0, 0] }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: -100,
+      }).addTo(layer);
+    }
+
     // 가까운 지하철 출구 (같은 출구는 한 번만)
     const seen = new Set<string>();
     for (const hint of access ?? []) {
@@ -182,7 +206,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
       });
       marker.addTo(layer);
     });
-  }, [ready, zoomTick, stops, activeStop, route, access]);
+  }, [ready, zoomTick, stops, activeStop, route, access, errand]);
 
   // 화면 맞춤: 스톱 + 실제 경로. 길이 크게 돌아가면 선이 화면 밖으로 나갔다 들어와 어디로 가는지 읽을 수 없다.
   // 그렇다고 한없이 축소하지는 않는다 — MIN_FIT_ZOOM 에서 멈춰 번호 핀이 읽히는 크기를 지킨다.
@@ -194,6 +218,8 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
       const pins = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       const bounds = L.latLngBounds(stops.map((s) => [s.place.lat, s.place.lng] as LatLngTuple));
       if (route?.routed) route.coordinates.forEach((at) => bounds.extend(at));
+      // 꼭 들를 곳은 길처럼 넣는다: 가까우면 함께 보이고, 멀면 번호 핀이 읽히는 확대에서 멈춘다(선이 그쪽을 가리킨다)
+      if (errand) bounds.extend([errand.lat, errand.lng]);
       const extra = nearbyRef.current;
       if (extra) {
         pins.extend([extra.lat, extra.lng]);
@@ -214,7 +240,7 @@ export function LeafletRouteMap({ stops, activeStop, onSelect, route, access, fo
       map.panBy([0, -34], { animate: false });
     };
     fitRef.current();
-  }, [ready, stops, route]);
+  }, [ready, stops, route, errand]);
 
   // 바텀시트 단계가 바뀌면 지도 칸의 높이가 달라진다 → 다 바뀐 뒤 한 번만 코스 전체를 다시 맞춘다
   useEffect(() => {

@@ -1,4 +1,4 @@
-import type { CourseRoute, Stop } from "@/lib/api/types";
+import type { CourseRoute, ErrandLeg, Stop } from "@/lib/api/types";
 
 /**
  * 지도 공통: 번호 핀 · 겹친 핀 펼치기 · 경로를 구간별로 나누기.
@@ -277,6 +277,35 @@ export function layoutLeg(path: Pt[], from: Pt, to: Pt, pins: Pt[]): LegLayout {
     if (best < CHIP_CLEARANCE_PX) chip = null;
   }
   return { line, connectors, chip };
+}
+
+// ── 꼭 들를 곳 (docs/59 #7) ─────────────────────────────────────
+// 코스 밖의 한 곳과 코스 사이의 구간: 먼저 들르기는 그곳 → 첫 장소, 끝나고 들르기는 마지막 장소 → 그곳.
+// 길을 잰 구간이 아니므로 곧은 점선으로만 잇고, 코스의 구간(색)과 헷갈리지 않게 회색으로 그린다.
+export const ERRAND_COLOR = "#6B7280";
+const ERRAND_CHIP_PX = 120; // 먼 볼일은 선의 가운데가 화면 밖이다 → 표시는 코스 쪽 끝에서 이만큼
+
+/** 구간의 두 끝 (from → to, 진행 방향). 장소가 없으면 없다 */
+export function errandSegment(errand: ErrandLeg, stops: Stop[]): { from: LatLngTuple; to: LatLngTuple } | null {
+  const stop = errand.when === "after" ? stops[stops.length - 1] : stops[0];
+  if (!stop) return null;
+  const course: LatLngTuple = [stop.place.lat, stop.place.lng];
+  const there: LatLngTuple = [errand.lat, errand.lng];
+  return errand.when === "after" ? { from: course, to: there } : { from: there, to: course };
+}
+
+/** 구간 표시(방향 · 시간)의 자리: 코스 쪽 끝에서 ERRAND_CHIP_PX (구간이 짧으면 가운데) */
+export function errandChipAt(from: Pt, to: Pt, when: ErrandLeg["when"]): Pt & { angle: number } {
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  const angle = (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI;
+  const f = length > 0 ? Math.min(0.5, ERRAND_CHIP_PX / length) : 0;
+  const t = when === "after" ? f : 1 - f; // after: 마지막 장소(from) 쪽 · before: 첫 장소(to) 쪽
+  return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t, angle };
+}
+
+/** 꼭 들를 곳의 핀: 주변 장소처럼 번호 없는 핀 + "먼저 · 이름" / "끝나고 · 이름" */
+export function errandHtml(errand: ErrandLeg) {
+  return nearbyHtml(`${errand.when === "after" ? "끝나고" : "먼저"} · ${errand.name}`);
 }
 
 export function legChipHtml(label: string, color: string, angle: number) {

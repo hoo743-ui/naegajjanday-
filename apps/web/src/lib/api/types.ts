@@ -437,6 +437,21 @@ export interface Course {
   stops: Stop[];
   route: { polyline: string | null; optimizer: string };
   warnings: CourseWarning[];
+  /** 꼭 들를 곳이 코스의 장소가 아닐 때: 그곳에서 오는(before) · 그곳으로 가는(after) 구간 (docs/59 #7). 예전 코스에는 없다 */
+  errand_leg?: ErrandLeg | null;
+}
+
+/** 꼭 들를 곳과 코스 사이의 한 구간: before = 그곳 → 첫 장소, after = 마지막 장소 → 그곳 */
+export interface ErrandLeg {
+  name: string;
+  lat: number;
+  lng: number;
+  when: "before" | "after";
+  /** 그곳에서 보낼 시간(분) */
+  minutes: number;
+  travel_min: number;
+  distance_m: number;
+  mode: Transport;
 }
 
 /** 예산이 남았을 때 권하는 곳 (GET /courses/{id}/suggestions) */

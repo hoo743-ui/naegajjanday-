@@ -87,10 +87,13 @@ class Case:
     budget: int
     start: str  # "HH:MM"
     scene: str | None = None
-    group: str = "hotspot"  # hotspot | solo_night | date_scene | family_scene | night | regular
+    group: str = "hotspot"  # hotspot | solo_night | date_scene | family_scene | night | regular | errand
     # 처음 · 자주 (docs/59 #1): "regular" = the same hotspot request by someone who has been — its pair is
     # the first-visit course of `first_key`, whose places they are taken to have been to
     familiarity: str | None = None
+    # 꼭 들를 곳 (docs/59 #7): "after" = the same hotspot request with an errand after the day, ERRAND_OFFSET
+    # east of the neighbourhood's centre — does the day end on the errand's side, is the ride there given
+    errand: str | None = None
 
     @property
     def first_key(self) -> str:
@@ -99,7 +102,12 @@ class Case:
 
     @property
     def key(self) -> str:
-        return self.first_key + ("|자주" if self.regular else "")
+        return self.first_key + ("|자주" if self.regular else "") + ("|끝나고" if self.errand else "")
+
+    @property
+    def half(self) -> str | None:
+        """Which half of a paired sample this case belongs to (None: the base sample)."""
+        return "regular" if self.regular else "errand" if self.errand else None
 
     @property
     def regular(self) -> bool:
@@ -147,6 +155,10 @@ class Record:
     flags: list[str] = field(default_factory=list)  # "CODE" or "CODE:detail"
     draw_eligible: bool = False  # the neighbourhood really has a draw within reach
     pair_draw: bool | None = None  # a regular's course: did the first-visit course of the pair have a draw
+    # an errand case: how much further from the errand the last stop is than the course's nearest stop (m),
+    # and the minutes of the ride to it the page shows (None: no leg)
+    errand_away_m: float | None = None
+    errand_leg_min: int | None = None
 
     @property
     def ok(self) -> bool:
@@ -168,6 +180,9 @@ class Record:
             + ("✧" if self.case.regular and s.novel else "")
             for s in self.stops
         )
+        if self.case.errand:
+            leg = f"{self.errand_leg_min}분" if self.errand_leg_min is not None else "구간 없음"
+            path += f" → 볼일({leg}, 가장 가까운 곳보다 {self.errand_away_m or 0:.0f}m 멀리서 끝남)"
         wanted = set(codes)
         shown = [f for f in self.flags if f.split(":", 1)[0] in wanted]
         return f"{head} | {path}" + (f"  [{', '.join(shown)}]" if shown else "")
@@ -241,9 +256,9 @@ class Metric:
     kind: str = "rate"  # rate (0..1) | mean
     scale: float = 0.25  # the miss that counts as 1.0 in the ranking (25 points for a rate)
     weight: float = 1.0
-    # counted on the "regular" half of the paired sample only; every other metric never sees that half, so
-    # the first-visit numbers stay comparable with runs from before it existed
-    paired: bool = False
+    # counted on that half of a paired sample only ("regular" · "errand"); every other metric never sees
+    # those halves, so the base numbers stay comparable with runs from before they existed
+    half: str | None = None
 
     def bad(self, value: float) -> float:
         """How far `value` is past the target, in the metric's own units (≤ 0: on target)."""
@@ -297,6 +312,20 @@ def _regular_draws(r: Record) -> tuple[float, float] | None:
     if not r.ok or not r.case.regular or not r.draw_eligible or r.pair_draw is None:
         return None
     return (1.0 if any(s.draw for s in r.stops) else 0.0, 1.0 if r.pair_draw else 0.0)
+
+
+def _errand_toward(r: Record) -> tuple[float, float] | None:
+    from app.domain.recommendation.errand import TOWARD_SLACK_M
+
+    if not r.ok or r.case.errand != "after" or r.errand_away_m is None:
+        return None
+    return (1.0 if r.errand_away_m <= TOWARD_SLACK_M else 0.0), 1.0
+
+
+def _errand_leg(r: Record) -> tuple[float, float] | None:
+    if not r.ok or not r.case.errand:
+        return None
+    return (1.0 if r.errand_leg_min is not None else 0.0), 1.0
 
 
 def _regular_stops(hit: Callable[[Stop], bool]) -> Count:
@@ -356,11 +385,16 @@ METRICS: tuple[Metric, ...] = (
            _course(_ok, lambda r: not r.flags), kind="rate", weight=0.5),
     # 처음 · 자주 (docs/59 #1): the paired sample — the same hotspot requests by someone who has been
     Metric("regular_draw_rate", "자주 모드의 명물 코스 ÷ 처음 모드의 명물 코스(같은 요청 짝)", "lower",
-           0.50, _regular_draws, paired=True),
+           0.50, _regular_draws, half="regular"),
     Metric("regular_overlap_rate", "자주 모드 코스의 장소 중 처음 모드 코스와 겹치는 곳", "lower", 0.20,
-           _regular_stops(lambda s: s.shared), paired=True),
+           _regular_stops(lambda s: s.shared), half="regular"),
     Metric("regular_novelty_rate", "자주 모드 코스의 장소 중 새로 생긴 곳 · 덜 알려진 독립 가게", "higher",
-           0.50, _regular_stops(lambda s: s.novel), paired=True),
+           0.50, _regular_stops(lambda s: s.novel), half="regular"),
+    # 꼭 들를 곳 · 끝나고 들르기 (docs/59 #7): the paired sample — the hotspot requests with an errand after
+    Metric("errand_toward_rate", "끝나고 들르기: 그곳에 가장 가까운 장소 쪽(300m)에서 끝남", "higher",
+           0.80, _errand_toward, half="errand"),
+    Metric("errand_leg_rate", "꼭 들를 곳과 코스 사이 구간(시간 · 거리)이 있는 코스", "higher", 0.95,
+           _errand_leg, half="errand"),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -391,9 +425,7 @@ def noise_band(metric: Metric, value: float | None, units: float, spread: float 
 
 
 def evaluate(metric: Metric, records: Sequence[Record], *, examples: int = 4) -> Result:
-    counted = [
-        (r, c) for r in records if r.case.regular == metric.paired and (c := metric.count(r)) is not None
-    ]
+    counted = [(r, c) for r in records if r.case.half == metric.half and (c := metric.count(r)) is not None]
     num = sum(c[0] for _r, c in counted)
     den = sum(c[1] for _r, c in counted)
     value = num / den if den else None
@@ -548,7 +580,22 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
         cases += [Case(region, p, n, b, "21:30", group="night") for p, n, b in night]
     # 처음 · 자주 (docs/59 #1): each hotspot request again, by someone who has been (last, after its pair)
     cases += [replace(c, group="regular", familiarity="regular") for c in cases if c.group == "hotspot"]
+    # 꼭 들를 곳 (docs/59 #7): the date lunch and the friends' evening of each hotspot, with an errand after
+    cases += [
+        replace(c, group="errand", errand="after")
+        for c in cases
+        if c.group == "hotspot" and (c.purpose, c.start) in ERRAND_CASES
+    ]
     return cases
+
+
+ERRAND_CASES = frozenset({("date", "12:00"), ("friends", "19:00")})
+ERRAND_OFFSET_M = 3000.0  # the errand of the paired sample: this far east of the centre (a ride, not a walk)
+ERRAND_MINUTES = 30
+
+
+def errand_point(lat: float, lng: float, offset_m: float = ERRAND_OFFSET_M) -> tuple[float, float]:
+    return lat, lng + offset_m / (111_320.0 * math.cos(math.radians(lat)))
 
 
 def sample_day(today: date) -> date:
@@ -606,7 +653,13 @@ def _compact(text: str) -> str:
 
 
 def record_from(
-    case: Case, region: Any, ctx: Any, course: Any, rules: dict[str, Any], pair: Record | None = None
+    case: Case,
+    region: Any,
+    ctx: Any,
+    course: Any,
+    rules: dict[str, Any],
+    pair: Record | None = None,
+    errand: tuple[float, float] | None = None,
 ) -> Record:
     from app.domain.recommendation.budget import evening_minute
     from app.domain.recommendation.day_score import experience_kind
@@ -647,6 +700,18 @@ def record_from(
         f.code + (f":{f.detail}" if f.detail else "") for f in judge(course, ctx, scenario, rules, names)
     ]
     found += concept_flags(case, stops, course.total_price)
+    away: float | None = None
+    leg_min: int | None = None
+    if errand is not None and case.errand and course.stops:
+        from app.domain.models import GeoPoint
+        from app.domain.recommendation.errand import away_m, errand_leg
+        from app.domain.recommendation.itinerary import itinerary_rules
+
+        point = GeoPoint(*errand)
+        points = [s.place.point for s in course.stops]
+        away = round(away_m(points, point), 1)
+        hop = errand_leg(point, case.errand, points, ctx.transport, itinerary_rules())
+        leg_min = hop.minutes if hop is not None else None
     return Record(
         case=case,
         price=course.total_price,
@@ -654,6 +719,8 @@ def record_from(
         flags=found,
         draw_eligible=bool(ctx.draw_words or ctx.draw_ids),
         pair_draw=any(s.draw for s in pair.stops) if pair is not None and pair.ok else None,
+        errand_away_m=away,
+        errand_leg_min=leg_min,
     )
 
 
@@ -671,6 +738,7 @@ async def collect(
     from app.domain.recommendation.familiarity import REGULAR
     from app.evaluation.harness import load_spec
     from app.infra.analytics.base import NoopTracker
+    from app.repositories.region_repo import SqlRegionRepository
     from app.schemas import course as dto
     from app.services.course_service import CourseService
     from app.services.narrative_service import NarrativeService
@@ -692,6 +760,9 @@ async def collect(
             pair = firsts.get(case.first_key) if case.regular else None
             # "has been before": the places of the first-visit course, as a past course of theirs would be
             been = [s.place_id for s in pair.stops if s.place_id] if pair is not None else []
+            errand: tuple[float, float] | None = None
+            if case.errand and (where := await SqlRegionRepository(session).get_by_slug(case.region)):
+                errand = errand_point(where.center_lat, where.center_lng)
             req = dto.CourseGenerateRequest(
                 region=case.region,
                 purpose=case.purpose,
@@ -702,10 +773,19 @@ async def collect(
                 scene=case.scene,
                 familiarity=REGULAR if case.regular else None,
                 preferences=dto.Preferences(exclude_place_ids=been[:100]),
+                errand=dto.ErrandIn(
+                    name="볼일",
+                    lat=errand[0],
+                    lng=errand[1],
+                    minutes=ERRAND_MINUTES,
+                    when="after" if case.errand == "after" else "before",
+                )
+                if errand
+                else None,
             )
             try:
                 region, ctx, out = await with_retries(partial(service.dry_run, req), session)
-                records.append(record_from(case, region, ctx, out.courses[0], rules, pair))
+                records.append(record_from(case, region, ctx, out.courses[0], rules, pair, errand))
                 if case.group == "hotspot":
                     firsts[case.key] = records[-1]
             except errors.AppError as exc:

@@ -267,9 +267,13 @@ def test_compare_marks_moves_beyond_the_noise_band() -> None:
 def test_quick_sample_size_and_groups() -> None:
     spots = [f"r{i}" for i in range(55)]
     quick = C.build_sample("quick", spots)
-    assert 90 <= len(quick) <= 140
-    groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular"}
+    assert 90 <= len(quick) <= 170
+    groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular", "errand"}
     assert {c.group for c in quick} == groups
+    # 꼭 들를 곳 (docs/59 #7): the date lunch and the friends' evening of each hotspot, with an errand after
+    errands = [c for c in quick if c.group == "errand"]
+    assert len(errands) == 2 * len({c.region for c in quick if c.group == "hotspot"})
+    assert all(c.errand == "after" and c.half == "errand" and c.key.endswith("|끝나고") for c in errands)
     # 처음 · 자주: every hotspot request has its regular twin, planned after it
     hot = [c.key for c in quick if c.group == "hotspot"]
     regular = [c for c in quick if c.group == "regular"]
@@ -395,3 +399,51 @@ def test_a_regular_record_marks_what_is_new_and_what_it_shares() -> None:
     # the same sign under another record is still the place they have been to
     assert [x.shared for x in r.stops] == [False, True]
     assert r.pair_draw is False
+
+
+# ── 꼭 들를 곳: the errand sample (docs/59 #7) ──────────────────────────────────────────────────
+
+
+def test_errand_metrics_count_only_the_errand_half() -> None:
+    base = [rec("date", [stop("MEAL")]) for _ in range(3)]
+    case = C.Case("seoul-hongdae", "date", 2, 60000, "12:00", group="errand", errand="after")
+    errand = [
+        C.Record(case, stops=[stop("MEAL")], errand_away_m=0.0, errand_leg_min=18),
+        C.Record(case, stops=[stop("MEAL")], errand_away_m=250.0, errand_leg_min=20),
+        C.Record(case, stops=[stop("MEAL")], errand_away_m=910.0, errand_leg_min=19),
+        C.Record(case, stops=[stop("MEAL")], errand_away_m=0.0, errand_leg_min=None),
+    ]
+    results = {r.id: r for r in C.evaluate_all([*base, *errand])}
+    assert results["clean_rate"].n == 3  # the base numbers never see the errand half
+    assert results["errand_toward_rate"].value == pytest.approx(3 / 4)
+    assert results["errand_leg_rate"].value == pytest.approx(3 / 4)
+    assert "볼일(19분, 가장 가까운 곳보다 910m 멀리서 끝남)" in errand[2].line()
+
+
+def test_an_errand_record_measures_the_ending_and_the_leg() -> None:
+    at = SUNDAY_6PM
+    west = place(dlng=-0.004)
+    east = place(dlng=0.004)
+
+    def s(position: int, p: PlaceCandidate) -> StopResult:
+        return StopResult(
+            position=position, role=p.course_role, place=p, arrive_at=at, leave_at=at + timedelta(minutes=60),
+            est_price=20000, travel_min_from_prev=5, distance_m_from_prev=300, score=0.7, score_breakdown={},
+            congestion=None, slot_budget=20000.0,
+        )  # fmt: skip
+
+    def course(*stops: PlaceCandidate) -> CourseResult:
+        return CourseResult(
+            label="추천", template_id=1, stops=[s(i + 1, p) for i, p in enumerate(stops)], total_price=40000,
+            total_travel_min=5, total_distance_m=300, duration_min=120, score=0.7, objective=0.7,
+            optimizer="none",
+        )  # fmt: skip
+
+    ctx = context(60000)
+    case = C.Case("seoul-hongdae", "date", 2, 60000, "18:00", group="errand", errand="after")
+    errand = C.errand_point(ctx.origin.lat, ctx.origin.lng)  # 3 km east
+    toward = C.record_from(case, SimpleNamespace(name="홍대"), ctx, course(west, east), RULES, None, errand)
+    away = C.record_from(case, SimpleNamespace(name="홍대"), ctx, course(east, west), RULES, None, errand)
+    assert toward.errand_away_m == 0.0 and away.errand_away_m is not None and away.errand_away_m > 600
+    assert toward.errand_leg_min is not None and away.errand_leg_min is not None
+    assert toward.errand_leg_min < away.errand_leg_min

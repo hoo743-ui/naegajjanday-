@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from app.domain.models import GeoPoint, PlaceCandidate, RequestContext, ScoringParams
 from app.domain.recommendation import day_score
 from app.domain.recommendation.budget import SlotBudget, effective_budget
+from app.domain.recommendation.errand import end_pull
 from app.domain.recommendation.features import congestion_at, is_open
 from app.domain.recommendation.scorer import PlaceScorer, Score, ScoreInput
 from app.domain.routing.travel_time import HaversineEstimator, Leg
@@ -88,7 +89,22 @@ def objective(
     final: bool = False,
     ctx: RequestContext | None = None,
 ) -> float:
-    """v1: J above. v2 (docs/29): the whole day (`day_score`) — pass the request context to get it."""
+    """v1: J above. v2 (docs/29): the whole day (`day_score`) — pass the request context to get it.
+    Either way, a day the user leaves for an errand (끝나고 들르기) should end on the errand's side."""
+    j = _objective(p, budget_per_person, params, final=final, ctx=ctx)
+    if ctx is not None and ctx.end_point is not None and p.stops:
+        j -= end_pull([s.place.point for s in p.stops], ctx.end_point)
+    return j
+
+
+def _objective(
+    p: Partial,
+    budget_per_person: float,
+    params: ScoringParams,
+    *,
+    final: bool,
+    ctx: RequestContext | None,
+) -> float:
     if ctx is not None and ctx.is_v2:
         return day_score.day_objective(p, ctx, params, final=final)
     n = len(p.stops)

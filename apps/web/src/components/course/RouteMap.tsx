@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { AccessHint } from "@/lib/api/hooks";
-import type { Stop } from "@/lib/api/types";
+import type { ErrandLeg, Stop } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { KakaoRouteMap } from "./KakaoRouteMap";
 import { LeafletRouteMap } from "./LeafletRouteMap";
@@ -25,6 +25,8 @@ interface RouteMapProps {
   /** 코스 밖의 주변 장소 하나를 번호 없는 핀으로 (SVG 약도는 그리지 않는다) */
   nearby?: NearbyPin | null;
   onNearby?: () => void;
+  /** 꼭 들를 곳과 코스 사이의 구간 (docs/59 #7). SVG 약도는 그리지 않는다 */
+  errand?: ErrandLeg | null;
   className?: string;
 }
 
@@ -33,7 +35,7 @@ interface RouteMapProps {
  * OpenStreetMap(Leaflet, 키 불필요), 그마저 타일을 받지 못하면 SVG 약도.
  * 어느 쪽이든 같은 props 를 받으므로 화면 쪽은 구분하지 않는다.
  */
-export function RouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, className }: RouteMapProps) {
+export function RouteMap({ stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, errand, className }: RouteMapProps) {
   const [kakaoFailed, setKakaoFailed] = useState(false);
   const [osmFailed, setOsmFailed] = useState(false);
   const useKakao = Boolean(KAKAO_KEY) && !kakaoFailed;
@@ -41,9 +43,9 @@ export function RouteMap({ stops, activeStop, onSelect, route, access, focus, fi
   return (
     <div className={cn("relative size-full overflow-hidden", className)}>
       {useKakao && KAKAO_KEY ? (
-        <KakaoRouteMap apiKey={KAKAO_KEY} stops={stops} activeStop={activeStop} onSelect={onSelect} route={route} access={access} focus={focus} fitKey={fitKey} nearby={nearby} onNearby={onNearby} onError={() => setKakaoFailed(true)} />
+        <KakaoRouteMap apiKey={KAKAO_KEY} stops={stops} activeStop={activeStop} onSelect={onSelect} route={route} access={access} focus={focus} fitKey={fitKey} nearby={nearby} onNearby={onNearby} errand={errand} onError={() => setKakaoFailed(true)} />
       ) : !osmFailed ? (
-        <LeafletRouteMap stops={stops} activeStop={activeStop} onSelect={onSelect} route={route} access={access} focus={focus} fitKey={fitKey} nearby={nearby} onNearby={onNearby} onError={() => setOsmFailed(true)} />
+        <LeafletRouteMap stops={stops} activeStop={activeStop} onSelect={onSelect} route={route} access={access} focus={focus} fitKey={fitKey} nearby={nearby} onNearby={onNearby} errand={errand} onError={() => setOsmFailed(true)} />
       ) : (
         <SvgRouteMap stops={stops} activeStop={activeStop} onSelect={onSelect} />
       )}

@@ -338,6 +338,9 @@ class RequestContext:
     # 처음 · 자주 (recommendation.familiarity): "first" = what the neighbourhood is known for (the default),
     # "regular" = what this person has not done here yet
     familiarity: str = "first"
+    # 꼭 들를 곳 · 끝나고 들르기 (recommendation.errand): where the user goes after the day — its last stop is
+    # pulled toward that side
+    end_point: GeoPoint | None = None
 
     @property
     def kept_keys(self) -> frozenset[tuple[bool, int]]:

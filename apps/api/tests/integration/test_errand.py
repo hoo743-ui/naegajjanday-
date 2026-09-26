@@ -53,6 +53,7 @@ async def test_one_of_our_places_without_time_is_a_stop(client: httpx.AsyncClien
     assert made.status_code == 200, made.text
     course = made.json()["courses"][0]
     assert target["id"] in [s["place"]["id"] for s in course["stops"]]
+    assert course["errand_leg"] is None  # the errand is a stop: no leg of its own
 
 
 # founder (2026-09-26): the place one has to go and the place one plays are often not the same —
@@ -76,6 +77,11 @@ async def test_an_errand_far_before_the_day_starts_it_after_the_ride_over(client
     assert f"애플 가로수길에 먼저 들렀다가 약 {travel}분 이동해" in note["detail"]
     starts = f"2026-09-20T{14 + travel // 60:02d}:{travel % 60:02d}"
     assert course["stops"][0]["arrive_at"] >= starts  # after the errand and the ride, not from 13:00
+    # docs/59 #7: the ride from the errand to the first stop is a leg of the course the map draws
+    leg = course["errand_leg"]
+    assert leg["when"] == "before" and leg["name"] == "애플 가로수길" and leg["minutes"] == 60
+    assert leg["travel_min"] >= 10 and leg["distance_m"] > 3000 and leg["mode"] == "transit"
+    assert (leg["lat"], leg["lng"]) == (FAR_ERRAND["lat"], FAR_ERRAND["lng"])
     echo = (await client.get(f"/v1/courses/{course['id']}")).json()["request"]
     assert echo["region"]["slug"] == "seoul-hongdae"  # the day stays where they want to play
     assert echo["origin"] is None
@@ -101,8 +107,12 @@ async def test_an_errand_far_after_the_day_ends_it_in_time(client: httpx.AsyncCl
     ends_by = 13 * 60 + 360 - 60 - travel
     last = course["stops"][-1]["leave_at"][11:16]
     assert int(last[:2]) * 60 + int(last[3:]) <= ends_by + 15  # the stay rounding may run a little over
-    echo = (await client.get(f"/v1/courses/{course['id']}")).json()["request"]
+    detail = (await client.get(f"/v1/courses/{course['id']}")).json()
+    echo = detail["request"]
     assert echo["duration_min"] == 360 and echo["errand"]["when"] == "after"  # as asked
+    # docs/59 #7: the ride from the last stop to the errand, on the saved course too
+    leg = detail["course"]["errand_leg"]
+    assert leg["when"] == "after" and leg["travel_min"] >= 10 and leg["distance_m"] > 3000
 
 
 async def test_an_errand_in_the_region_is_where_the_day_starts(client: httpx.AsyncClient) -> None:

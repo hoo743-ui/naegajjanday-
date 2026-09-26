@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import type { AccessHint } from "@/lib/api/hooks";
-import type { Stop } from "@/lib/api/types";
+import type { ErrandLeg, Stop } from "@/lib/api/types";
 import { minutes, transportLabel } from "@/lib/format";
 import { routeColor, stopColor } from "./colors";
-import { escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
+import { ERRAND_COLOR, errandChipAt, errandHtml, errandSegment, escapeHtml, landingClock, layoutLeg, legChipHtml, legsOf, nearbyHtml, passed, pinHtml, spreadOverlaps, type LatLngTuple, type MapRoute, type NearbyPin, type Pt } from "./map-shared";
 
 // ── Kakao Maps JS SDK (쓰는 만큼만 타입 선언) ─────────────────
 interface KLatLng {
@@ -104,6 +104,8 @@ interface KakaoRouteMapProps {
   nearby?: NearbyPin | null;
   /** 주변 장소 핀을 눌렀을 때 (장소 상세 열기) */
   onNearby?: () => void;
+  /** 꼭 들를 곳과 코스 사이의 구간 (docs/59 #7): 회색 점선 + 번호 없는 핀 */
+  errand?: ErrandLeg | null;
   onError: () => void;
 }
 
@@ -111,7 +113,7 @@ interface KakaoRouteMapProps {
  * 카카오 지도. Leaflet 지도와 **같은 것**을 그린다: 실제 보행 경로(구간별 색) · 가까운 지하철 출구 ·
  * 겹치면 부채꼴로 펼쳐지는 번호 핀(`map-shared.ts`). 키를 넣어 지도가 바뀌어도 코스는 똑같이 읽혀야 한다.
  */
-export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, onError }: KakaoRouteMapProps) {
+export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, access, focus, fitKey, nearby, onNearby, errand, onError }: KakaoRouteMapProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KMap | null>(null);
   const landingRef = useRef(landingClock());
@@ -172,6 +174,8 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
         bounds.extend(new maps.LatLng(extra.lat, extra.lng));
       }
       if (route?.routed) route.coordinates.forEach(([lat, lng]) => bounds.extend(new maps.LatLng(lat, lng)));
+      // 꼭 들를 곳은 길처럼 넣는다: 가까우면 함께 보이고, 멀면 번호 핀이 읽히는 확대에서 멈춘다(선이 그쪽을 가리킨다)
+      if (errand) bounds.extend(new maps.LatLng(errand.lat, errand.lng));
       map.relayout();
       // 핀은 무엇보다 먼저다: 차로 야경을 보러 가는 코스 · 여러 동네를 잇는 코스는 동네 하나보다 넓다.
       // 확대 제한(MAX_FIT_LEVEL)은 "길이 돌아가서 넓어진 만큼"에만 건다 → 모든 번호 핀은 언제나 화면 안에 있다.
@@ -186,7 +190,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       setZoomTick((n) => n + 1);
     };
     fitRef.current();
-  }, [maps, stops, route]);
+  }, [maps, stops, route, errand]);
 
   // 경로 · 출구 · 핀
   useEffect(() => {
@@ -225,6 +229,19 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
       el.innerHTML = html;
       return el;
     };
+
+    // 꼭 들를 곳: 그곳 ↔ 첫(마지막) 장소를 곧은 회색 점선으로, 코스 쪽 끝에 방향 · 시간, 그곳에 번호 없는 핀
+    const segment = errand ? errandSegment(errand, stops) : null;
+    if (errand && segment) {
+      const [from, to] = [toPx(segment.from), toPx(segment.to)];
+      stroke([from, to], 5, ERRAND_COLOR, "shortdot");
+      const chip = errandChipAt(from, to, errand.when);
+      if (errand.travel_min > 0) {
+        const el = anchor(legChipHtml(`${transportLabel(errand.mode)} ${minutes(errand.travel_min)}`, ERRAND_COLOR, chip.angle));
+        overlays.push(new maps.CustomOverlay({ position: toCoords(chip), content: el, xAnchor: 0, yAnchor: 0, zIndex: 40 }));
+      }
+      overlays.push(new maps.CustomOverlay({ position: new maps.LatLng(errand.lat, errand.lng), content: anchor(errandHtml(errand)), xAnchor: 0, yAnchor: 0, zIndex: 60 }));
+    }
 
     const seen = new Set<string>();
     for (const hint of access ?? []) {
@@ -267,7 +284,7 @@ export function KakaoRouteMap({ apiKey, stops, activeStop, onSelect, route, acce
 
     overlays.forEach((o) => o.setMap(map));
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [maps, zoomTick, stops, activeStop, route, access]);
+  }, [maps, zoomTick, stops, activeStop, route, access, errand]);
 
   // 바텀시트 단계가 바뀌면 지도 칸의 높이가 달라진다 → 다 바뀐 뒤 한 번만 코스 전체를 다시 맞춘다
   useEffect(() => {

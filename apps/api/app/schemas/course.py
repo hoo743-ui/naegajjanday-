@@ -340,6 +340,19 @@ class Warning(BaseModel):
     meta: dict[str, Any] | None = None
 
 
+class ErrandLegOut(BaseModel):
+    """꼭 들를 곳과 코스 사이의 한 구간 (docs/59 #7): before=그곳 → 첫 장소, after=마지막 장소 → 그곳"""
+
+    name: str
+    lat: float
+    lng: float
+    when: Literal["before", "after"]
+    minutes: int = Field(default=0, description="그곳에서 보낼 시간(분)")
+    travel_min: int
+    distance_m: int
+    mode: Transport
+
+
 class CourseOut(BaseModel):
     id: str
     label: str
@@ -350,6 +363,10 @@ class CourseOut(BaseModel):
     stops: list[StopOut]
     route: RouteOut
     warnings: list[Warning] = Field(default_factory=list)
+    errand_leg: ErrandLegOut | None = Field(
+        default=None,
+        description="꼭 들를 곳이 코스의 장소가 아닐 때: 그곳에서 오는(before) · 그곳으로 가는(after) 구간",
+    )
 
 
 class NearbyEvent(BaseModel):

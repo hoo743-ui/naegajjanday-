@@ -592,6 +592,7 @@ export function CourseView({ id }: { id: string }) {
               access={accessHints.data?.items}
               nearby={nearby}
               onNearby={nearby?.id ? () => setNearbyOpen(true) : undefined}
+              errand={data.errand_leg}
             />
             <button
               type="button"
