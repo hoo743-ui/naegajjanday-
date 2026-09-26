@@ -59,6 +59,7 @@ RUN_KEY = "@run"  # the row that remembers the last whole run (not an item)
 # rules written in code that stored rows must follow: when the module changes, the rows are re-derived
 # (no outside calls). Key → (label, the module's file). The functions are in `_apply_rule`.
 RULE_HOURS = "rules/hours_text"
+RULE_NAMES = "rules/place_names"
 
 
 def _module_file(module: str) -> Path:
@@ -69,6 +70,10 @@ RULES: dict[str, tuple[str, Path]] = {
     RULE_HOURS: (
         "영업시간 다시 읽기 (저장된 TourAPI 답, 호출 0건)",
         _module_file("app.infra.ingestion.hours_text"),
+    ),
+    RULE_NAMES: (
+        '합쳐진 장소 이름 정리 ("순대;곱창;족발" → 보여 줄 이름)',
+        _module_file("app.infra.ingestion.place_names"),
     ),
 }
 
@@ -280,6 +285,10 @@ async def _apply_rule(db: Database, key: str, log: Log) -> str:
         from app.infra.ingestion.bulk import tourapi_hours
 
         return "reapply: " + (await tourapi_hours.reapply(db, log=log)).line()
+    if key == RULE_NAMES:  # names a source joined with ";" (backlog 6)
+        from app.infra.ingestion import place_names
+
+        return await place_names.tidy_stored(db, log=log)
     raise ValueError(f"unknown rule {key}")
 
 

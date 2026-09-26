@@ -16,6 +16,8 @@
 | `prices/price_prior.json` | `data/bulk/price_prior.json` · `regions_kr.json` | `ingest-bulk reprice` |
 | `rules/hours_text` | `app/infra/ingestion/hours_text.py` (코드) | `ingest-bulk tourapi-hours --reapply` — 영업시간 해석기가 바뀌면 저장된 TourAPI 답을 다시 읽는다(호출 0건) |
 
+| `rules/place_names` | `app/infra/ingestion/place_names.py` (코드) | 이름에 ";" 가 든 장소(소진공 파일이 쉼표를 ";" 로 쓴다) 이름 정리 — 대기열 6 |
+
 `rules/*` 는 파일이 아니라 **코드의 규칙**이다: 모듈 파일의 해시가 바뀌면(= 규칙을 고친 배포) 이미 저장된 행을 새 규칙으로 다시 만든다.
 외부 호출은 하지 않는다. 목록은 `app/services/data_sync.py::RULES`.
 

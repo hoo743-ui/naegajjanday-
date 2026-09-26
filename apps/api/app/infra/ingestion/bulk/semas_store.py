@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.infra.ingestion import place_names
 from app.infra.ingestion.bulk.common import BulkPlace, BulkReport, csv_members, in_korea, iter_csv, to_float
 from app.infra.ingestion.bulk.price_prior import PricePrior
 from app.infra.ingestion.bulk.regions import RegionStats
@@ -143,7 +144,7 @@ class SemasMapper:
         sido = row.get(COL_SIDO) or None
         lat, lng = to_float(row.get(COL_LAT)), to_float(row.get(COL_LNG))
         assert lat is not None and lng is not None
-        name = display_name(row.get(COL_NAME, ""), row.get(COL_BRANCH, ""))
+        name = display_name(row.get(COL_NAME, ""), row.get(COL_BRANCH, ""), category)
         # a place moved by its name (타로 카페) is priced as what it is, not as the code it was filed under
         moved = category != self.categories.get(code)
         price = self.prior.estimate(category, sido, None if moved else code, name)
@@ -176,8 +177,9 @@ class SemasMapper:
 NOT_A_BRANCH = frozenset({"코리아", "주", "(주)", "㈜", "주식회사", "유한회사", "본사", "법인"})
 
 
-def display_name(name: str, branch: str) -> str:
-    name, branch = name.strip(), branch.strip()
+def display_name(name: str, branch: str, category_code: str = "") -> str:
+    # the file writes a comma in a store name as ";" — and several stores at one address the same way
+    name, branch = place_names.display_name(name.strip(), category_code), branch.strip()
     if branch and branch not in name and branch not in NOT_A_BRANCH:
         return f"{name} {branch}"
     return name

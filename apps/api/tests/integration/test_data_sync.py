@@ -188,6 +188,27 @@ async def test_a_changed_rule_module_re_derives_stored_rows(
     }
 
 
+async def test_merged_names_already_stored_are_tidied_once(
+    empty_db: tuple[Database, Settings], sources: data_sync.Sources
+) -> None:
+    """Backlog 6: rows loaded before the SEMAS loader tidied names are renamed by the next deploy."""
+    db, settings = empty_db
+    merged = replace(_cinema("신의주찹쌀순대;황소곱창;장충왕족발", "t-9"), category_code="food.korean")
+    comma = replace(_cinema("지금;여기", "t-10"), category_code="bar")
+    delta.write_delta(sources.delta_dir / "merged.json", "test_sync", [merged, comma])
+    with_rules = replace(sources, rules=(data_sync.RULE_NAMES,))
+    first = await data_sync.sync(db, settings, sources=with_rules, log=lambda _m: None)
+    assert _actions(first)[data_sync.RULE_NAMES] == "applied"
+    assert await _place_names(db) == ["신의주찹쌀순대", "씨네 홍대", "지금,여기"]
+    assert (
+        next(r for r in first.results if r.key == data_sync.RULE_NAMES).summary == "names: seen=2 renamed=2"
+    )
+    again = await data_sync.sync(db, settings, sources=with_rules, force=True, log=lambda _m: None)
+    assert (
+        next(r for r in again.results if r.key == data_sync.RULE_NAMES).summary == "names: seen=0 renamed=0"
+    )
+
+
 def test_the_real_rules_point_at_their_modules() -> None:
     for _label, path in data_sync.RULES.values():
         assert path.is_file(), path
