@@ -97,10 +97,24 @@ cd /opt/render/project/src/apps/api
 .venv/bin/python -m app.cli ingest-bulk tourapi-hours --limit 800
 ```
 
-**cron**: Render 의 Cron Job 은 별도 유료 서비스이고, 웹 서비스의 영구 디스크(/var/data 의 SQLite)를 붙일 수 없어 이 DB 에 쓸 수 없다.
-그래서 render.yaml 에 추가하지 않았다(유료 자원 금지). 당분간 위 한 줄을 Shell 에서 하루 한 번 — 무료로 자동화하려면
-(1) 관리자 화면에 "영업시간 이어받기" 버튼(API 안에서 같은 함수 호출) 또는 (2) GitHub Actions 스케줄이 그 관리자 엔드포인트를 부르는 방식을 다음에 만든다.
-운영계정 트래픽 증설(활용사례 등록, docs/51 §4)이 되면 `--limit` 만 올리면 된다.
+### 매일 자동으로 — API 안의 일정 (2026-09-26, 대기열 10)
+
+위의 마지막 줄은 **이제 손으로 돌리지 않아도 된다.** API 프로세스가 켜질 때 일정 작업을 하나 띄운다(`app/services/daily_hours.py`):
+
+- **매일 04:30 (KST)** — TourAPI 한도는 자정에 새로 차고, 사람들이 코스를 짜기 전. 배포 · 재시작이 그 시각 뒤라면 **오늘 몫이 아직 안 돌았을 때만** 바로 돈다
+  (돌린 날은 `data_sync` 테이블의 `@tourapi-hours` 행에 남아서 재시작해도 하루 두 번 돌지 않는다. 실패한 날도 "시도함"으로 남아 다음 날 다시 한다).
+- **하루 800건까지**, 그리고 한도 훅(docs/47)이 말하는 오늘 남은 호출 − 예약분 100 안에서만 — `ingest-bulk tourapi-hours --limit 800` 과 같은 함수(`tourapi_hours.run`)다.
+  사이트의 둘러보기 링크 몫은 그대로 남는다.
+- `TOURAPI_SERVICE_KEY` 가 비어 있으면 로그 한 줄(`tourapi_hours_daily.off`)만 남기고 아무것도 안 한다.
+- 켜짐: production 에서만(로컬 전국 DB 는 기본으로 부르지 않는다 — 같은 키 한도를 나눠 쓰므로 **로컬에서는 돌리지 말 것**).
+- 설정(선택, 없으면 기본값): `TOURAPI_HOURS_DAILY`(끄려면 `false`) · `TOURAPI_HOURS_DAILY_LIMIT`(기본 800, 최대 1000) · `TOURAPI_HOURS_DAILY_AT`(기본 `04:30`).
+- 한 번에 한 프로세스: DB 파일 옆 `naegajjanday.db.tourapi-hours.lock`.
+- 확인: Render 로그의 `tourapi_hours_daily.done result=calls=… parsed=…`, 또는 Shell 에서 `ingest-bulk tourapi-hours --status`.
+
+왜 이 방식인가: Render 의 Cron Job 은 별도 유료 서비스이고 웹 서비스의 영구 디스크(/var/data 의 SQLite)를 붙일 수 없다.
+GitHub Actions 스케줄은 관리자 인증 정보를 GitHub 비밀값으로 넣어야 하고 만료를 관리해야 한다. 웹 서비스(starter, 디스크 1대 고정)는 늘 켜져 있으므로
+그 안에서 도는 것이 가장 단순하다. **창업자가 설정할 비밀값은 없다** — `TOURAPI_SERVICE_KEY` 는 이미 Render 에 있다.
+운영계정 트래픽 증설(활용사례 등록, docs/51 §4)이 되면 `TOURAPI_HOURS_DAILY_LIMIT` 만 올리면 된다.
 
 ## 남은 것
 

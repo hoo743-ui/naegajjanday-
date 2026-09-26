@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     # the background after start. None = production only (a local nationwide DB is never touched by default).
     data_sync_on_start: bool | None = None
     data_sync_delay_s: float = Field(default=5.0, ge=0)  # let the health check pass first
+    # backlog 10 / docs/55: TourAPI opening hours, once a day in the API process (services/daily_hours.py).
+    # None = production only. No TOURAPI_SERVICE_KEY → it does nothing.
+    tourapi_hours_daily: bool | None = None
+    tourapi_hours_daily_limit: int = Field(default=800, ge=0, le=1000)  # the key allows 1,000 a day in all
+    tourapi_hours_daily_at: str = Field(default="04:30", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")  # KST
 
     # --- storage ---
     database_url: str = "sqlite+aiosqlite:///./dev.db"

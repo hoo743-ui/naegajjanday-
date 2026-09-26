@@ -64,7 +64,8 @@ API: `GET /v1/admin/database/data-sync`, `POST /v1/admin/database/data-sync` (20
 - 새 데이터 파일을 추가할 때는 `data/bulk/delta/` 에 넣고 커밋만 하면 된다. 새 카테고리가 필요하면 같은 커밋에
   `data/seed/categories.json` 도 — seed 가 먼저 반영된다.
 - 이 목록에 없는 것은 여전히 손으로: 원본이 필요한 전국 적재(`ingest-bulk semas|all|tourapi …`), `ingest-bulk marks`,
-  그리고 하루 한도 안에서 TourAPI 를 부르는 `ingest-bulk tourapi-hours`(파일이 아니라 호출이라 자동 반영 대상이 아니다, docs/55).
+  그리고 하루 한도 안에서 TourAPI 를 부르는 `ingest-bulk tourapi-hours`(파일이 아니라 호출이라 자동 반영 대상이 아니다 —
+  대신 API 가 매일 04:30 KST 에 스스로 800건씩 돈다, docs/55 "매일 자동으로").
   docs/55 의 "Render Shell 에서 `--from-file`" 단계는 이제 필요 없다.
 
 ## 코드

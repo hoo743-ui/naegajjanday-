@@ -35,7 +35,7 @@ from app.infra.db.session import Database
 from app.infra.llm.factory import build_llm
 from app.infra.search.client import build_search
 from app.prompts.loader import PromptLoader
-from app.services import data_sync
+from app.services import daily_hours, data_sync
 from app.services import retention_service as retention
 
 logger = get_logger(__name__)
@@ -107,13 +107,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if data_sync.enabled_on_start(settings)
             else None
         )
+        # backlog 10 / docs/55: today's TourAPI opening hours (800 calls of the 1,000 a day), once a day
+        hours_task = (
+            asyncio.create_task(daily_hours.run_forever(container.db, settings), name="tourapi-hours-daily")
+            if daily_hours.enabled(settings)
+            else None
+        )
         try:
             yield
         finally:
-            if sync_task is not None and not sync_task.done():
-                sync_task.cancel()  # an unfinished item is not recorded → applied again next start
-                with contextlib.suppress(asyncio.CancelledError):
-                    await sync_task
+            for task in (sync_task, hours_task):
+                if task is not None and not task.done():
+                    task.cancel()  # an unfinished item / batch is not recorded → done again next start
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await task
             await container.tracker.aclose()
             if container.search is not None:
                 await container.search.aclose()

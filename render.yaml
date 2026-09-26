@@ -93,7 +93,7 @@ services:
         sync: false
       - key: KAKAO_REST_API_KEY
         sync: false
-      - key: TOURAPI_SERVICE_KEY
+      - key: TOURAPI_SERVICE_KEY        # 이 키가 있으면 매일 04:30 KST 관광지 영업시간 800건 (docs/55, 끄기: TOURAPI_HOURS_DAILY=false)
         sync: false
       - key: NAVER_SEARCH_CLIENT_ID     # 블로그 후기 수 (docs/46). 없으면 그 신호만 빠진다
         sync: false
