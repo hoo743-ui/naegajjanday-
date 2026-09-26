@@ -188,6 +188,52 @@ def test_always_open() -> None:
     assert week(p) == same("00:00-00:00")  # every day, whatever the category's default closed day
 
 
+@pytest.mark.parametrize(
+    ("usetime", "restdate", "name", "category"),
+    [  # real answers (local DB, 2026-09-26): open spaces keep "always"
+        ("상시 개방", "연중무휴", "남천교 청연루", "attraction.landmark"),
+        ("상시 개방", "연중무휴", "전북 전주 한옥마을 [슬로시티]", "attraction.landmark"),
+        ("상시 개방", "연중무휴", "여의도한강공원", "attraction.park"),
+        ("상시 개방", "연중무휴", "서울광장", "attraction.park"),
+        ("상시 개방", "연중무휴", "영도대교", "attraction.landmark"),
+        ("상시 개방", "연중무휴", "대구 진골목", "attraction.street"),
+        ("상시개방", "연중무휴", "화서문(華西門)", "attraction.landmark"),
+        ("상시 개방※ 자세한 사항은 전화문의 요망", "연중무휴", "송도 센트럴파크", "attraction.park"),
+        # a shop's phrasing on an open space still means the whole day
+        ("상시운영", "연중무휴", "서면1번가 거리", "attraction.landmark"),
+        ("상시 운영", "연중무휴", "연남동 공방거리", "attraction.street"),
+        ("24시간 운영", "연중무휴", "어느 찜질방", "activity"),  # explicit 24 h is believed anywhere
+    ],
+)
+def test_always_open_spaces(usetime: str, restdate: str, name: str, category: str) -> None:
+    p = parse_usetime(usetime, restdate, place_name=name, category_code=category)
+    assert week(p) == same("00:00-00:00")
+
+
+@pytest.mark.parametrize(
+    ("usetime", "restdate", "name", "category", "reason"),
+    [
+        # 영카이브 성수점 (… 1층): a standing shop, not a pop-up — not a door that never shuts (backlog 9)
+        ("상시운영", "연중무휴", "영카이브 성수점", "attraction.landmark", "standing shop"),
+        ("상시 영업", "연중무휴", "어느 편집숍", "", "standing shop"),
+        ("연중 운영", "", "어느 소품샵", "attraction.landmark", "no time range"),
+        # 김만덕기념관: a museum is a building with a door (09:00~18:00 in fact) whatever TourAPI writes
+        ("상시 개방", "연중무휴", "김만덕기념관", "culture.museum", "indoor place"),
+        ("상시 개방", "연중무휴", "어느 카페", "cafe.coffee", "indoor place"),
+    ],
+)
+def test_always_is_not_24h_for_a_shop(
+    usetime: str, restdate: str, name: str, category: str, reason: str
+) -> None:
+    p = parse_usetime(usetime, restdate, place_name=name, category_code=category)
+    assert not p.ok and reason in (p.reason or "")
+
+
+def test_standing_shop_without_hints_is_not_24h() -> None:
+    assert not parse_usetime("상시운영", "연중무휴").ok  # no name to say it is a park → the safe side
+    assert parse_item("12", {"usetime": "상시운영"}, place_name="청주 중앙공원").ok
+
+
 def test_24h_close_wraps_to_midnight() -> None:
     p = parse_usetime("07:00~24:00", "연중무휴")  # 송상현광장
     assert week(p) == same("07:00-00:00")

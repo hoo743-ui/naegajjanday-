@@ -10,3 +10,4 @@
 | 2026-09-26 06:49 | quick | 121acd4 | 79 | 20/23 | night_violation_rate 12.5% / 3.0%, repeated_kind_rate 6.3% / 5.0%, day_schedule_conflict_rate 3.6% / 3.0% | – | loop |
 | 2026-09-26 06:58 | quick | 121acd4 | 79 | 23/23 | – | ▲night_violation_rate | round2: night |
 | 2026-09-26 10:29 | quick | 05bb20e | 118 | 26/26 | – | – | round3: first vs regular |
+| 2026-09-26 14:11 | quick | 959da44 | 118 | 26/26 | – | – | backlog 9: "상시운영" 가게 ≠ 24시간 (Δ 0 — 로컬 DB 의 저장된 시간은 배포 때 rules/hours_text 가 다시 읽는다) |

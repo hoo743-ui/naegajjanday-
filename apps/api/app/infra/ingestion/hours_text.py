@@ -246,6 +246,64 @@ _ALWAYS = re.compile(
     r"24 ?시간|상시|연중 ?개방|연중 ?무휴 ?개방|제한 ?없음|자유 ?관람|자유 ?이용|자유롭게|항시|언제든|"
     r"00:00 ?~ ?24:00"
 )
+# "always" comes in two kinds (backlog 9, docs/55). "상시 개방" / "24시간" / "자유 관람" say the gate
+# never shuts — a park, a square, a bridge, a 한옥마을. "상시운영" / "상시 영업" / "연중 운영" is a shop
+# saying it is a standing shop and not a pop-up (영카이브 성수점, 1층: "상시운영", sent to on a
+# night date at 23:04); it says nothing about the hour its door closes.
+_ALWAYS_OPEN_WORDS = re.compile(
+    r"개방|24 ?시간|제한 ?없음|자유 ?관람|자유 ?이용|자유롭게|언제든|00:00 ?~ ?24:00"
+)
+_STANDING_SHOP = re.compile(r"(?:상시|항시|연중)\s*(?:운영|영업|오픈|open)", re.I)
+# a place that has no door: its "상시 운영" can only mean the whole day
+OPEN_SPACE_CATEGORIES = ("attraction.park", "attraction.street", "nightview.riverside")
+_OPEN_SPACE_NAME = re.compile(
+    r"공원|광장|거리|골목|마을|다리|대교|해변|해수욕장|해안|산책로|둘레길|숲|호수|강변|천변|성곽|유원지|관광특구|"
+    r"(?:길|교|항|포구|천|성|터)(?:\s*\(|$)"
+)
+# inside a building (a museum, a shop, a café): the building has a door even when TourAPI writes
+# "상시 개방" (김만덕기념관 — a museum, 09:00~18:00 in fact); only an explicit "24시간" is believed there
+INDOOR_CATEGORIES = (
+    "culture.museum",
+    "culture.gallery",
+    "culture.exhibition",
+    "culture.bookstore",
+    "food",
+    "cafe",
+    "dessert",
+    "bar",
+    "activity",
+    "stay",
+    "attraction.market",
+)
+_EXPLICIT_24H = re.compile(r"24 ?시간|00:00 ?~ ?24:00")
+
+
+def is_open_space(place_name: str = "", category_code: str = "") -> bool:
+    """A park, a street, a square, a bridge, a village — somewhere with no door to lock."""
+    if category_code and category_code.startswith(OPEN_SPACE_CATEGORIES):
+        return True
+    return bool(place_name and _OPEN_SPACE_NAME.search(place_name.strip()))
+
+
+def _is_indoor(category_code: str) -> bool:
+    return bool(category_code) and any(
+        category_code == c or category_code.startswith(c + ".") for c in INDOOR_CATEGORIES
+    )
+
+
+def always_open_doubt(text: str, *, place_name: str = "", category_code: str = "") -> str | None:
+    """Why an "always" in the hours text must not be read as 24 h here, or None when it can be."""
+    if _is_indoor(category_code) and not _EXPLICIT_24H.search(text):
+        return f"indoor place ({category_code}) said always open"
+    if (
+        _STANDING_SHOP.search(text)
+        and not _ALWAYS_OPEN_WORDS.search(text)
+        and not is_open_space(place_name, category_code)
+    ):
+        return "standing shop: '상시운영' is not 24 h"
+    return None
+
+
 _SUN = re.compile(r"일출|일몰|해 ?뜰|해 ?질|해넘이|해돋이|해가")
 _ASK = re.compile(r"문의|변동|상이|다름|다릅|달라|홈페이지|사전 ?예약|예약제|공지|확인|유동|협의|별도|회차")
 _SEASON_LABEL = re.compile(
@@ -378,8 +436,11 @@ def parse_usetime(
     restdate: str | None,
     *,
     default_closed: Iterable[int] = (),
+    place_name: str = "",
+    category_code: str = "",
 ) -> ParsedHours:
-    """Seven days of hours from TourAPI `usetime` + `restdate`, or `ambiguous` with the reason."""
+    """Seven days of hours from TourAPI `usetime` + `restdate`, or `ambiguous` with the reason.
+    `place_name` / `category_code` only decide what an "always" means (a park vs. a shop)."""
     t = normalize(usetime)
     rest = parse_restdate(restdate)
     if not t:
@@ -395,6 +456,10 @@ def parse_usetime(
     offset = _entry_offset(t)
     ranges = _ranges(t)
     always = bool(_ALWAYS.search(t))
+    if always and not ranges:
+        doubt = always_open_doubt(t, place_name=place_name, category_code=category_code)
+        if doubt:
+            return _ambiguous(doubt)
     if always and any(r.close_min - r.open_min < 1440 for r in ranges):
         return _ambiguous("always open and a time range")
     if not ranges and not always:
@@ -527,7 +592,14 @@ def hours_fields(content_type: str, item: Mapping[str, object]) -> tuple[str, st
 
 
 def parse_item(
-    content_type: str, item: Mapping[str, object], *, default_closed: Sequence[int] = ()
+    content_type: str,
+    item: Mapping[str, object],
+    *,
+    default_closed: Sequence[int] = (),
+    place_name: str = "",
+    category_code: str = "",
 ) -> ParsedHours:
     usetime, restdate = hours_fields(content_type, item)
-    return parse_usetime(usetime, restdate, default_closed=default_closed)
+    return parse_usetime(
+        usetime, restdate, default_closed=default_closed, place_name=place_name, category_code=category_code
+    )

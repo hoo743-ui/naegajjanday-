@@ -56,8 +56,23 @@ PRICE_PRIOR_PATHS = (
     API_ROOT / "data" / "bulk" / "regions_kr.json",
 )
 RUN_KEY = "@run"  # the row that remembers the last whole run (not an item)
+# rules written in code that stored rows must follow: when the module changes, the rows are re-derived
+# (no outside calls). Key → (label, the module's file). The functions are in `_apply_rule`.
+RULE_HOURS = "rules/hours_text"
 
-Kind = Literal["seed", "delta", "anchor", "reprice"]
+
+def _module_file(module: str) -> Path:
+    return API_ROOT / Path(*module.split(".")).with_suffix(".py")
+
+
+RULES: dict[str, tuple[str, Path]] = {
+    RULE_HOURS: (
+        "영업시간 다시 읽기 (저장된 TourAPI 답, 호출 0건)",
+        _module_file("app.infra.ingestion.hours_text"),
+    ),
+}
+
+Kind = Literal["seed", "delta", "anchor", "reprice", "rule"]
 Action = Literal["applied", "skipped", "failed"]
 
 
@@ -125,10 +140,11 @@ class Sources:
     delta_dir: Path = DELTA_DIR
     universities: Path = UNIVERSITIES_PATH
     price_prior: tuple[Path, ...] = PRICE_PRIOR_PATHS
+    rules: tuple[str, ...] = ()  # keys of RULES
 
 
 def default_sources(settings: Settings) -> Sources:
-    return Sources(seed_dir=settings.seed_dir)
+    return Sources(seed_dir=settings.seed_dir, rules=tuple(RULES))
 
 
 def _hash(paths: tuple[Path, ...]) -> str:
@@ -157,6 +173,10 @@ def plan(sources: Sources) -> list[Item]:
     prices = tuple(p for p in sources.price_prior if p.is_file())
     if prices:  # last: the deltas above bring places whose estimate it may correct
         items.append(Item("prices/price_prior.json", "reprice", "추정 가격 다시 계산", prices, _hash(prices)))
+    for key in sources.rules:  # last: they re-derive rows the items above may have brought
+        label, path = RULES[key]
+        if path.is_file():
+            items.append(Item(key, "rule", label, (path,), _hash((path,))))
     return items
 
 
@@ -248,9 +268,19 @@ async def _apply(db: Database, item: Item, log: Log) -> str:
         from app.infra.ingestion.bulk import reprice
 
         return (await reprice.reprice(db, log=log)).line()
+    if item.kind == "rule":
+        return await _apply_rule(db, item.key, log)
     from app.infra.ingestion.bulk import universities
 
     return (await universities.load(db, path=item.paths[0], log=log)).line()
+
+
+async def _apply_rule(db: Database, key: str, log: Log) -> str:
+    if key == RULE_HOURS:  # the hours parser changed: re-read every stored TourAPI answer (docs/55)
+        from app.infra.ingestion.bulk import tourapi_hours
+
+        return "reapply: " + (await tourapi_hours.reapply(db, log=log)).line()
+    raise ValueError(f"unknown rule {key}")
 
 
 def _read_json(path: Path) -> Any:

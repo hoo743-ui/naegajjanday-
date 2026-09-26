@@ -291,7 +291,13 @@ def _late_close(parsed: ParsedHours) -> int:
 def parse_intro(t: Target, intro: Mapping[str, Any]) -> ParsedHours | None:
     if intro.get("missing"):
         return None
-    parsed = parse_item(t.content_type, dict(intro.get("fields") or {}), default_closed=default_closed(t))
+    parsed = parse_item(
+        t.content_type,
+        dict(intro.get("fields") or {}),
+        default_closed=default_closed(t),
+        place_name=t.name,
+        category_code=t.category_code,
+    )
     # a theatre's "이용시간" is its box office (09:00~18:00); the shows are at night — storing it would
     # shut every evening performance out, so the category default stays
     if parsed.ok and t.category_code.startswith(SHOW_VENUES) and _late_close(parsed) < SHOW_LATEST_MIN:

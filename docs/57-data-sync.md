@@ -13,6 +13,11 @@
 | `seed` | `data/seed/{categories,tags,regions,purposes}.json` | `seed-config` |
 | `delta/<이름>.json` | `data/bulk/delta/*.json` (이름순, 새 파일도 자동으로) | `places` 가 있으면 `ingest-bulk delta <파일>`, `intros` 가 있으면(영업시간 답, docs/55) `ingest-bulk tourapi-hours --from-file <파일>` |
 | `anchors/universities.json` | `data/anchors/universities.json` | `ingest-bulk universities --step load` |
+| `prices/price_prior.json` | `data/bulk/price_prior.json` · `regions_kr.json` | `ingest-bulk reprice` |
+| `rules/hours_text` | `app/infra/ingestion/hours_text.py` (코드) | `ingest-bulk tourapi-hours --reapply` — 영업시간 해석기가 바뀌면 저장된 TourAPI 답을 다시 읽는다(호출 0건) |
+
+`rules/*` 는 파일이 아니라 **코드의 규칙**이다: 모듈 파일의 해시가 바뀌면(= 규칙을 고친 배포) 이미 저장된 행을 새 규칙으로 다시 만든다.
+외부 호출은 하지 않는다. 목록은 `app/services/data_sync.py::RULES`.
 
 - 무엇을 반영했는지는 같은 DB 의 `data_sync` 테이블(= 영구 디스크)에 파일별 해시 · 시각 · 한 줄 결과 · 마지막 오류로 남는다.
   `@run` 행은 마지막 전체 실행 시각.

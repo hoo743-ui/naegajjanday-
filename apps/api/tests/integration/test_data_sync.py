@@ -162,6 +162,37 @@ async def test_a_file_of_unknown_shape_fails_alone(
     assert actions["delta/cinemas.json"] == "applied"
 
 
+async def test_a_changed_rule_module_re_derives_stored_rows(
+    empty_db: tuple[Database, Settings],
+    sources: data_sync.Sources,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A parser fix (hours_text.py) reaches production rows on the next deploy, with no calls (backlog 9)."""
+    db, settings = empty_db
+    module = tmp_path / "hours_text.py"
+    module.write_text("# v1\n", encoding="utf-8")
+    monkeypatch.setitem(data_sync.RULES, data_sync.RULE_HOURS, ("영업시간 다시 읽기", module))
+    with_rules = replace(sources, rules=(data_sync.RULE_HOURS,))
+    first = await data_sync.sync(db, settings, sources=with_rules, log=lambda _m: None)
+    assert _actions(first)[data_sync.RULE_HOURS] == "applied"
+    assert (first.results[-1].summary or "").startswith("reapply:")
+    again = await data_sync.sync(db, settings, sources=with_rules, log=lambda _m: None)
+    assert _actions(again)[data_sync.RULE_HOURS] == "skipped"
+    module.write_text("# v2\n", encoding="utf-8")
+    changed = await data_sync.sync(db, settings, sources=with_rules, log=lambda _m: None)
+    assert _actions(changed) == {
+        "seed": "skipped",
+        "delta/cinemas.json": "skipped",
+        data_sync.RULE_HOURS: "applied",
+    }
+
+
+def test_the_real_rules_point_at_their_modules() -> None:
+    for _label, path in data_sync.RULES.values():
+        assert path.is_file(), path
+
+
 async def test_another_process_holding_the_lock_means_nothing_runs(
     empty_db: tuple[Database, Settings], sources: data_sync.Sources
 ) -> None:

@@ -243,7 +243,7 @@ async def delete_backup(name: str, container: ContainerDep, audit: AuditDep, ses
 
 class DataSyncItemOut(BaseModel):
     key: str
-    kind: str = Field(description="seed | delta | anchor")
+    kind: str = Field(description="seed | delta | anchor | reprice | rule")
     label: str
     files: list[str]
     applied: bool = Field(description="지금 파일 그대로 반영됐는지")
