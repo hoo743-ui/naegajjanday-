@@ -134,6 +134,15 @@ def test_age_taste_is_read_only_from_context_the_request_has() -> None:
     assert shop_lines.age_group("date", "anniversary", anchored=False) == "30s"
     assert shop_lines.age_group("friends", None, anchored=False) is None  # no age asked, none guessed
     assert shop_lines.taste_pull("travel", None, anchored=False) == {}
+    # 2026-09-27 창업자 결정(docs/64 R5): 잰 값이 아니라 가정이라 꺼 둔다 — pull 0 이면 어떤 맥락에서도 당기지 않는다.
+    assert shop_lines.taste_pull("campus", None, anchored=False) == {}
+    assert shop_lines.taste_pull("date", "anniversary", anchored=False) == {}
+
+
+def test_age_taste_when_switched_on_is_a_nudge(monkeypatch: pytest.MonkeyPatch) -> None:
+    texts = dict(shop_lines.shop_texts())
+    texts["age_taste"] = {**texts["age_taste"], "pull": 0.04}
+    monkeypatch.setattr(shop_lines, "shop_texts", lambda: texts)
     pull = shop_lines.taste_pull("campus", None, anchored=False)
     assert pull["cat:shop.character"] > pull["cat:shop.select"] > 0
     assert max(pull.values()) <= 0.05  # a nudge, not a rule

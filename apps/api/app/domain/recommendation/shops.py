@@ -150,5 +150,7 @@ def taste_pull(purpose_code: str, scene: str | None, anchored: bool) -> dict[str
         return {}
     taste: Mapping[str, Any] = shop_texts()["age_taste"]
     pull = float(taste.get("pull", 0.0))
+    if pull <= 0:
+        return {}
     weights: Mapping[str, float] = taste["groups"].get(group) or {}
     return {f"cat:{code}": round(pull * float(w), 4) for code, w in weights.items() if w}
