@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infra import quota_guard
 from app.infra.db.base import utcnow
 from app.infra.db.models import (
     Category,
@@ -38,6 +39,8 @@ from app.infra.ingestion.stats import refresh_region_stats
 logger = logging.getLogger(__name__)
 
 PROVIDER_MAPPING_KEY = {"kakao_local": "kakao", "naver_search": "naver", "google_places": "google"}
+# what one region's pull may cost (pages × categories) — asked of the quota guard before it starts
+REGION_PULL_CALLS = 60
 AUTO_TAG_GROUP = "auto"
 
 
@@ -103,6 +106,16 @@ class IngestionPipeline:
         self, provider: PlaceProvider, region: Region, job: IngestionJob | None = None
     ) -> IngestionReport:
         report = IngestionReport()
+        # quota guard (docs/47 · docs/62): a region's pull is a batch — if it could eat into the reserve the
+        # site needs today, the job waits (deferred, its cursor kept) and the region keeps what it has
+        guard = await quota_guard.open_guard(
+            self._s, provider.name, job=f"ingest:{provider.name}:{region.slug}", log=lambda _m: None
+        )
+        if not guard.allows(REGION_PULL_CALLS, cursor=job.cursor if job else None):
+            report.errors.append(guard.stopped.line() if guard.stopped else "quota")
+            if job is not None:
+                job.status, job.error, job.finished_at = quota_guard.STOP_STATUS, report.errors[-1], utcnow()
+            return report
         resolver = CategoryResolver(list((await self._s.scalars(select(Category))).all()))
         tags = {t.name: t for t in (await self._s.scalars(select(Tag))).all()}
         rows = (await self._s.scalars(select(Place).where(Place.region_id == region.id))).all()

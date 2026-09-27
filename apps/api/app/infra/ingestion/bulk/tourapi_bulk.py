@@ -25,6 +25,7 @@ import httpx
 from app.infra.ingestion.bulk.common import BulkEvent, BulkPlace, BulkReport, in_korea
 from app.infra.ingestion.bulk.price_prior import PricePrior
 from app.infra.ingestion.providers.tourapi import BASE_URL, extract_items
+from app.infra.quota_guard import QuotaGuard
 
 PROVIDER = "tourapi"
 ROWS_PER_CALL = 5000
@@ -66,10 +67,23 @@ def _fresh(path: Path) -> bool:
     return path.exists() and (time.time() - path.stat().st_mtime) < CACHE_DAYS * 86400
 
 
+def _cached_rows(out_dir: Path, kind: str) -> int:
+    return sum(len(json.loads(p.read_text("utf-8"))) for p in out_dir.glob(f"{kind}_*.json"))
+
+
 def download(
-    key: str, out_dir: Path, content_types: Mapping[str, str], festivals_from: date, *, force: bool = False
+    key: str,
+    out_dir: Path,
+    content_types: Mapping[str, str],
+    festivals_from: date,
+    *,
+    force: bool = False,
+    guard: QuotaGuard | None = None,
 ) -> dict[str, int]:
-    """Writes `<type>_<page>.json` / `festival_<page>.json`; returns rows per kind. Cached for a week."""
+    """Writes `<type>_<page>.json` / `festival_<page>.json`; returns rows per kind. Cached for a week.
+
+    `guard` (docs/47 · docs/62) is asked before every page: when the quota says stop, the kinds not fetched
+    keep their pages from the last run (they are only replaced page by page, never wiped first)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = {}
     jobs: list[tuple[str, str, dict[str, str]]] = [
@@ -81,23 +95,30 @@ def download(
     with httpx.Client(timeout=90) as client:
         for kind, op, params in jobs:
             first = out_dir / f"{kind}_1.json"
-            if not force and _fresh(first):
-                counts[kind] = sum(
-                    len(json.loads(p.read_text("utf-8"))) for p in out_dir.glob(f"{kind}_*.json")
-                )
+            if (not force and _fresh(first)) or (guard is not None and guard.stopped is not None):
+                counts[kind] = _cached_rows(out_dir, kind)
                 continue
-            for stale in out_dir.glob(f"{kind}_*.json"):
-                stale.unlink()
-            page, got = 1, 0
+            page, got, complete = 1, 0, False
             while True:
+                if guard is not None and not guard.allows(1, cursor={"kind": kind, "page": page}):
+                    break  # the pages already on disk stay the fallback
                 items, total = _get(client, key, op, {**params, "pageNo": str(page)})
+                if guard is not None:
+                    guard.spent(1)
                 (out_dir / f"{kind}_{page}.json").write_text(json.dumps(items, ensure_ascii=False), "utf-8")
                 got += len(items)
                 if not items or got >= total:
+                    complete = True
                     break
                 page += 1
                 time.sleep(CALL_GAP_S)
-            counts[kind] = got
+            if complete:  # a shorter answer than last time: the old tail pages are stale
+                for stale in out_dir.glob(f"{kind}_*.json"):
+                    if int(stale.stem.rsplit("_", 1)[1]) > page:
+                        stale.unlink()
+                counts[kind] = got
+            else:
+                counts[kind] = _cached_rows(out_dir, kind)
             time.sleep(CALL_GAP_S)
     return counts
 

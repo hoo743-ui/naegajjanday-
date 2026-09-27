@@ -35,8 +35,8 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import API_ROOT
-from app.infra import api_usage
-from app.infra.db.models import ApiUsage, Category, OpeningHour, Place, PlaceSource, PlaceStats, Region
+from app.infra import api_usage, quota_guard
+from app.infra.db.models import Category, OpeningHour, Place, PlaceSource, PlaceStats, Region
 from app.infra.db.session import Database
 from app.infra.default_hours import get_default_hours
 from app.infra.ingestion.bulk import tourapi_bulk
@@ -54,6 +54,10 @@ INTROS_FILE = API_ROOT / "data" / "regions" / "intros.json"
 SHOW_VENUES = ("culture.cinema",)  # 영화 · 공연장
 SHOW_LATEST_MIN = 21 * 60
 DEFAULT_RESERVE = 100  # calls left for the running site (둘러보기 links) after a batch
+JOB = "tourapi-hours"
+# what the day falls back on when the quota stops the job: the category's usual hours (default_hours.json)
+# and the answers already stored or shipped (`--from-file`); the rest waits for tomorrow's 04:30 run
+FALLBACK = "default_hours + stored answers; the queue resumes tomorrow (daily_hours 04:30 KST)"
 BATCH = 20
 CALL_GAP_S = 0.15
 LOCK_RETRIES = 20
@@ -214,16 +218,7 @@ async def targets(session: AsyncSession, *, with_intro: bool | None = False) -> 
 
 async def quota_left(session: AsyncSession) -> int | None:
     """What the quota hook (docs/47) says is left of today's TourAPI calls; None = unknown limit."""
-    row = await session.get(ApiUsage, (PROVIDER, api_usage.today()))
-    limit = (row.limit if row and row.limit else None) or api_usage.quotas().get(PROVIDER, {}).get("limit")
-    if row and row.exhausted_at:
-        return 0
-    if not limit:
-        return None
-    used = row.calls if row else 0
-    if row and row.remaining is not None:
-        used = max(used, int(limit) - row.remaining)
-    return max(0, int(limit) - used)
+    return await quota_guard.quota_left(session, PROVIDER)
 
 
 # ── fetching ────────────────────────────────────────────────────────────────────────────────────────
@@ -384,9 +379,11 @@ async def run(
     async with db.sessionmaker() as session:
         queue = await targets(session, with_intro=False)
         report.queued = len(queue)
-        left = await quota_left(session)
+        # quota guard (docs/47 · docs/62): asked before every call, and where it stopped is written down
+        guard = await quota_guard.open_guard(session, PROVIDER, job=JOB, reserve=reserve, log=log)
+        left = guard.left
         await session.commit()  # no transaction held while calling out (the quota hook writes too)
-        budget = limit if left is None else min(limit, left - reserve)
+        budget = guard.budget(limit)
         log(
             f"queue={len(queue)} (hotspot {sum(t.hotspot for t in queue)}) · quota left today={left} "
             f"reserve={reserve} → budget={max(budget, 0)}"
@@ -394,33 +391,44 @@ async def run(
         if budget <= 0:
             report.stopped = "no quota left today"
             report.remaining = left
+            guard.allows(1, cursor=queue[0].content_id if queue else None)  # logs quota.stop
+            await quota_guard.record_stop(session, guard, fallback=FALLBACK)
             return report
         todo = queue[:budget]
         async with httpx.AsyncClient(timeout=30, transport=transport) as client:
             for start in range(0, len(todo), BATCH):
                 done: list[tuple[Target, dict[str, Any]]] = []
                 for t in todo[start : start + BATCH]:
+                    if not guard.allows(1, cursor=t.content_id):
+                        report.stopped = guard.stopped.reason if guard.stopped else "quota"
+                        break
                     try:
                         item, remaining = await fetch_one(client, key, t.content_id, t.content_type)
                     except QuotaExhausted as exc:
                         report.stopped = str(exc)
+                        guard.exhausted(cursor=t.content_id)
                         break
                     except (httpx.HTTPError, HoursIngestError) as exc:
                         report.calls += 1
+                        guard.spent(1)
                         log(f"  {t.content_id} {t.name}: {str(exc)[:120]}")
                         continue
                     report.calls += 1
                     report.fetched += 1
                     report.remaining = remaining
+                    guard.spent(1, remaining=remaining)
                     done.append((t, _intro_of(item, t.content_type, datetime.now(UTC).isoformat())))
                     if remaining is not None and remaining <= reserve:
                         report.stopped = f"rate-limit header says {remaining} left (reserve {reserve})"
+                        guard.allows(1, cursor=t.content_id)  # logs quota.stop with the next cursor
                         break
                     await asyncio.sleep(CALL_GAP_S if transport is None else 0)
                 await _write(session, done, report)
                 log(f"  {start + len(done)}/{len(todo)} parsed={report.parsed} ambiguous={report.ambiguous}")
                 if report.stopped:
                     break
+        if guard.stopped is not None:
+            await quota_guard.record_stop(session, guard, fallback=FALLBACK)
     return report
 
 

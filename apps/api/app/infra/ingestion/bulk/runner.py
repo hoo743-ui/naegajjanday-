@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infra import quota_guard
 from app.infra.db.base import utcnow
 from app.infra.db.models import Category, Event, Place, PlaceSource, PlaceTag, Region, Tag
 from app.infra.db.session import Database
@@ -397,10 +398,23 @@ async def load_tourapi(
     aliases = _sido_aliases(spec)
     prior = PricePrior.from_data(load_json("price_prior.json"), spec)
     if key:
+        # asked before every page (docs/47 · docs/62); what is not fetched falls back on the cached pages
+        async with db.sessionmaker() as session:
+            guard = await quota_guard.open_guard(session, tourapi_bulk.PROVIDER, job="tourapi-bulk", log=log)
         counts = tourapi_bulk.download(
-            key, raw_dir, rules["content_types"], date.fromisoformat(rules["festivals_from"]), force=force
+            key,
+            raw_dir,
+            rules["content_types"],
+            date.fromisoformat(rules["festivals_from"]),
+            force=force,
+            guard=guard,
         )
         log(f"tourapi rows on disk: {counts}")
+        if guard.stopped is not None:
+            async with db.sessionmaker() as session:
+                await quota_guard.record_stop(session, guard, fallback="pages cached in raw/tourapi")
+            if not tourapi_bulk.has_cache(raw_dir):
+                raise BulkIngestError("TourAPI quota is used up for today and nothing is cached yet")
     elif not tourapi_bulk.has_cache(raw_dir):
         raise BulkIngestError("TOURAPI_SERVICE_KEY is not set and nothing is cached in " + str(raw_dir))
 

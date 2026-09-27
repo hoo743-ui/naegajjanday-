@@ -35,6 +35,7 @@ import httpx
 from sqlalchemy import select
 
 from app.core.config import API_ROOT
+from app.infra import quota_guard
 from app.infra.db.models import Place, PlaceSource
 from app.infra.db.session import Database
 from app.infra.ingestion.bulk.common import BulkPlace, BulkReport, load_json
@@ -395,11 +396,24 @@ async def build(
     by_road, by_lot = await _address_index(db)
     located: list[tuple[School, tuple[float, float, str]]] = []
     missing: list[str] = []
+    guard: quota_guard.QuotaGuard | None = None
+    if kakao_key:  # asked before each lookup (docs/47 · docs/62): the site's own Kakao lookups come first
+        async with db.sessionmaker() as session:
+            guard = await quota_guard.open_guard(session, "kakao_local", job="universities-kakao", log=log)
+    cached = previous_spots(out)
     async with httpx.AsyncClient(timeout=10.0) as client:
         for school in schools:
-            spot = locate(school, by_road, by_lot)
-            if spot is None and kakao_key:  # our own data had nothing at that address: ask Kakao Local
+            spot = locate(school, by_road, by_lot) or cached.get((school.name, school.road_address))
+            # our own data had nothing at that address and no earlier run found it: ask Kakao Local — unless
+            # the quota says stop, then the school waits (reported unlocated) for a later run
+            if (
+                spot is None
+                and kakao_key
+                and guard is not None
+                and guard.allows(1, cursor=school.display_name)
+            ):
                 found = await _kakao_locate(client, kakao_key, school)
+                guard.spent(1)
                 if found is not None:
                     spot = (found[0], found[1], "kakao_local")
                 await asyncio.sleep(KAKAO_DELAY_S)
@@ -439,7 +453,26 @@ async def build(
     }
     write_json(out, payload)
     log(f"universities: {len(schools)} schools · located {len(entries)} · unlocated {len(missing)} → {out}")
+    if guard is not None and guard.stopped is not None:
+        async with db.sessionmaker() as session:
+            await quota_guard.record_stop(
+                session,
+                guard,
+                fallback="earlier runs' coordinates; the rest stay unlocated until a later run",
+            )
     return {"schools": len(schools), "located": len(entries), "unlocated": len(missing)}
+
+
+def previous_spots(path: Path) -> dict[tuple[str, str], tuple[float, float, str]]:
+    """What an earlier build found (Kakao answers included): asked again only when it had nothing."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        (str(e["school"]), str(e["road_address"])): (float(e["lat"]), float(e["lng"]), str(e["coord_source"]))
+        for e in data.get("universities", [])
+        if e.get("coord_source") == "kakao_local"
+    }
 
 
 def write_json(out: Path, payload: Mapping[str, Any]) -> None:
