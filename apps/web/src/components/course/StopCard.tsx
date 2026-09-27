@@ -92,6 +92,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
   // 0원이라고 다 무료는 아니다: 요금 자료가 없는 곳도 0원으로 계산돼 온다 → "무료"는 무료라고 확인된 곳에만 쓴다
   const free = place.is_free === true || (stop.est_price === 0 && place.price_per_person === 0);
   const priceUnknown = !free && stop.est_price === 0;
+  // 구경하는 가게 (docs/63): 들어가 보는 데는 돈이 들지 않는다 — 무엇을 사는지는 그 사람 몫이라 금액을 만들지 않는다
+  const browse = stop.est_price === 0 && (place.category === "shop" || place.category.startsWith("shop."));
   // 이 장소에 자료가 없는 항목은 "왜 여기?"에서도 뺀다
   const hidden: ScoreFeature[] = [...hiddenFeatures, ...(place.rating === null ? (["rating"] as const) : []), ...(stop.congestion ? [] : (["congestion"] as const))];
   // 그림 한 장 (docs/43): 서버가 고른 것 — 실제 사진 → 분위기 이미지 → 브랜드 그림
@@ -273,7 +275,9 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </h3>
           {/* 금액: 이름 아래 한 줄. 평균가로 계산했으면 ≈ 를 붙인다(영수증과 같은 표기) */}
           <p className="tabular mt-1 flex flex-wrap items-baseline gap-x-2">
-            {priceUnknown ? (
+            {browse ? (
+              <span className="text-body-sm font-semibold text-muted-foreground">구경은 무료</span>
+            ) : priceUnknown ? (
               <span className="text-body-sm font-semibold text-muted-foreground">가격 정보 없음</span>
             ) : (
               <>

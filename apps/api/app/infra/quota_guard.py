@@ -1,4 +1,4 @@
-"""Stop a bulk job before it eats a quota the running site still needs (창업자 2026-09-26, docs/47 · docs/62).
+"""Stop a bulk job before it eats a quota the running site still needs (창업자 2026-09-26, docs/47 · docs/63).
 
 The quota hook (`api_usage`) counts every call after it is made. A bulk path (ingestion, enrichment, the daily
 hours job) must also ask **before** each batch: "if I make these calls, is there still `reserve` left for the

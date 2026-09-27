@@ -1,0 +1,37 @@
+{
+ "_note": "구경하는 가게(docs/63). 가게 종류(업종 shop.*)마다 결과 화면 카드의 한 줄과 나이대 취향. 한 줄은 사실만: 무엇을 파는 가게인지(브랜드는 data/bulk/shop_rules.json › brands 의 이름) + 구경에 드는 시간(업종의 머무는 시간). '인기 · 20대가 많이 가는'처럼 자료가 없는 말은 쓰지 않는다.",
+ "kinds": {
+  "shop.character": {"label": "캐릭터 · 굿즈 가게", "browse": "구경만 해도 20~30분"},
+  "shop.vintage": {"label": "빈티지 · 구제 가게", "browse": "구경 30분 남짓"},
+  "shop.goods": {"label": "소품 · 문구 가게", "browse": "구경 20분 남짓"},
+  "shop.select": {"label": "편집숍 · 브랜드 매장", "browse": "구경 20~30분"},
+  "shop": {"label": "구경하는 가게", "browse": "구경 20~30분"}
+ },
+ "browse_slot": {
+  "_note": "부탁하지 않아도: 친구 · 데이트의 낮(시작 11:00~16:00)에는 식사 뒤에 '있으면 넣는' 가게 자리 하나를 둔다. 이 자리는 가게(shop · shop.*)만 받고, 걸어갈 만한 곳에 그 시간에 여는 가게가 없으면 말없이 빠진다 — 동네 명물 자리(걷기 · 볼거리)를 빼앗지 않는다. 옵션(소품샵 · 캐릭터샵 구경)을 켜면 이 자리 대신 extra_roles.json › SHOP 이 가게를 반드시 넣는다. 예산 몫은 0(구경은 무료).",
+  "purposes": ["date", "friends"],
+  "start_from": "11:00",
+  "start_until": "16:00",
+  "after": "MEAL",
+  "family": "shop",
+  "share": 0.0
+ },
+ "brand_line": "{brand} 매장 · {browse}",
+ "flagship_words": ["플래그십", "플래그쉽", "FLAGSHIP", "스퀘어", "메가스토어"],
+ "flagship_line": "{brand} 플래그십 · {browse}",
+ "age_taste": {
+  "_assumption": "가정이다 — 잰 값이 아니다. 서울 열린데이터광장 상권분석(추정매출, OA-15572)에 상권 × 업종 × 연령대 매출이 있지만 인증키가 없고, 샘플 키(sample)는 1~5행만 준다(ERROR-335 · 2026-09-26 확인) — 업종별 연령 비중을 뽑을 수 없다. 키가 오면 '의류 · 완구 · 문구 · 중고' 업종의 20대 · 30대 매출 비중으로 이 표를 바꾼다. 그때까지는 흔히 말하는 경향(20대: 캐릭터 · 빈티지 · 소품, 30대: 편집숍 · 플래그십 · 리빙)을 아주 작게만 쓴다.",
+  "groups": {
+   "20s": {"shop.character": 1.0, "shop.vintage": 1.0, "shop.goods": 0.8, "shop.select": 0.4},
+   "30s": {"shop.select": 1.0, "shop.goods": 0.6, "shop.vintage": 0.3, "shop.character": 0.2}
+  },
+  "pull": 0.04,
+  "_pull_note": "장소 점수에 더하는 양 = pull × 표의 값(최대 0.04). 장면의 업종 선호(scenes.json category_weights × 0.3)보다 한참 작다 — 나이는 묻지 않았고 추정이라서.",
+  "contexts": {
+   "_note": "나이를 묻지 않는다(위저드 질문을 늘리지 않는다, docs/61). 이미 있는 맥락에서만 읽는다: 대학교 앵커(docs/34)와 캠퍼스 목적은 대학생 = 20s. 데이트 장면은 설레는 사이 = 20s, 기념일 = 30s(가정). 그 밖(친구 모임 · 여행 · 가족 · 혼자)은 나이를 모르므로 당기지 않는다.",
+   "anchor": "20s",
+   "purposes": {"campus": "20s", "campus_food": "20s", "festival": "20s"},
+   "scenes": {"date.new": "20s", "date.anniversary": "30s"}
+  }
+ }
+}

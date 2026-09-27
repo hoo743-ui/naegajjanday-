@@ -82,6 +82,9 @@ from app.domain.recommendation.preference import (
     reweight_templates,
 )
 from app.domain.recommendation.scorer import PlaceScorer
+from app.domain.recommendation.shops import SHOP_EXTRA, is_shop, with_browse_slot
+from app.domain.recommendation.shops import taste_pull as shop_taste_pull
+from app.domain.recommendation.shops import why_line as shop_why_line
 from app.domain.recommendation.style import (
     DEFAULT_STYLE,
     carries,
@@ -763,6 +766,7 @@ class CourseService:
         profile, templates = self._apply_understood(ctx, profile, templates, understood)
         ctx.scene, scene = resolve_scene(purpose.code, req.scene)
         profile, templates = self._apply_scene(ctx, profile, templates, scene)
+        self._apply_shop_taste(ctx, purpose.code, anchored=req.anchor is not None)
         # "조용하게": no pub and no karaoke room, unless a drink was asked for by name
         asked_roles = {str(extra_roles()[r]["role"]) for r in req.extras if r in extra_roles()}
         templates = without_roles(templates, understood.avoid_roles - asked_roles)
@@ -775,9 +779,12 @@ class CourseService:
             # rainy walk is closed, and the course lost the slot altogether (one-stop courses at 1:30 a.m.)
             if not (condition.get("swap_roles") and "night" in conditions and name != "night"):
                 templates = styled_templates(templates, condition)
+        # docs/63: a browse after the meal when a shop is near and open — a shops-only slot of its own, so
+        # asked or not, the neighbourhood's own sight keeps its slot
+        templates = with_browse_slot(templates, purpose.code, ctx.start_at, asked=SHOP_EXTRA in req.extras)
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
             entry = extra_roles().get(role)
-            if entry is not None and entry["role"] not in vetoed:
+            if entry is not None and entry["role"] not in vetoed and not entry.get("family"):
                 templates = with_role(templates, entry)
                 if entry.get("category"):
                     ctx.wanted_categories = (*ctx.wanted_categories, str(entry["category"]))
@@ -1635,6 +1642,7 @@ class CourseService:
         profile, _ = self._apply_understood(ctx, profile, [], understood)
         ctx.scene, scene = resolve_scene(ctx.purpose_code, (row.request or {}).get("scene"))
         profile, _ = self._apply_scene(ctx, profile, [], scene)
+        self._apply_shop_taste(ctx, ctx.purpose_code, anchored=bool((row.request or {}).get("anchor")))
         # 처음 · 자주: a replacement for a regular's stop leans the same way the course did
         ctx.familiarity = REGULAR if (row.request or {}).get("familiarity") == REGULAR else FIRST
         # the day as it was said to be (rain, or "실내 위주"), and the night the clock says: a replacement
@@ -1693,6 +1701,13 @@ class CourseService:
         if scene.get("params"):  # shorter legs with children or parents
             profile = styled_profile(profile, {"params": scene["params"]})
         return profile, templates
+
+    @staticmethod
+    def _apply_shop_taste(ctx: RequestContext, purpose_code: str, *, anchored: bool) -> None:
+        """구경하는 가게 (docs/63): a small, assumed age taste — only from what the request already says
+        (a campus day, a date scene). Nobody is asked their age."""
+        for key, weight in shop_taste_pull(purpose_code, ctx.scene, anchored).items():
+            ctx.trait_pull[key] = round(ctx.trait_pull.get(key, 0.0) + weight, 4)
 
     @staticmethod
     def _apply_conditions(ctx: RequestContext, names: Sequence[str]) -> None:
@@ -2440,6 +2455,8 @@ def candidate_line(place: PlaceCandidate, price_delta: int, walk_delta: int | No
 def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
     """reason_codes (strongest first) as one card subtitle of at most 40 characters. Only what the code
     itself says about the place — never a claim the data does not hold (no reviews, no "맛집" by guess)."""
+    if is_shop(place.category_code):  # docs/63: a shop says what it sells and how long a browse takes
+        return _fit(shop_why_line(place.name, place.category_code))
     for code in codes:
         line: str | None = None
         if code == "LOCAL_SIGNIFICANCE":

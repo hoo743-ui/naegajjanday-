@@ -44,6 +44,7 @@ from app.domain.recommendation.familiarity import is_regular, mark_opened
 from app.domain.recommendation.scorer import PlaceScorer
 from app.domain.recommendation.style import (
     assign_buzz,
+    family_pools,
     kept_pools,
     wanted_events,
     wanted_places,
@@ -323,6 +324,7 @@ class RecommendationEngine:
                 mark_opened(every, await opened([p.id for p in every if not p.is_event]))
         if rings:
             pools = self._admit_rings(ctx, pools, rings, params)
+        pools = family_pools(pools, slot_budgets)  # a browse slot takes shops only (docs/63)
         unfiltered = [p for found in cache.values() for p in found]
         # the pinned stops first: whatever else is asked for by name goes into the other slots
         positions = [(sb.slot.position, sb.slot.course_role) for sb in slot_budgets]

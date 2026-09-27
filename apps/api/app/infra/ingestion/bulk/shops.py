@@ -1,4 +1,4 @@
-"""구경하는 가게 (docs/62): retail codes of the 소상공인 file, let in only where the name says what to browse.
+"""구경하는 가게 (docs/63): retail codes of the 소상공인 file, let in only where the name says what to browse.
 
 The whole 소매 section was left out of the nationwide load (supermarkets, pharmacies, phone shops). A
 character shop, a vintage shop, a 소품샵 or a brand's flagship is a destination for people in their 20s and
@@ -20,7 +20,6 @@ from app.infra.ingestion.bulk.common import load_json
 from app.infra.ingestion.bulk.semas_store import NameGate
 
 RULES_FILE = "shop_rules.json"
-SHOP_PREFIX = "shop"
 
 
 def _compact_upper(text: str) -> str:
@@ -51,21 +50,6 @@ def gates(rules: Mapping[str, Any] | None = None) -> dict[str, tuple[NameGate, .
                 )
             )
     return {code: tuple(g) for code, g in out.items()}
-
-
-def is_shop(category_code: str) -> bool:
-    return category_code == SHOP_PREFIX or category_code.startswith(SHOP_PREFIX + ".")
-
-
-def brand_of(name: str, rules: Mapping[str, Any] | None = None) -> tuple[str, str] | None:
-    """(kind of shop, what the brand is — "산리오 캐릭터") when the name carries a listed brand."""
-    rules = shop_rules() if rules is None else rules
-    compact = _compact_upper(name)
-    for kind in rules.get("types") or ():
-        for brand, label in (kind.get("brands") or {}).items():
-            if _compact_upper(str(brand)) in compact:
-                return str(kind["category"]), str(label)
-    return None
 
 
 def dedupe_rows(rows: Iterable[Mapping[str, Any]], within_m: float) -> list[Mapping[str, Any]]:

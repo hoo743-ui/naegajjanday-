@@ -58,7 +58,7 @@ export interface AnalyticsEvents {
   /** 결과 화면에서 설정(시간 · 예산 · 인원 · 누구와 · 목적)을 바꿔 다시 짰다. changed = 바꾼 설정 이름들 */
   course_settings_changed: { course_id: string; changed: string };
   /**
-   * 선택지가 늘어도 어지럽지 않게 (docs/59 #2): 옵션(BAR · MOVIE · BASEBALL · rain · ERRAND)을 넣거나 빼서 다시 짰다.
+   * 선택지가 늘어도 어지럽지 않게 (docs/59 #2): 옵션(BAR · MOVIE · BASEBALL · SHOP · rain · ERRAND)을 넣거나 빼서 다시 짰다.
    * via = 결과 화면 칩 · 한 줄 말 · 설정 바꾸기 시트. 옵션별 사용률로 안 쓰는 것은 치운다
    */
   course_option_toggled: { course_id: string; option: string; on: boolean; via: "chip" | "text" | "settings" };

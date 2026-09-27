@@ -1,4 +1,4 @@
-"""Quota guard (docs/47 · docs/62): a bulk job asks before each batch, stops cleanly, says where, falls back."""
+"""Quota guard (docs/47 · docs/63): a bulk job asks before each batch, stops cleanly, says where, falls back."""
 
 from __future__ import annotations
 

@@ -18,3 +18,5 @@
 | 2026-09-26 15:37 | quick | b36f48b | 144 | 31/31 | – | ▲chain_rate_friends_cafe ▲chain_rate_friends | B (docs/59 #4): 체인 목록에 저가 커피 브랜드 · 메머드, 카페 칸 1인 4,800원 바닥(slot_floors.json), 카페 때문에 술집을 잃는 날은 카페 없이 한 번 더(yield_to BAR) |
 | 2026-09-26 16:23 | quick | 0257449 | 152 | 32/32 | – | ▲few_stops_rate ▲solo_late_bar_rate | C (docs/59 #5): 표본에 혼자 20:30 · 3만 원(solo_late_bar_rate). 20시부터 술집 칸을 최소 금액 모자라서 빼지 않고 다른 칸이 빌려줌(1인 15,200 → 안 되면 12,000), 카페 없는 같은 날도 짜서 술집이 남으면 그쪽 |
 | 2026-09-26 16:57 | quick | 5cda464 | 152 | 33/33 | – | ▲date_bbq_meal_rate | D (docs/59 #8): 데이트면 장면과 상관없이 고깃집 -0.3(scenes.json › date.base) — 동네 명물 고깃집(막창 · 흑돼지)은 명물 당김이 이긴다. 새 지표 date_bbq_meal_rate |
+| 2026-09-27 14:04 | quick | 92bece1 | 184 | 34/38 | shop_asked_rate 0.0% / 90.0%, shop_presence_rate 0.0% / 30.0% | – | shops: 기준 — 새 코드(7300e79 위로 rebase), 가게 0곳인 공유 DB = 지금 운영 |
+| 2026-09-27 14:22 | quick | 92bece1 | 184 | 38/38 | – | ▲shop_asked_rate ▲mean_stops_day ▲shop_presence_rate | docs/63 구경하는 가게: 공유 DB 사본 + delta/semas_shops.json 3,395곳(운영엔 data sync), 친구 · 데이트 낮 식사 뒤 가게만 받는 선택 자리, SHOP 옵션 · 한 줄 말, 가게 한 줄 이유 |

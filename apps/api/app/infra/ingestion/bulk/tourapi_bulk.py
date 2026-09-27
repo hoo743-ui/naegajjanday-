@@ -82,7 +82,7 @@ def download(
 ) -> dict[str, int]:
     """Writes `<type>_<page>.json` / `festival_<page>.json`; returns rows per kind. Cached for a week.
 
-    `guard` (docs/47 · docs/62) is asked before every page: when the quota says stop, the kinds not fetched
+    `guard` (docs/47 · docs/63) is asked before every page: when the quota says stop, the kinds not fetched
     keep their pages from the last run (they are only replaced page by page, never wiped first)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = {}

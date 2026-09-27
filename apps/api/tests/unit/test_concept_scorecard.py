@@ -267,8 +267,8 @@ def test_compare_marks_moves_beyond_the_noise_band() -> None:
 def test_quick_sample_size_and_groups() -> None:
     spots = [f"r{i}" for i in range(55)]
     quick = C.build_sample("quick", spots)
-    assert 90 <= len(quick) <= 170
-    groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular", "errand"}
+    assert 90 <= len(quick) <= 200
+    groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular", "errand", "shop"}
     assert {c.group for c in quick} == groups
     # 꼭 들를 곳 (docs/59 #7): the date lunch and the friends' evening of each hotspot, with an errand after
     errands = [c for c in quick if c.group == "errand"]

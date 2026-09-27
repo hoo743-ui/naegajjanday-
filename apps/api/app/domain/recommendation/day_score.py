@@ -82,7 +82,12 @@ _ROLE_KIND = {
     "CULTURE": CULTURE,
     "NIGHTVIEW": VIEW,
 }
-_ATTRACTION_KIND = {"attraction.park": WALK, "attraction.street": WALK, "attraction.market": SHOPPING}
+_ATTRACTION_KIND = {
+    "attraction.park": WALK,
+    "attraction.street": WALK,
+    "attraction.market": SHOPPING,
+    "shop": SHOPPING,  # 구경하는 가게 (docs/63): a browse, not a sight — and not twice in one day
+}
 REPEATABLE = {DINING: 2}  # lunch and dinner are two meals, not a repetition
 
 REASONS = (

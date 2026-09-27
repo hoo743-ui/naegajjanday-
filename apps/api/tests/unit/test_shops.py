@@ -1,9 +1,15 @@
-"""docs/62 구경하는 가게: retail codes of the 소상공인 file let in by name — and what the page says about them."""
+"""docs/63 구경하는 가게: retail codes of the 소상공인 file let in by name — and what the page says about them."""
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 
+from app.domain.models import PlaceCandidate, Slot, Template
+from app.domain.recommendation import shops as shop_lines
+from app.domain.recommendation.option_text import parse_options
+from app.evaluation import concept as C
 from app.infra.ingestion.bulk import semas_store, shops
 from app.infra.ingestion.bulk.common import load_json
 from app.infra.ingestion.bulk.price_prior import PricePrior
@@ -93,9 +99,44 @@ def test_a_place_that_is_not_a_shop_keeps_its_name() -> None:
 
 
 def test_brand_of() -> None:
-    assert shops.brand_of("카카오프렌즈플래그십스토어 홍대점") == ("shop.character", "카카오프렌즈 캐릭터")
-    assert shops.brand_of("무신사스탠다드 성수점") == ("shop.select", "무신사")
-    assert shops.brand_of("성수빈티지") is None
+    assert shop_lines.brand_of("카카오프렌즈플래그십스토어 홍대점") == (
+        "shop.character",
+        "카카오프렌즈 캐릭터",
+    )
+    assert shop_lines.brand_of("무신사스탠다드 성수점") == ("shop.select", "무신사")
+    assert shop_lines.brand_of("성수빈티지") is None
+
+
+@pytest.mark.parametrize(
+    ("name", "code", "line"),
+    [
+        (
+            "카카오프렌즈플래그십스토어 홍대점",
+            "shop.character",
+            "카카오프렌즈 캐릭터 플래그십 · 구경만 해도 20~30분",
+        ),
+        ("라인프렌즈 강남점", "shop.character", "라인프렌즈 캐릭터 매장 · 구경만 해도 20~30분"),
+        ("무신사스탠다드 성수점", "shop.select", "무신사 매장 · 구경 20~30분"),
+        ("성수빈티지", "shop.vintage", "빈티지 · 구제 가게 · 구경 30분 남짓"),
+        ("모리소품샵", "shop.goods", "소품 · 문구 가게 · 구경 20분 남짓"),
+    ],
+)
+def test_why_line_says_what_the_shop_is_and_nothing_more(name: str, code: str, line: str) -> None:
+    got = shop_lines.why_line(name, code)
+    assert got == line and len(got) <= 40
+    assert "인기" not in got and "20대" not in got  # no claim the data does not hold
+
+
+def test_age_taste_is_read_only_from_context_the_request_has() -> None:
+    assert shop_lines.age_group("friends", None, anchored=True) == "20s"  # a campus day
+    assert shop_lines.age_group("campus_food", None, anchored=False) == "20s"
+    assert shop_lines.age_group("date", "new", anchored=False) == "20s"
+    assert shop_lines.age_group("date", "anniversary", anchored=False) == "30s"
+    assert shop_lines.age_group("friends", None, anchored=False) is None  # no age asked, none guessed
+    assert shop_lines.taste_pull("travel", None, anchored=False) == {}
+    pull = shop_lines.taste_pull("campus", None, anchored=False)
+    assert pull["cat:shop.character"] > pull["cat:shop.select"] > 0
+    assert max(pull.values()) <= 0.05  # a nudge, not a rule
 
 
 def test_the_same_store_listed_twice_is_one() -> None:
@@ -108,5 +149,143 @@ def test_the_same_store_listed_twice_is_one() -> None:
 
 
 def test_is_shop() -> None:
-    assert shops.is_shop("shop") and shops.is_shop("shop.vintage")
-    assert not shops.is_shop("shopping") and not shops.is_shop("attraction.market")
+    assert shop_lines.is_shop("shop") and shop_lines.is_shop("shop.vintage")
+    assert not shop_lines.is_shop("shopping") and not shop_lines.is_shop("attraction.market")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "성수 소품샵 구경하고 싶어",
+        "빈티지샵 들렀다가 카페",
+        "캐릭터샵 가고 싶어",
+        "굿즈 사러 가자",
+        "구제 쇼핑",
+        "팝업 구경",
+    ],
+)
+def test_a_shop_to_browse_is_the_shop_option_not_an_errand(text: str) -> None:
+    got = parse_options(text)
+    assert got.extras == ["SHOP"]
+    assert got.errand is None  # "소품샵" is a kind of place, not a place to look up
+
+
+def test_a_named_shop_is_still_an_errand() -> None:
+    got = parse_options("라인프렌즈 들렀다가 저녁 먹자")
+    assert got.errand is not None and got.errand.query == "라인프렌즈"
+    assert got.extras == []
+
+
+def test_declining_the_shops() -> None:
+    assert parse_options("소품샵은 빼고 술 한잔").declined == ["SHOP"]
+
+
+def _shop_record(
+    stops: list[tuple[str, str, str, int, str | None]], extras: tuple[str, ...] = ()
+) -> C.Record:
+    case = C.Case("seoul-seongsu", "friends", 3, 90000, "14:00", group="shop", extras=extras)
+    return C.Record(
+        case,
+        stops=[
+            C.Stop(
+                i,
+                role,
+                "가게",
+                cat,
+                at,
+                leave,
+                0,
+                5,
+                kind="SHOPPING" if cat.startswith(("shop", "attraction.market")) else None,
+                why=why,
+            )
+            for i, (role, cat, at, leave, why) in enumerate(stops, 1)
+        ],
+    )
+
+
+def test_shop_metrics() -> None:
+    off = _shop_record(
+        [
+            ("MEAL", "food.korean", "14:00", 900, None),
+            ("ATTRACTION", "shop.vintage", "15:10", 945, "빈티지 · 구제 가게 · 구경 30분 남짓"),
+        ]
+    )
+    plain = _shop_record([("MEAL", "food.korean", "14:00", 900, None), ("CAFE", "cafe", "15:10", 960, None)])
+    asked = _shop_record([("ATTRACTION", "shop.goods", "20:40", 21 * 60 + 10, None)], extras=("SHOP",))
+    twice = _shop_record(
+        [
+            ("ATTRACTION", "shop.goods", "14:00", 870, "x"),
+            ("ATTRACTION", "attraction.market", "14:40", 900, None),
+        ]
+    )
+    records = [off, plain, asked, twice]
+    got = {r.id: r for r in C.evaluate_all(records)}
+    assert got["shop_presence_rate"].value == pytest.approx(2 / 3, abs=1e-3)  # off, plain, twice
+    assert got["shop_asked_rate"].value == 1.0
+    assert got["shop_explained_rate"].value == pytest.approx(2 / 3, abs=1e-3)  # the asked one: no line
+    assert got["shop_hours_violation_rate"].value == pytest.approx(1 / 3, abs=1e-3)  # past 21:00
+    assert got["shop_twice_rate"].value == pytest.approx(1 / 4, abs=1e-3)
+    # the base metrics never see the shop half
+    assert got["mean_stops_day"].value is None
+    assert all(c.half == "shop" for c in (r.case for r in records))
+
+
+def test_the_shop_option_is_a_family_not_an_opt_in_category() -> None:
+    from app.domain.recommendation.style import (
+        category_matches,
+        extra_roles,
+        opt_in_categories,
+        wanted_families,
+    )
+
+    assert extra_roles()["SHOP"]["family"] == "shop"
+    assert "shop" in wanted_families()
+    assert not any(c.startswith("shop") for c in opt_in_categories())  # shops come unasked too
+    assert category_matches("shop.vintage", "shop") and category_matches("shop", "shop")
+    assert not category_matches("attraction.market", "shop")
+    assert category_matches("activity.cinema", "activity.cinema")
+    assert not category_matches("activity.cinema.x", "activity.cinema")  # a category is not a family
+
+
+def _template() -> Template:
+    slots = (
+        Slot(1, "MEAL", 0.6),
+        Slot(2, "CAFE", 0.25),
+        Slot(3, "ATTRACTION", 0.15),
+    )
+    return Template(1, "date_day", "date", "day", 10000, 2, 2, slots)
+
+
+def test_an_afternoon_gets_a_shops_only_slot_after_the_meal() -> None:
+    day = datetime(2026, 10, 3, 13, 0)
+    [t] = shop_lines.with_browse_slot([_template()], "date", day)
+    assert [s.course_role for s in t.slots] == ["MEAL", "ATTRACTION", "CAFE", "ATTRACTION"]
+    browse = t.slots[1]
+    assert browse.family == "shop" and browse.is_optional and browse.budget_share == 0.0
+    assert [s.position for s in t.slots] == [1, 2, 3, 4]
+    assert t.slots[3].family is None  # the neighbourhood's own sight keeps its slot
+    assert shop_lines.with_browse_slot([t], "date", day)[0] == t  # once
+    # not a family day, not the evening, not a trip
+    assert shop_lines.with_browse_slot([_template()], "family", day)[0] == _template()
+    assert shop_lines.with_browse_slot([_template()], "date", day.replace(hour=19))[0] == _template()
+
+
+def _cand(pid: int, code: str) -> PlaceCandidate:
+    return PlaceCandidate(pid, f"p{pid}", f"곳{pid}", code, "ATTRACTION", 37.5, 127.0)
+
+
+def test_a_browse_slot_keeps_only_shops_and_empties_without_them() -> None:
+    from app.domain.recommendation.budget import SlotBudget
+    from app.domain.recommendation.style import family_pools
+
+    browse = Slot(2, "ATTRACTION", 0.0, is_optional=True, family="shop")
+    sight = Slot(3, "ATTRACTION", 0.15)
+    pools = {
+        2: [_cand(1, "attraction.street"), _cand(2, "shop.vintage"), _cand(3, "shop")],
+        3: [_cand(1, "attraction.street"), _cand(2, "shop.vintage")],
+    }
+    got = family_pools(pools, [SlotBudget(browse, 0.0, 0.0), SlotBudget(sight, 0.15, 3000.0)])
+    assert [c.id for c in got[2]] == [2, 3] and [c.id for c in got[3]] == [1, 2]
+    none = family_pools({2: [_cand(1, "attraction.street")]}, [SlotBudget(browse, 0.0, 0.0)])
+    assert none[2] == []  # an optional slot with an empty pool is dropped by the engine, silently

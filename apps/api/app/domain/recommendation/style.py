@@ -166,9 +166,20 @@ def extra_roles(path: Path = EXTRA_ROLES_PATH) -> dict[str, dict[str, Any]]:
 
 def carries(course: CourseResult, extra: Mapping[str, Any]) -> bool:
     """Whether the course holds what was asked for by name: that kind of place, or else that role."""
-    if extra.get("category"):
-        return any(s.place.category_code == extra["category"] for s in course.stops)
+    wanted = extra.get("category") or extra.get("family")
+    if wanted:
+        return any(category_matches(s.place.category_code, str(wanted)) for s in course.stops)
     return any(s.role == extra["role"] for s in course.stops)
+
+
+def wanted_families() -> frozenset[str]:
+    """Extras that name a family of categories (구경하는 가게 = shop · shop.*, docs/63), not one category."""
+    return frozenset(str(e["family"]) for e in extra_roles().values() if e.get("family"))
+
+
+def category_matches(code: str, wanted: str) -> bool:
+    """`code` is what was asked for: that category, or any member of an asked family."""
+    return code == wanted or (wanted in wanted_families() and code.startswith(wanted + "."))
 
 
 def extra_unavailable(name: str, extra: Mapping[str, Any], *, vetoed: bool) -> dict[str, Any]:
@@ -203,6 +214,23 @@ def opt_in_categories() -> frozenset[str]:
     return frozenset(str(e["category"]) for e in extra_roles().values() if e.get("category"))
 
 
+def family_pools(
+    pools: Mapping[int, list[PlaceCandidate]], slot_budgets: Sequence[Any]
+) -> dict[int, list[PlaceCandidate]]:
+    """A slot that names a family (구경하는 가게' browse slot, docs/63) keeps only that family's places. Left
+    empty, an optional slot is dropped without a word — no shop near, no browse."""
+    out = dict(pools)
+    for sb in slot_budgets:
+        family = sb.slot.family
+        if family and sb.slot.position in out:
+            out[sb.slot.position] = [
+                c
+                for c in out[sb.slot.position]
+                if not c.is_event and (c.category_code == family or c.category_code.startswith(family + "."))
+            ]
+    return out
+
+
 def wanted_pools(
     pools: Mapping[int, list[PlaceCandidate]], categories: Sequence[str]
 ) -> dict[int, list[PlaceCandidate]]:
@@ -210,7 +238,7 @@ def wanted_pools(
     out = dict(pools)
     for category in categories:
         for position in sorted(out):
-            matching = [c for c in out[position] if c.category_code == category]
+            matching = [c for c in out[position] if category_matches(c.category_code, category)]
             if matching:
                 out[position] = matching
                 break

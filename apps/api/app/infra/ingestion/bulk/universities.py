@@ -397,7 +397,7 @@ async def build(
     located: list[tuple[School, tuple[float, float, str]]] = []
     missing: list[str] = []
     guard: quota_guard.QuotaGuard | None = None
-    if kakao_key:  # asked before each lookup (docs/47 · docs/62): the site's own Kakao lookups come first
+    if kakao_key:  # asked before each lookup (docs/47 · docs/63): the site's own Kakao lookups come first
         async with db.sessionmaker() as session:
             guard = await quota_guard.open_guard(session, "kakao_local", job="universities-kakao", log=log)
     cached = previous_spots(out)

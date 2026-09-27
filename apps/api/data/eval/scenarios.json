@@ -81,7 +81,8 @@
       "attraction.street": "always",
       "attraction.park": "always",
       "culture.cinema": "always",
-      "culture.festival": "always"
+      "culture.festival": "always",
+      "shop": "20:30"
     },
     "not_before": {
       "bar": "17:00",

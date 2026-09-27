@@ -1,5 +1,5 @@
 {
- "_note": "구경하는 가게(docs/62): 소상공인 상가정보(2026-06 파일)의 소매 업종 중 이름이 캐릭터샵 · 빈티지 · 구제 · 소품 · 문구 · 굿즈 · 편집숍 · 브랜드 플래그십이라고 말하는 곳만(data/bulk/shop_rules.json). 다시 만들기: ingest-bulk delta-export --category shop.character --category shop.vintage --category shop.select --category shop.goods --dedupe-m 150 --out data/bulk/delta/semas_shops.json",
+ "_note": "구경하는 가게(docs/63): 소상공인 상가정보(2026-06 파일)의 소매 업종 중 이름이 캐릭터샵 · 빈티지 · 구제 · 소품 · 문구 · 굿즈 · 편집숍 · 브랜드 플래그십이라고 말하는 곳만(data/bulk/shop_rules.json). 다시 만들기: ingest-bulk delta-export --category shop.character --category shop.vintage --category shop.select --category shop.goods --dedupe-m 150 --out data/bulk/delta/semas_shops.json",
  "provider": "semas",
  "places": [
   {

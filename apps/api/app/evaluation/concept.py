@@ -72,6 +72,9 @@ NIGHT_FLAGS = frozenset(
     {"CLOSED_AT_ARRIVAL", "NIGHT_TRAIL", "TOO_EARLY", "NIGHT_NO_DRINK", "DATE_UNMANNED", "FAMILY_DRINK"}
 )
 SCHEDULE_FLAGS = frozenset({"CLOSED_AT_ARRIVAL", "TOO_EARLY", "NIGHT_TRAIL"})
+# 구경하는 가게 (docs/63): the shop bundle, and the retail hours a shop stop sits inside (default_hours)
+SHOP_GROUP, SHOP_EXTRA = "shop", "SHOP"
+SHOP_OPEN_MIN, SHOP_CLOSE_MIN = 11 * 60, 21 * 60
 
 
 # ── records: what one course was, in plain data ───────────────────────────────────────────────
@@ -94,6 +97,8 @@ class Case:
     # 꼭 들를 곳 (docs/59 #7): "after" = the same hotspot request with an errand after the day, ERRAND_OFFSET
     # east of the neighbourhood's centre — does the day end on the errand's side, is the ride there given
     errand: str | None = None
+    # 구경하는 가게 (docs/63): the request's extras ("SHOP" = the 소품샵 · 캐릭터샵 chip is on)
+    extras: tuple[str, ...] = ()
 
     @property
     def first_key(self) -> str:
@@ -102,11 +107,19 @@ class Case:
 
     @property
     def key(self) -> str:
-        return self.first_key + ("|자주" if self.regular else "") + ("|끝나고" if self.errand else "")
+        return (
+            self.first_key
+            + ("|자주" if self.regular else "")
+            + ("|끝나고" if self.errand else "")
+            + ("|구경" if self.group == SHOP_GROUP else "")
+            + "".join(f"|+{e}" for e in self.extras)
+        )
 
     @property
     def half(self) -> str | None:
         """Which half of a paired sample this case belongs to (None: the base sample)."""
+        if self.group == SHOP_GROUP:
+            return SHOP_GROUP
         return "regular" if self.regular else "errand" if self.errand else None
 
     @property
@@ -136,10 +149,20 @@ class Stop:
     place_id: str = ""  # public id — the paired sample compares a regular's course with the first one
     novel: bool = False  # newly opened or a lesser-known independent (recommendation.familiarity)
     shared: bool = False  # a regular's stop that was already in the first-visit course
+    why: str | None = None  # the card's one line (reason_short) — docs/63 checks every shop has one
 
     @property
     def chain(self) -> bool:
         return bool(self.tags.get(CHAIN_TAG))
+
+    @property
+    def shop(self) -> bool:
+        return self.category == "shop" or self.category.startswith("shop.")
+
+    @property
+    def arrive_min(self) -> int:
+        h, m = (int(x) for x in self.at.split(":"))
+        return h * 60 + m
 
     @property
     def unmanned(self) -> bool:
@@ -178,6 +201,7 @@ class Record:
             + ("ⓒ" if s.chain else "")
             + ("★" if s.draw else "")
             + ("✧" if self.case.regular and s.novel else "")
+            + (f"◇[{s.category}·{s.why}]" if s.shop else "")
             for s in self.stops
         )
         if self.case.errand:
@@ -342,6 +366,36 @@ def _errand_leg(r: Record) -> tuple[float, float] | None:
     return (1.0 if r.errand_leg_min is not None else 0.0), 1.0
 
 
+def _shop_course(asked: bool, hit: Callable[[Record], bool]) -> Count:
+    """The shop bundle, with the 소품샵 · 캐릭터샵 option on (asked) or off."""
+    return _course(lambda r: r.ok and (SHOP_EXTRA in r.case.extras) == asked, hit)
+
+
+def _has_shop(r: Record) -> bool:
+    return any(s.shop for s in r.stops)
+
+
+def _shops_twice(r: Record) -> bool:
+    """Two shops in a row (a market counts: the same browse) — one browse is the day's, two is a mall trip."""
+    return any(a.kind == b.kind == "SHOPPING" and (a.shop or b.shop) for a, b in pairwise(r.stops))
+
+
+def _shop_stops(hit: Callable[[Stop], bool]) -> Count:
+    def count(r: Record) -> tuple[float, float] | None:
+        shops = [s for s in r.stops if s.shop] if r.ok else []
+        return (float(sum(1 for s in shops if hit(s))), float(len(shops))) if shops else None
+
+    return count
+
+
+def _explained(s: Stop) -> bool:
+    return bool(s.why) and len(s.why or "") <= 40
+
+
+def _outside_shop_hours(s: Stop) -> bool:
+    return s.arrive_min < SHOP_OPEN_MIN or s.leave_min > SHOP_CLOSE_MIN
+
+
 def _regular_stops(hit: Callable[[Stop], bool]) -> Count:
     def count(r: Record) -> tuple[float, float] | None:
         if not r.ok or not r.case.regular:
@@ -427,6 +481,18 @@ METRICS: tuple[Metric, ...] = (
            0.80, _errand_toward, half="errand"),
     Metric("errand_leg_rate", "꼭 들를 곳과 코스 사이 구간(시간 · 거리)이 있는 코스", "higher", 0.95,
            _errand_leg, half="errand"),
+    # 구경하는 가게 (docs/63): the shop bundle — friends' and dates' afternoons where shops exist, the
+    # 소품샵 · 캐릭터샵 option off and on
+    Metric("shop_presence_rate", "구경하는 가게: 옵션 없이도 가게가 든 낮 코스", "higher", 0.30,
+           _shop_course(False, _has_shop), half=SHOP_GROUP),
+    Metric("shop_asked_rate", "구경하는 가게: 옵션을 켜면 가게가 든 코스", "higher", 0.90,
+           _shop_course(True, _has_shop), half=SHOP_GROUP),
+    Metric("shop_explained_rate", "코스의 가게 중 '왜 이 가게' 한 줄(40자)이 있는 곳", "higher", 1.0,
+           _shop_stops(_explained), half=SHOP_GROUP),
+    Metric("shop_hours_violation_rate", "코스의 가게 중 11시 전 도착 · 21시 넘어 머무는 곳", "lower", 0.0,
+           _shop_stops(_outside_shop_hours), half=SHOP_GROUP, weight=1.5),
+    Metric("shop_twice_rate", "가게 → 가게(시장) 연달아", "lower", 0.05,
+           _course(_ok, _shops_twice), half=SHOP_GROUP),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -619,9 +685,21 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
         for c in cases
         if c.group == "hotspot" and (c.purpose, c.start) in ERRAND_CASES
     ]
+    # 구경하는 가게 (docs/63): an afternoon of friends and of a date where shops exist, without and with the
+    # 소품샵 · 캐릭터샵 option — its own half, so the base numbers stay comparable with older runs
+    for region in shop_regions(sample):
+        for p, n, b, t in SHOP_CASES:
+            cases += [Case(region, p, n, b, t, group=SHOP_GROUP, extras=x) for x in ((), (SHOP_EXTRA,))]
     return cases
 
 
+def shop_regions(sample: str, path: Path = SAMPLE_PATH) -> list[str]:
+    """Hotspots with browsing shops (data/eval/concept.json › shop_regions, docs/63)."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return list((data.get("shop_regions") or {}).get(sample) or [])
+
+
+SHOP_CASES = (("date", 2, 60000, "13:00"), ("friends", 3, 90000, "14:00"))
 ERRAND_CASES = frozenset({("date", "12:00"), ("friends", "19:00")})
 ERRAND_OFFSET_M = 3000.0  # the errand of the paired sample: this far east of the centre (a ride, not a walk)
 ERRAND_MINUTES = 30
@@ -698,6 +776,7 @@ def record_from(
     from app.domain.recommendation.day_score import experience_kind
     from app.domain.recommendation.familiarity import novel
     from app.evaluation.harness import Scenario, judge
+    from app.services.course_service import short_reason  # the card's own line (docs/63)
 
     # the same place under a second record (a duplicate listing) is still the same place: id or sign name
     before = {s.place_id for s in pair.stops} | {_compact(s.name) for s in pair.stops} if pair else set()
@@ -725,6 +804,7 @@ def record_from(
                 place_id=p.public_id,
                 novel=novel(p, ctx.start_at),
                 shared=p.public_id in before or _compact(p.name) in before,
+                why=short_reason(list(s.reason_codes), p),
             )
         )
     scenario = Scenario(case.region, case.purpose, case.start, "efficient", case.party, case.budget)
@@ -804,6 +884,7 @@ async def collect(
                 start_at=datetime.combine(day, time(h, m), tzinfo=tz),
                 alternatives=0,
                 scene=case.scene,
+                extras=list(case.extras),
                 familiarity=REGULAR if case.regular else None,
                 errand=dto.ErrandIn(
                     name="볼일",

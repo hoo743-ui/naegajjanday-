@@ -203,7 +203,7 @@ class ParsedErrand(BaseModel):
 
 
 class ParsedOption(BaseModel):
-    key: str = Field(description="BAR · MOVIE · BASEBALL (extras) · rain (conditions) · ERRAND")
+    key: str = Field(description="BAR · MOVIE · BASEBALL · SHOP (extras) · rain (conditions) · ERRAND")
     label: str
     words: str = Field(description="그렇게 읽은 말")
     declined: bool = False
@@ -229,7 +229,9 @@ class LastChoices(BaseModel):
     move_style: MoveStyle | None = None
     pace: list[Pace] = Field(default_factory=list)
     wishes: list[Wish] = Field(default_factory=list)
-    extras: list[str] = Field(default_factory=list, description="지난번에 넣은 술 한잔 · 영화 · 야구")
+    extras: list[str] = Field(
+        default_factory=list, description="지난번에 넣은 술 한잔 · 영화 · 야구 · 가게 구경"
+    )
 
 
 class PlaceBrief(BaseModel):

@@ -106,6 +106,8 @@ class Slot:
     earliest_start_min: int | None = None
     latest_start_min: int | None = None
     min_slot_budget: int | None = None
+    # only places of this family of categories (구경하는 가게 = "shop", docs/63); None = any of the role
+    family: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

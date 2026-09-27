@@ -28,7 +28,7 @@ import { ScenicStrip } from "./ScenicStrip";
 import { PerformanceCard } from "./PerformanceCard";
 import { StayCard } from "./StayCard";
 import { VisitedCard } from "./VisitedCard";
-import { AddOptions, type OptionChange } from "./AddOptions";
+import { AddOptions, COURSE_OPTIONS, type OptionChange } from "./AddOptions";
 import { AlternativeTabs } from "./AlternativeTabs";
 import { BudgetBar } from "./BudgetBar";
 import { CourseTimeline } from "./CourseTimeline";
@@ -433,7 +433,7 @@ export function CourseView({ id }: { id: string }) {
     const changed = (Object.keys(next) as (keyof CourseSettings)[]).filter((k) => JSON.stringify(next[k]) !== JSON.stringify(currentSettings[k]));
     track("course_settings_changed", { course_id: id, changed: changed.join(",") });
     // 옵션별 사용률 (docs/59 #2): 설정 시트에서 넣고 뺀 것도 옵션 하나하나로 센다
-    for (const key of ["BAR", "MOVIE", "BASEBALL", "rain"]) {
+    for (const key of COURSE_OPTIONS.map((o) => o.key)) {
       const was = currentSettings.extras.includes(key) || currentSettings.conditions.includes(key);
       const now = next.extras.includes(key) || next.conditions.includes(key);
       if (was !== now) track("course_option_toggled", { course_id: id, option: key, on: now, via: "settings" });

@@ -107,6 +107,11 @@ category_words:
   attraction.street: 골목 구경
   attraction.market: 시장 구경
   attraction.landmark: 동네 명소 구경
+  shop: 가게 구경
+  shop.character: 캐릭터 굿즈 구경
+  shop.vintage: 빈티지 가게 구경
+  shop.goods: 소품 구경
+  shop.select: 편집숍 구경
   activity: 놀거리
   activity.arcade: 오락 한 판
   activity.boardgame: 보드게임 한 판

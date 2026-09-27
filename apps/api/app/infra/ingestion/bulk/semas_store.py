@@ -195,7 +195,7 @@ def undoubled(name: str, min_len: int = 3) -> str:
 def display_name(name: str, branch: str, category_code: str = "") -> str:
     # the file writes a comma in a store name as ";" — and several stores at one address the same way
     name, branch = place_names.display_name(name.strip(), category_code), branch.strip()
-    if category_code.startswith("shop."):  # retail rows carry the company in front (docs/62)
+    if category_code.startswith("shop."):  # retail rows carry the company in front (docs/63)
         name = undoubled(name)
     if branch and branch not in name and branch not in NOT_A_BRANCH:
         return f"{name} {branch}"

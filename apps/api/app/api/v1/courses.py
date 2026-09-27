@@ -66,7 +66,7 @@ async def interpret_preferences(body: dto.InterpretRequest) -> dto.InterpretResp
     response_model=dto.ParseOptionsResponse,
     dependencies=[Depends(rate_limit("read"))],
     responses=PROBLEMS(422, 429),
-    summary="한 줄 말 → 코스 옵션 (술 한잔 · 영화 · 야구 · 비 · 꼭 들를 곳, 규칙 기반)",
+    summary="한 줄 말 → 코스 옵션 (술 한잔 · 영화 · 야구 · 가게 구경 · 비 · 꼭 들를 곳, 규칙 기반)",
 )
 async def parse_course_options(
     body: dto.ParseOptionsRequest, session: SessionDep, container: ContainerDep

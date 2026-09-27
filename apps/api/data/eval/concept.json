@@ -12,5 +12,23 @@
       "gyeongju-hwangnidan",
       "gangneung-anmok"
     ]
+  },
+  "_shop_regions_note": "구경하는 가게(docs/63) 묶음: 가게가 5곳 넘게 있는 명소 동네(2026-09-26 전국 적재 기준 — 홍대 66 · 성수 44 · 이태원 30 · 을지로 22 · 서면 28 · 전포 20 · 익선 13 · 망원 8 …). 친구 오후(14:00) · 데이트 오후(13:00)를 옵션 끄고 · 켜고.",
+  "shop_regions": {
+    "quick": ["seoul-hongdae", "seoul-seongsu", "seoul-itaewon", "seoul-euljiro", "busan-seomyeon", "busan-jeonpo", "seoul-ikseon-jongno", "seoul-mangwon"],
+    "full": [
+      "seoul-hongdae",
+      "seoul-seongsu",
+      "seoul-itaewon",
+      "seoul-euljiro",
+      "busan-seomyeon",
+      "busan-jeonpo",
+      "seoul-ikseon-jongno",
+      "seoul-mangwon",
+      "seoul-yeonnam",
+      "seoul-sinsa-garosugil",
+      "daegu-dongseongro",
+      "gyeonggi-suwon-haenggung"
+    ]
   }
 }

@@ -379,7 +379,7 @@ async def run(
     async with db.sessionmaker() as session:
         queue = await targets(session, with_intro=False)
         report.queued = len(queue)
-        # quota guard (docs/47 · docs/62): asked before every call, and where it stopped is written down
+        # quota guard (docs/47 · docs/63): asked before every call, and where it stopped is written down
         guard = await quota_guard.open_guard(session, PROVIDER, job=JOB, reserve=reserve, log=log)
         left = guard.left
         await session.commit()  # no transaction held while calling out (the quota hook writes too)

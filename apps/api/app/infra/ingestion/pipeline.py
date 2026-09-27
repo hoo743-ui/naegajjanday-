@@ -106,7 +106,7 @@ class IngestionPipeline:
         self, provider: PlaceProvider, region: Region, job: IngestionJob | None = None
     ) -> IngestionReport:
         report = IngestionReport()
-        # quota guard (docs/47 · docs/62): a region's pull is a batch — if it could eat into the reserve the
+        # quota guard (docs/47 · docs/63): a region's pull is a batch — if it could eat into the reserve the
         # site needs today, the job waits (deferred, its cursor kept) and the region keeps what it has
         guard = await quota_guard.open_guard(
             self._s, provider.name, job=f"ingest:{provider.name}:{region.slug}", log=lambda _m: None

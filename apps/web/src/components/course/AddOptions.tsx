@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Check, Clapperboard, CloudRain, Minus, Plus, ShoppingBag, Sparkles, Trophy, Wine, type LucideIcon } from "lucide-react";
+import { Check, Clapperboard, CloudRain, Minus, Plus, ShoppingBag, Sparkles, Store, Trophy, Wine, type LucideIcon } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useParseOptions, type ParsedOptions, type Spot } from "@/lib/api/hooks";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ export const COURSE_OPTIONS: { key: string; kind: "extra" | "condition"; label: 
   { key: "BAR", kind: "extra", label: "술 한잔", icon: Wine },
   { key: "MOVIE", kind: "extra", label: "영화 한 편", icon: Clapperboard },
   { key: "BASEBALL", kind: "extra", label: "야구", icon: Trophy },
+  // 구경하는 가게 (docs/63): 소품샵 · 캐릭터샵 · 빈티지 · 편집숍 한 곳을 반드시 넣는다
+  { key: "SHOP", kind: "extra", label: "소품샵 · 캐릭터샵 구경", icon: Store },
   { key: "rain", kind: "condition", label: "비 오는 날", icon: CloudRain },
 ];
 

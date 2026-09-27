@@ -52,7 +52,7 @@ async def _semas_mapper(session: AsyncSession, spec: dict[str, Any]) -> semas_st
     if not mapping:
         raise BulkIngestError("no category has provider_mapping.semas — run `seed-config` first")
     prior = PricePrior.from_data(load_json("price_prior.json"), spec)
-    # 구경하는 가게: retail codes, by name only (docs/62)
+    # 구경하는 가게: retail codes, by name only (docs/63)
     return semas_store.SemasMapper.from_data(
         mapping, load_json("bulk_rules.json"), prior, extra_gates=shops.gates()
     )
@@ -398,7 +398,7 @@ async def load_tourapi(
     aliases = _sido_aliases(spec)
     prior = PricePrior.from_data(load_json("price_prior.json"), spec)
     if key:
-        # asked before every page (docs/47 · docs/62); what is not fetched falls back on the cached pages
+        # asked before every page (docs/47 · docs/63); what is not fetched falls back on the cached pages
         async with db.sessionmaker() as session:
             guard = await quota_guard.open_guard(session, tourapi_bulk.PROVIDER, job="tourapi-bulk", log=log)
         counts = tourapi_bulk.download(
