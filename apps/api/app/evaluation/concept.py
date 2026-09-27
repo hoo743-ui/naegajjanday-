@@ -23,7 +23,7 @@ import math
 import os
 import subprocess
 import time as _time
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from functools import partial
@@ -75,6 +75,10 @@ SCHEDULE_FLAGS = frozenset({"CLOSED_AT_ARRIVAL", "TOO_EARLY", "NIGHT_TRAIL"})
 # 구경하는 가게 (docs/63): the shop bundle, and the retail hours a shop stop sits inside (default_hours)
 SHOP_GROUP, SHOP_EXTRA = "shop", "SHOP"
 SHOP_OPEN_MIN, SHOP_CLOSE_MIN = 11 * 60, 21 * 60
+# trust_line_rate's target (docs/59 #15): the share of food and drink stops our stored facts cover today —
+# measured 2026-09-27 (quick: 91.8 %, the rest have no designation, no licence of 5+ years, no menu, no draw,
+# no top-30 rank and no photo), not a promise the engine can keep by writing more words
+TRUST_LINE_TARGET = 0.90
 
 
 # ── records: what one course was, in plain data ───────────────────────────────────────────────
@@ -162,6 +166,10 @@ class Stop:
     ticket_venue: str | None = None
     inside_venue: str | None = None
     admission_priced: bool | None = None  # a venue stop: is its price the official admission × party
+    # 믿을 이유 한 줄 (docs/59 #15, app.domain.trust): the card's line, and whether every fact in it reads a
+    # stored field of this place (trust_invented_rate)
+    trust: str | None = None
+    trust_ok: bool = True
 
     @property
     def chain(self) -> bool:
@@ -544,6 +552,14 @@ METRICS: tuple[Metric, ...] = (
            1.0, _course(lambda r: r.ok and any(s.ticket_venue for s in r.stops),
                         lambda r: all(s.admission_priced for s in r.stops if s.ticket_venue)),
            half=ANY_HALF),
+    # 믿을 이유 한 줄 (docs/59 #15 · docs/61): of the food and drink stops, those with a stored fact
+    # (공적 표식 · 영업 연수 · 메뉴 가격 · 동네 명물 · 티맵 실측 · 사진). The target is today's coverage
+    # ceiling — the line is never filled with words the data does not hold, so more needs more data
+    Metric("trust_line_rate", "식음 장소 중 '믿을 이유'(저장된 사실) 한 줄이 붙은 곳", "higher",
+           TRUST_LINE_TARGET,
+           _stops(_ok, lambda s: s.role in FOOD_ROLES, lambda s: bool(s.trust))),
+    Metric("trust_invented_rate", "'믿을 이유' 중 저장된 필드로 되짚어지지 않는 것(지어낸 말)", "lower", 0.0,
+           _stops(_ok, lambda s: bool(s.trust), lambda s: not s.trust_ok), half=ANY_HALF, weight=1.5),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -847,7 +863,9 @@ def record_from(
     rules: dict[str, Any],
     pair: Record | None = None,
     errand: tuple[float, float] | None = None,
+    trust: Mapping[int, Any] | None = None,
 ) -> Record:
+    from app.domain import trust as trust_rules
     from app.domain.recommendation.budget import evening_minute
     from app.domain.recommendation.day_score import experience_kind
     from app.domain.recommendation.familiarity import novel
@@ -874,6 +892,8 @@ def record_from(
             if p.is_event or venue is not None
             else venues.inside_of(p.id, p.name, p.course_role, p.address, p.point)
         )
+        today = ctx.start_at.date()
+        line, evidence = trust_rules.for_place(p, (trust or {}).get(p.id), today=today, area=region.name)
         stops.append(
             Stop(
                 position=s.position,
@@ -894,6 +914,8 @@ def record_from(
                 ticket_venue=venue.key if venue else None,
                 inside_venue=inside.key if inside else None,
                 admission_priced=s.est_price == venue.admission.adult * case.party if venue else None,
+                trust=line.text if line else None,
+                trust_ok=trust_rules.grounded(line, evidence, today=today),
             )
         )
     scenario = Scenario(case.region, case.purpose, case.start, "efficient", case.party, case.budget)
@@ -949,6 +971,7 @@ async def collect(
     from app.schemas.common import LatLng
     from app.services.course_service import CourseService
     from app.services.narrative_service import NarrativeService
+    from app.services.trust_service import load_trust_facts
 
     tz = ZoneInfo(settings.timezone)
     rules = load_spec()["rules"]
@@ -1007,7 +1030,9 @@ async def collect(
                 # as a signed-in regular's history gives them (not the user's own "not this place" veto)
                 run = partial(service.dry_run, req, been=been)
                 region, ctx, out = await with_retries(run, session)
-                records.append(record_from(case, region, ctx, out.courses[0], rules, pair, errand))
+                ids = [s.place.id for s in out.courses[0].stops if not s.place.is_event]
+                facts = await with_retries(partial(load_trust_facts, session, ids), session)
+                records.append(record_from(case, region, ctx, out.courses[0], rules, pair, errand, facts))
                 if case.group == "hotspot":
                     firsts[case.key] = records[-1]
             except errors.AppError as exc:

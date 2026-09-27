@@ -74,6 +74,9 @@ class PlaceCandidate:
     buzz: float = 0.0  # set per request by style.assign_buzz
     local_score: float = 0.0  # set per request by signature.mark_local: what this neighbourhood is known for
     local_word: str | None = None
+    # the local_word / landmark is one of the neighbourhood's draws (data/regions/draws.json), not a
+    # specialty read from sign statistics — only a draw is said on the card (docs/59 #15)
+    local_draw: bool = False
     # added to the score as it stands: what people come to this neighbourhood for (data/regions/draws.json)
     # pulls hardest, a specialty read from the signs a little less (signature.mark_local)
     local_pull: float = 0.0

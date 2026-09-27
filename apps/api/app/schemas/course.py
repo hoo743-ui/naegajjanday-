@@ -270,6 +270,21 @@ class Congestion(BaseModel):
     value: float
 
 
+class TrustFactOut(BaseModel):
+    kind: Literal["designated", "long_run", "menu_price", "draw", "visited", "photos"]
+    text: str
+    source: str = Field(description="누가 · 어디서 말하는가 (화면에 그대로)")
+
+
+class TrustOut(BaseModel):
+    """믿을 이유 (app.domain.trust): 카드에는 text 한 줄, 결정 시트에는 facts 전부 · 출처와 함께."""
+
+    text: str = Field(max_length=40)
+    kind: Literal["designated", "long_run", "menu_price", "draw", "visited", "photos"]
+    source: str
+    facts: list[TrustFactOut] = Field(default_factory=list)
+
+
 class StopOut(BaseModel):
     position: int
     role: str
@@ -292,6 +307,11 @@ class StopOut(BaseModel):
         "UNIQUE_EXPERIENCE · USER_PREFERENCE · HIGH_PLACE_QUALITY · BUDGET_FIT · DIVERSITY · ROUTE_BALANCE)",
     )
     congestion: Congestion | None = None
+    trust: TrustOut | None = Field(
+        default=None,
+        description="믿을 이유 한 줄(docs/59 #15) — 저장된 사실(공적 표식 · 인허가 연도 · 메뉴 가격 · "
+        "동네 명물 · 티맵 실측 · 사진)에서만. 없으면 null(채우는 말 없음)",
+    )
 
 
 class ErrandIn(BaseModel):

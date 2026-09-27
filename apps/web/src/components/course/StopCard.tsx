@@ -6,6 +6,7 @@ import { BadgeCheck, Check, ChevronDown, ChevronUp, ExternalLink, Eye, History, 
 import { track } from "@/lib/analytics";
 import { useCategoryImages } from "@/lib/api/hooks";
 import type { PlaceSignal, ScoreFeature, Stop, SwapStrategy, Transport } from "@/lib/api/types";
+import { TRUST_ICON, TrustFacts } from "./TrustFacts";
 import { clock, minutes, num, roleLabel, transportLabel, won } from "@/lib/format";
 import { resolvePlaceImage } from "@/lib/place-image";
 import { PlacePhoto } from "@/components/brand/PlacePhoto";
@@ -18,7 +19,10 @@ import { DirectionsSheet } from "./DirectionsSheet";
 import { CandidateList, SwapSheet } from "./SwapSheet";
 import { PlaceSheet } from "./PlaceSheet";
 import { RoadviewPeek } from "./RoadviewPeek";
-import { placeQuery as searchQuery } from "./stop-links";
+import { kakaoSearchUrl, placeQuery as searchQuery } from "./stop-links";
+
+/** 먹고 마시는 자리 — 카카오맵에서 볼 것이 "메뉴"인 곳 */
+const FOOD_ROLES = new Set(["MEAL", "CAFE", "DESSERT", "BAR"]);
 
 interface StopCardProps {
   courseId: string;
@@ -105,15 +109,21 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
     if (!open) track("stop_reason_opened", { course_id: courseId, position: stop.position });
     setOpen((v) => !v);
   };
-  // 카드의 한 문장: 짠이의 한 줄 이유, 없으면 가장 강한 확인된 정보("완산구 방문 11위")
-  const lead = stop.reason_short ?? (signals[0] ? chipLabel(signals[0]) : null);
-  const LeadIcon = !stop.reason_short && signals[0] ? SIGNAL_ICON[signals[0].kind] : null;
-  const openSheet = () => {
+  // 믿을 이유 한 줄 (docs/59 #15): 저장된 사실(공적 표식 · 영업 연수 · 메뉴 가격 · 명물 · 티맵 실측 · 사진)만. 없으면 말하지 않고
+  // 카카오맵으로 가는 길을 앞에 둔다 — 사진 · 메뉴 · 후기는 거기 있다
+  const trust = stop.trust ?? null;
+  const TrustIcon = trust ? TRUST_ICON[trust.kind] : null;
+  const panelSignals = trust ? signals.filter((s) => s.kind === "blog") : signals;
+  // 카드의 한 문장: 짠이의 한 줄 이유, 없으면 가장 강한 확인된 정보("완산구 방문 11위") — 믿을 이유가 있으면 신호는 겹치니 뺀다
+  const lead = stop.reason_short ?? (!trust && signals[0] ? chipLabel(signals[0]) : null);
+  const LeadIcon = !stop.reason_short && !trust && signals[0] ? SIGNAL_ICON[signals[0].kind] : null;
+  const showSheet = (from?: "trust") => {
     setSheet(true);
     setAltOpen(false);
     setRemoveAsk(false);
-    track("stop_sheet_opened", { course_id: courseId, position: stop.position });
+    track("stop_sheet_opened", { course_id: courseId, position: stop.position, ...(from ? { from } : {}) });
   };
+  const openSheet = () => showSheet();
   const closeSheet = () => setSheet(false);
   const why = stop.reason_short ?? stop.reason ?? (signals[0] ? signals[0].label : null);
 
@@ -122,6 +132,8 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
    * 이 곳으로 할게요 · 다른 곳 보기(이 자리의 후보 2~3곳, 고르면 그 자리만 바뀐다) · 빼기 → 예약 · 메뉴 · 길찾기 · 전화.
    */
   const decision = {
+    // 맨 위: 믿을 이유 전부(출처와 함께). 없으면(null) 시트가 카카오맵 장소 페이지를 맨 위로 올린다
+    trust,
     why: (
       <div className="grid gap-1.5">
         {why ? (
@@ -273,6 +285,31 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               </button>
             )}
           </h3>
+          {/* 믿을 이유 한 줄 (docs/59 #15 "한 문장 + 펼침"): 누르면 결정 시트 맨 위에 사실 · 출처가 전부 나온다.
+              없으면 채우는 말 대신 카카오맵(사진 · 메뉴 · 후기가 있는 곳)으로 가는 길을 여기 둔다 */}
+          {trust && TrustIcon ? (
+            <button
+              type="button"
+              onClick={() => showSheet("trust")}
+              aria-label={`믿을 이유 ${trust.text} · 출처 보기`}
+              className="mt-0.5 flex max-w-full items-center gap-1 text-left text-caption font-bold text-blue-deep hover:underline hover:underline-offset-2"
+            >
+              <TrustIcon aria-hidden className="size-3.5 shrink-0" />
+              <span className="truncate">{trust.text}</span>
+            </button>
+          ) : stop.place.kind !== "event" ? (
+            <a
+              href={kakaoSearchUrl(place)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`${place.name} 카카오맵에서 사진 · ${FOOD_ROLES.has(stop.role) ? "메뉴" : "정보"} 보기`}
+              onClick={() => track("place_link_clicked", { course_id: courseId, position: stop.position, to: "kakaomap_card" })}
+              className="mt-0.5 inline-flex max-w-full items-center gap-1 text-caption font-bold text-ink-2 underline decoration-ink/30 underline-offset-2 hover:text-ink"
+            >
+              카카오맵에서 사진 · {FOOD_ROLES.has(stop.role) ? "메뉴" : "정보"} 보기
+              <ExternalLink aria-hidden className="size-3 shrink-0" />
+            </a>
+          ) : null}
           {/* 금액: 이름 아래 한 줄. 평균가로 계산했으면 ≈ 를 붙인다(영수증과 같은 표기) */}
           <p className="tabular mt-1 flex flex-wrap items-baseline gap-x-2">
             {browse ? (
@@ -413,9 +450,11 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
               {/* 왜 여기: 짠이의 한 줄 → 고른 이유 → 점수 */}
               {stop.reason ? <p className="text-body-sm text-ink">{stop.reason}</p> : null}
               <ReasonList codes={stop.reason_codes} />
-              {signals.length > 0 ? (
+              {trust ? <TrustFacts trust={trust} /> : null}
+              {/* 믿을 이유가 있으면 표식 · 연수 · 순위는 거기 다 있다 — 블로그 후기 수만 남긴다 */}
+              {panelSignals.length > 0 ? (
                 <ul aria-label="확인된 정보와 출처" className="grid gap-1 text-caption text-muted-foreground">
-                  {signals.map((s) => (
+                  {panelSignals.map((s) => (
                     <li key={s.label} className="flex items-start gap-1.5">
                       {(() => {
                         const Icon = SIGNAL_ICON[s.kind];

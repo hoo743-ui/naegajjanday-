@@ -9,7 +9,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -111,6 +111,8 @@ from app.domain.region_draws import shop_draw
 from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
 from app.domain.signature import get_signature_rules
+from app.domain.trust import TrustFacts
+from app.domain.trust import for_place as trust_for_place
 from app.infra.analytics.base import AnalyticsEvent, EventTracker
 from app.infra.db.base import as_utc
 from app.infra.db.models import Course, CourseFeedback, CourseStop, Purpose, RecommendationLog, Region, User
@@ -127,6 +129,7 @@ from app.schemas.meta import LocalSignature
 from app.services import signature_service
 from app.services.meta_service import local_signature_out
 from app.services.narrative_service import Narrative, NarrativeService
+from app.services.trust_service import load_trust_facts
 
 logger = get_logger(__name__)
 
@@ -1204,7 +1207,9 @@ class CourseService:
         await self._s.commit()
 
         views = [
-            await self._top_up(row, r.stops, user) or self._view(row, r.stops, origin) for row, r, _ in rows
+            await self._top_up(row, r.stops, user)
+            or self._view(row, r.stops, origin, await self._trust_of(row, r.stops))
+            for row, r, _ in rows
         ]
         response = dto.CourseGenerateResponse(
             request_id=request_id,
@@ -1358,7 +1363,19 @@ class CourseService:
             for s in result.stops
         ]
 
-    def _view(self, row: Course, stops: Sequence[StopResult], origin: GeoPoint) -> dto.CourseOut:
+    async def _trust_of(self, row: Course, stops: Sequence[StopResult]) -> dict[int, dto.TrustOut]:
+        """믿을 이유 한 줄 per stop position (docs/59 #15): stored facts only, none where there are none."""
+        facts = await load_trust_facts(self._s, [s.place.id for s in stops if not s.place.is_event])
+        region = await self._s.get(Region, row.region_id) if row.region_id else None
+        return trust_view(stops, facts, today=self._out_time(row.start_at).date(), row=row, region=region)
+
+    def _view(
+        self,
+        row: Course,
+        stops: Sequence[StopResult],
+        origin: GeoPoint,
+        trust: Mapping[int, dto.TrustOut] | None = None,
+    ) -> dto.CourseOut:
         reasons = {s.position: s.reason for s in row.stops}
         codes = {s.position: list(s.reason_codes or []) for s in row.stops}
         # no photo twice in one course (docs/29 §21): a later stop with the same photo shows the category tile
@@ -1405,6 +1422,7 @@ class CourseService:
                     reason=reasons.get(s.position),
                     reason_short=short_reason(s.reason_codes or codes.get(s.position, []), s.place),
                     reason_codes=s.reason_codes or codes.get(s.position, []),
+                    trust=(trust or {}).get(s.position),
                     congestion=(
                         dto.Congestion(
                             level=self._narrative.congestion_level(s.congestion), value=round(s.congestion, 2)
@@ -1489,6 +1507,11 @@ class CourseService:
             cand = places.get(s.place_id or -1) or events.get(s.event_id or -1)
             if cand is None:  # the place was deleted after the course was generated
                 continue
+            snap = s.slot or {}
+            if snap.get("draw_word") and cand.local_word is None:
+                cand.local_word, cand.local_draw = str(snap["draw_word"]), True
+            elif snap.get("draw_sight"):
+                cand.local_draw = True
             stops.append(
                 StopResult(
                     position=s.position,
@@ -1558,7 +1581,7 @@ class CourseService:
             origin, (region.radius_m if region else 1200) * 1.5, self._out_time(row.start_at).date()
         )
         return dto.CourseDetailResponse(
-            course=self._view(row, stops, origin),
+            course=self._view(row, stops, origin, await self._trust_of(row, stops)),
             request=dto.CourseRequestEcho(
                 region=dto.SlugName(slug=region.slug, name=region.name) if region else None,
                 origin=LatLng(lat=origin.lat, lng=origin.lng) if around_point else None,
@@ -1807,7 +1830,7 @@ class CourseService:
         )
         self._apply(row, result, narrative)
         await self._s.commit()
-        return self._view(row, result.stops, ctx.origin)
+        return self._view(row, result.stops, ctx.origin, await self._trust_of(row, result.stops))
 
     async def _swap_options(
         self,
@@ -2295,7 +2318,7 @@ class CourseService:
         await self._tracker.track(
             AnalyticsEvent("course_saved", user.public_id, {"course_id": row.public_id})
         )
-        return self._view(row, stops, origin)
+        return self._view(row, stops, origin, await self._trust_of(row, stops))
 
     async def _bump_saved(self, place_id: int) -> None:
         from sqlalchemy import update
@@ -2437,6 +2460,9 @@ def _slot_snapshot(s: StopResult) -> dict[str, Any]:
         "is_order_flexible": bool(slot and slot.is_order_flexible),
         "earliest_start_min": slot.earliest_start_min if slot else None,
         "latest_start_min": slot.latest_start_min if slot else None,
+        # the neighbourhood draw it matched (docs/59 #15) — kept, because a reload no longer knows the request
+        "draw_word": s.place.local_word if s.place.local_draw else None,
+        "draw_sight": bool(s.place.local_draw and not s.place.local_word),
     }
 
 
@@ -2515,6 +2541,52 @@ def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
         if line:
             return _fit(line)
     return "돈 들이지 않고 들르는 곳" if place.price == 0 else None
+
+
+def stop_area(position: int, row: Course, region: Region | None) -> str | None:
+    """The neighbourhood a stop is in: the segment it falls in on a day across several, else the course's."""
+    segments = sorted(
+        (seg for seg in (row.request or {}).get("segments") or [] if seg.get("name")),
+        key=lambda seg: int(seg.get("from_position") or 0),
+    )
+    name = next(
+        (str(seg["name"]) for seg in reversed(segments) if int(seg.get("from_position") or 0) <= position),
+        None,
+    )
+    return name or (region.name if region is not None else None)
+
+
+def trust_out(
+    place: PlaceCandidate, facts: TrustFacts | None, *, today: date, area: str | None
+) -> dto.TrustOut | None:
+    """믿을 이유 (app.domain.trust) as the API shape: the card's line and every fact with its source."""
+    line, _evidence = trust_for_place(place, facts, today=today, area=area)
+    if line is None:
+        return None
+    return dto.TrustOut(
+        text=line.text,
+        kind=line.kind,
+        source=line.source,
+        facts=[dto.TrustFactOut(kind=f.kind, text=f.text, source=f.source) for f in line.facts],
+    )
+
+
+def trust_view(
+    stops: Sequence[StopResult],
+    facts: Mapping[int, TrustFacts],
+    *,
+    today: date,
+    row: Course,
+    region: Region | None,
+) -> dict[int, dto.TrustOut]:
+    out: dict[int, dto.TrustOut] = {}
+    for s in stops:
+        found = trust_out(
+            s.place, facts.get(s.place.id), today=today, area=stop_area(s.position, row, region)
+        )
+        if found is not None:
+            out[s.position] = found
+    return out
 
 
 _KEEP = object()

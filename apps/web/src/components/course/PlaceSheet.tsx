@@ -6,11 +6,12 @@ import { distinctPhotos } from "@/lib/photo-key";
 import { BadgeCheck, CalendarCheck, ChevronDown, Clock, ExternalLink, Globe, Navigation, Phone, Utensils } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePlaceDetail, usePlaceLinks } from "@/lib/api/hooks";
-import type { PlaceSummary } from "@/lib/api/types";
+import type { PlaceSummary, StopTrust } from "@/lib/api/types";
 import { won } from "@/lib/format";
 import { photoCredit } from "@/lib/photo-credit";
 import { cn } from "@/lib/utils";
 import { kakaoSearchUrl, naverSearchUrl } from "./stop-links";
+import { TrustFacts } from "./TrustFacts";
 
 export type OutboundKind = "kakao" | "naver" | "official" | "phone" | "directions";
 
@@ -24,6 +25,11 @@ interface PlaceSheetProps {
    * 메뉴판 · 영업시간은 한 줄로 접는다. 없으면(주변 장소) 예전처럼 정보만.
    */
   decision?: {
+    /**
+     * 믿을 이유 (docs/59 #15): 있으면 시트 맨 위에 사실 · 출처 전부. null 이면 말을 지어 채우지 않고 카카오맵 장소 페이지를
+     * 맨 위로 올린다. undefined(예전 응답)면 예전처럼 영업 신고 연도 · 표식만.
+     */
+    trust?: StopTrust | null;
     why?: ReactNode;
     actions?: ReactNode;
     onDirections?: () => void;
@@ -128,6 +134,19 @@ export function PlaceSheet({ place, partySize, onClose, decision }: PlaceSheetPr
   );
 
   const out = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3 text-body-sm font-semibold text-ink hover:border-ink-2";
+  // 카카오맵의 그 장소 페이지 (서버가 찾아 둔 것, 못 찾으면 검색) — 예약 · 메뉴 · 사진 · 후기가 거기 있다
+  const kakaoLink = (onOutbound: ((kind: OutboundKind) => void) | undefined, top: boolean) => (
+    <a
+      href={kakaoPage?.url ?? kakaoSearchUrl({ name: place.name, address })}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() => onOutbound?.("kakao")}
+      className={cn(out, "border-ink bg-ink text-white hover:border-ink hover:opacity-90", !top && "col-span-2")}
+    >
+      <CalendarCheck aria-hidden className="size-4" /> {top ? "사진 · 메뉴 · 후기 보기" : "예약 · 메뉴 보기"} <span className="font-medium text-white/70">카카오맵</span>
+      <ExternalLink aria-hidden className="size-3.5" />
+    </a>
+  );
 
   return (
     <Sheet open onOpenChange={(open) => (open ? undefined : onClose())}>
@@ -153,22 +172,16 @@ export function PlaceSheet({ place, partySize, onClose, decision }: PlaceSheetPr
 
         {decision ? (
           <div className="grid gap-4 px-5 pt-3 pb-8">
+            {/* 믿을 이유가 맨 위 (docs/59 #15). 없으면 말 대신 카카오맵 장소 페이지(사진 · 메뉴 · 후기)가 맨 위 */}
+            {decision.trust ? <TrustFacts trust={decision.trust} /> : null}
+            {decision.trust === null ? kakaoLink(decision.onOutbound, true) : null}
             {decision.why}
-            {trust}
+            {decision.trust ? null : trust}
             {decision.actions}
 
             {/* 밖으로: 예약 · 메뉴 · 후기는 그 장소의 페이지에 있다. 우리가 예약 · 결제를 하지 않는다 (docs/61) */}
             <nav aria-label="예약 · 길찾기" className="grid grid-cols-2 gap-2">
-              <a
-                href={kakaoPage?.url ?? kakaoSearchUrl({ name: place.name, address })}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => decision.onOutbound?.("kakao")}
-                className={cn(out, "col-span-2 border-ink bg-ink text-white hover:border-ink hover:opacity-90")}
-              >
-                <CalendarCheck aria-hidden className="size-4" /> 예약 · 메뉴 보기 <span className="font-medium text-white/70">카카오맵</span>
-                <ExternalLink aria-hidden className="size-3.5" />
-              </a>
+              {decision.trust === null ? null : kakaoLink(decision.onOutbound, false)}
               <a href={naverSearchUrl({ name: place.name, address })} target="_blank" rel="noreferrer" onClick={() => decision.onOutbound?.("naver")} className={out}>
                 네이버 지도 <ExternalLink aria-hidden className="size-3.5" />
               </a>

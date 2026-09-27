@@ -389,6 +389,26 @@ export interface Stop {
   /** 왜 이 장소인지 (docs/29 §15). 예전 코스에는 없다 */
   reason_codes?: ReasonCode[];
   congestion: Congestion | null;
+  /** 믿을 이유 한 줄 (docs/59 #15): 저장된 사실에서만. 없으면 null — 채우는 말은 없다. 예전 응답에는 없다 */
+  trust?: StopTrust | null;
+}
+
+export type TrustKind = "designated" | "long_run" | "menu_price" | "draw" | "visited" | "photos";
+
+export interface TrustFact {
+  kind: TrustKind;
+  text: string;
+  /** 누가 · 어디서 말하는가 (화면에 그대로) */
+  source: string;
+}
+
+export interface StopTrust {
+  /** 카드의 한 줄(40자 이하) — 가장 강한 사실, 둘이 들어가면 둘 */
+  text: string;
+  kind: TrustKind;
+  source: string;
+  /** 결정 시트에서 펼쳐 보이는 사실 전부 (강한 순서) */
+  facts: TrustFact[];
 }
 
 export type ReasonCode =

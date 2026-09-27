@@ -36,7 +36,7 @@ export interface AnalyticsEvents {
   stop_swapped: { course_id: string; position: number; strategy: string };
   stop_reason_opened: { course_id: string; position: number };
   /** 스톱 카드에서 지도 앱의 장소 페이지(실제 사진·메뉴)로 나간 클릭 */
-  place_link_clicked: { course_id: string; position: number; to: "kakaomap" | "roadview" };
+  place_link_clicked: { course_id: string; position: number; to: "kakaomap" | "kakaomap_card" | "roadview" };
   /** from_shared: 친구가 짠 코스에서 "이 코스로 내 코스 만들기"를 누른 경우 */
   /** focus: 동네 명물을 골라(또는 빼고) 다시 짠 경우 그 말 */
   reroll_clicked: { course_id: string; from_shared?: boolean; focus?: string };
@@ -95,7 +95,7 @@ export interface AnalyticsEvents {
    * 고르는 흐름 (2026-09-26 창업자 "눌렀을 때 선택이 있어야"): 장소를 누르면 여는 결정 시트 · 이 곳으로 확정 ·
    * 다른 곳 보기 · 시트에서 바꾸기 · 빼기 · 코스 확정 · 밖으로 나간 링크(무엇으로)
    */
-  stop_sheet_opened: { course_id: string; position: number };
+  stop_sheet_opened: { course_id: string; position: number; from?: "trust" };
   stop_fixed: { course_id: string; position: number; fixed: boolean };
   stop_alternative_viewed: { course_id: string; position: number; count: number };
   stop_swapped_from_sheet: { course_id: string; position: number };

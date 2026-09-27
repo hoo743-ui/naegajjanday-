@@ -306,10 +306,12 @@ def mark_local(candidates: Iterable[PlaceCandidate], ctx: RequestContext, rules:
             word = next((w for w in ctx.local_words if w in flat), None)
             if word is not None:
                 cand.local_score, cand.local_word = rules.specialty_score, word
-                cand.local_pull = draw_pull if word in ctx.draw_words else local_pull
+                cand.local_draw = word in ctx.draw_words
+                cand.local_pull = draw_pull if cand.local_draw else local_pull
         elif cand.id in ctx.landmark_ids:
             cand.local_score = rules.landmark_score
-            cand.local_pull = draw_pull if cand.id in ctx.draw_ids else local_pull
+            cand.local_draw = cand.id in ctx.draw_ids
+            cand.local_pull = draw_pull if cand.local_draw else local_pull
         if cand.local_score > 0 and rules.tag:
             cand.tags = {**cand.tags, rules.tag: 1.0}
 
