@@ -6,6 +6,7 @@ import asyncio
 import shutil
 from collections.abc import AsyncIterator
 from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -14,8 +15,9 @@ import pytest_asyncio
 from sqlalchemy import func, select
 
 from app.core.config import API_ROOT, Settings
-from app.infra.db.models import Category, DataSync, Place, PlaceSource
+from app.infra.db.models import Category, DataSync, Place, PlaceSource, PlaceTag, Tag
 from app.infra.db.session import Database
+from app.infra.ingestion import bar_licence
 from app.infra.ingestion.bulk import delta
 from app.infra.ingestion.bulk.common import BulkPlace
 from app.services import data_sync
@@ -212,6 +214,67 @@ async def test_merged_names_already_stored_are_tidied_once(
 def test_the_real_rules_point_at_their_modules() -> None:
     for _label, path in data_sync.RULES.values():
         assert path.is_file(), path
+
+
+async def test_bars_filed_as_restaurants_move_by_their_licence(
+    empty_db: tuple[Database, Settings], sources: data_sync.Sources, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """docs/59 #14: the licence's 업태 moves a 호프 out of 한식; a word taken out of the rule moves it back."""
+    db, settings = empty_db
+    places = [
+        replace(_cinema("좋은친구들", "b-1"), category_code="food.korean"),  # 호프/통닭 → bar.pub
+        replace(_cinema("강현숙왕족발", "b-2"), category_code="food.korean"),  # 호프/통닭, a meal → 술자리
+        replace(_cinema("청춘포차", "b-3"), category_code="bar"),  # no licence → bar.pocha by its name
+        replace(_cinema("쥬씨프레소", "b-4"), category_code="cafe"),  # a café name → stays
+    ]
+    delta.write_delta(sources.delta_dir / "bars.json", "test_sync", places)
+    await data_sync.sync(db, settings, sources=sources, log=lambda _m: None)
+    async with db.sessionmaker() as s:
+        ids = {name: pid for name, pid in (await s.execute(select(Place.name, Place.id))).all()}
+        for n, name in enumerate(("좋은친구들", "강현숙왕족발", "쥬씨프레소")):
+            s.add(
+                PlaceSource(
+                    place_id=ids[name],
+                    provider="lic_restaurant",
+                    external_id=f"lic-{n}",
+                    raw={"name": name, bar_licence.KIND_KEY: bar_licence.HOF},
+                    fetched_at=datetime.now(UTC),
+                    content_hash=f"h{n}",
+                )
+            )
+        await s.commit()
+
+    async def state() -> dict[str, tuple[str, bool]]:
+        async with db.sessionmaker() as s:
+            drinks = (
+                select(PlaceTag.place_id).join(Tag, Tag.id == PlaceTag.tag_id).where(Tag.name == "술자리")
+            )
+            tagged = set((await s.scalars(drinks)).all())
+            rows = (await s.execute(select(Place.id, Place.name, Category.code).join(Category))).all()
+            return {name: (code, pid in tagged) for pid, name, code in rows if name != "씨네 홍대"}
+
+    with_rules = replace(sources, rules=(data_sync.RULE_BARS,))
+    first = await data_sync.sync(db, settings, sources=with_rules, log=lambda _m: None)
+    assert _actions(first)[data_sync.RULE_BARS] == "applied"
+    assert await state() == {
+        "좋은친구들": ("bar.pub", False),
+        "강현숙왕족발": ("food.korean", True),
+        "청춘포차": ("bar.pocha", False),
+        "쥬씨프레소": ("cafe", False),
+    }
+    again = await data_sync.sync(db, settings, sources=with_rules, force=True, log=lambda _m: None)
+    summary = next(r for r in again.results if r.key == data_sync.RULE_BARS).summary or ""
+    assert "moved=0 drinks_tag+=0 -=0" in summary  # idempotent
+
+    # the rule changes: "친구" now says a meal, "족발" no longer does → both follow, from where they started
+    monkeypatch.setattr(bar_licence, "MEAL_WORDS", ("친구",))
+    await bar_licence.apply(db, log=lambda _m: None)
+    assert await state() == {
+        "좋은친구들": ("food.korean", True),
+        "강현숙왕족발": ("bar.pub", False),
+        "청춘포차": ("bar.pocha", False),
+        "쥬씨프레소": ("cafe", False),
+    }
 
 
 async def test_another_process_holding_the_lock_means_nothing_runs(

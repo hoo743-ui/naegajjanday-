@@ -456,6 +456,13 @@ METRICS: tuple[Metric, ...] = (
     Metric("solo_late_bar_rate", "혼자의 늦은 저녁(20시대 시작)에 한잔할 곳", "higher", 0.80,
            _course(lambda r: r.ok and r.case.purpose == "solo" and r.case.start.startswith("20:"),
                    lambda r: any(s.role == "BAR" for s in r.stops))),
+    # docs/59 #14: the friends' evening (19:00) — 한잔 is what the evening is for (docs/48 §3)
+    Metric("friends_evening_bar_rate", "친구 모임 저녁(19시)에 한잔할 곳", "higher", 0.60,
+           _course(lambda r: r.ok and r.case.purpose == "friends" and r.case.start.startswith("19:"),
+                   lambda r: any(s.role == "BAR" for s in r.stops))),
+    # docs/59 #14: a bar that says what kind it is (호프 · 포차 · 이자카야 · 와인 …), not just "술집"
+    Metric("bar_kind_rate", "코스의 술집 중 종류가 있는 곳(호프 · 포차 · 이자카야 …)", "higher", 0.50,
+           _stops(lambda r: True, lambda s: s.role == "BAR", lambda s: s.category != "bar")),
     # docs/59 #8 · docs/48 §1 "고깃집(데이트 식사로)": a date's meal at a 고깃집 that is not what the
     # neighbourhood is known for (대구 막창 · 제주 흑돼지 are the draw, not the default)
     Metric("date_bbq_meal_rate", "데이트 식사 중 동네 명물이 아닌 고깃집", "lower", 0.15,

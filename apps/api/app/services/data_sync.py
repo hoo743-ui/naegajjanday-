@@ -60,6 +60,7 @@ RUN_KEY = "@run"  # the row that remembers the last whole run (not an item)
 # (no outside calls). Key → (label, the module's file). The functions are in `_apply_rule`.
 RULE_HOURS = "rules/hours_text"
 RULE_NAMES = "rules/place_names"
+RULE_BARS = "rules/bar_licence"
 
 
 def _module_file(module: str) -> Path:
@@ -74,6 +75,10 @@ RULES: dict[str, tuple[str, Path]] = {
     RULE_NAMES: (
         '합쳐진 장소 이름 정리 ("순대;곱창;족발" → 보여 줄 이름)',
         _module_file("app.infra.ingestion.place_names"),
+    ),
+    RULE_BARS: (
+        "인허가 업태로 술집 다시 나누기 (호프 · 포차 · 이자카야 …, 음식점에 묻힌 술집)",
+        _module_file("app.infra.ingestion.bar_licence"),
     ),
 }
 
@@ -289,6 +294,10 @@ async def _apply_rule(db: Database, key: str, log: Log) -> str:
         from app.infra.ingestion import place_names
 
         return await place_names.tidy_stored(db, log=log)
+    if key == RULE_BARS:  # bars filed as restaurants, and the kind of every bar (docs/59 #14)
+        from app.infra.ingestion import bar_licence
+
+        return (await bar_licence.apply(db, log=log)).line()
     raise ValueError(f"unknown rule {key}")
 
 

@@ -17,6 +17,7 @@
 | `rules/hours_text` | `app/infra/ingestion/hours_text.py` (코드) | `ingest-bulk tourapi-hours --reapply` — 영업시간 해석기가 바뀌면 저장된 TourAPI 답을 다시 읽는다(호출 0건) |
 
 | `rules/place_names` | `app/infra/ingestion/place_names.py` (코드) | 이름에 ";" 가 든 장소(소진공 파일이 쉼표를 ";" 로 쓴다) 이름 정리 — 대기열 6 |
+| `rules/bar_licence` | `app/infra/ingestion/bar_licence.py` (코드) | 인허가 `업태구분명`(호프/통닭 · 소주방 · 감성주점 · 라이브카페) + 이름으로 음식점에 묻힌 술집을 `bar.*` 로, 모든 술집에 종류(호프 · 포차 · 이자카야 · 막걸리 · 와인 · 칵테일). 식사 이름이면 음식점 그대로 + 숨은 태그 `술자리`(source `licence`). 처음 옮길 때 `place_revision`(action `reclassify`)에 원래 업종을 남겨, 규칙을 고치면 거기서부터 다시 — 되돌리기도 된다. 옮긴 곳의 추정가는 새 업종으로 — 대기열 14 |
 
 `rules/*` 는 파일이 아니라 **코드의 규칙**이다: 모듈 파일의 해시가 바뀌면(= 규칙을 고친 배포) 이미 저장된 행을 새 규칙으로 다시 만든다.
 외부 호출은 하지 않는다. 목록은 `app/services/data_sync.py::RULES`.
