@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 
 from app.domain.models import GeoPoint, PlaceCandidate, RequestContext, ScoringParams
@@ -18,6 +18,7 @@ from app.domain.recommendation.budget import SlotBudget, effective_budget
 from app.domain.recommendation.errand import end_pull
 from app.domain.recommendation.features import congestion_at, is_open
 from app.domain.recommendation.scorer import PlaceScorer, Score, ScoreInput
+from app.domain.recommendation.ticketed import may_follow, ticketed_venues, within_gate
 from app.domain.routing.travel_time import HaversineEstimator, Leg
 
 MIN_OPEN_BUFFER_MIN = 30
@@ -25,6 +26,9 @@ FIXED_STAY_MIN = 120  # a show (film, ball game) — its length does not follow 
 WINDOW_GRACE_MIN = 15  # a course may end this much after the requested window (v2)
 ON_PLAN_SEATS_DIVISOR = 4  # a quarter of the beam is kept for partials that have not overspent
 MIN_CATEGORIES_IN_TOP_K = 4  # a slot's shortlist spans at least this many categories when the pool allows
+# a café or restaurant behind the gate of the venue just visited (recommendation.ticketed): the ticket is paid
+# and they are already inside — about what a clearly better place is worth
+INSIDE_GATE_PULL = 0.1
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,7 +196,14 @@ class CourseComposer:
                 return None
             if partial.spent + place.price > params.budget_tolerance * ctx.budget_per_person:
                 return None
+        previous = partial.stops[-1].place if partial.stops else None
+        # 입장권 (recommendation.ticketed): a café behind a venue's gate only right after that venue
+        if strict and not pinned and not may_follow(place, previous):
+            return None
         leg = self._est.estimate(partial.last_point, place.point, ctx.transport)
+        inside = within_gate(place, previous)
+        if inside:  # the few minutes inside the gate, not a walk out to the street and back in
+            leg = Leg(min(leg.minutes, ticketed_venues().leg_cap_min), leg.distance_m, leg.source)
         if strict and partial.stops and not pinned and leg.minutes > self.leg_limit():
             return None
         arrive = partial.clock + timedelta(minutes=round(leg.minutes))
@@ -213,6 +224,12 @@ class CourseComposer:
         # leaves the hop to the day score (the travel curve), so distance is not counted twice
         distance = day_score.distance_from_centre(place, ctx) if ctx.is_v2 else leg.distance_m
         score = self._scorer.score(ScoreInput(place, eff, sb.share, distance, arrive, stay))
+        if inside:  # already paid for and already there: preferred for the slot after the venue
+            score = replace(
+                score,
+                total=score.total + INSIDE_GATE_PULL,
+                breakdown={**score.breakdown, "inside_gate": INSIDE_GATE_PULL},
+            )
         leave = arrive + timedelta(minutes=stay)
         # v2: longer legs are allowed, so the meeting window must be checked, not assumed — the time the user
         # gave is a hard limit (docs/29 §1). v1 fitted the window by trimming slots and kept no such check.

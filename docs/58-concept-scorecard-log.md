@@ -20,3 +20,4 @@
 | 2026-09-26 16:57 | quick | 5cda464 | 152 | 33/33 | – | ▲date_bbq_meal_rate | D (docs/59 #8): 데이트면 장면과 상관없이 고깃집 -0.3(scenes.json › date.base) — 동네 명물 고깃집(막창 · 흑돼지)은 명물 당김이 이긴다. 새 지표 date_bbq_meal_rate |
 | 2026-09-27 14:04 | quick | 92bece1 | 184 | 34/38 | shop_asked_rate 0.0% / 90.0%, shop_presence_rate 0.0% / 30.0% | – | shops: 기준 — 새 코드(7300e79 위로 rebase), 가게 0곳인 공유 DB = 지금 운영 |
 | 2026-09-27 14:22 | quick | 92bece1 | 184 | 38/38 | – | ▲shop_asked_rate ▲mean_stops_day ▲shop_presence_rate | docs/63 구경하는 가게: 공유 DB 사본 + delta/semas_shops.json 3,395곳(운영엔 data sync), 친구 · 데이트 낮 식사 뒤 가게만 받는 선택 자리, SHOP 옵션 · 한 줄 말, 가게 한 줄 이유 |
+| 2026-09-27 14:33 | quick | c5f5eb2 | 164 | 35/35 | – | ▲ticketed_admission_priced_rate | 입장권(창업자 2026-09-26): ticketed_venues.json 18곳 — 시설은 공식 입장료 × 인원 · 머무는 시간, 정문 안 식당 · 카페 54곳은 그 시설 바로 다음에만(구간 5분 · 선호), 고정한 시설은 첫 자리 다음. 표본에 잠실 · 에버랜드 · 과천 입장 짝 12코스 |

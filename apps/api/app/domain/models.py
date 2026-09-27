@@ -82,6 +82,11 @@ class PlaceCandidate:
     # the licence date of the business (인허가일자, place_source.raw) — read per request, only for a regular
     # (recommendation.familiarity): "newly opened" where the data has it, nothing where it does not
     opened_on: date | None = None
+    # 입장권이 있어야 들어가는 곳 (recommendation.ticketed, data/recommendation/ticketed_venues.json), derived
+    # when read: the venue this place IS (priced at its admission), or the one it stands inside (a café
+    # behind the gate — a stop only right after that venue)
+    ticket_venue: str | None = None
+    inside_venue: str | None = None
 
     @property
     def point(self) -> GeoPoint:

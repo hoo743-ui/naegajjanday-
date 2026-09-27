@@ -50,6 +50,7 @@ from app.domain.recommendation.style import (
     wanted_places,
     wanted_pools,
 )
+from app.domain.recommendation.ticketed import drop_orphans
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import (
@@ -332,7 +333,9 @@ class RecommendationEngine:
         pools = wanted_pools(pools, ctx.wanted_categories)
         pools = wanted_places(pools, ctx.wanted_place_ids)
         pools = wanted_events(pools, ctx.wanted_event_ids)
-        return focus_pools(pools, ctx, get_signature_rules(), unfiltered)
+        pools = focus_pools(pools, ctx, get_signature_rules(), unfiltered)
+        # a café behind a ticket gate is no candidate unless its venue can be in the course (ticketed)
+        return drop_orphans(pools, ctx.kept_places)
 
     async def _ring(
         self,

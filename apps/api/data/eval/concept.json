@@ -30,5 +30,11 @@
       "daegu-dongseongro",
       "gyeonggi-suwon-haenggung"
     ]
-  }
+  },
+  "_ticketed": "입장권 짝 표본(recommendation.ticketed): 시설 정문에서 시작하는 가족(아이와) · 데이트 하루를 시설을 꼭 들를 곳으로 고정한 것과 안 한 것 둘로. venue = data/recommendation/ticketed_venues.json 의 key",
+  "ticketed": [
+    {"region": "seoul-jamsil", "venue": "lotteworld-adventure"},
+    {"region": "gyeonggi-yongin-cheoin-d586b44", "venue": "everland"},
+    {"region": "gyeonggi-gwacheon", "venue": "seoulland"}
+  ]
 }

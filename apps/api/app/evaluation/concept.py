@@ -99,11 +99,16 @@ class Case:
     errand: str | None = None
     # 구경하는 가게 (docs/63): the request's extras ("SHOP" = the 소품샵 · 캐릭터샵 chip is on)
     extras: tuple[str, ...] = ()
+    # 입장권 (recommendation.ticketed): the day planned at a ticketed venue's gate (data/eval/concept.json ›
+    # ticketed) — "with" pins the venue (꼭 들를 곳), "without" does not; the cafés behind its gate are near
+    venue: str | None = None
+    with_venue: bool = False
 
     @property
     def first_key(self) -> str:
         who = f"{self.purpose}/{self.scene}" if self.scene else self.purpose
-        return f"{self.region}|{who}|{self.start}|{self.budget}"
+        where = f"{self.region}@{self.venue}" if self.venue else self.region
+        return f"{where}|{who}|{self.start}|{self.budget}"
 
     @property
     def key(self) -> str:
@@ -113,6 +118,7 @@ class Case:
             + ("|끝나고" if self.errand else "")
             + ("|구경" if self.group == SHOP_GROUP else "")
             + "".join(f"|+{e}" for e in self.extras)
+            + (("|입장" if self.with_venue else "|입장 없이") if self.venue else "")
         )
 
     @property
@@ -120,6 +126,8 @@ class Case:
         """Which half of a paired sample this case belongs to (None: the base sample)."""
         if self.group == SHOP_GROUP:
             return SHOP_GROUP
+        if self.venue:
+            return "ticket"
         return "regular" if self.regular else "errand" if self.errand else None
 
     @property
@@ -150,6 +158,10 @@ class Stop:
     novel: bool = False  # newly opened or a lesser-known independent (recommendation.familiarity)
     shared: bool = False  # a regular's stop that was already in the first-visit course
     why: str | None = None  # the card's one line (reason_short) — docs/63 checks every shop has one
+    # 입장권 (recommendation.ticketed): the venue this stop is (priced at admission?) or stands inside
+    ticket_venue: str | None = None
+    inside_venue: str | None = None
+    admission_priced: bool | None = None  # a venue stop: is its price the official admission × party
 
     @property
     def chain(self) -> bool:
@@ -202,6 +214,8 @@ class Record:
             + ("★" if s.draw else "")
             + ("✧" if self.case.regular and s.novel else "")
             + (f"◇[{s.category}·{s.why}]" if s.shop else "")
+            + (f"ⓣ{s.price:,}" if s.ticket_venue else "")
+            + (f"(안:{s.inside_venue})" if s.inside_venue else "")
             for s in self.stops
         )
         if self.case.errand:
@@ -287,6 +301,9 @@ class Metric:
     def bad(self, value: float) -> float:
         """How far `value` is past the target, in the metric's own units (≤ 0: on target)."""
         return self.target - value if self.direction == "higher" else value - self.target
+
+
+ANY_HALF = "*"  # Metric.half: every record of the run, the paired halves included
 
 
 def _course(applies: Callable[[Record], bool], hit: Callable[[Record], bool]) -> Count:
@@ -493,6 +510,16 @@ METRICS: tuple[Metric, ...] = (
            _shop_stops(_outside_shop_hours), half=SHOP_GROUP, weight=1.5),
     Metric("shop_twice_rate", "가게 → 가게(시장) 연달아", "lower", 0.05,
            _course(_ok, _shops_twice), half=SHOP_GROUP),
+    # 입장권 (창업자 2026-09-26, recommendation.ticketed): counted over the whole run (the base sample and the
+    # ticket pairs at 롯데월드 · 에버랜드 · 서울랜드) — a café behind a gate without its venue in the course
+    Metric("ticketed_inner_without_venue_rate", "입장권 안쪽 가게가 그 시설 없이 든 코스", "lower", 0.0,
+           _course(_ok, lambda r: any(s.inside_venue and s.inside_venue not in
+                                      {t.ticket_venue for t in r.stops} for s in r.stops)),
+           half=ANY_HALF, weight=1.5),
+    Metric("ticketed_admission_priced_rate", "입장권 시설이 든 코스에서 공식 입장료 × 인원으로 셈", "higher",
+           1.0, _course(lambda r: r.ok and any(s.ticket_venue for s in r.stops),
+                        lambda r: all(s.admission_priced for s in r.stops if s.ticket_venue)),
+           half=ANY_HALF),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -523,7 +550,11 @@ def noise_band(metric: Metric, value: float | None, units: float, spread: float 
 
 
 def evaluate(metric: Metric, records: Sequence[Record], *, examples: int = 4) -> Result:
-    counted = [(r, c) for r in records if r.case.half == metric.half and (c := metric.count(r)) is not None]
+    counted = [
+        (r, c)
+        for r in records
+        if (metric.half == ANY_HALF or r.case.half == metric.half) and (c := metric.count(r)) is not None
+    ]
     num = sum(c[0] for _r, c in counted)
     den = sum(c[1] for _r, c in counted)
     value = num / den if den else None
@@ -690,6 +721,13 @@ def build_sample(sample: str, hotspot_slugs: Sequence[str] | None = None) -> lis
     for region in shop_regions(sample):
         for p, n, b, t in SHOP_CASES:
             cases += [Case(region, p, n, b, t, group=SHOP_GROUP, extras=x) for x in ((), (SHOP_EXTRA,))]
+    # 입장권 (recommendation.ticketed): a day at a ticketed venue's gate, with the venue pinned and without
+    for region, venue in ticketed_regions():
+        for p, n, b, t, scene in TICKET_CASES:
+            cases += [
+                Case(region, p, n, b, t, scene=scene, group="ticket", venue=venue, with_venue=w)
+                for w in (True, False)
+            ]
     return cases
 
 
@@ -700,6 +738,17 @@ def shop_regions(sample: str, path: Path = SAMPLE_PATH) -> list[str]:
 
 
 SHOP_CASES = (("date", 2, 60000, "13:00"), ("friends", 3, 90000, "14:00"))
+
+# the paired ticket sample: a family day with the kids and a date — budgets that can pay the admission
+TICKET_CASES = (("family", 3, 300000, "11:00", "kids"), ("date", 2, 200000, "12:00", None))
+
+
+def ticketed_regions(path: Path = SAMPLE_PATH) -> list[tuple[str, str]]:
+    """(region slug, venue key) of the ticket pairs (data/eval/concept.json › ticketed)."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return [(str(t["region"]), str(t["venue"])) for t in data.get("ticketed", [])]
+
+
 ERRAND_CASES = frozenset({("date", "12:00"), ("friends", "19:00")})
 ERRAND_OFFSET_M = 3000.0  # the errand of the paired sample: this far east of the centre (a ride, not a walk)
 ERRAND_MINUTES = 30
@@ -781,12 +830,22 @@ def record_from(
     # the same place under a second record (a duplicate listing) is still the same place: id or sign name
     before = {s.place_id for s in pair.stops} | {_compact(s.name) for s in pair.stops} if pair else set()
 
+    from app.domain.recommendation.ticketed import ticketed_venues
+
+    venues = ticketed_venues()
     words = [w for w in (_compact(w) for w in ctx.draw_words) if w]
     stops = []
     for s in course.stops:
         p = s.place
         draw = not p.is_event and (
             p.id in ctx.draw_ids or (s.role in FOOD_ROLES and any(w in _compact(p.name) for w in words))
+        )
+        # read off the data file here, not off the candidate: the same check with the engine's rule off
+        venue = None if p.is_event else venues.venue_of(p.id, p.name, p.course_role, p.point)
+        inside = (
+            None
+            if p.is_event or venue is not None
+            else venues.inside_of(p.id, p.name, p.course_role, p.address, p.point)
         )
         stops.append(
             Stop(
@@ -805,6 +864,9 @@ def record_from(
                 novel=novel(p, ctx.start_at),
                 shared=p.public_id in before or _compact(p.name) in before,
                 why=short_reason(list(s.reason_codes), p),
+                ticket_venue=venue.key if venue else None,
+                inside_venue=inside.key if inside else None,
+                admission_priced=s.est_price == venue.admission.adult * case.party if venue else None,
             )
         )
     scenario = Scenario(case.region, case.purpose, case.start, "efficient", case.party, case.budget)
@@ -846,13 +908,18 @@ async def collect(
     progress: Callable[[int, int], None] | None = None,
 ) -> list[Record]:
     """Every case through `CourseService.dry_run` — one session, one service for the whole sample."""
+    from sqlalchemy import select
+
     from app.core import errors
     from app.core.cache import MemoryCache
     from app.domain.recommendation.familiarity import REGULAR
+    from app.domain.recommendation.ticketed import ticketed_venues
     from app.evaluation.harness import load_spec
     from app.infra.analytics.base import NoopTracker
+    from app.infra.db.models import Place
     from app.repositories.region_repo import SqlRegionRepository
     from app.schemas import course as dto
+    from app.schemas.common import LatLng
     from app.services.course_service import CourseService
     from app.services.narrative_service import NarrativeService
 
@@ -876,7 +943,20 @@ async def collect(
             errand: tuple[float, float] | None = None
             if case.errand and (where := await SqlRegionRepository(session).get_by_slug(case.region)):
                 errand = errand_point(where.center_lat, where.center_lng)
+            venue = ticketed_venues().by_key(case.venue)
+            gate = LatLng(lat=venue.gate.lat, lng=venue.gate.lng) if venue else None
+            keep = (
+                [pid for (pid,) in (await session.execute(
+                    select(Place.public_id).where(Place.id.in_(sorted(venue.place_ids)))
+                    .order_by(Place.id)
+                )).all()][:1]
+                if venue and case.with_venue
+                else []
+            )  # fmt: skip
             req = dto.CourseGenerateRequest(
+                origin=gate,
+                origin_label=venue.name if venue else None,
+                keep_place_ids=keep,
                 region=case.region,
                 purpose=case.purpose,
                 party_size=case.party,

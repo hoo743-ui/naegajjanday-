@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from app.domain.anchors import AnchoredEvent, event_window
 from app.domain.models import GeoPoint, OpeningPeriod, PlaceCandidate
 from app.domain.recommendation.familiarity import familiarity_rules, parse_opened_on
+from app.domain.recommendation.ticketed import ticketed_venues
 from app.domain.routing.travel_time import haversine_m
 from app.infra.db.base import as_utc
 from app.infra.db.models import (
@@ -93,37 +94,40 @@ def to_candidate(place: Place) -> PlaceCandidate:
     )
     tags = merge_tags({pt.tag.name: pt.weight for pt in place.place_tags}, derived)
     vouched = get_tag_rules().quality_tags or frozenset({CURATED_TAG})
-    return PlaceCandidate(
-        id=place.id,
-        public_id=place.public_id,
-        name=get_tag_rules().sign_name(place.name),
-        category_code=cat.code,
-        category_name=cat.name,
-        # no reviews exist: "an official body vouches for it" is the quality signal we do have
-        is_curated=any(tag in vouched for tag in tags),
-        course_role=cat.course_role,
-        lat=place.lat,
-        lng=place.lng,
-        price_per_person=place.price_per_person,
-        price_is_estimated=bool(place.price_is_estimated) and not place.is_free,
-        is_free=place.is_free,
-        address=place.road_address or place.address,
-        thumbnail_url=place.thumbnail_url,
-        default_stay_min=cat.default_stay_min,
-        rating_avg=stats.rating_avg if stats else None,
-        rating_count=stats.rating_count if stats else 0,
-        bayes_rating=stats.bayes_rating if stats else None,
-        sentiment_score=stats.sentiment_score if stats else None,
-        sentiment_count=stats.sentiment_count if stats else 0,
-        aspect_scores=dict(stats.aspect_scores or {}) if stats else {},
-        popularity=stats.popularity if stats else 0.0,
-        tags=tags,
-        # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
-        # museum at 20:30; real hours always win
-        opening_hours=real_hours or list(get_default_hours().for_place(cat.code, place.name, address)),
-        hours_known=bool(real_hours),
-        popular_times={(pt.dow, pt.hour): pt.congestion for pt in place.popular_times},
-        approved_at=as_utc(place.approved_at),
+    # a ticketed venue costs its admission; a café behind its gate is marked (recommendation.ticketed)
+    return ticketed_venues().mark(
+        PlaceCandidate(
+            id=place.id,
+            public_id=place.public_id,
+            name=get_tag_rules().sign_name(place.name),
+            category_code=cat.code,
+            category_name=cat.name,
+            # no reviews exist: "an official body vouches for it" is the quality signal we do have
+            is_curated=any(tag in vouched for tag in tags),
+            course_role=cat.course_role,
+            lat=place.lat,
+            lng=place.lng,
+            price_per_person=place.price_per_person,
+            price_is_estimated=bool(place.price_is_estimated) and not place.is_free,
+            is_free=place.is_free,
+            address=place.road_address or place.address,
+            thumbnail_url=place.thumbnail_url,
+            default_stay_min=cat.default_stay_min,
+            rating_avg=stats.rating_avg if stats else None,
+            rating_count=stats.rating_count if stats else 0,
+            bayes_rating=stats.bayes_rating if stats else None,
+            sentiment_score=stats.sentiment_score if stats else None,
+            sentiment_count=stats.sentiment_count if stats else 0,
+            aspect_scores=dict(stats.aspect_scores or {}) if stats else {},
+            popularity=stats.popularity if stats else 0.0,
+            tags=tags,
+            # no hours of its own (99 % of bulk data) → the category's usual hours, so nobody is sent to a
+            # museum at 20:30; real hours always win
+            opening_hours=real_hours or list(get_default_hours().for_place(cat.code, place.name, address)),
+            hours_known=bool(real_hours),
+            popular_times={(pt.dow, pt.hour): pt.congestion for pt in place.popular_times},
+            approved_at=as_utc(place.approved_at),
+        )
     )
 
 

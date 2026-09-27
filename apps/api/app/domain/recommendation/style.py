@@ -305,6 +305,7 @@ def kept_pools(
 
 
 KEPT_MIN_SHARE, KEPT_MAX_SHARE = 0.05, 0.6
+KEPT_TICKET_MAX_SHARE = 0.9  # a pinned ticketed venue: its admission, whatever share of the day that is
 
 
 def with_kept(
@@ -327,15 +328,17 @@ def with_kept(
                 slots[i] = replace(slots[i], is_optional=False)
             for place in places[len(have) :]:
                 share = place.price / budget_per_person if budget_per_person > 0 else 0.0
-                share = min(KEPT_MAX_SHARE, max(KEPT_MIN_SHARE, share))
+                # a ticket is a fixed price, not a wish to share the day with (recommendation.ticketed)
+                cap = KEPT_TICKET_MAX_SHARE if place.ticket_venue else KEPT_MAX_SHARE
+                share = min(cap, max(KEPT_MIN_SHARE, share))
                 slots = [replace(s, budget_share=s.budget_share * (1.0 - share)) for s in slots]
-                slots.append(
-                    Slot(
-                        position=max((s.position for s in slots), default=0) + 1,
-                        course_role=role,
-                        budget_share=share,
-                    )
-                )
+                if not place.ticket_venue:
+                    last = max((s.position for s in slots), default=0)
+                    slots.append(Slot(position=last + 1, course_role=role, budget_share=share))
+                    continue
+                # a ticketed venue is the day, not its last hour: right after the first stop (lunch first)
+                slots.insert(min(1, len(slots)), Slot(position=0, course_role=role, budget_share=share))
+                slots = [replace(s, position=i + 1) for i, s in enumerate(slots)]
         out.append(replace(template, slots=tuple(slots)))
     return out
 

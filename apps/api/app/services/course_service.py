@@ -106,6 +106,7 @@ from app.domain.recommendation.style import (
     with_optional_after,
     with_role,
 )
+from app.domain.recommendation.ticketed import may_follow, ticketed_venues
 from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
 from app.domain.signature import get_signature_rules
@@ -222,8 +223,11 @@ class CourseService:
                 if not any(
                     getattr(st.place, "public_id", None) == req.errand.place_id for st in course.stops
                 ):
+                    why = self._kept_dropped(req.errand.place_id or "", req.party_size, req.budget_total)
                     errand = errand | {
-                        "detail": f"{req.errand.name}은(는) 이 시간이나 예산에 맞지 않아 넣지 못했고, "
+                        "detail": why["detail"] + " 그 근처로 짰어요."
+                        if why["meta"].get("reason") == "admission"
+                        else f"{req.errand.name}은(는) 이 시간이나 예산에 맞지 않아 넣지 못했고, "
                         "그 근처로 짰어요."
                     }
                     break
@@ -400,14 +404,25 @@ class CourseService:
             for pid in req.keep_place_ids:
                 if pid in held:
                     continue
-                warning = self._kept_dropped(pid)
+                warning = self._kept_dropped(pid, req.party_size, req.budget_total)
                 if warning not in course.warnings:
                     course.warnings.append(warning)
                 if warning not in out.warnings:
                     out.warnings.append(warning)
 
-    def _kept_dropped(self, pid: str) -> dict[str, Any]:
+    def _kept_dropped(self, pid: str, party: int = 1, budget_total: int = 0) -> dict[str, Any]:
         place = self._kept.get(pid)
+        venue = ticketed_venues().by_key(place.ticket_venue) if place is not None else None
+        if place is not None and venue is not None and place.price * party > 0.8 * budget_total:
+            # the ticket alone takes the day's money (a pinned 롯데월드 at 12만 원 for three)
+            name = get_tag_rules().sign_name(place.name)
+            total = place.price * party
+            return {
+                "code": "KEPT_PLACE_DROPPED",
+                "detail": f"{name} 입장권이 1인 {place.price:,}원({party}명 {total:,}원)이라 "
+                "이 예산으로는 넣지 못했어요.",
+                "meta": {"place_id": pid, "name": name, "reason": "admission", "admission": place.price},
+            }
         if place is None:
             return {
                 "code": "KEPT_PLACE_DROPPED",
@@ -2003,7 +2018,8 @@ class CourseService:
                 continue
             pool = await self._places.fetch(role, last.place.point, reach_m, arrive_at.date())
             fc = FilterContext.build(ctx, role, per_person, arrive_at)
-            open_now = hard_filter(pool, fc, profile.params)  # budget, hours, dislikes: all checked here
+            # budget, hours, dislikes: all checked here; behind a ticket gate only after its own venue
+            open_now = [p for p in hard_filter(pool, fc, profile.params) if may_follow(p, last.place)]
             if not open_now:
                 continue
 
@@ -2070,6 +2086,7 @@ class CourseService:
             for p in pool:
                 if (
                     p.id in in_course
+                    or not may_follow(p, stop.place)  # behind a ticket gate: only from its own venue
                     or any(p.tags.get(t) for t in skip)
                     or not is_open(p.opening_hours, stop.arrive_at)
                 ):
@@ -2454,7 +2471,13 @@ def candidate_line(place: PlaceCandidate, price_delta: int, walk_delta: int | No
 
 def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
     """reason_codes (strongest first) as one card subtitle of at most 40 characters. Only what the code
-    itself says about the place — never a claim the data does not hold (no reviews, no "맛집" by guess)."""
+    itself says about the place — never a claim the data does not hold (no reviews, no "맛집" by guess).
+    A ticketed venue says first what it costs to get in; a café behind its gate, that it is behind it."""
+    venues = ticketed_venues()
+    if (venue := venues.by_key(place.ticket_venue)) is not None:
+        return _fit(venue.admission_line())
+    if (venue := venues.by_key(place.inside_venue)) is not None:
+        return _fit(venue.inside_line())
     if is_shop(place.category_code):  # docs/63: a shop says what it sells and how long a browse takes
         return _fit(shop_why_line(place.name, place.category_code))
     for code in codes:

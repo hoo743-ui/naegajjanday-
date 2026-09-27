@@ -267,9 +267,15 @@ def test_compare_marks_moves_beyond_the_noise_band() -> None:
 def test_quick_sample_size_and_groups() -> None:
     spots = [f"r{i}" for i in range(55)]
     quick = C.build_sample("quick", spots)
-    assert 90 <= len(quick) <= 200
+    assert 90 <= len(quick) <= 215
     groups = {"hotspot", "solo_night", "date_scene", "family_scene", "night", "regular", "errand", "shop"}
+    groups.add("ticket")
     assert {c.group for c in quick} == groups
+    # 입장권: each venue of concept.json › ticketed twice per request — pinned and not
+    tickets = [c for c in quick if c.group == "ticket"]
+    assert tickets and len(tickets) % 2 == 0 and all(c.half == "ticket" for c in tickets)
+    assert sum(c.with_venue for c in tickets) == len(tickets) // 2
+    assert len({c.key for c in tickets}) == len(tickets)
     # 꼭 들를 곳 (docs/59 #7): the date lunch and the friends' evening of each hotspot, with an errand after
     errands = [c for c in quick if c.group == "errand"]
     assert len(errands) == 2 * len({c.region for c in quick if c.group == "hotspot"})
@@ -287,6 +293,25 @@ def test_quick_sample_size_and_groups() -> None:
     assert len({c.key for c in full}) == len(full)  # every case distinct
     with pytest.raises(ValueError):
         C.build_sample("huge", spots)
+
+
+def test_ticketed_metrics_count_every_half() -> None:
+    """입장권 (recommendation.ticketed): a café behind a gate without its venue, and the venue's admission."""
+    from dataclasses import replace as _replace
+
+    venue = _replace(stop("ACTIVITY", "테마파크", price=134000), ticket_venue="park", admission_priced=True)
+    cafe = _replace(stop("CAFE", "안쪽 카페"), inside_venue="park")
+    street = stop("MEAL", "길가 식당")
+    alone = rec("date", [street, cafe])
+    together = rec("date", [venue, cafe])
+    unpriced = rec("date", [_replace(venue, admission_priced=False), street])
+    paired = rec("date", [street, cafe], group="ticket")
+    paired.case = _replace(paired.case, venue="park")
+    records = [alone, together, unpriced, paired]
+    inner = C.evaluate(C.METRIC_BY_ID["ticketed_inner_without_venue_rate"], records)
+    assert inner.n == 4 and inner.value == 0.5  # the pinned-venue half is counted too
+    priced = C.evaluate(C.METRIC_BY_ID["ticketed_admission_priced_rate"], records)
+    assert priced.n == 2 and priced.value == 0.5
 
 
 def test_sample_day_is_a_saturday_at_least_two_days_ahead() -> None:
