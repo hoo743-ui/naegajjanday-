@@ -36,6 +36,7 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | night | 4곳 × 데이트 · 친구 21:30 | 8곳 × 데이트 · 친구 · 여행 | 밤 규칙 |
 | regular | hotspot 요청 하나하나를 `familiarity=regular` 로 한 번 더(짝). "가 본 적 있음" = 짝인 처음 코스의 장소를 뺀다 | 같음 | 처음 · 자주 (docs/59 #1) |
 | errand | hotspot 의 데이트 점심 · 친구 저녁을 "끝나고 들르기"(볼일 30분, 동네 중심에서 동쪽 3 km)로 한 번 더 | 같음 | 꼭 들를 곳 (docs/59 #7) |
+| shop | 가게가 있는 명소 동네 8곳(`concept.json › shop_regions`) × 데이트 13:00 · 친구 14:00 × 소품샵 · 캐릭터샵 옵션 끔/켬 | 12곳 | 구경하는 가게 (docs/63) — 자기 절반, 기존 지표의 분모에 안 들어간다 |
 
 ## 2. 지표 — 무엇을 지키려는 숫자인가
 
@@ -55,6 +56,11 @@ uv run python -m app.cli eval-concept --json out.json --no-log   # 실험(기록
 | `solo_night_bar_rate` | ≥ 80% | "혼자 — **밤:** 혼술바 · 심야 영화 · 야경 산책" (docs/48 §4) · "혼자의 밤: 술집이 가격 상한에 걸려 0곳 → 걷기만" (docs/51 B3) | 혼자 · 21시 이후 코스 중 술집(BAR)이 있는 비율 |
 | `solo_late_bar_rate` | ≥ 80% | 같은 원칙 — 엔진의 밤(21시~)이 되기 전인 20시대도 혼자의 저녁은 "닫기: 한잔"(docs/48 §4). "20:30 · 3만 원: 곱창 + 산책뿐"(docs/59 #5) | solo_night 묶음의 20:30 코스 중 술집(BAR)이 있는 비율 |
 | `date_bbq_meal_rate` | ≤ 15% | "절대 안 됨: … 고깃집(데이트 식사로)" (docs/48 §1) · "6만 원 데이트 점심이 핫플 13곳 중 7곳에서 고깃집"(docs/59 #8) | 데이트의 식사(MEAL) 중 동네 명물(★)이 아닌 고깃집(`food.bbq`) — 대구 막창 · 제주 흑돼지는 그 동네에 오는 이유라 세지 않는다(장소 단위) |
+| `shop_presence_rate` | ≥ 30% | "20 · 30대가 실제로 구경하러 나가는 곳"(창업자 2026-09-26, docs/63) — 부탁하지 않아도 가게가 있는 동네의 낮이면 | **shop 묶음**, 옵션 끔: 코스에 가게(`shop.*`)가 있는 비율 |
+| `shop_asked_rate` | ≥ 90% | 같은 요청 — 부탁했으면 넣는다(없으면 말한다) | shop 묶음, `extras: ["SHOP"]`: 가게가 있는 비율 |
+| `shop_explained_rate` | 100% | "지금 피드백에는 가게에 대한 해석이 거의 없다" — 가게마다 왜 이 가게인지 한 줄 | shop 묶음 코스의 가게 중 카드 한 줄(`reason_short`, 40자)이 있는 곳(장소 단위) |
+| `shop_hours_violation_rate` | 0% | 닫힌 가게에 데려가지 않는다(업종 기본 11:00~21:00) | shop 묶음 코스의 가게 중 11시 전 도착 · 21시 넘어 머묾. 가중치 1.5 |
+| `shop_twice_rate` | ≤ 5% | 구경은 한 번 — 가게 → 가게는 쇼핑몰 나들이 | shop 묶음에서 가게 → 가게(시장) 연달아 |
 | `date_scene_flag_rate` | ≤ 5% | "절대 안 됨: 무인매장, 단체석 위주 대형 호프 · 고깃집, … 키즈 시설" · "기념일: 예산의 절반 이상을 한 끼(또는 한 잔)에" · 설레는 사이: 시끄러운 곳 피함 (docs/48 §1) | `DATE_GROUP_SPOT`(단체석 ≥ 0.8 인 식사 · 술집) · `DATE_KIDS_SPOT` · `DATE_UNMANNED` · `ANNIV_NO_SPLURGE`(가장 비싼 식사 · 술집 < 총액 35%) · `ANNIV_SNACK_MEAL` · `NEW_KARAOKE` 중 하나라도 |
 | `family_scene_flag_rate` | ≤ 5% | "가장 체력이 약한 사람에게 속도를 맞추고 … 술집(아이와 · 부모님과), 긴 도보 구간, 오락실 · 노래방(부모님과), 밤 21시 이후 코스(아이와)" (docs/48 §2) | `FAMILY_DRINK` · `FAMILY_BAR` · `KIDS_SPICY` · `KIDS_LATE`(마지막 장소를 21시 넘어 떠남) · `PARENTS_NOISY` · `LONG_LEG_KIDS/PARENTS`(20분 넘는 구간). 장면이 없으면 아이와(§9 결정) |
 | `night_violation_rate` | ≤ 3% | "밤(21시~): 한잔 → 걷기. 2곳이 정상" · "닫힌 곳, 밤의 산길" (docs/48 §1 · 7-6) · "밤 데이트 = 술집"(팀원 피드백 2026-09-24) | 21시 이후 시작한 코스 중 `CLOSED_AT_ARRIVAL` · `NIGHT_TRAIL` · `TOO_EARLY` · `NIGHT_NO_DRINK`(데이트 · 친구의 밤에 술집 없음) · `DATE_UNMANNED` · `FAMILY_DRINK` |
