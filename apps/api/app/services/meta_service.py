@@ -12,6 +12,7 @@ from app.core.cache import Cache
 from app.domain.anchors import context_purposes, university_rules
 from app.domain.models import GeoPoint
 from app.domain.recommendation.style import scene_rules
+from app.domain.recommendation.ticketed import ticketed_venues
 from app.domain.region_intro import intro_for
 from app.domain.signature import Sight, Signature, get_signature_rules
 from app.infra.db.base import utcnow
@@ -157,6 +158,7 @@ class MetaService:
         if (cached := await self._cache.get("purpose:list")) is not None:
             return dto.PurposeList.model_validate(cached)
         items = []
+        child_scenes = ticketed_venues().party.child_scenes  # the scenes that ask how many are children
         for p in await self._config.list_purposes():
             templates = await self._config.template_rows(p.id)
             # budget_min/max are totals for the purpose's usual party (a date = two people)
@@ -176,7 +178,12 @@ class MetaService:
                     min_budget_per_person=min((t.min_budget_per_person for t in templates), default=None),
                     scene_question=(scene_rules().get(p.code) or {}).get("question"),
                     scenes=[
-                        dto.SceneOut(code=code, label=str(s["label"]), hint=s.get("hint"))
+                        dto.SceneOut(
+                            code=code,
+                            label=str(s["label"]),
+                            hint=s.get("hint"),
+                            asks_children=code in child_scenes.get(p.code, frozenset()),
+                        )
                         for code, s in ((scene_rules().get(p.code) or {}).get("scenes") or {}).items()
                     ],
                     default_scene=(scene_rules().get(p.code) or {}).get("default"),

@@ -54,6 +54,7 @@ from app.domain.recommendation.blend import (
 )
 from app.domain.recommendation.budget import SlotBudget, evening_minute, is_night, night_window
 from app.domain.recommendation.candidates import FilterContext, area_names_of, compact_name, hard_filter
+from app.domain.recommendation.children import apply_children, child_scene, vetoed_for, with_children
 from app.domain.recommendation.composer import CourseComposer, Partial, objective
 from app.domain.recommendation.engine import RecommendationEngine, build_course
 from app.domain.recommendation.errand import errand_leg
@@ -347,6 +348,8 @@ class CourseService:
         """누구와 (docs/48): a day with children is not a night out. Asked for at night, it is planned for
         that evening instead (founder, 2026-09-25) — and the course says so."""
         _key, scene = resolve_scene(req.purpose, req.scene)
+        if with_children(req.children) and not scene.get("earlier_start"):
+            scene = child_scene()  # children said (docs/64 R18): whatever the purpose, not a night out
         start = self._local(req.start_at)
         if req.nights > 0 or not scene.get("earlier_start") or not is_night(start):
             return req, None
@@ -505,12 +508,16 @@ class CourseService:
         asked = {name: extra_roles()[name] for name in dict.fromkeys(req.extras) if name in extra_roles()}
         if not asked:
             return
-        vetoed = vetoed_roles([p.code for p in await self._purposes(req)])
+        by_purpose = vetoed_roles([p.code for p in await self._purposes(req)])
+        vetoed = by_purpose | vetoed_for(req.children)
         for name, extra in asked.items():
             held = [carries(course, extra) for course in out.courses]
             if ctx.days and any(held):
                 continue
-            warning = extra_unavailable(name, extra, vetoed=str(extra["role"]) in vetoed)
+            role = str(extra["role"])
+            warning = extra_unavailable(
+                name, extra, vetoed=role in vetoed, children=role in vetoed and role not in by_purpose
+            )
             out.warnings.append(warning)
             for course, has_it in zip(out.courses, held, strict=True):
                 if not has_it:
@@ -719,7 +726,7 @@ class CourseService:
         purposes = await self._purposes(req)
         purpose = purposes[0]  # the first one gives the day its shape; all of them weigh in below
         profile = blend_profiles([await self._config.scoring_profile(p.id, p.code) for p in purposes])
-        vetoed = vetoed_roles([p.code for p in purposes])
+        vetoed = vetoed_roles([p.code for p in purposes]) | vetoed_for(req.children)
         vetoed |= frozenset(r.upper() for r in req.skip_roles)
         templates = without_roles(await self._config.templates_for(purpose.id, purpose.code), vetoed)
         conditions = self._conditions(req)
@@ -788,6 +795,7 @@ class CourseService:
         profile, templates = self._apply_understood(ctx, profile, templates, understood)
         ctx.scene, scene = resolve_scene(purpose.code, req.scene)
         profile, templates = self._apply_scene(ctx, profile, templates, scene)
+        apply_children(ctx, req.children)  # docs/64 R18: children said → no drink anywhere, home by evening
         self._apply_shop_taste(ctx, purpose.code, anchored=req.anchor is not None)
         # "조용하게": no pub and no karaoke room, unless a drink was asked for by name
         asked_roles = {str(extra_roles()[r]["role"]) for r in req.extras if r in extra_roles()}
@@ -1074,7 +1082,8 @@ class CourseService:
         ip: str | None = None,
     ) -> dto.CourseGenerateResponse:
         started = time.perf_counter()
-        body = req.model_dump(mode="json")
+        # an absent head count of children is left out: the same key and log row as before docs/64 R18
+        body = req.model_dump(mode="json", exclude={"children"} if req.children is None else None)
         digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()[:32]
         owner = user.public_id if user else "anon"
         # Same request → same courses is only safe for one owner: anonymous courses carry an edit key, so they
@@ -1124,6 +1133,8 @@ class CourseService:
             "pace": list(req.pace),
             "wishes": list(req.wishes),
             "scene": ctx.scene,
+            # docs/64 R18: only when it was said (a course without it reads the same as before)
+            **({"children": req.children} if req.children is not None else {}),
             # 처음 · 자주 (docs/59 #1): the page says why, and 다시 짜기 sends an asked-for one back
             "familiarity": self._familiar.value,
             "familiarity_source": self._familiar.source,
@@ -1622,6 +1633,7 @@ class CourseService:
                 move_style=(row.request or {}).get("move_style"),
                 wishes=list((row.request or {}).get("wishes") or []),
                 scene=(row.request or {}).get("scene"),
+                children=(row.request or {}).get("children"),
                 errand=dto.ErrandIn.model_validate({k: v for k, v in errand.items() if k != "asked_start_at"})
                 if (errand := (row.request or {}).get("errand"))
                 else None,
@@ -1694,6 +1706,7 @@ class CourseService:
         profile, _ = self._apply_understood(ctx, profile, [], understood)
         ctx.scene, scene = resolve_scene(ctx.purpose_code, (row.request or {}).get("scene"))
         profile, _ = self._apply_scene(ctx, profile, [], scene)
+        apply_children(ctx, (row.request or {}).get("children"))  # a swap keeps the day with children
         self._apply_shop_taste(ctx, ctx.purpose_code, anchored=bool((row.request or {}).get("anchor")))
         # 처음 · 자주: a replacement for a regular's stop leans the same way the course did
         ctx.familiarity = REGULAR if (row.request or {}).get("familiarity") == REGULAR else FIRST
@@ -2039,8 +2052,10 @@ class CourseService:
         ctx.exclude_place_ids |= {s.place.id for s in stops if not s.place.is_event}
         last = stops[-1]
         purposes = (row.request or {}).get("purposes") or []
-        vetoed = vetoed_roles([str(code) for code in purposes]) | (
-            set() if same_role else {s.role for s in stops}
+        vetoed = (
+            vetoed_roles([str(code) for code in purposes])
+            | vetoed_for((row.request or {}).get("children"))
+            | (set() if same_role else {s.role for s in stops})
         )
         # "조용하게" offers no pub afterwards either, unless a drink was asked for by name
         extras = (row.request or {}).get("extras") or []
@@ -2105,7 +2120,7 @@ class CourseService:
         purposes = [str(c) for c in (row.request or {}).get("purposes") or []] or [
             str((row.request or {}).get("purpose") or "")
         ]
-        vetoed = vetoed_roles(purposes)
+        vetoed = vetoed_roles(purposes) | vetoed_for((row.request or {}).get("children"))
         in_course = {s.place.id for s in stops if not s.place.is_event}
         skip = set(rules.get("skip_tags") or ())
         region = await self._s.get(Region, row.region_id) if row.region_id else None

@@ -182,9 +182,15 @@ def category_matches(code: str, wanted: str) -> bool:
     return code == wanted or (wanted in wanted_families() and code.startswith(wanted + "."))
 
 
-def extra_unavailable(name: str, extra: Mapping[str, Any], *, vetoed: bool) -> dict[str, Any]:
-    """The user ticked "a drink" / "a ball game" and the course has none: say so, never drop it silently."""
-    detail = extra.get("vetoed" if vetoed else "missing") or extra.get("missing") or ""
+def extra_unavailable(
+    name: str, extra: Mapping[str, Any], *, vetoed: bool, children: bool = False
+) -> dict[str, Any]:
+    """The user ticked "a drink" / "a ball game" and the course has none: say so, never drop it silently.
+    `children`: kept out because children come along (docs/64 R18), not because of the purposes."""
+    key = "missing"
+    if vetoed:
+        key = "vetoed_children" if children and extra.get("vetoed_children") else "vetoed"
+    detail = extra.get(key) or extra.get("missing") or ""
     return {
         "code": "EXTRA_UNAVAILABLE",
         "detail": str(detail),

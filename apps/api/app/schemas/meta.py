@@ -40,6 +40,9 @@ class SceneOut(BaseModel):
     code: str
     label: str
     hint: str | None = None
+    asks_children: bool = Field(
+        default=False, description="이 장면이면 위저드가 아이 수를 묻는다 (docs/64 R18: 가족 · 아이와)"
+    )
 
 
 class PurposeOut(BaseModel):

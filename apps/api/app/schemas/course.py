@@ -3,7 +3,15 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.image_ref import ImageRef, resolve_image
 from app.schemas.common import LatLng
@@ -65,6 +73,14 @@ class CourseGenerateRequest(BaseModel):
         description="함께 고른 다른 목적들. 가중치·취향은 평균, 한 목적의 금기(가족 → 술집)는 전체에 적용",
     )
     party_size: int = Field(ge=1, le=20)
+    children: int | None = Field(
+        default=None,
+        ge=0,
+        le=19,
+        description="그중 아이 수 (docs/64 R18). 입장권은 아이만큼 어린이 요금, 1명 이상이면 아이와의 "
+        "규칙(술집 · 술자리 없음, 저녁에 마무리). 생략하면 지금처럼 가정한다(가족 · 아이와 = 어른 둘, "
+        "나머지 아이). 인원보다 적어야 한다(어른이 한 명은 있다)",
+    )
     budget_total: int = Field(ge=1000, le=10_000_000, description="총 예산(원)")
     start_at: datetime | None = Field(default=None, description="생략 시 현재 시각")
     duration_min: int | None = Field(default=None, ge=60, le=960)
@@ -139,6 +155,16 @@ class CourseGenerateRequest(BaseModel):
         max_length=40,
         description="여행의 하루를 다시 짤 때 바꿀 그 날의 코스 id. 새 코스가 같은 여행의 같은 날이 된다",
     )
+
+    @field_validator("children")
+    @classmethod
+    def _children_under_party(cls, value: int | None, info: ValidationInfo) -> int | None:
+        party = info.data.get("party_size")
+        if value is not None and party is not None and value >= party:
+            raise ValueError(
+                f"아이 수({value}명)는 인원({party}명)보다 적어야 해요. 어른이 한 명은 있어야 해요"
+            )
+        return value
 
     @model_validator(mode="after")
     def _region_or_origin(self) -> CourseGenerateRequest:
@@ -224,6 +250,7 @@ class LastChoices(BaseModel):
     purpose: str | None = None
     scene: str | None = None
     party_size: int | None = None
+    children: int | None = Field(default=None, description="지난번에 직접 고른 아이 수 (docs/64 R18)")
     budget_total: int | None = None
     transport: Transport | None = None
     move_style: MoveStyle | None = None
@@ -577,6 +604,10 @@ class CourseRequestEcho(BaseModel):
     move_style: str | None = None
     wishes: list[str] = Field(default_factory=list)
     scene: str | None = None
+    children: int | None = Field(
+        default=None,
+        description="요청에 있던 아이 수 (docs/64 R18). 없으면 가정했다. 다시 짤 때 그대로 보낸다",
+    )
     errand: ErrandIn | None = None
     scene_label: str | None = Field(default=None, description="누구와의 이름: 아이와 · 기념일 …")
     familiarity: Familiarity = Field(

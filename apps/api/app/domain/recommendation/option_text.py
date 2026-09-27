@@ -182,6 +182,7 @@ LAST_CHOICE_FIELDS = (
     "purpose",
     "scene",
     "party_size",
+    "children",  # docs/64 R18: only when it was said
     "budget_total",
     "transport",
     "move_style",

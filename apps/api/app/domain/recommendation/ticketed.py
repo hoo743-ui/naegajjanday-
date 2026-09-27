@@ -16,6 +16,8 @@ Follow-up (창업자 2026-09-27, docs/59 #13):
   it), then home — no second outing, no long leg, and a day with the kids still ends by its scene's hour;
 - a party with children pays the child price for them (`party_of`: the request has no head count by age, so
   아이와 is read as two adults and the rest children — one adult and one child for a pair);
+- how many are children is asked since docs/64 R18 (`children` on the request): when given it replaces the
+  assumption above, and the card shows the real split ("입장권 어른 1 · 어린이 2 = 138,000원");
 - a price announced for a later day (에버랜드 2026-10-06) is in force from that day by itself (`changes`).
 """
 
@@ -107,6 +109,13 @@ class Venue:
             return f"입장권 어른 {a.adult:,} · 어린이 {a.child:,}원({short} {a.as_of})"
         basis = "공식 요금" if a.basis == "공식" else "추정 요금"
         return f"입장권 1인 {a.adult:,}원 ({basis}, {a.as_of} 기준)"
+
+    def split_line(self, day: date | None, adults: int, children: int) -> str:
+        """The party as asked (docs/64 R18): "입장권 어른 1 · 어린이 2 = 138,000원(공식 2026-09)"."""
+        a = self.admission_on(day)
+        who = f"어른 {adults}" + (f" · 어린이 {children}" if children else "")
+        short = "공식" if a.basis == "공식" else "추정"
+        return f"입장권 {who} = {a.for_party(adults, children):,}원({short} {a.as_of})"
 
     def inside_line(self) -> str:
         return f"{self.name} 안 · 입장권이 있어야 들어가요"
@@ -205,10 +214,16 @@ class TicketedVenues:
 
     # ── a request's own price: its day, its children ──────────────────────────────────────────
 
-    def party_of(self, purpose_code: str, scene: str | None, party_size: int) -> tuple[int, int]:
-        """(adults, children). A scene with children (가족 · 아이와): two adults and the rest children, one
-        adult for a pair; any other company is all adults."""
+    def party_of(
+        self, purpose_code: str, scene: str | None, party_size: int, children: int | None = None
+    ) -> tuple[int, int]:
+        """(adults, children). Asked (docs/64 R18): the children said, the rest adults. Not asked: a scene
+        with children (가족 · 아이와) is two adults and the rest children, one adult for a pair; any other
+        company is all adults."""
         party_size = max(1, party_size)
+        if children is not None:
+            kids = min(max(0, children), party_size - 1)
+            return party_size - kids, kids
         if scene is None or scene not in self.party.child_scenes.get(purpose_code, frozenset()):
             return party_size, 0
         adults = min(self.party.adults_of_family, max(1, party_size - 1))
@@ -218,7 +233,8 @@ class TicketedVenues:
         """Price each venue among `places` for this request: the admission in force on its day, children at
         the child price. Per person is the party's total spread over it, rounded up (the course's total is
         never less than what the gate charges). In place; the same answer however often it runs."""
-        adults, children = self.party_of(ctx.purpose_code, ctx.scene, ctx.party_size)
+        adults, children = self.party_of(ctx.purpose_code, ctx.scene, ctx.party_size, ctx.children)
+        split = (adults, children) if ctx.children is not None else None
         day = ctx.start_at.date()
         for place in places:
             venue = self.by_key(place.ticket_venue)
@@ -228,6 +244,7 @@ class TicketedVenues:
             place.price_per_person = math.ceil(admission.for_party(adults, children) / (adults + children))
             place.price_is_estimated = admission.basis != "공식"
             place.ticket_children = children
+            place.ticket_split = split
             place.ticket_day = day
 
     def party_price(self, place: PlaceCandidate, party_size: int) -> int:
@@ -243,19 +260,27 @@ class TicketedVenues:
         self, place: PlaceCandidate, est_price: int, party_size: int, request: Mapping[str, Any], day: date
     ) -> None:
         """A saved course's venue keeps the price it was planned at (a reorder or a swap re-times the day
-        with it): the stored party price, and the children it counted (request › purposes · scene)."""
+        with it): the stored party price, and the children it counted (request › children, else purposes ·
+        scene)."""
         if not place.ticket_venue or est_price <= 0 or party_size <= 0:
             return
         purposes = request.get("purposes") or []
-        _, children = self.party_of(str(purposes[0]) if purposes else "", request.get("scene"), party_size)
+        asked = request.get("children")
+        asked = int(asked) if asked is not None else None
+        adults, children = self.party_of(
+            str(purposes[0]) if purposes else "", request.get("scene"), party_size, asked
+        )
         place.price_per_person = math.ceil(est_price / party_size)
         place.ticket_children = children
+        place.ticket_split = (adults, children) if asked is not None else None
         place.ticket_day = day
 
     def line(self, place: PlaceCandidate) -> str | None:
         """The card's one line for a venue (its admission, for the party it was priced for) or for a place
         inside one (behind the gate)."""
         if (venue := self.by_key(place.ticket_venue)) is not None:
+            if place.ticket_split is not None:  # the party as asked: the real split and its total
+                return venue.split_line(place.ticket_day, *place.ticket_split)
             return venue.admission_line(place.ticket_day, place.ticket_children)
         if (venue := self.by_key(place.inside_venue)) is not None:
             return venue.inside_line()

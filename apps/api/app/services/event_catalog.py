@@ -31,6 +31,7 @@ EVENT_PROPS: dict[str, frozenset[str]] = {
     "course_generation_started": frozenset({"pace", "wishes", "detailed", "move_style"}),
     "plan_abandoned": frozenset({"step"}),
     "plan_last_choices_applied": frozenset({"fields", "extras"}),
+    "children_set": frozenset({"children", "party_size", "via"}),  # docs/64 R18: 아이는 몇 명이에요?
     "course_generate_requested": frozenset({"region", "purpose", "party_size", "budget_total", "transport"}),
     "course_generated": frozenset({"purpose", "budget_total", "price", "stops", "candidates", "latency_ms"}),
     "course_generate_failed": frozenset({"code", "purpose", "budget_total"}),

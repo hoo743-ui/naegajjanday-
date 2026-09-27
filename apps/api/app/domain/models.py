@@ -94,6 +94,9 @@ class PlaceCandidate:
     # of the party paid the child price
     ticket_day: date | None = None
     ticket_children: int = 0
+    # the request said how many are children (docs/64 R18): (adults, children) as paid at the gate — the
+    # card shows that split. None: the head count by age was assumed (party_of) and the card says less
+    ticket_split: tuple[int, int] | None = None
 
     @property
     def point(self) -> GeoPoint:
@@ -287,6 +290,9 @@ class RequestContext:
     leg_cap_min: float | None = None  # the night's shorter longest walk (conditions.json › night)
     soft_end_min: int | None = None  # 누구와 end_by: minute of the evening an open-ended day wraps up
     scene: str | None = None  # 누구와 (docs/48): kids · parents · adults · new · steady · anniversary
+    # 아이 수 (docs/64 R18): how many of the party are children, as asked. None = not asked (assumed from
+    # the scene for tickets, recommendation.ticketed.party_of); more than 0 = a day with children
+    children: int | None = None
     # names of the chosen area itself ("경주 황리단길", "홍대"): a sight called exactly that is not a stop
     area_names: frozenset[str] = frozenset()
     # the neighbourhood's signature (domain.signature): its specialty words, its landmark sights, and the
