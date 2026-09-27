@@ -1,0 +1,437 @@
+{
+ "_note": "잣대 잠금 — 손으로 고치지 말 것. `python -m app.evaluation.yardstick --write` 로만, 창업자 승인(docs/64) 후 엔진 · 데이터 변경과 다른 커밋에서, 메시지에 `Yardstick-Approved: R<번호>`.",
+ "metrics": {
+  "bar_kind_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.5,
+   "weight": 1.0
+  },
+  "cafe_cafe_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.03,
+   "weight": 1.0
+  },
+  "chain_ending_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "chain_rate_date": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "chain_rate_friends": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.25,
+   "weight": 1.0
+  },
+  "chain_rate_friends_cafe": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.25,
+   "weight": 1.0
+  },
+  "chain_rate_travel": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "clean_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.5,
+   "weight": 0.5
+  },
+  "date_bbq_meal_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.15,
+   "weight": 1.0
+  },
+  "date_scene_flag_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "day_schedule_conflict_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.03,
+   "weight": 1.0
+  },
+  "draw_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.7,
+   "weight": 1.0
+  },
+  "empty_slot_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "errand_leg_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "errand",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.95,
+   "weight": 1.0
+  },
+  "errand_toward_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "errand",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.8,
+   "weight": 1.0
+  },
+  "family_scene_flag_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "few_stops_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "friends_evening_bar_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.6,
+   "weight": 1.0
+  },
+  "long_walk_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "low_budget_use_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "mean_stops_day": {
+   "direction": "higher",
+   "floor_only": true,
+   "half": null,
+   "kind": "mean",
+   "scale": 1.0,
+   "target": 3.0,
+   "weight": 1.0
+  },
+  "naming_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.02,
+   "weight": 1.0
+  },
+  "night_violation_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.03,
+   "weight": 1.0
+  },
+  "no_course_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.02,
+   "weight": 1.5
+  },
+  "over_budget_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.0,
+   "weight": 1.5
+  },
+  "regular_draw_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "regular",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.5,
+   "weight": 1.0
+  },
+  "regular_long_walk_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "regular",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "regular_novelty_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "regular",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.5,
+   "weight": 1.0
+  },
+  "regular_overlap_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "regular",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.2,
+   "weight": 1.0
+  },
+  "regular_schedule_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "regular",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.03,
+   "weight": 1.0
+  },
+  "repeated_kind_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "same_kind_twice_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "shop_asked_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.9,
+   "weight": 1.0
+  },
+  "shop_explained_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 1.0,
+   "weight": 1.0
+  },
+  "shop_hours_violation_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.0,
+   "weight": 1.5
+  },
+  "shop_presence_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.7,
+   "weight": 1.0
+  },
+  "shop_twice_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "shop_unasked_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "shop",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.25,
+   "weight": 1.0
+  },
+  "snack_as_meal_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.03,
+   "weight": 1.0
+  },
+  "solo_late_bar_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.8,
+   "weight": 1.0
+  },
+  "solo_night_bar_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.8,
+   "weight": 1.0
+  },
+  "ticket_after_venue_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "*",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.0,
+   "weight": 1.5
+  },
+  "ticket_family_scene_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "ticket",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.05,
+   "weight": 1.0
+  },
+  "ticket_long_walk_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "ticket",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.1,
+   "weight": 1.0
+  },
+  "ticketed_admission_priced_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": "*",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 1.0,
+   "weight": 1.0
+  },
+  "ticketed_inner_without_venue_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "*",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.0,
+   "weight": 1.5
+  },
+  "trust_invented_rate": {
+   "direction": "lower",
+   "floor_only": false,
+   "half": "*",
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.0,
+   "weight": 1.5
+  },
+  "trust_line_rate": {
+   "direction": "higher",
+   "floor_only": false,
+   "half": null,
+   "kind": "rate",
+   "scale": 0.25,
+   "target": 0.9,
+   "weight": 1.0
+  }
+ }
+}
