@@ -58,7 +58,7 @@ def write() -> None:
         "metrics": current(),
     }
     text = json.dumps(body, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
-    LOCK_PATH.write_text(text, encoding="utf-8")
+    LOCK_PATH.write_text(text, encoding="utf-8", newline="\n")
 
 
 def main() -> int:
