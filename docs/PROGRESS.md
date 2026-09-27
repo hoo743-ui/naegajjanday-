@@ -2,7 +2,29 @@
 
 > 세션이 끊겨도 이어서 작업할 수 있도록 남기는 체크포인트. 남은 일이 없어지면 이 파일은 삭제한다.
 
-## 체크포인트 — 2026-09-26 11:00 KST (최신)
+## 체크포인트 — 2026-09-27 저녁 (최신) · 창업자 "모든 작업 중단" 후, 다른 PC 로 옮기기 전
+
+**새 PC 에서 시작하는 법: docs/66.** 한 줄 요약 — OneDrive 밖에 clone → `scripts\migrate\import.ps1` → Claude Code 에서 "docs/PROGRESS.md 맨 위부터 이어서".
+
+### 지금 상태
+- **모든 에이전트 · 루프 멈춤.** 3시간 개선 루프(세션 크론)는 꺼져 있다. 다시 켜기 전에 docs/64 R17 순서(③ 일관성 테스트 · 이동 모델, ④ 민감도)가 먼저.
+- **main 은 원격과 같음.** 이번 세션에 운영에 올라간 것: 대기열 2~15 · 21(docs/59 "끝난 것"), 장소 결정 창 · 코스 확정, 자체 이벤트 · /admin/usage, 구경하는 가게, API 한도 가드, 입장권 구역 + 후속, 업태로 술집 재분류, 믿을 이유 한 줄, /chat 수정, KOPIS 켜짐, 카카오 지도(JS SDK 도메인) 해결, 나이대 취향 끔.
+- **잣대 잠금**(docs/64 R17 ②): `apps/api/data/eval/yardstick.lock.json` + `tests/unit/test_yardstick.py` + CI `yardstick`. 목표를 바꾸려면 창업자 승인 · 엔진과 다른 커밋 · `Yardstick-Approved: R<번호>`.
+- **멈춘 작업물(원격 브랜치, 검토 안 됨, main 아님)**: `wip/r18-children`(아이 인원 입력 — 단위 테스트 쓰던 중, 합격 기준은 docs/64 R18), `wip/16-mealtime`(밥때 식사 — 규칙 파일만).
+- **로컬 전국 DB 반쯤 반영**: `data-sync` 11개 중 9개 적용, `rules/place_names` · `rules/bar_licence` 남음(다음에 `uv run python -m app.cli data-sync` 한 번). 반영 전 백업 `%LOCALAPPDATA%\naegajjanday\naegajjanday.before-sync-0927.db`. 잠금 파일 `naegajjanday.db.data-sync.lock` 이 남아 있다(방해하면 지울 것).
+
+### 창업자 답을 기다리는 것
+1. docs/65 이동 모델 §5 — M1 역 안 · M2 역 주변(기본) · M3 다른 역, 800m / 2km / 도보 20분, M3 에서 돌아오기 필요?, 불변식 빠진 것.
+2. 믿을 이유 "두 번째 문구"(여기도 성수 명물 젤라또) 유지 vs 카카오 링크로.
+3. 서울 열린데이터 키 발급(R19) — 오면 나이대 취향을 실측으로.
+
+### 다음 순서 (docs/64)
+1. 위 답 → docs/65 확정 → `tests/metamorphic/` 불변식 I1~I12 를 CI 에.
+2. `app.cli sensitivity` — 값 하나 ±10% 에 코스가 얼마나 바뀌나.
+3. 그 다음에야 대기열(16 밥때 식사 · 17 대안 차별화 · R18 이어서) — 에이전트는 합격 기준을 바꾸지 않는 조건으로.
+4. 정리는 `python scripts/housekeeping.py`(보고만, 삭제는 창업자).
+
+## 체크포인트 — 2026-09-26 11:00 KST
 
 운영: 웹 https://naegajjanday.vercel.app (Vercel) · API https://naegajjanday-api.onrender.com (Render, SQLite /var/data). main 에 push = 배포. 마지막 커밋 `f1dc5d4`.
 
