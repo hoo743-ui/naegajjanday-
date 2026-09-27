@@ -18,7 +18,12 @@ from app.domain.recommendation.budget import SlotBudget, effective_budget
 from app.domain.recommendation.errand import end_pull
 from app.domain.recommendation.features import congestion_at, is_open
 from app.domain.recommendation.scorer import PlaceScorer, Score, ScoreInput
-from app.domain.recommendation.ticketed import may_follow, ticketed_venues, within_gate
+from app.domain.recommendation.ticketed import (
+    after_long_venue,
+    may_follow,
+    ticketed_venues,
+    within_gate,
+)
 from app.domain.routing.travel_time import HaversineEstimator, Leg
 
 MIN_OPEN_BUFFER_MIN = 30
@@ -206,6 +211,13 @@ class CourseComposer:
             leg = Leg(min(leg.minutes, ticketed_venues().leg_cap_min), leg.distance_m, leg.source)
         if strict and partial.stops and not pinned and leg.minutes > self.leg_limit():
             return None
+        # docs/59 #13: after a long venue (a theme park) one meal or café near its gate, then the day is over
+        wrap = ticketed_venues().wrap
+        after = after_long_venue([s.place for s in partial.stops]) if strict and not pinned else None
+        if after is not None and (
+            after >= 1 or place.course_role not in wrap.roles or leg.minutes > wrap.leg_max_min
+        ):
+            return None
         arrive = partial.clock + timedelta(minutes=round(leg.minutes))
         windowed = slot_window_ok(sb, self._day0, arrive, params.max_wait_min)
         if windowed is None:
@@ -240,6 +252,13 @@ class CourseComposer:
             and leave > ctx.start_at + timedelta(minutes=ctx.duration_min + WINDOW_GRACE_MIN)
         ):
             return None
+        # ... and a day with the kids still ends by its scene's hour (scenes.json › end_by, 20:30)
+        if (
+            after is not None
+            and ctx.soft_end_min is not None
+            and leave > self._day0 + timedelta(minutes=ctx.soft_end_min + WINDOW_GRACE_MIN)
+        ):
+            return None
         stop = PlannedStop(place, sb, arrive, leave, leg, score, eff, congestion_at(place, arrive))
         return Partial(
             stops=(*partial.stops, stop),
@@ -263,10 +282,21 @@ class CourseComposer:
         for sb in slot_budgets:
             nxt: list[Partial] = []
             for partial in beam:
+                grew = False
                 for place in ranked.get(sb.slot.position, ()):
                     grown = self.extend(partial, place, sb)
                     if grown is not None:
                         nxt.append(grown)
+                        grew = True
+                # docs/59 #13: a day that has had its long venue ends after its one stop near the gate — the
+                # slots left are not holes. Waiting at the venue for a later slot's stop is kept only while
+                # this slot has none for it (the day score averages per stop: the park alone would win).
+                after = after_long_venue([s.place for s in partial.stops])
+                if after is not None and (after >= 1 or not grew):
+                    nxt.append(partial)
+            # a pinned long venue: the stop before it is near its gate (lunch, then in), when any is
+            near = [p for p in nxt if not self._far_before_venue(p)]
+            nxt = near or nxt
             if not nxt:
                 unfilled.append(sb.slot.position)
                 continue
@@ -275,6 +305,16 @@ class CourseComposer:
         finals = [p for p in beam if p.stops]
         finals.sort(key=lambda p: -objective(p, b, self._params, final=True, ctx=self._ctx))
         return finals, unfilled
+
+    def _far_before_venue(self, partial: Partial) -> bool:
+        """The last stop is a pinned long venue reached by a long leg from the stop before it."""
+        if len(partial.stops) < 2 or not self._ctx.kept_places:
+            return False
+        last = partial.stops[-1]
+        if (last.place.is_event, last.place.id) not in self._ctx.kept_keys:
+            return False
+        venues = ticketed_venues()
+        return venues.ends_day(last.place) and last.leg.minutes > venues.wrap.before_leg_max_min
 
     def _reachable(
         self, slot_budgets: Sequence[SlotBudget], ranked: Mapping[int, Sequence[PlaceCandidate]]

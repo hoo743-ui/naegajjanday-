@@ -170,6 +170,7 @@ class Stop:
     # stored field of this place (trust_invented_rate)
     trust: str | None = None
     trust_ok: bool = True
+    ends_day: bool = False  # a venue stayed long enough that the day ends near its gate (docs/59 #13)
 
     @property
     def chain(self) -> bool:
@@ -338,6 +339,19 @@ def _full_length(r: Record) -> bool:
     so its two stops are the scene working, not too few (docs/48 §2 · §6)."""
     kids = r.case.purpose == "family" and (r.case.scene or "kids") == "kids"
     return r.ok and not (kids and int(r.case.start.split(":")[0]) >= 17)
+
+
+AFTER_VENUE_LEG_MIN = 15  # ticketed_venues.json › wrap_up.leg_max_min
+KIDS_WRAP_END_MIN = 20 * 60 + 30 + 15  # scenes.json › kids.end_by, and the window's grace
+
+
+def _long_after_venue(r: Record) -> bool:
+    """docs/59 #13: after a long venue, more than one stop, a long leg, or (with the kids) past 20:45."""
+    at = next(i for i, s in enumerate(r.stops) if s.ends_day)
+    after = r.stops[at + 1 :]
+    kids = r.case.purpose == "family" and (r.case.scene or "kids") == "kids"
+    late = kids and bool(after) and after[-1].leave_min > KIDS_WRAP_END_MIN
+    return len(after) > 1 or any(s.leg > AFTER_VENUE_LEG_MIN for s in after) or late
 
 
 def _chains(purpose: str, roles: frozenset[str] = FOOD_ROLES) -> Count:
@@ -560,6 +574,16 @@ METRICS: tuple[Metric, ...] = (
            _stops(_ok, lambda s: s.role in FOOD_ROLES, lambda s: bool(s.trust))),
     Metric("trust_invented_rate", "'믿을 이유' 중 저장된 필드로 되짚어지지 않는 것(지어낸 말)", "lower", 0.0,
            _stops(_ok, lambda s: bool(s.trust), lambda s: not s.trust_ok), half=ANY_HALF, weight=1.5),
+    # docs/59 #13 (창업자 2026-09-27): the ticket pairs' own family · long-walk checks (the base metrics never
+    # see a paired half), and the day after a theme park's afternoon — one stop near the gate, then home
+    Metric("ticket_family_scene_rate", "입장권 짝: 가족의 '절대 안 됨'(늦은 끝 · 긴 구간 …)", "lower", 0.05,
+           _course(lambda r: r.ok and r.case.purpose == "family", _has(FAMILY_FLAGS)), FAMILY_FLAGS,
+           half="ticket"),
+    Metric("ticket_long_walk_rate", "입장권 짝: 한 구간을 너무 오래 걷는 코스", "lower", 0.10,
+           _course(_ok, _has(_code("LONG_WALK"))), _code("LONG_WALK"), half="ticket"),
+    Metric("ticket_after_venue_rate", "테마파크 반나절 뒤 또 나감(두 곳 · 긴 구간 · 늦은 끝)",
+           "lower", 0.0, _course(lambda r: r.ok and any(s.ends_day for s in r.stops), _long_after_venue),
+           half=ANY_HALF, weight=1.5),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -879,6 +903,7 @@ def record_from(
 
     venues = ticketed_venues()
     words = [w for w in (_compact(w) for w in ctx.draw_words) if w]
+    gate_party = venues.party_of(ctx.purpose_code, ctx.scene, case.party)  # (adults, children)
     stops = []
     for s in course.stops:
         p = s.place
@@ -913,7 +938,11 @@ def record_from(
                 why=short_reason(list(s.reason_codes), p),
                 ticket_venue=venue.key if venue else None,
                 inside_venue=inside.key if inside else None,
-                admission_priced=s.est_price == venue.admission.adult * case.party if venue else None,
+                # docs/59 #13: the admission in force that day, children at the child price
+                admission_priced=s.est_price == venue.admission_on(ctx.start_at.date()).for_party(*gate_party)
+                if venue
+                else None,
+                ends_day=bool(venue and (venue.stay_min or 0) >= venues.wrap.long_stay_min),
                 trust=line.text if line else None,
                 trust_ok=trust_rules.grounded(line, evidence, today=today),
             )

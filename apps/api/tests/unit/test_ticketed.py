@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from app.domain.models import GeoPoint, Slot
 from app.domain.recommendation import budget as B
 from app.domain.recommendation.composer import INSIDE_GATE_PULL, CourseComposer
@@ -141,3 +143,114 @@ def test_the_shipped_data_file_reads() -> None:
         69674, "강강술래롯데 잠실점", "MEAL", "서울특별시 송파구 올림픽로 240", GeoPoint(37.51131, 127.09814)
     )
     assert dept is None
+
+
+# ── docs/59 #13: a short day after a long venue · child prices · dated prices ──────────────────
+
+DATED = parse(
+    {
+        "venues": [
+            {
+                "key": "land",
+                "name": "테스트랜드",
+                "place_ids": [2],
+                "gate": [GATE.lat, GATE.lng],
+                "stay_min": 240,
+                "admission": {
+                    "adult": 68000,
+                    "child": 58000,
+                    "as_of": "2026-09",
+                    "basis": "공식",
+                    "source": "https://example.test/price",
+                    "changes": [
+                        {"from": "2026-11-01", "adult": 65000, "child": 55000},
+                        {
+                            "from": "2026-10-06",
+                            "adult": 71000,
+                            "child": 61000,
+                            "source": "https://example.test/up",
+                        },
+                    ],
+                },
+            }
+        ],
+    }
+)
+
+
+def test_an_announced_price_switches_on_its_day() -> None:
+    land = DATED.venues[0]
+    assert land.admission_on(date(2026, 10, 5)).adult == 68000
+    up = land.admission_on(date(2026, 10, 6))
+    assert (up.adult, up.child, up.as_of, up.basis) == (71000, 61000, "2026-10", "공식")
+    assert up.source == "https://example.test/up"
+    later = land.admission_on(date(2026, 11, 2))  # what a change does not restate carries over
+    assert (later.adult, later.child, later.source) == (65000, 55000, "https://example.test/price")
+    assert land.admission_line(date(2026, 10, 6)) == "입장권 1인 71,000원 (공식 요금, 2026-10 기준)"
+    kids_line = land.admission_line(date(2026, 10, 6), children=1)
+    assert kids_line == "입장권 어른 71,000 · 어린이 61,000원(공식 2026-10)"
+
+
+def test_children_pay_the_child_price() -> None:
+    assert DATED.party_of("family", "kids", 3) == (2, 1)
+    assert DATED.party_of("family", "kids", 2) == (1, 1)
+    assert DATED.party_of("family", "kids", 1) == (1, 0)
+    assert DATED.party_of("family", "parents", 3) == (3, 0)  # 부모님과: all adults
+    assert DATED.party_of("date", None, 2) == (2, 0)
+
+    at = context().start_at.replace(month=10, day=10)  # after the rise
+    ctx = context(budget_total=300000, party_size=3, purpose_code="family", scene="kids", start_at=at)
+    land = DATED.mark(place("ACTIVITY", "activity", 12000, id=2, lat=GATE.lat, lng=GATE.lng))
+    DATED.price([land], ctx)
+    total = 2 * 71000 + 61000
+    assert land.price == -(-total // 3) and DATED.party_price(land, 3) == total
+    assert DATED.line(land) == "입장권 어른 71,000 · 어린이 61,000원(공식 2026-10)"
+    DATED.price([land], ctx)  # the same answer however often it runs
+    assert DATED.party_price(land, 3) == total
+
+    couple = DATED.mark(place("ACTIVITY", "activity", 12000, id=2, lat=GATE.lat, lng=GATE.lng))
+    DATED.price([couple], context(budget_total=300000, party_size=2, start_at=at))
+    assert couple.price == 71000 and DATED.party_price(couple, 2) == 142000
+
+
+def test_after_a_long_venue_one_stop_near_the_gate_then_the_day_is_over() -> None:
+    hours = all_week(9 * 60, 23 * 60)
+    park = place(
+        "ACTIVITY", "activity", 20000, opening_hours=hours, ticket_venue="park", default_stay_min=240
+    )
+    near = place("CAFE", "cafe", 5000, opening_hours=hours, dlat=0.004)
+    far = place("MEAL", "food.western", 15000, opening_hours=hours, dlat=0.03)
+    sight = place("ATTRACTION", "attraction.park", 0, opening_hours=hours, dlat=0.003)
+    ctx = context(budget_total=200000, start_at=context().start_at.replace(hour=11))
+    composer = CourseComposer(PlaceScorer(profile(), ctx), ctx)
+    day = template(
+        Slot(1, "ACTIVITY", 0.5), Slot(2, "CAFE", 0.1), Slot(3, "ATTRACTION", 0.1), Slot(4, "MEAL", 0.3)
+    )
+    sbs = B.allocate(day, ctx.budget_per_person)
+    first = composer.extend(composer.empty(), park, sbs[0])
+    assert first is not None
+    assert composer.extend(first, far, sbs[3]) is None  # a long leg after four hours in the park
+    assert composer.extend(first, sight, sbs[2]) is None  # a second outing, not a meal or a café
+    wrapped = composer.extend(first, near, sbs[1])
+    assert wrapped is not None
+    assert composer.extend(wrapped, sight, sbs[2]) is None  # nothing after the one stop
+
+    finals, unfilled = composer.search(sbs, {1: [park], 2: [near], 3: [sight], 4: [far]})
+    assert unfilled == []  # the slots after it are not holes: the day ended on purpose
+    assert finals and all(p.stops[0].place is park for p in finals)
+    assert all(s.place is not sight and s.place is not far for p in finals for s in p.stops)
+
+
+def test_with_the_kids_the_stop_after_the_park_ends_by_the_scene_hour() -> None:
+    hours = all_week(9 * 60, 23 * 60)
+    park = place(
+        "ACTIVITY", "activity", 20000, opening_hours=hours, ticket_venue="park", default_stay_min=240
+    )
+    near = place("CAFE", "cafe", 5000, opening_hours=hours, dlat=0.004)
+    start = context().start_at.replace(hour=16)
+    ctx = context(budget_total=200000, start_at=start, soft_end_min=20 * 60 + 30)
+    composer = CourseComposer(PlaceScorer(profile(), ctx), ctx)
+    sbs = B.allocate(template(Slot(1, "ACTIVITY", 0.8), Slot(2, "CAFE", 0.2)), ctx.budget_per_person)
+    first = composer.extend(composer.empty(), park, sbs[0])  # 16:00 → 20:00
+    assert first is not None
+    assert composer.extend(first, near, sbs[1]) is None  # a café after 20:00 runs past 20:45

@@ -106,7 +106,7 @@ from app.domain.recommendation.style import (
     with_optional_after,
     with_role,
 )
-from app.domain.recommendation.ticketed import may_follow, ticketed_venues
+from app.domain.recommendation.ticketed import after_long_venue, may_follow, ticketed_venues
 from app.domain.region_draws import shop_draw
 from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
@@ -420,10 +420,13 @@ class CourseService:
         if place is not None and venue is not None and place.price * party > 0.8 * budget_total:
             # the ticket alone takes the day's money (a pinned 롯데월드 at 12만 원 for three)
             name = get_tag_rules().sign_name(place.name)
-            total = place.price * party
+            kids = min(place.ticket_children, party - 1)
+            admission = venue.admission_on(place.ticket_day)
+            total = admission.for_party(party - kids, kids)
+            who = f"{party}명(어린이 {kids}명) {total:,}원" if kids else f"{party}명 {total:,}원"
             return {
                 "code": "KEPT_PLACE_DROPPED",
-                "detail": f"{name} 입장권이 1인 {place.price:,}원({party}명 {total:,}원)이라 "
+                "detail": f"{name} 입장권이 1인 {admission.adult:,}원({who})이라 "
                 "이 예산으로는 넣지 못했어요.",
                 "meta": {"place_id": pid, "name": name, "reason": "admission", "admission": place.price},
             }
@@ -818,6 +821,7 @@ class CourseService:
             templates, festival_missing = await self._apply_anchor(req, purpose, ctx, list(templates))
         plain_templates, plain_keep = list(templates), ctx.keep_roles
         if kept:  # the stops the user pinned: a slot of its own role each, never trimmed, never excluded
+            ticketed_venues().price(kept, ctx)  # a pinned venue's share is what this party pays that day
             templates = with_kept(templates, kept, ctx.budget_per_person)
             ctx.kept_places = tuple(kept)
             ctx.keep_roles = ctx.keep_roles | {p.course_role for p in kept}
@@ -1512,6 +1516,9 @@ class CourseService:
                 cand.local_word, cand.local_draw = str(snap["draw_word"]), True
             elif snap.get("draw_sight"):
                 cand.local_draw = True
+            ticketed_venues().restore(
+                cand, s.est_price, row.party_size, row.request or {}, self._out_time(s.arrive_at).date()
+            )
             stops.append(
                 StopResult(
                     position=s.position,
@@ -1855,6 +1862,7 @@ class CourseService:
                 origin = ctx.origin = GeoPoint(seg["lat"], seg["lng"])
                 radius = seg["radius_m"] * profile.params.radius_expand_factor
         pool = await self._places.fetch(target.role, origin, radius, ctx.start_at.date())
+        ticketed_venues().price(pool, ctx)  # a venue as the replacement: this party's admission that day
         fc = FilterContext.build(ctx, target.role, max(sb.budget, target.slot_budget), target.arrive_at)
         pool = [p for p in hard_filter(pool, fc, profile.params) if p.public_id != target.place.public_id]
         if ctx.is_v2:  # the same reach as generation: a standout a little further may replace it (docs/29)
@@ -1968,7 +1976,7 @@ class CourseService:
         base_travel = now.travel_min if now is not None else float(row.total_travel_min)
         items = []
         for cand, partial in picked:
-            est_price = cand.price * row.party_size
+            est_price = ticketed_venues().party_price(cand, row.party_size)
             price_delta = est_price - target.est_price
             walk_delta = round(partial.travel_min - base_travel) if row.transport == "walk" else None
             items.append(
@@ -2210,6 +2218,9 @@ class CourseService:
             underspent = use < float(rules.get("below_use", 0.0)) and not is_night(
                 self._out_time(row.start_at)
             )
+            # docs/59 #13: after a theme park's afternoon the day ended near its gate on purpose
+            if after_long_venue([s.place for s in stops]) is not None:
+                underspent = False
             if not (few or underspent):
                 break
             options = await self._leftover_options(row, stops, user)
@@ -2506,11 +2517,8 @@ def short_reason(codes: Sequence[str], place: PlaceCandidate) -> str | None:
     """reason_codes (strongest first) as one card subtitle of at most 40 characters. Only what the code
     itself says about the place — never a claim the data does not hold (no reviews, no "맛집" by guess).
     A ticketed venue says first what it costs to get in; a café behind its gate, that it is behind it."""
-    venues = ticketed_venues()
-    if (venue := venues.by_key(place.ticket_venue)) is not None:
-        return _fit(venue.admission_line())
-    if (venue := venues.by_key(place.inside_venue)) is not None:
-        return _fit(venue.inside_line())
+    if (ticket_line := ticketed_venues().line(place)) is not None:
+        return _fit(ticket_line)
     if is_shop(place.category_code):  # docs/63: a shop says what it sells and how long a browse takes
         return _fit(shop_why_line(place.name, place.category_code))
     for code in codes:

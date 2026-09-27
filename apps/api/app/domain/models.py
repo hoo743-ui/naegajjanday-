@@ -90,6 +90,10 @@ class PlaceCandidate:
     # behind the gate — a stop only right after that venue)
     ticket_venue: str | None = None
     inside_venue: str | None = None
+    # a venue priced for a request (ticketed.price, docs/59 #13): the day whose admission it is, and how many
+    # of the party paid the child price
+    ticket_day: date | None = None
+    ticket_children: int = 0
 
     @property
     def point(self) -> GeoPoint:

@@ -50,7 +50,7 @@ from app.domain.recommendation.style import (
     wanted_places,
     wanted_pools,
 )
-from app.domain.recommendation.ticketed import drop_orphans
+from app.domain.recommendation.ticketed import drop_orphans, ticketed_venues
 from app.domain.routing.optimizer import optimize
 from app.domain.routing.problem import RouteProblem, Window
 from app.domain.routing.travel_time import (
@@ -139,6 +139,22 @@ class RecommendationEngine:
                 other is not None
                 and _has_role(other, closers)
                 and len(other.courses[0].stops) >= len(out.courses[0].stops)
+                and _kept_count(other, ctx) >= _kept_count(out, ctx)
+            ):
+                out = other
+        # docs/59 #13: a pinned theme park reached by a long leg from the stop before it (no restaurant
+        # outside its gate — 에버랜드로 199 is all inside): the same day with the park first, in at the
+        # opening and a meal inside or near the gate after. Taken when it still holds the park and a stop
+        # after it (the park alone is not a course).
+        gate_first = _venue_first(out.template, out, ctx)
+        if gate_first is not None:
+            try:
+                other = await self._generate_with(ctx, gate_first, profile)
+            except NoCourseError:
+                other = None
+            if (
+                other is not None
+                and len(other.courses[0].stops) >= 2
                 and _kept_count(other, ctx) >= _kept_count(out, ctx)
             ):
                 out = other
@@ -317,6 +333,8 @@ class RecommendationEngine:
                 role = sb.slot.course_role
                 rings[sb.slot.position] = await self._ring(ctx, role, fc, radius, params, cache)
         every = [p for group in (*pools.values(), *rings.values()) for p in group]
+        # a ticketed venue costs what this party pays on this day (children at the child price, docs/59 #13)
+        ticketed_venues().price([*every, *ctx.kept_places], ctx)
         assign_buzz([*every, *ctx.kept_places])
         mark_local([*every, *ctx.kept_places], ctx, get_signature_rules())
         if is_regular(ctx):  # a regular is pulled toward what opened lately (the licence date, where known)
@@ -611,7 +629,7 @@ def build_course(
             place=s.place,
             arrive_at=s.arrive,
             leave_at=s.leave,
-            est_price=s.place.price * ctx.party_size,
+            est_price=ticketed_venues().party_price(s.place, ctx.party_size),
             travel_min_from_prev=round(s.leg.minutes),
             distance_m_from_prev=round(s.leg.distance_m),
             score=s.score.total,
@@ -645,6 +663,29 @@ def build_course(
         optimizer=solver,
         warnings=course_warnings,
     )
+
+
+def _venue_first(template: Template, out: EngineOutput, ctx: RequestContext) -> Template | None:
+    """The template with the slot of a pinned long venue moved to the front — only when the course reached
+    that venue by a leg longer than its gate allows (ticketed.WrapUp.before_leg_max_min)."""
+    venues = ticketed_venues()
+    stops = out.courses[0].stops
+    at = next(
+        (
+            i
+            for i, s in enumerate(stops)
+            if (s.place.is_event, s.place.id) in ctx.kept_keys and venues.ends_day(s.place)
+        ),
+        None,
+    )
+    if not at or stops[at].travel_min_from_prev <= venues.wrap.before_leg_max_min:
+        return None
+    role = stops[at].place.course_role
+    slot = next((s for s in template.slots if s.course_role == role), None)
+    if slot is None:
+        return None
+    order = [slot, *(s for s in template.slots if s is not slot)]
+    return replace(template, slots=tuple(replace(s, position=i + 1) for i, s in enumerate(order)))
 
 
 def _kept_count(out: EngineOutput, ctx: RequestContext) -> int:
