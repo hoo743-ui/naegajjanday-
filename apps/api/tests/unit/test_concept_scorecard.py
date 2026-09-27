@@ -261,6 +261,16 @@ def test_compare_marks_moves_beyond_the_noise_band() -> None:
     assert not ok
 
 
+def test_a_floor_is_not_a_goal() -> None:
+    """mean_stops_day (docs/58 "늘리라는 지표가 아니다"): up or down while on target is neither better nor
+    worse — only falling under the floor is."""
+    down = C.compare([fake("mean_stops_day", 3.4, True, 0.0)], prev(mean_stops_day=3.7))
+    up = C.compare([fake("mean_stops_day", 3.7, True, 0.0)], prev(mean_stops_day=3.4))
+    under = C.compare([fake("mean_stops_day", 2.6, False, 0.4)], prev(mean_stops_day=3.4))
+    assert down["mean_stops_day"].status == up["mean_stops_day"].status == "same"
+    assert under["mean_stops_day"].status == "worse"
+
+
 # ── sample · history · report ───────────────────────────────────────────────────────────────
 
 

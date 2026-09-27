@@ -19,6 +19,9 @@ DRAWS_PATH = Path(__file__).resolve().parents[2] / "data" / "regions" / "draws.j
 class Draws:
     eat: tuple[str, ...] = ()
     see: tuple[str, ...] = ()
+    # the kinds of shop people come here to browse (shop.select …) — only where browsing is itself the
+    # draw (성수 편집숍, 홍대 캐릭터 플래그십); the unasked browse stop comes only here (docs/59 #12)
+    shop: tuple[str, ...] = ()
 
 
 @lru_cache(maxsize=1)
@@ -27,7 +30,7 @@ def region_draws(path: Path = DRAWS_PATH) -> dict[str, Draws]:
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     return {
-        slug: Draws(tuple(v.get("eat") or ()), tuple(v.get("see") or ()))
+        slug: Draws(tuple(v.get("eat") or ()), tuple(v.get("see") or ()), tuple(v.get("shop") or ()))
         for slug, v in data.items()
         if not slug.startswith("_") and isinstance(v, dict)
     }
@@ -36,3 +39,9 @@ def region_draws(path: Path = DRAWS_PATH) -> dict[str, Draws]:
 def draws_for(slug: str | None) -> Draws | None:
     found = region_draws().get(slug or "")
     return found if found and (found.eat or found.see) else None
+
+
+def shop_draw(slug: str | None) -> tuple[str, ...]:
+    """The shop kinds that are this neighbourhood's draw — () for almost everywhere."""
+    found = region_draws().get(slug or "")
+    return found.shop if found else ()

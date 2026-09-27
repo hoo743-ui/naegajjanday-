@@ -297,6 +297,9 @@ class Metric:
     # counted on that half of a paired sample only ("regular" · "errand"); every other metric never sees
     # those halves, so the base numbers stay comparable with runs from before they existed
     half: str | None = None
+    # a floor, not a goal (mean_stops_day — docs/58 "늘리라는 지표가 아니다"): a move while on target is
+    # neither better nor worse; only falling past the target is worse
+    floor_only: bool = False
 
     def bad(self, value: float) -> float:
         """How far `value` is past the target, in the metric's own units (≤ 0: on target)."""
@@ -383,9 +386,19 @@ def _errand_leg(r: Record) -> tuple[float, float] | None:
     return (1.0 if r.errand_leg_min is not None else 0.0), 1.0
 
 
-def _shop_course(asked: bool, hit: Callable[[Record], bool]) -> Count:
-    """The shop bundle, with the 소품샵 · 캐릭터샵 option on (asked) or off."""
-    return _course(lambda r: r.ok and (SHOP_EXTRA in r.case.extras) == asked, hit)
+def _shop_course(asked: bool, hit: Callable[[Record], bool], drawn: bool | None = None) -> Count:
+    """The shop bundle, with the 소품샵 · 캐릭터샵 option on (asked) or off — and, when `drawn` is given, only
+    the neighbourhoods where browsing is (True) or is not (False) the draw (draws.json › shop, #12)."""
+    from app.domain.region_draws import shop_draw
+
+    return _course(
+        lambda r: (
+            r.ok
+            and (SHOP_EXTRA in r.case.extras) == asked
+            and (drawn is None or bool(shop_draw(r.case.region)) == drawn)
+        ),
+        hit,
+    )
 
 
 def _has_shop(r: Record) -> bool:
@@ -460,7 +473,8 @@ METRICS: tuple[Metric, ...] = (
            _course(_day, _has(_code("LOW_BUDGET_USE"))), _code("LOW_BUDGET_USE")),
     Metric("over_budget_rate", "예산을 넘은 코스", "lower", 0.0,
            _course(_ok, _has(_code("OVER_BUDGET"))), _code("OVER_BUDGET"), weight=1.5),
-    Metric("mean_stops_day", "낮 코스의 평균 장소 수", "higher", 3.0, _mean_stops, kind="mean", scale=1.0),
+    Metric("mean_stops_day", "낮 코스의 평균 장소 수", "higher", 3.0, _mean_stops, kind="mean", scale=1.0,
+           floor_only=True),
     Metric("few_stops_rate", "들르는 곳이 너무 적은 코스", "lower", 0.05,
            _course(_full_length, _has(_code("FEW_STOPS"))), _code("FEW_STOPS")),
     Metric("empty_slot_rate", "템플릿 자리를 못 채운 코스", "lower", 0.10,
@@ -499,9 +513,12 @@ METRICS: tuple[Metric, ...] = (
     Metric("errand_leg_rate", "꼭 들를 곳과 코스 사이 구간(시간 · 거리)이 있는 코스", "higher", 0.95,
            _errand_leg, half="errand"),
     # 구경하는 가게 (docs/63): the shop bundle — friends' and dates' afternoons where shops exist, the
-    # 소품샵 · 캐릭터샵 option off and on
-    Metric("shop_presence_rate", "구경하는 가게: 옵션 없이도 가게가 든 낮 코스", "higher", 0.30,
-           _shop_course(False, _has_shop), half=SHOP_GROUP),
+    # 소품샵 · 캐릭터샵 option off and on. Unasked, a shop belongs only where browsing is the neighbourhood's
+    # draw (draws.json › shop — 성수 · 홍대 · 가로수길, docs/59 #12); elsewhere only when asked
+    Metric("shop_presence_rate", "구경하는 가게: 명물이 가게인 동네에서 옵션 없이도 가게가 든 낮 코스",
+           "higher", 0.70, _shop_course(False, _has_shop, drawn=True), half=SHOP_GROUP),
+    Metric("shop_unasked_rate", "구경하는 가게: 명물이 가게가 아닌 동네에서 옵션 없이 가게가 든 낮 코스",
+           "lower", 0.25, _shop_course(False, _has_shop, drawn=False), half=SHOP_GROUP),
     Metric("shop_asked_rate", "구경하는 가게: 옵션을 켜면 가게가 든 코스", "higher", 0.90,
            _shop_course(True, _has_shop), half=SHOP_GROUP),
     Metric("shop_explained_rate", "코스의 가게 중 '왜 이 가게' 한 줄(40자)이 있는 곳", "higher", 1.0,
@@ -626,6 +643,9 @@ def compare(results: Sequence[Result], previous: dict[str, Any] | None) -> dict[
         good = change if r.direction == "higher" else -change
         band = max(r.noise, float(old.get("noise") or 0.0))
         status = "same" if abs(change) <= band else "better" if good > 0 else "worse"
+        metric = METRIC_BY_ID.get(r.id)
+        if metric is not None and metric.floor_only and status != "same":
+            status = "worse" if good < 0 and not r.passed else "same"
         out[r.id] = Delta(r.id, float(old["value"]), r.value, round(change, 4), status)
     return out
 

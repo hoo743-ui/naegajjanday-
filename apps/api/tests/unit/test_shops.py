@@ -181,9 +181,11 @@ def test_declining_the_shops() -> None:
 
 
 def _shop_record(
-    stops: list[tuple[str, str, str, int, str | None]], extras: tuple[str, ...] = ()
+    stops: list[tuple[str, str, str, int, str | None]],
+    extras: tuple[str, ...] = (),
+    region: str = "seoul-seongsu",
 ) -> C.Record:
-    case = C.Case("seoul-seongsu", "friends", 3, 90000, "14:00", group="shop", extras=extras)
+    case = C.Case(region, "friends", 3, 90000, "14:00", group="shop", extras=extras)
     return C.Record(
         case,
         stops=[
@@ -219,13 +221,19 @@ def test_shop_metrics() -> None:
             ("ATTRACTION", "attraction.market", "14:40", 900, None),
         ]
     )
-    records = [off, plain, asked, twice]
+    # 을지로: browsing is not its draw — a shop there unasked is counted against
+    elsewhere = _shop_record(
+        [("MEAL", "food.korean", "14:00", 900, None), ("ATTRACTION", "shop.goods", "15:10", 935, "x")],
+        region="seoul-euljiro",
+    )
+    records = [off, plain, asked, twice, elsewhere]
     got = {r.id: r for r in C.evaluate_all(records)}
-    assert got["shop_presence_rate"].value == pytest.approx(2 / 3, abs=1e-3)  # off, plain, twice
+    assert got["shop_presence_rate"].value == pytest.approx(2 / 3, abs=1e-3)  # 성수: off, plain, twice
+    assert got["shop_unasked_rate"].value == 1.0  # 을지로 alone
     assert got["shop_asked_rate"].value == 1.0
-    assert got["shop_explained_rate"].value == pytest.approx(2 / 3, abs=1e-3)  # the asked one: no line
-    assert got["shop_hours_violation_rate"].value == pytest.approx(1 / 3, abs=1e-3)  # past 21:00
-    assert got["shop_twice_rate"].value == pytest.approx(1 / 4, abs=1e-3)
+    assert got["shop_explained_rate"].value == pytest.approx(3 / 4, abs=1e-3)  # the asked one: no line
+    assert got["shop_hours_violation_rate"].value == pytest.approx(1 / 4, abs=1e-3)  # past 21:00
+    assert got["shop_twice_rate"].value == pytest.approx(1 / 5, abs=1e-3)
     # the base metrics never see the shop half
     assert got["mean_stops_day"].value is None
     assert all(c.half == "shop" for c in (r.case for r in records))
@@ -257,18 +265,42 @@ def _template() -> Template:
     return Template(1, "date_day", "date", "day", 10000, 2, 2, slots)
 
 
-def test_an_afternoon_gets_a_shops_only_slot_after_the_meal() -> None:
+def test_an_afternoon_where_browsing_is_the_draw_gets_a_shops_only_slot_after_the_meal() -> None:
     day = datetime(2026, 10, 3, 13, 0)
-    [t] = shop_lines.with_browse_slot([_template()], "date", day)
+    drawn = ("shop.select",)  # 성수 편집숍
+    [t] = shop_lines.with_browse_slot([_template()], "date", day, drawn=drawn)
     assert [s.course_role for s in t.slots] == ["MEAL", "ATTRACTION", "CAFE", "ATTRACTION"]
     browse = t.slots[1]
-    assert browse.family == "shop" and browse.is_optional and browse.budget_share == 0.0
+    assert browse.family == "shop.select" and browse.is_optional and browse.budget_share == 0.0
     assert [s.position for s in t.slots] == [1, 2, 3, 4]
     assert t.slots[3].family is None  # the neighbourhood's own sight keeps its slot
-    assert shop_lines.with_browse_slot([t], "date", day)[0] == t  # once
+    assert shop_lines.with_browse_slot([t], "date", day, drawn=drawn)[0] == t  # once
+    assert shop_lines.with_browse_slot([t], "date", day, asked=True)[0] == t  # …asked or not
+    # two kinds drawn: any shop
+    [two] = shop_lines.with_browse_slot([_template()], "date", day, drawn=("shop.select", "shop.vintage"))
+    assert two.slots[1].family == "shop"
     # not a family day, not the evening, not a trip
-    assert shop_lines.with_browse_slot([_template()], "family", day)[0] == _template()
-    assert shop_lines.with_browse_slot([_template()], "date", day.replace(hour=19))[0] == _template()
+    assert shop_lines.with_browse_slot([_template()], "family", day, drawn=drawn)[0] == _template()
+    assert (
+        shop_lines.with_browse_slot([_template()], "date", day.replace(hour=19), drawn=drawn)[0]
+        == _template()
+    )
+
+
+def test_no_browse_unasked_where_browsing_is_not_the_draw() -> None:
+    """docs/59 #12: a shop near is not reason enough — only the option or the neighbourhood's draw."""
+    day = datetime(2026, 10, 3, 13, 0)
+    assert shop_lines.with_browse_slot([_template()], "date", day)[0] == _template()
+    [asked] = shop_lines.with_browse_slot([_template()], "family", day.replace(hour=19), asked=True)
+    assert asked.slots[1].family == "shop"  # asked: any purpose, any hour, any shop
+
+
+def test_the_shop_draws_are_where_browsing_is_why_people_come() -> None:
+    from app.domain.region_draws import shop_draw
+
+    assert shop_draw("seoul-seongsu") == ("shop.select",)
+    assert shop_draw("seoul-hongdae") == ("shop.character",)
+    assert shop_draw("seoul-euljiro") == () and shop_draw("seoul-mangwon") == () and shop_draw(None) == ()
 
 
 def _cand(pid: int, code: str) -> PlaceCandidate:

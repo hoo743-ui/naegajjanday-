@@ -8,8 +8,9 @@ live here, both from data:
   no "20대가 많이 가는".
 - `taste_pull`: an assumed (not measured) age taste, read only from context the request already has — a
   campus anchor or campus purpose, a date scene. data/recommendation/shops.json › age_taste says why.
-- `with_browse_slot`: a friends' or a date's afternoon gets an "if it fits" slot after the meal that takes
-  shops only (Slot.family) — the neighbourhood's own sight keeps its slot; no shop near, no browse.
+- `with_browse_slot`: an "if it fits" slot after the meal that takes shops only (Slot.family) — when the
+  option is on, or unasked on a friends' or a date's afternoon where browsing is the neighbourhood's draw
+  (draws.json › shop, docs/59 #12); the neighbourhood's own sight keeps its slot; no shop near, no browse.
 """
 
 from __future__ import annotations
@@ -87,25 +88,35 @@ def _minute(hhmm: str) -> int:
 
 
 def with_browse_slot(
-    templates: Sequence[Template], purpose_code: str, start: datetime, *, asked: bool = False
+    templates: Sequence[Template],
+    purpose_code: str,
+    start: datetime,
+    *,
+    asked: bool = False,
+    drawn: Sequence[str] = (),
 ) -> list[Template]:
-    """An optional shops-only slot right after the meal (or first), for the purposes and start hours of
-    shops.json › browse_slot. Templates of other purposes / hours come back as they were.
+    """An optional shops-only slot right after the meal (or first). Templates without it come back as they
+    were.
 
-    `asked` (the 소품샵 · 캐릭터샵 option): any purpose, any hour — the same slot, so the neighbourhood's own
-    sight keeps its slot; when no shop is open near, the page says so (EXTRA_UNAVAILABLE)."""
+    `asked` (the 소품샵 · 캐릭터샵 option): any purpose, any hour, any shop — when no shop is open near, the
+    page says so (EXTRA_UNAVAILABLE). Unasked (docs/59 #12), only where browsing is the neighbourhood's
+    draw (`drawn`, draws.json › shop) and only for the purposes and start hours of shops.json › browse_slot:
+    the slot then takes that kind of shop (one kind listed) and drops silently when none is open near.
+    Either way the neighbourhood's own sight keeps its slot."""
     rule: Mapping[str, Any] = shop_texts().get("browse_slot") or {}
     at_min = start.hour * 60 + start.minute
     if not asked and (
-        purpose_code not in (rule.get("purposes") or ())
+        not drawn
+        or purpose_code not in (rule.get("purposes") or ())
         or not _minute(str(rule["start_from"])) <= at_min <= _minute(str(rule["start_until"]))
     ):
         return list(templates)
-    family, share, after = str(rule["family"]), float(rule.get("share", 0.0)), str(rule.get("after") or "")
+    family = str(rule["family"]) if asked or len(drawn) != 1 else str(drawn[0])
+    share, after = float(rule.get("share", 0.0)), str(rule.get("after") or "")
     out: list[Template] = []
     for template in templates:
         slots = list(template.slots)
-        if any(s.family == family for s in slots):
+        if any(s.family and is_shop(s.family) for s in slots):
             out.append(template)
             continue
         at = next((i for i, s in enumerate(slots) if s.course_role == after), 0)

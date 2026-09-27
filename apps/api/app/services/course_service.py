@@ -107,6 +107,7 @@ from app.domain.recommendation.style import (
     with_role,
 )
 from app.domain.recommendation.ticketed import may_follow, ticketed_venues
+from app.domain.region_draws import shop_draw
 from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
 from app.domain.signature import get_signature_rules
@@ -795,8 +796,14 @@ class CourseService:
             if not (condition.get("swap_roles") and "night" in conditions and name != "night"):
                 templates = styled_templates(templates, condition)
         # docs/63: a browse after the meal when a shop is near and open — a shops-only slot of its own, so
-        # asked or not, the neighbourhood's own sight keeps its slot
-        templates = with_browse_slot(templates, purpose.code, ctx.start_at, asked=SHOP_EXTRA in req.extras)
+        # the neighbourhood's own sight keeps its slot. Unasked only where browsing is the draw (#12)
+        templates = with_browse_slot(
+            templates,
+            purpose.code,
+            ctx.start_at,
+            asked=SHOP_EXTRA in req.extras,
+            drawn=shop_draw(region.slug),
+        )
         for role in req.extras:  # "술 한잔 포함": the slot is there for certain, whatever the template
             entry = extra_roles().get(role)
             if entry is not None and entry["role"] not in vetoed and not entry.get("family"):
