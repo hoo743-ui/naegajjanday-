@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { api } from "@/lib/api/client";
 import type { Course } from "@/lib/api/types";
 import { OG_BACKGROUND, OG_SIZE, OgBrand, OgJjani, OgWordmark, loadOgFonts } from "@/lib/og";
+import { isShopCategory } from "@/lib/format";
 
 export const alt = "내가짠데이 추천 코스";
 export const size = OG_SIZE;
@@ -78,7 +79,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             {stops.map((stop) => (
               <div key={stop.position} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, fontSize: 25 }}>
                 <div style={{ display: "flex", gap: 10, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden" }}>
-                  <div style={{ display: "flex", flexShrink: 0, color: "#5f6c87", fontWeight: 500 }}>{ROLE[stop.role] ?? "코스"}</div>
+                  <div style={{ display: "flex", flexShrink: 0, color: "#5f6c87", fontWeight: 500 }}>{isShopCategory(stop.place.category) ? "구경" : (ROLE[stop.role] ?? "코스")}</div>
                   {stop.place.name.length > 8 ? `${stop.place.name.slice(0, 7)}…` : stop.place.name}
                 </div>
                 <div style={{ display: "flex", flexShrink: 0, fontWeight: 800, whiteSpace: "nowrap" }}>{stop.est_price === 0 ? "무료" : won(stop.est_price)}</div>

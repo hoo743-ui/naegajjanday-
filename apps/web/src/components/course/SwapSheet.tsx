@@ -31,7 +31,7 @@ const delta = (n: number) => (n === 0 ? "같은 금액" : n < 0 ? `${won(-n)} �
  */
 export function SwapSheet({ open, onClose, courseId, stop, onPick, onStrategy }: SwapSheetProps) {
   return (
-    <BottomSheet open={open} onClose={onClose} title={`${roleLabel(stop.role)} 자리를 바꿔요`} description="한 곳만 바꿔도 남은 돈은 바로 다시 계산할게요.">
+    <BottomSheet open={open} onClose={onClose} title={`${roleLabel(stop.role, stop.place.category)} 자리를 바꿔요`} description="한 곳만 바꿔도 남은 돈은 바로 다시 계산할게요.">
       <p className="mb-2 text-body-sm font-semibold text-ink-2">대신 갈 만한 곳</p>
       <CandidateList courseId={courseId} position={stop.position} enabled={open} onPick={onPick} />
 

@@ -277,9 +277,14 @@ class TrustFactOut(BaseModel):
 
 
 class TrustOut(BaseModel):
-    """믿을 이유 (app.domain.trust): 카드에는 text 한 줄, 결정 시트에는 facts 전부 · 출처와 함께."""
+    """믿을 이유 (app.domain.trust): 카드에는 text 한 줄(짧은 말), 결정 시트에는 facts 전부 · 출처와 함께."""
 
-    text: str = Field(max_length=40)
+    text: str | None = Field(
+        default=None,
+        max_length=40,
+        description='카드의 한 줄: 가장 강한 사실 하나의 짧은 말("34년째 영업"). '
+        "같은 코스의 앞 장소가 이미 같은 말을 쓰면 다음 사실, 다 겹치면 null(시트의 facts 는 그대로)",
+    )
     kind: Literal["designated", "long_run", "menu_price", "draw", "visited", "photos"]
     source: str
     facts: list[TrustFactOut] = Field(default_factory=list)

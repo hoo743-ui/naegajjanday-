@@ -64,7 +64,7 @@ export type ErrorCode = KnownErrorCode | (string & {});
  * - branded-placeholder: 우리 그림. image_url 이 없다.
  */
 export type ImageType = "actual" | "category" | "branded-placeholder";
-export type PlaceholderKind = "meal" | "cafe" | "walk" | "activity" | "sight" | "bar" | "night";
+export type PlaceholderKind = "meal" | "cafe" | "walk" | "activity" | "sight" | "shop" | "bar" | "night";
 
 export interface ImageRef {
   image_type: ImageType;
@@ -403,8 +403,11 @@ export interface TrustFact {
 }
 
 export interface StopTrust {
-  /** 카드의 한 줄(40자 이하) — 가장 강한 사실, 둘이 들어가면 둘 */
-  text: string;
+  /**
+   * 카드의 한 줄(40자 이하) — 가장 강한 사실 하나의 짧은 말("34년째 영업" · "관광공사 소개", docs/59 #21).
+   * 같은 코스의 앞 장소가 이미 같은 말을 쓰면 다음 사실, 다 겹치면 null(시트의 facts 는 그대로)
+   */
+  text: string | null;
   kind: TrustKind;
   source: string;
   /** 결정 시트에서 펼쳐 보이는 사실 전부 (강한 순서) */

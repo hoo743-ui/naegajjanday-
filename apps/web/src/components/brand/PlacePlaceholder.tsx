@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Landmark, Moon, Wine, type LucideIcon } from "lucide-react";
+import { Landmark, Moon, ShoppingBag, Wine, type LucideIcon } from "lucide-react";
 import { toPlaceholderKind } from "@/lib/place-image";
 import type { PlaceholderKind } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ const SCENES: Partial<Record<PlaceholderKind, ReactNode>> = {
 };
 
 /** 장면이 없는 종류는 예전처럼 옅은 지도 선 + 아이콘 */
-const ICON: Partial<Record<PlaceholderKind, LucideIcon>> = { sight: Landmark, bar: Wine, night: Moon };
+const ICON: Partial<Record<PlaceholderKind, LucideIcon>> = { sight: Landmark, shop: ShoppingBag, bar: Wine, night: Moon };
 
 const LOOK: Record<PlaceholderKind, { label: string; tint: string }> = {
   meal: { label: "식사", tint: "#f6e3d4" },
@@ -92,6 +92,7 @@ const LOOK: Record<PlaceholderKind, { label: string; tint: string }> = {
   walk: { label: "산책", tint: "#e3ecdf" },
   activity: { label: "놀거리", tint: "#f3e0dc" },
   sight: { label: "볼거리", tint: "#e6e6ef" },
+  shop: { label: "구경", tint: "#efe2ea" },
   bar: { label: "한잔", tint: "#eadbe3" },
   night: { label: "야경", tint: "#dfe3ee" },
 };

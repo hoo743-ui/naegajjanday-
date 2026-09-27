@@ -86,5 +86,7 @@ export function toPlaceholderKind(code: string | null | undefined): PlaceholderK
   if (/^(nightview|night)/.test(c)) return "night";
   if (/^(attraction\.(park|nature|trail)|walk|park|nature|trail)/.test(c)) return "walk";
   if (/^(activity|festival|culture\.festival|play|event)/.test(c)) return "activity";
+  // 구경하는 가게 (docs/63 · docs/59 #21): 캐릭터샵 · 빈티지는 박물관 그림이 아니다
+  if (/^shop(\.|$)/.test(c)) return "shop";
   return "sight";
 }

@@ -97,7 +97,7 @@ export function BudgetTools({ baseRequest, budget, partySize, stops, total, head
               예산 {won(tried.budget)}이면 <span className="text-blue-deep">{tried.course.stops.length}곳</span>, 합계 <span className="text-gold-ink">{won(tried.course.totals.price)}</span>
               <span className="font-semibold text-ink-2"> (지금 {stops.length}곳 · {won(total)})</span>
             </p>
-            <p className="text-body-sm text-ink-2">{tried.course.stops.map((s) => `${roleLabel(s.role)} ${s.place.name}`).join(" → ")}</p>
+            <p className="text-body-sm text-ink-2">{tried.course.stops.map((s) => `${roleLabel(s.role, s.place.category)} ${s.place.name}`).join(" → ")}</p>
             {added.length > 0 ? <p className="text-caption text-muted-foreground">달라지는 곳: {added.map((s) => s.place.name).join(", ")}</p> : null}
             <Link href={`/course/${encodeURIComponent(tried.course.id)}`} onClick={() => track("budget_whatif_opened", { course_id: tried.course.id, budget_total: tried.budget })} className="inline-flex items-center gap-1 text-body-sm font-semibold text-blue-deep hover:underline">
               이 코스 열어 보기 <ArrowRight aria-hidden className="size-4" />

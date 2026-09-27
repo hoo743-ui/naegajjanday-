@@ -42,13 +42,16 @@ async def test_a_stop_says_its_licence_year_and_menu_price(
     again = next(s for s in detail["stops"] if s["place"]["id"] == stop["place"]["id"])
     trust = again["trust"]
     assert trust is not None
-    assert trust["text"] == f"1990년부터 {since}년째 영업 · 칼국수 9,000원"
+    # the card: one fact in compact words (docs/59 #21); the sheet: every fact in full, with its source
+    assert trust["text"] == f"{since}년째 영업"
     assert trust["kind"] == "long_run" and trust["source"] == "지자체 인허가(영업 신고) 기록"
     kinds = [f["kind"] for f in trust["facts"]]
     assert kinds[:2] == ["long_run", "menu_price"]
+    assert trust["facts"][0]["text"] == f"1990년부터 {since}년째 영업"
     assert trust["facts"][1]["source"] == "행정안전부 착한가격업소 조사 가격"
-    # every other stop: a line from its own rows, or nothing — never filler
-    for s in detail["stops"]:
-        assert s["trust"] is None or 0 < len(s["trust"]["text"]) <= 40
-        if s["trust"]:
-            assert "인기" not in s["trust"]["text"] and "맛집" not in s["trust"]["text"]
+    # every other stop: a line from its own rows, or nothing — never filler, never the same words twice
+    lines = [s["trust"]["text"] for s in detail["stops"] if s["trust"] and s["trust"]["text"]]
+    assert len(lines) == len(set(lines))
+    for text in lines:
+        assert 0 < len(text) <= 40
+        assert "인기" not in text and "맛집" not in text

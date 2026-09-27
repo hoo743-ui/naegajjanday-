@@ -96,7 +96,17 @@ const ROLE_LABEL: Record<string, string> = {
   BAR: "한잔",
   NIGHTVIEW: "야경",
 };
-export function roleLabel(role: CourseRole): string {
+/** 구경하는 가게(docs/63: shop · shop.character · shop.vintage …) — 역할로는 ATTRACTION 이지만 박물관이 아니다 */
+export function isShopCategory(category: string | null | undefined): boolean {
+  return !!category && (category === "shop" || category.startsWith("shop."));
+}
+
+/**
+ * 역할 이름. 업종 코드를 주면 더 정확하게: 가게를 둘러보는 자리는 "볼거리"가 아니라 "구경" (docs/59 #21).
+ * 카드 · 결정 시트 · 영수증 · 바꾸기 시트가 모두 이것을 쓴다.
+ */
+export function roleLabel(role: CourseRole, category?: string | null): string {
+  if (isShopCategory(category)) return "구경";
   return ROLE_LABEL[role] ?? role;
 }
 

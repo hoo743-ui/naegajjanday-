@@ -330,6 +330,11 @@ def _ok(r: Record) -> bool:
     return r.ok
 
 
+def _trust_repeats(r: Record) -> bool:
+    lines = [s.trust for s in r.stops if s.trust]
+    return len(lines) != len(set(lines))
+
+
 def _day(r: Record) -> bool:
     return r.ok and not r.case.night
 
@@ -584,6 +589,10 @@ METRICS: tuple[Metric, ...] = (
     Metric("ticket_after_venue_rate", "테마파크 반나절 뒤 또 나감(두 곳 · 긴 구간 · 늦은 끝)",
            "lower", 0.0, _course(lambda r: r.ok and any(s.ends_day for s in r.stops), _long_after_venue),
            half=ANY_HALF, weight=1.5),
+    # docs/59 #21: one course never says the same card words twice ("관광공사 소개" on three stops)
+    Metric("trust_repeat_rate", "'믿을 이유' 한 줄에 같은 문구가 두 번 나오는 코스", "lower", 0.0,
+           _course(lambda r: r.ok and sum(1 for s in r.stops if s.trust) >= 2, _trust_repeats),
+           half=ANY_HALF),
 )  # fmt: skip
 METRIC_BY_ID = {m.id: m for m in METRICS}
 
@@ -905,6 +914,7 @@ def record_from(
     words = [w for w in (_compact(w) for w in ctx.draw_words) if w]
     gate_party = venues.party_of(ctx.purpose_code, ctx.scene, case.party)  # (adults, children)
     stops = []
+    said: set[str] = set()  # card words an earlier stop already shows (docs/59 #21: none said twice)
     for s in course.stops:
         p = s.place
         draw = not p.is_event and (
@@ -918,7 +928,11 @@ def record_from(
             else venues.inside_of(p.id, p.name, p.course_role, p.address, p.point)
         )
         today = ctx.start_at.date()
-        line, evidence = trust_rules.for_place(p, (trust or {}).get(p.id), today=today, area=region.name)
+        line, evidence = trust_rules.for_place(
+            p, (trust or {}).get(p.id), today=today, area=region.name, taken=said
+        )
+        if line is not None and line.text:
+            said.add(line.text)
         stops.append(
             Stop(
                 position=s.position,

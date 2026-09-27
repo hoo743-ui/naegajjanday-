@@ -7,7 +7,7 @@ import json
 import random
 import time
 import uuid
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Collection, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -2565,10 +2565,16 @@ def stop_area(position: int, row: Course, region: Region | None) -> str | None:
 
 
 def trust_out(
-    place: PlaceCandidate, facts: TrustFacts | None, *, today: date, area: str | None
+    place: PlaceCandidate,
+    facts: TrustFacts | None,
+    *,
+    today: date,
+    area: str | None,
+    taken: Collection[str] = (),
 ) -> dto.TrustOut | None:
-    """믿을 이유 (app.domain.trust) as the API shape: the card's line and every fact with its source."""
-    line, _evidence = trust_for_place(place, facts, today=today, area=area)
+    """믿을 이유 (app.domain.trust) as the API shape: the card's line (compact words, none that an earlier
+    stop of the course already shows — `taken`) and every fact with its source for the decision sheet."""
+    line, _evidence = trust_for_place(place, facts, today=today, area=area, taken=taken)
     if line is None:
         return None
     return dto.TrustOut(
@@ -2588,12 +2594,19 @@ def trust_view(
     region: Region | None,
 ) -> dict[int, dto.TrustOut]:
     out: dict[int, dto.TrustOut] = {}
-    for s in stops:
+    said: set[str] = set()  # docs/59 #21: the same card words on one stop of the course only
+    for s in sorted(stops, key=lambda s: s.position):
         found = trust_out(
-            s.place, facts.get(s.place.id), today=today, area=stop_area(s.position, row, region)
+            s.place,
+            facts.get(s.place.id),
+            today=today,
+            area=stop_area(s.position, row, region),
+            taken=said,
         )
         if found is not None:
             out[s.position] = found
+            if found.text:
+                said.add(found.text)
     return out
 
 

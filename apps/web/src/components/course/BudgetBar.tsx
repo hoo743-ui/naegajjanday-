@@ -34,7 +34,7 @@ export function BudgetBar({ totals, budget, partySize, stops, heading, travel, c
         items={stops.map((s) => {
           const free = s.place.is_free === true || (s.est_price === 0 && s.place.price_per_person === 0);
           return {
-            label: roleLabel(s.role),
+            label: roleLabel(s.role, s.place.category),
             name: s.place.name,
             price: s.est_price,
             estimated: s.place.price_is_estimated === true && s.est_price > 0,

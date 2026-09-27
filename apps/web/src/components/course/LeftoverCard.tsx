@@ -61,11 +61,11 @@ export function LeftoverCard({ courseId, budgetLeft, budget, editable, onAdded, 
                   onClick={() => onShow({ id: item.place.id, name: item.place.name, lat: item.place.lat, lng: item.place.lng, kind: `남은 돈으로 · 도보 ${minutes(item.walk_min)}` })}
                   className="block max-w-full truncate text-left text-body font-extrabold text-ink underline decoration-line underline-offset-4 hover:text-blue-deep"
                 >
-                  <span className="text-muted-foreground">{roleLabel(item.role)}</span> {item.place.name}
+                  <span className="text-muted-foreground">{roleLabel(item.role, item.place.category)}</span> {item.place.name}
                 </button>
               ) : (
                 <p className="truncate text-body font-extrabold text-ink">
-                  <span className="text-muted-foreground">{roleLabel(item.role)}</span> {item.place.name}
+                  <span className="text-muted-foreground">{roleLabel(item.role, item.place.category)}</span> {item.place.name}
                 </p>
               )}
               <p className="tabular text-caption text-muted-foreground">

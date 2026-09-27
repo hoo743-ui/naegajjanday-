@@ -143,7 +143,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
           </p>
         ) : null}
         <p className="tabular text-body-sm text-ink-2">
-          {roleLabel(stop.role)} · {clock(stop.arrive_at)} ~ {clock(stop.leave_at)} · {free ? "무료" : priceUnknown ? "가격 정보 없음" : `${estimated ? "≈" : ""}${won(stop.est_price)}${partySize > 1 ? ` (${partySize}명)` : ""}`}
+          {roleLabel(stop.role, stop.place.category)} · {clock(stop.arrive_at)} ~ {clock(stop.leave_at)} · {free ? "무료" : priceUnknown ? "가격 정보 없음" : `${estimated ? "≈" : ""}${won(stop.est_price)}${partySize > 1 ? ` (${partySize}명)` : ""}`}
         </p>
       </div>
     ),
@@ -234,7 +234,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
         if ((e.target as HTMLElement).closest("a, button, input, select, textarea, [role='button'], [role='menu'], [role='dialog']")) return;
         onFocusStop?.(stop.position);
       }}
-      aria-label={`${stop.position}번째 ${roleLabel(stop.role)}: ${place.name}`}
+      aria-label={`${stop.position}번째 ${roleLabel(stop.role, stop.place.category)}: ${place.name}`}
       aria-busy={swapping}
       className={cn(
         // 상자가 아니라 일정의 한 줄 (docs/31 §6). 지금 보고 있는 곳만 종이 한 장이 깔린다
@@ -264,7 +264,7 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
 
         <div className="min-w-0 flex-1">
           <p className="tabular flex items-center gap-2 text-caption font-bold text-tomato-deep">
-            {roleLabel(stop.role)}
+            {roleLabel(stop.role, stop.place.category)}
             {pinned ? (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-tomato-soft px-2 py-0.5 text-tomato-deep">
                 <Pin aria-hidden className="size-3" /> 확정
@@ -286,16 +286,17 @@ export function StopCard({ courseId, stop, count, partySize, hiddenFeatures = []
             )}
           </h3>
           {/* 믿을 이유 한 줄 (docs/59 #15 "한 문장 + 펼침"): 누르면 결정 시트 맨 위에 사실 · 출처가 전부 나온다.
-              없으면 채우는 말 대신 카카오맵(사진 · 메뉴 · 후기가 있는 곳)으로 가는 길을 여기 둔다 */}
-          {trust && TrustIcon ? (
+              없으면 채우는 말 대신 카카오맵(사진 · 메뉴 · 후기가 있는 곳)으로 가는 길을 여기 둔다.
+              짧은 말 하나("34년째 영업")라 390px 에서도 보통 한 줄, 길면 두 줄까지 감싼다 — "…"로 자르지 않는다 (docs/59 #21) */}
+          {trust?.text && TrustIcon ? (
             <button
               type="button"
               onClick={() => showSheet("trust")}
               aria-label={`믿을 이유 ${trust.text} · 출처 보기`}
-              className="mt-0.5 flex max-w-full items-center gap-1 text-left text-caption font-bold text-blue-deep hover:underline hover:underline-offset-2"
+              className="mt-0.5 flex max-w-full items-start gap-1 text-left text-caption font-bold text-blue-deep hover:underline hover:underline-offset-2"
             >
-              <TrustIcon aria-hidden className="size-3.5 shrink-0" />
-              <span className="truncate">{trust.text}</span>
+              <TrustIcon aria-hidden className="mt-px size-3.5 shrink-0" />
+              <span className="line-clamp-2 break-keep">{trust.text}</span>
             </button>
           ) : stop.place.kind !== "event" ? (
             <a

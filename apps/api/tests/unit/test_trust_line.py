@@ -27,9 +27,11 @@ def test_designation_leads_and_licence_years_follow() -> None:
     line, evidence = for_place(p, TrustFacts(licence_on=date(1992, 5, 1)), today=TODAY, area="망원동")
     assert line is not None
     assert line.kind == "designated"
-    assert line.text == "지자체 지정 모범음식점 · 1992년부터 34년째 영업"
-    assert len(line.text) <= LINE_MAX
+    # the card: one fact, in compact words; the sheet keeps the full words
+    assert line.text == "모범음식점"
     assert [f.kind for f in line.facts] == ["designated", "long_run"]
+    assert [f.text for f in line.facts] == ["지자체 지정 모범음식점", "1992년부터 34년째 영업"]
+    assert line.facts[1].short == "34년째 영업"
     assert grounded(line, evidence, today=TODAY)
 
 
@@ -56,7 +58,8 @@ def test_draw_visit_rank_and_photos_in_that_order() -> None:
         "확인된 사진 3장",
     ]
     assert line.facts[1].source == "티맵 내비게이션 목적지 실측 (2026년 8월)"
-    assert line.text == "망원동 명물 칼국수 · 마포구 티맵 목적지 12위"
+    assert line.text == "망원동 명물 칼국수"
+    assert [f.short for f in line.facts] == ["망원동 명물 칼국수", "티맵 목적지 12위", "사진 3장"]
     assert grounded(line, evidence, today=TODAY)
 
 
@@ -74,7 +77,7 @@ def test_nothing_stored_means_no_line() -> None:
     assert for_place(place("MEAL"), weak, today=TODAY, area="홍대")[0] is None
     # a photo alone is a (weak) fact, and it is said as a count only
     line = for_place(place("MEAL"), TrustFacts(photos=2), today=TODAY, area=None)[0]
-    assert line is not None and line.text == "확인된 사진 2장"
+    assert line is not None and line.text == "사진 2장" and line.facts[0].text == "확인된 사진 2장"
 
 
 def test_menu_names_that_would_make_a_claim_are_skipped() -> None:
@@ -128,13 +131,74 @@ def test_invented_facts_are_caught() -> None:
     assert not grounded(replace(line, text="지자체 지정 모범음식점 · 줄 서는 집"), evidence, today=TODAY)
 
 
-def test_line_keeps_to_one_short_sentence() -> None:
+def test_line_keeps_to_one_short_fact() -> None:
     long_area = "아주아주아주아주아주긴이름의동네골목상권"
-    p = place("MEAL", tags={"모범음식점": 1.0})
+    p = place("MEAL")
     p.local_word, p.local_draw = "칼국수", True
-    line = trust_line(trust_facts(p, TrustFacts(), today=TODAY, area=long_area, draw_word="칼국수"))
-    assert line is not None and len(line.text) <= LINE_MAX
-    assert line.text == "지자체 지정 모범음식점"  # the second fact rides along only when both fit
+    found = trust_facts(p, TrustFacts(), today=TODAY, area=long_area, draw_word="칼국수")
+    line = trust_line(found)
+    assert line is not None and line.text is not None and len(line.text) <= LINE_MAX
+    assert line.text == "동네 명물 칼국수"  # a long neighbourhood name stays on the sheet
+    assert found[0].text == f"{long_area} 명물 칼국수"
+
+
+def test_tourapi_listing_is_the_weakest_fact() -> None:
+    """docs/59 #21: "관광공사 관광정보에 실린 곳" goes after years, a draw, a menu price, a Tmap rank and photos."""
+    p = place("MEAL", tags={"관광공사 소개": 1.0})
+    line = for_place(p, TrustFacts(photos=2), today=TODAY, area=None)[0]
+    assert line is not None and line.text == "사진 2장"
+    assert [f.short for f in line.facts] == ["사진 2장", "관광공사 소개"]
+    # alone, it still says something — in two words
+    alone = for_place(p, None, today=TODAY, area=None)[0]
+    assert alone is not None and alone.text == "관광공사 소개"
+    assert alone.facts[0].text == "관광공사 관광정보에 실린 곳"
+    # a strong designation still leads
+    strong = for_place(
+        place("MEAL", tags={"관광공사 소개": 1.0, "백년가게": 1.0}), None, today=TODAY, area=None
+    )[0]
+    assert strong is not None and strong.text == "백년가게"
+
+
+def test_a_course_never_says_the_same_card_words_twice() -> None:
+    p = place("MEAL", tags={"관광공사 소개": 1.0})
+    first, ev = for_place(p, TrustFacts(photos=2), today=TODAY, area=None)
+    assert first is not None and first.text == "사진 2장"
+    second, ev2 = for_place(p, TrustFacts(photos=2), today=TODAY, area=None, taken={"사진 2장"})
+    assert second is not None and second.text == "관광공사 소개"  # the next-best fact
+    third, ev3 = for_place(
+        p, TrustFacts(photos=2), today=TODAY, area=None, taken={"사진 2장", "관광공사 소개"}
+    )
+    # nothing new to say: no card line, but the sheet keeps every fact
+    assert third is not None and third.text is None and len(third.facts) == 2
+    assert all(grounded(ln, e, today=TODAY) for ln, e in ((first, ev), (second, ev2), (third, ev3)))
+
+
+def test_a_second_place_with_its_own_same_fact_says_it_differently() -> None:
+    """Two gelato shops of 성수, two places licensed the same year: their own facts, worded a second way —
+    a label many places share (관광공사 소개 · 사진 N장) gets no second wording."""
+    p = place("DESSERT", name="마망젤라또")
+    p.local_word, p.local_draw = "젤라또", True
+    line, ev = for_place(p, None, today=TODAY, area="성수", taken={"성수 명물 젤라또"})
+    assert line is not None and line.text == "여기도 성수 명물 젤라또"
+    assert grounded(line, ev, today=TODAY)
+    old = TrustFacts(licence_on=date(1995, 1, 1))
+    line, ev = for_place(place("BAR"), old, today=TODAY, area=None, taken={"31년째 영업"})
+    assert line is not None and line.text == "1995년부터 31년째 영업"
+    assert grounded(line, ev, today=TODAY)
+    assert not grounded(replace(line, text="여기도 31년째 영업"), ev, today=TODAY)
+
+
+def test_scorecard_flags_a_course_that_repeats_a_line() -> None:
+    def s(trust: str | None, position: int) -> C.Stop:
+        return C.Stop(position=position, role="MEAL", name=str(position), category="food.korean", at="12:00",
+                      leave_min=13 * 60, price=10000, leg=5, trust=trust)  # fmt: skip
+
+    case = C.Case("seoul-hongdae", "date", 2, 60000, "12:00", group="hotspot")
+    twice = C.Record(case, price=1, stops=[s("관광공사 소개", 1), s("관광공사 소개", 2)])
+    once = C.Record(case, price=1, stops=[s("관광공사 소개", 1), s("34년째 영업", 2), s(None, 3)])
+    single = C.Record(case, price=1, stops=[s("관광공사 소개", 1)])  # one line: not counted
+    got = C.evaluate(C.METRIC_BY_ID["trust_repeat_rate"], [twice, once, single])
+    assert got.value == 0.5 and not got.passed
 
 
 def test_scorecard_counts_food_stops_with_a_line_and_invented_ones() -> None:
@@ -157,7 +221,8 @@ def test_a_neighbourhood_name_with_a_number_is_not_an_invented_number() -> None:
     p = place("MEAL", name="종로빈대떡")
     p.local_word, p.local_draw = "빈대떡", True
     line, evidence = for_place(p, TrustFacts(licence_on=date(1998, 1, 1)), today=TODAY, area="익선동·종로3가")
-    assert line is not None and line.text == "1998년부터 28년째 영업 · 익선동·종로3가 명물 빈대떡"
+    assert line is not None and line.text == "28년째 영업"
+    assert line.facts[1].text == "익선동·종로3가 명물 빈대떡"
     assert grounded(line, evidence, today=TODAY)
     # without the area on record, the same "3" is a number from nowhere
     assert not grounded(line, {k: v for k, v in evidence.items() if k != "region.name"}, today=TODAY)

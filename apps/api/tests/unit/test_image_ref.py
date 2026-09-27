@@ -58,6 +58,8 @@ def test_nothing_at_all_is_our_own_drawing() -> None:
         ("bar.wine", "bar"),
         ("nightview", "night"),
         ("culture.museum", "sight"),
+        ("shop.character", "shop"),
+        ("shop", "shop"),
         (None, "sight"),
     ],
 )

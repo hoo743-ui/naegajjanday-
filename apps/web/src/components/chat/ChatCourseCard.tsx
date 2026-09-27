@@ -28,7 +28,7 @@ export function ChatCourseCard({ course }: { course: Course }) {
               <li key={stop.position} className="flex items-baseline gap-2 text-body-sm">
                 <span className="tabular w-5 shrink-0 text-caption font-semibold text-muted-foreground">{String(stop.position).padStart(2, "0")}</span>
                 <span className="min-w-0 shrink truncate font-semibold text-ink">
-                  <span className="font-medium text-muted-foreground">{roleLabel(stop.role)}</span> {stop.place.name}
+                  <span className="font-medium text-muted-foreground">{roleLabel(stop.role, stop.place.category)}</span> {stop.place.name}
                 </span>
                 <span aria-hidden className="receipt-leader" />
                 <span className="tabular shrink-0 font-bold text-ink">{stop.est_price === 0 ? "무료" : won(stop.est_price)}</span>

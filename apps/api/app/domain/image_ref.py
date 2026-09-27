@@ -20,7 +20,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 ImageType = Literal["actual", "category", "branded-placeholder"]
-PlaceholderKind = Literal["meal", "cafe", "walk", "activity", "sight", "bar", "night"]
+PlaceholderKind = Literal["meal", "cafe", "walk", "activity", "sight", "shop", "bar", "night"]
 
 # TourAPI photos are KOGL (공공누리) type 1 (출처표시) or type 3 (출처표시 + 변경금지). Both require the
 # credit; type 3 also forbids edits, so actual photos are shown as they are (no tint, no blur).
@@ -71,6 +71,9 @@ def placeholder_kind(code: str | None) -> PlaceholderKind:
         return "walk"
     if c.startswith("activity") or c in {"festival", "culture.festival"}:
         return "activity"
+    # 구경하는 가게 (docs/63 · docs/59 #21): a character or vintage shop is not a museum
+    if c == "shop" or c.startswith("shop."):
+        return "shop"
     return "sight"
 
 
