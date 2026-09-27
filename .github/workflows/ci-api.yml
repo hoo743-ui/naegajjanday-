@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "apps/api/**"
+      - "scripts/ci/check_yardstick.py"
       - ".github/workflows/ci-api.yml"
   push:
     branches: [main]
     paths:
       - "apps/api/**"
+      - "scripts/ci/check_yardstick.py"
       - ".github/workflows/ci-api.yml"
 
 concurrency:
@@ -52,6 +54,21 @@ jobs:
 
       - name: mypy
         run: uv run mypy app
+
+  yardstick:
+    name: 잣대 잠금 (docs/64 R17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: lock file changes are approved and alone
+        working-directory: .
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/ci/check_yardstick.py "$BASE" "$HEAD"
 
   test:
     # Same database as local and production (Render runs SQLite on a disk): tests/conftest.py builds a
