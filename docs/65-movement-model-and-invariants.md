@@ -77,3 +77,15 @@ I3 · I7 의 문턱(70%)은 **잣대 잠금**(yardstick) 과 같은 규칙으로
 - 캠퍼스 기준 코스: 모드 반경으로 자른다.
 - 차 · 대중교통 선택: 반경 약속은 그대로, 구간 도보 규칙은 도보일 때만.
 - I10 "역방향 없음": 이동 1회 · 이동 뒤 장소는 모두 A 보다 B 에 가깝다.
+
+## 7. 구현 메모 — 2026-09-29 (§6 그대로, 해석한 곳은 표시)
+
+- **숫자 한 곳**: R1 · R2 · 한 구간 도보는 `app/evaluation/yardstick.py › INVARIANT_THRESHOLDS`(`M1_radius_m` 800 · `M2_radius_m` 2000 · `M2_walk_leg_max_min` 20) → 잠금 파일 `invariants`. 엔진(`app/domain/recommendation/movement.py`)과 I8~I10 이 모두 잠금 파일에서 읽고, 없으면 엔진이 멈춘다(숫자를 스스로 갖지 않는다). 잠금이 아닌 값(대중교통 횟수 1 · M3 15분 · 문구)은 `data/recommendation/movement.json`.
+- **엔진**: 약속(`Promise`)은 `RequestContext.promise`. 후보는 모두 `movement.WithinPromise` 한 곳을 지난다(기본 풀 · 반경 넓히기 · v2 바깥 고리 · 부탁한 곳으로 옮기기 · 걷기 좋은 구역 찾기). 구간은 `CourseComposer.extend` 에서: 20분 넘는 도보 → M2 는 `itinerary.hop_between(…, "transit")` 로 한 번(`from_prev.mode = "transit"`), 둘째 · M1 은 그 조합을 버린다. 실측 재계산(`_remeasure`)도 같은 규칙으로 다시 정해지고, 그 뒤 서비스가 `movement.violations` 로 한 번 더 본다(어기면 `MOVEMENT_PROMISE` — 나오면 버그).
+- **해석 ①** 대중교통으로 바꾼 구간은 시간 · 화면은 탑승 + 대기(`hop_overhead_min`)로, **하루 점수의 이동 비용은 원래 도보 시간으로** 매긴다. 그러지 않으면 20분 넘는 도보가 13분짜리 "지름길"이 되어 멀리 있는 곳이 더 싸 보이고, 전국 DB 잠실 가족 11:00 에서 I3(출발 −10분 → 장소 40% 유지)이 깨졌다. 지금은 M2 가 이전 코스와 가장 가깝다(§2 "지금 동작과 가장 가깝게").
+- **해석 ②** 고정한 곳도 구간 규칙을 따른다(예전에는 고정한 곳이면 긴 도보를 허용했다). 반경 밖 고정 장소는 §6 대로 빼고 알린다.
+- **해석 ③** M3 의 무리는 각자 M2 전체(무리 안 대중교통 한 번 포함)를 지키고, A 무리도 B 보다 A 에 가깝게 둔다(§6 은 "이동 뒤 장소는 B 에 가깝다"만 말한다 — 양쪽으로 적용해 A↔B 오가기를 원천적으로 막았다). B 제안의 "명물 세기" = `draws.json` 의 eat + see 개수.
+- **해석 ④** 차 · 대중교통으로 고르면 M1 의 "도보만"도 적용하지 않는다(반경만). 적용 밖 요청(시 · 도 · `regions[]` · 몇 박 · 여행 하루 다시 짜기)의 `movement` 는 422 가 아니라 무시하고 echo 는 `null`.
+- **저장된 코스**: 스냅숏 `request.movement {mode, label, lat, lng, radius_m, onward?, onward_to?}` — 있는 코스만 바꾸기 · 후보 · 순서 변경 · 끝에 넣기 · 채우기에서 약속을 지킨다(M3 은 스톱이 속한 무리 기준, 이동 구간은 `hop_index`). 없는 예전 코스는 그대로.
+- **테스트**: `tests/unit/test_movement.py`(잠금 값 · 필터 · 구간 · 0.5/1.0/1.9/2.4km 합성 동네에서 진짜 엔진 · B 순위 · 요청 검사), `tests/integration/test_movement_api.py`(echo · 후보 · 예전 코스 · 반경 밖 고정 · M3), `tests/metamorphic` I8 · I9 · I10 — 별도 `movement` DB(홍대 둘레 0.9~2.4km 가게 + 서쪽 1.8km 허구 동네)라 I1~I7 의 fixture 코스는 그대로. 거리는 요청에서 따로 구한 기준점(역 좌표 · DB 의 동네 중심)에서 잰다.
+- 씨앗 DB 에서 바뀐 테스트 하나: `test_errand.py` 의 "볼일 뒤에 시작" — 가로수길 좌표 2km 안에 씨앗 장소가 없어(예전 코스는 4km 떨어진 성수였다) 볼일 위치를 성수 안으로 옮겼다(단언은 그대로).

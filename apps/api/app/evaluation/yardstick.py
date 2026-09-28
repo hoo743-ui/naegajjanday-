@@ -25,9 +25,16 @@ FIELDS = ("direction", "target", "kind", "scale", "weight", "half", "floor_only"
 # 일관성 불변식의 문턱 (docs/65 §3 · §5, 창업자 승인 2026-09-28): 점수표 지표와 같은 규칙으로 잠근다 —
 # 바꾸려면 창업자 승인 후 엔진 변경과 다른 커밋에서 `--write`. tests/metamorphic 이 여기서 읽는다.
 #   I3: 출발 시각 ±10분 → 장소의 ≥70% 유지 · I7: 인원만 바꿈(2→3, 1인 예산 같게) → 장소 종류 구성 유지
+#   이동 모드의 약속 (docs/65 §5 ② R1 · R2 · 한 구간 도보, 창업자 승인 2026-09-28): 엔진
+#   (app/domain/recommendation/movement.py)과 I8 · I9 · I10 이 모두 잠금 파일에서 읽는다 — 숫자는 여기 하나뿐.
+#   M1 역 안에서 = 기준점에서 직선 800m 안 · 도보만
+#   M2 역 주변 = 직선 2km 안 · 한 구간 도보 ≤ 20분 (M1 도 같다)
 INVARIANT_THRESHOLDS: dict[str, float] = {
     "I3_start_shift_keep_share": 0.7,
     "I7_party_kind_keep_share": 0.7,
+    "M1_radius_m": 800,
+    "M2_radius_m": 2000,
+    "M2_walk_leg_max_min": 20,
 }
 
 
