@@ -64,36 +64,8 @@ OPTIONS = ("SHOP", "BAR", "MOVIE")  # I5
 PARTY_FROM, PARTY_TO = 2, 3  # I7
 
 # 지금 엔진에서 깨지는 것: (불변식, world, base.key) → 이유 + 구체적인 예. 엔진을 고치면 xfail 이 XPASS 로
-# 실패한다(strict) — 그때 이 줄을 지운다.
-_PINNED_MEAL = (
-    "고정한 첫 장소(영수증 파스타, 2인 29,000원)와 함께면 {opt} 자리를 못 넣고 EXTRA_UNAVAILABLE"
-    "{also} — 고정 없이 같은 요청이면 {opt} 자리가 들어간다({without}). 예산 60,000원: 파스타 29,000 + {floor}"
-)
-KNOWN: dict[tuple[str, str, str], str] = {
-    ("I5:MOVIE", "fixture", "seoul-hongdae|date|2026-10-06 13:00|2명|60,000원"): _PINNED_MEAL.format(
-        opt="영화",
-        also=" + SLOT_EMPTY",
-        without="16:01 짠 시네마 홍대",
-        floor="영화 2인 28,000 = 57,000 으로 들어갈 돈은 있다",
-    ),
-    ("I5:MOVIE", "fixture", "seoul-hongdae|date|2026-10-06 18:00|2명|60,000원"): _PINNED_MEAL.format(
-        opt="영화",
-        also=" + SLOT_EMPTY",
-        without="19:44 짠 시네마 홍대",
-        floor="영화 2인 28,000 = 57,000 으로 들어갈 돈은 있다",
-    ),
-    ("I5:BAR", "fixture", "seoul-hongdae|date|2026-10-06 18:00|2명|60,000원"): _PINNED_MEAL.format(
-        opt="술 한잔",
-        also=" + SLOT_EMPTY, 오락실까지 빠짐",
-        without="20:26 엔빵 펍",
-        floor="술자리 최소 2인 24,000 = 53,000 으로 들어갈 돈은 있다",
-    ),
-    # 전국 DB(2026-09-28 스냅숏) — 같은 모양: 고정한 식사 30,000원이면 영화가 빠진다
-    ("I5:MOVIE", "national", "seoul-hongdae|date|2026-10-06 18:00|2명|60,000원"): (
-        "고정한 첫 장소(디스틸, 2인 30,000원)와 함께면 영화 자리를 못 넣고 EXTRA_UNAVAILABLE + SLOT_EMPTY, "
-        "하루필름(사진)까지 빠짐 — 전국 DB 2026-09-28 스냅숏"
-    ),
-}
+# 실패한다(strict) — 그때 이 줄을 지운다. (I5 고정 + 옵션 4건은 engine._around_kept 로 풀려 지웠다.)
+KNOWN: dict[tuple[str, str, str], str] = {}
 
 
 @pytest.fixture

@@ -64,6 +64,37 @@ class TestKeptInTheEngine:
         out = await RecommendationEngine(FakeSource(world())).generate(ctx, [DATE_EVENING], profile())
         assert (False, shut.id) not in out.courses[0].place_ids and out.courses[0].stops
 
+    async def test_a_pin_over_its_share_leaves_room_for_the_asked_slot(self) -> None:
+        """docs/65 I5: a pinned 14,500원 meal (its slot planned ~10,000) and an asked film (14,000) fit
+        30,000원 a head — but not with a café too. The beam filled the café first and lost the film; the day
+        is also tried without the paid stops that are not pinned, and keeps the film."""
+        hours = all_week(9 * 60, 23 * 60)
+        pasta = place("MEAL", "food.western", 14500, opening_hours=hours)
+        film = place("ACTIVITY", "activity.cinema", 14000, dlat=0.001, opening_hours=hours)
+        cafes = [
+            place("CAFE", "cafe.coffee", p, dlat=-0.001 * n, opening_hours=hours)
+            for n, p in enumerate((3500, 4000, 5000), 1)
+        ]
+        walk = place("ATTRACTION", "attraction.park", None, dlng=0.001)
+        t = template(
+            Slot(1, "MEAL", 0.344),
+            Slot(2, "CAFE", 0.125),
+            Slot(3, "ATTRACTION", 0.031),
+            Slot(4, "ACTIVITY", 0.5),
+        )
+        ctx = context(
+            budget_total=60000,
+            alternatives=0,
+            start_at=SUNDAY_6PM.replace(hour=13),
+            kept_places=(pasta,),
+        )
+        source = FakeSource([pasta, film, *cafes, walk])
+        out = await RecommendationEngine(source).generate(ctx, with_kept([t], [pasta], 30000), profile())
+        ids = out.courses[0].place_ids
+        assert (False, pasta.id) in ids and (False, film.id) in ids
+        assert out.courses[0].total_price <= 60000
+        assert not [w for w in out.courses[0].warnings if w.get("code") == "SLOT_EMPTY"]
+
 
 class TestWishes:
     def test_new_wishes_become_knobs(self) -> None:

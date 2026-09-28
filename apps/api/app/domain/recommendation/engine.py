@@ -142,6 +142,23 @@ class RecommendationEngine:
                 and _kept_count(other, ctx) >= _kept_count(out, ctx)
             ):
                 out = other
+        # docs/65 I5: a pinned stop that costs more than its slot's share leaves the slots after it short,
+        # and the beam fills slot by slot — a café before it spends what the asked film (or drink) needed.
+        # The same day with only the pinned stops, the ones that cost nothing and the slots it lost is tried,
+        # and taken when it fills more of them with the pinned stops held and no fewer stops.
+        around = _around_kept(out.template, out, ctx)
+        if around is not None:
+            try:
+                other = await self._generate_with(ctx, around, profile)
+            except NoCourseError:
+                other = None
+            if (
+                other is not None
+                and _empty_slots(other) < _empty_slots(out)
+                and len(other.courses[0].stops) >= len(out.courses[0].stops)
+                and _kept_count(other, ctx) >= _kept_count(out, ctx)
+            ):
+                out = other
         # docs/59 #13: a pinned theme park reached by a long leg from the stop before it (no restaurant
         # outside its gate — 에버랜드로 199 is all inside): the same day with the park first, in at the
         # opening and a meal inside or near the gate after. Taken when it still holds the park and a stop
@@ -686,6 +703,27 @@ def _venue_first(template: Template, out: EngineOutput, ctx: RequestContext) -> 
         return None
     order = [slot, *(s for s in template.slots if s is not slot)]
     return replace(template, slots=tuple(replace(s, position=i + 1) for i, s in enumerate(order)))
+
+
+def _around_kept(template: Template, out: EngineOutput, ctx: RequestContext) -> Template | None:
+    """The template with only the slots of the pinned stops, of the stops that cost nothing, and of the
+    slots the course could not fill (SLOT_EMPTY) — None without a pinned stop, a lost slot, or anything to
+    leave out."""
+    if not ctx.kept_places:
+        return None
+    course = out.courses[0]
+    lost = {w["meta"]["position"] for w in course.warnings if w.get("code") == "SLOT_EMPTY"}
+    if not lost:
+        return None
+    held = {
+        s.slot.position
+        for s in course.stops
+        if s.slot is not None and (s.est_price == 0 or (s.place.is_event, s.place.id) in ctx.kept_keys)
+    }
+    slots = [s for s in template.slots if s.position in lost | held]
+    if len(slots) == len(template.slots) or not any(s.position in lost for s in slots):
+        return None
+    return replace(template, slots=tuple(slots))
 
 
 def _kept_count(out: EngineOutput, ctx: RequestContext) -> int:
