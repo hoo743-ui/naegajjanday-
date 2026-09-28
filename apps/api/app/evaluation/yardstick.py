@@ -22,6 +22,13 @@ from typing import Any
 LOCK_PATH = Path(__file__).resolve().parents[2] / "data" / "eval" / "yardstick.lock.json"
 # 합격 여부를 바꾸는 필드만 — 라벨(글자)은 바꿔도 잣대가 아니다
 FIELDS = ("direction", "target", "kind", "scale", "weight", "half", "floor_only")
+# 일관성 불변식의 문턱 (docs/65 §3 · §5, 창업자 승인 2026-09-28): 점수표 지표와 같은 규칙으로 잠근다 —
+# 바꾸려면 창업자 승인 후 엔진 변경과 다른 커밋에서 `--write`. tests/metamorphic 이 여기서 읽는다.
+#   I3: 출발 시각 ±10분 → 장소의 ≥70% 유지 · I7: 인원만 바꿈(2→3, 1인 예산 같게) → 장소 종류 구성 유지
+INVARIANT_THRESHOLDS: dict[str, float] = {
+    "I3_start_shift_keep_share": 0.7,
+    "I7_party_kind_keep_share": 0.7,
+}
 
 
 def current() -> dict[str, dict[str, Any]]:
@@ -35,10 +42,19 @@ def locked() -> dict[str, dict[str, Any]]:
     return data
 
 
+def locked_invariants() -> dict[str, float]:
+    data: dict[str, float] = json.loads(LOCK_PATH.read_text(encoding="utf-8")).get("invariants", {})
+    return data
+
+
 def diff() -> list[str]:
     """코드와 잠금 파일의 차이, 사람이 읽는 줄로. 빈 목록이면 같다."""
     code, lock = current(), locked()
     out: list[str] = []
+    inv_code, inv_lock = INVARIANT_THRESHOLDS, locked_invariants()
+    for key in sorted(inv_code.keys() | inv_lock.keys()):
+        if inv_code.get(key) != inv_lock.get(key):
+            out.append(f"~ invariants.{key}: 잠금 {inv_lock.get(key)!r} → 코드 {inv_code.get(key)!r}")
     for mid in sorted(code.keys() - lock.keys()):
         out.append(f"+ {mid}: 잠금 파일에 없는 새 지표 {code[mid]}")
     for mid in sorted(lock.keys() - code.keys()):
@@ -56,6 +72,7 @@ def write() -> None:
         "_note": "잣대 잠금 — 손으로 고치지 말 것. `python -m app.evaluation.yardstick --write` 로만, "
         "창업자 승인(docs/64) 후 엔진 · 데이터 변경과 다른 커밋에서, 메시지에 `Yardstick-Approved: R<번호>`.",
         "metrics": current(),
+        "invariants": dict(INVARIANT_THRESHOLDS),
     }
     text = json.dumps(body, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
     LOCK_PATH.write_text(text, encoding="utf-8", newline="\n")

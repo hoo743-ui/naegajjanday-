@@ -1,5 +1,9 @@
 {
  "_note": "잣대 잠금 — 손으로 고치지 말 것. `python -m app.evaluation.yardstick --write` 로만, 창업자 승인(docs/64) 후 엔진 · 데이터 변경과 다른 커밋에서, 메시지에 `Yardstick-Approved: R<번호>`.",
+ "invariants": {
+  "I3_start_shift_keep_share": 0.7,
+  "I7_party_kind_keep_share": 0.7
+ },
  "metrics": {
   "bar_kind_rate": {
    "direction": "higher",
