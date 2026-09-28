@@ -53,6 +53,7 @@ EVENT_PROPS: dict[str, frozenset[str]] = {
     "course_option_toggled": frozenset({"option", "on", "via"}),
     "course_option_text_parsed": frozenset({"length", "matched", "options"}),  # never the text itself
     "familiarity_changed": frozenset({"to"}),
+    "movement_changed": frozenset({"to"}),  # 이동 모드 줄 (docs/65): inside · around · onward
     "budget_whatif_tried": frozenset({"budget_total", "from_budget"}),
     "budget_whatif_opened": frozenset({"budget_total"}),
     "settlement_copied": frozenset({"party_size", "total"}),
@@ -99,6 +100,7 @@ REGENERATE_EVENTS = frozenset(
         "course_settings_changed",
         "course_option_toggled",
         "familiarity_changed",
+        "movement_changed",
     }
 )
 SWAP_EVENTS = frozenset({"stop_swapped", "stop_swapped_from_sheet"})

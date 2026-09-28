@@ -68,6 +68,8 @@ export interface AnalyticsEvents {
   plan_last_choices_applied: { fields: number; extras: number };
   /** 처음 · 자주 (docs/59 #1): 결과 화면의 한 줄로 바꿔 다시 짰다 */
   familiarity_changed: { course_id: string; to: "first" | "regular" };
+  /** 이동 모델 (docs/65): 결과 화면의 한 줄로 역 안 · 역 주변 · 다른 동네로를 바꿔 다시 짰다 */
+  movement_changed: { course_id: string; to: "inside" | "around" | "onward" };
   // 브랜드 인트로(/intro)를 떠남 (docs/40)
   intro_left: { via: "intro_enter" | "intro_plan" | "intro_skip" };
   // 주변 장소를 코스 지도에 띄움 (docs/36): kind = 카드에 붙은 한 줄

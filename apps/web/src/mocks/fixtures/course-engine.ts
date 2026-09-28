@@ -418,6 +418,14 @@ export function getDetail(id: string): CourseDetail {
       budget_total: s.req.budget_total,
       transport: s.req.transport ?? "walk",
       start_at: s.req.start_at ?? s.course.stops[0]?.arrive_at ?? new Date().toISOString(),
+      // 이동 모델 (docs/65): 목 서버는 범위를 지키지 않고 요청만 되돌려 준다 — 결과 화면의 한 줄이 보이게
+      ...(region && !s.req.regions?.length && !s.req.nights
+        ? {
+            movement: s.req.movement ?? "around",
+            movement_anchor: { label: region.name, lat: region.center.lat, lng: region.center.lng, radius_m: s.req.movement === "inside" ? 800 : 2000 },
+            onward_to: s.req.movement === "onward" ? { region: s.req.onward_to?.region ?? null, origin: s.req.onward_to?.origin ?? null, label: s.req.onward_to?.label ?? "옆 동네" } : null,
+          }
+        : { movement: null }),
     },
     siblings: s.siblings,
     nearby_events: s.events,

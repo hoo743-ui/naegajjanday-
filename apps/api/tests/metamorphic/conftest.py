@@ -70,6 +70,50 @@ async def fixture_planner(tmp_path_factory: pytest.TempPathFactory) -> AsyncIter
         await db.dispose()
 
 
+MOVEMENT_DIR = Path(__file__).parent / "data_movement"
+# M3 의 B: 홍대 중심에서 서쪽으로 1.8km 의 허구 동네 (tests/metamorphic/data_movement/seoul-mm-west.json)
+MOVEMENT_WEST = {
+    "slug": "seoul-mm-west",
+    "name": "서쪽샘플",
+    "level": 3,
+    "parent": "seoul-mapo",
+    "center_lat": 37.5572,
+    "center_lng": 126.90408,
+    "radius_m": 1200,
+    "area_code": "1:13",
+    "status": "active",
+    "search_keywords": [],
+}
+
+
+@pytest_asyncio.fixture(scope="session")
+async def movement_planner(tmp_path_factory: pytest.TempPathFactory) -> AsyncIterator[Planner]:
+    """이동 모드(I8 · I9 · I10) 의 DB: `fixture` 와 같고, 거기에 홍대 둘레 0.9~2.4km 의 가게들과 서쪽 1.8km 의
+    허구 동네 하나(M3 의 B)를 더한 것. 따로 두는 까닭: 둘레 가게가 I1~I7 의 코스를 바꾸지 않게."""
+    from app.infra.ingestion.config_loader import upsert_regions
+
+    db_file = tmp_path_factory.mktemp("metamorphic-movement") / "movement.db"
+    settings = _settings(f"sqlite+aiosqlite:///{db_file.as_posix()}", tmp_path_factory.mktemp("uploads-m"))
+    db = Database(settings)
+    try:
+        await db.create_all()
+        async with db.sessionmaker() as session:
+            await load_config(session, SEED_DIR)
+            await upsert_regions(session, [MOVEMENT_WEST])
+            await session.commit()
+        paths = [
+            *sorted((SEED_DIR / "places").glob("*.json")),
+            *sorted(EXTRA_DIR.glob("*.json")),
+            *sorted(MOVEMENT_DIR.glob("*.json")),
+        ]
+        for path in paths:
+            _, report = await ingest(db, settings, provider_name="file", region_slug=None, path=path)
+            assert report.failed == 0, report.errors
+        yield Planner(db, settings, world="movement")
+    finally:
+        await db.dispose()
+
+
 def _national_url() -> str | None:
     """The local national DB from apps/api/.env, as a read-only SQLite URI — or None."""
     env = API_ROOT / ".env"

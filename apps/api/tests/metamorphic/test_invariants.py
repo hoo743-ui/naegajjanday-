@@ -7,7 +7,8 @@
 I3 · I7 의 문턱(70%)은 잣대 잠금(app/evaluation/yardstick.py › INVARIANT_THRESHOLDS,
 data/eval/yardstick.lock.json › invariants)에서 읽는다 — 여기서 바꾸지 않는다.
 지금 엔진에서 깨지는 불변식은 고치지 않고 xfail(strict) 로 남긴다(KNOWN) — 발견이지 고칠 거리가 아니다.
-I8~I10(이동 모드 M1~M3)과 I11(아이 수, R18)은 아직 없는 입력이라 건너뛴다(맨 아래).
+I8~I10(이동 모드 M1~M3)은 R1 · R2 · 한 구간 도보를 같은 잠금에서 읽고, 둘레 가게를 더한 `movement` DB 에서
+본다(I1~I7 의 fixture 코스는 그대로). I11(아이 수, R18)은 아직 없는 입력이라 건너뛴다(맨 아래).
 """
 
 from __future__ import annotations
@@ -103,7 +104,13 @@ def test_the_thresholds_come_from_the_yardstick_lock() -> None:
     from app.evaluation.yardstick import locked_invariants
 
     assert locked_invariants() == INVARIANT_THRESHOLDS
-    assert set(INVARIANT_THRESHOLDS) == {"I3_start_shift_keep_share", "I7_party_kind_keep_share"}
+    assert set(INVARIANT_THRESHOLDS) == {
+        "I3_start_shift_keep_share",
+        "I7_party_kind_keep_share",
+        "M1_radius_m",
+        "M2_radius_m",
+        "M2_walk_leg_max_min",
+    }
 
 
 @pytest.mark.parametrize(("world", "base"), CASES)
@@ -373,22 +380,178 @@ async def test_i12_the_engine_never_leaves_a_gated_shop_alone(venue_price: int |
         ]
 
 
+# ── I8 · I9 · I10 이동 모드 (docs/65 §2 · §6) ──────────────────────────────────────────────────
+# 문턱(R1 · R2 · 한 구간 도보)은 잣대 잠금에서 읽는다. 거리는 엔진이 말하는 기준점이 아니라 요청에서 따로 구한
+# 기준점(역 = req.origin, 동네 = DB 의 동네 중심)에서 잰다 — 그리고 엔진의 기준점이 그것과 같은지도 본다.
+# `movement` DB: fixture + 홍대 둘레 0.9~2.4km 의 가게 + 서쪽 1.8km 의 허구 동네 (conftest.movement_planner).
+
+R1 = INVARIANT_THRESHOLDS["M1_radius_m"]
+R2 = INVARIANT_THRESHOLDS["M2_radius_m"]
+WALK_LEG_MAX = INVARIANT_THRESHOLDS["M2_walk_leg_max_min"]
+MOVEMENT_BASES = [
+    Base("seoul-hongdae", "date", WEEKDAY, "13:00"),
+    Base("seoul-hongdae", "date", WEEKDAY, "18:00"),
+    Base("seoul-hongdae", "friends", WEEKDAY, "13:00"),
+    Base("seoul-seongsu", "friends", WEEKDAY, "18:00"),
+]
+# 역을 고른 요청: 동네 중심에서 300m 떨어진 점 — 기준점은 그 점이어야 한다(동네 중심이 아니라)
+STATION = {
+    "seoul-hongdae": (37.5572, 126.9279, "홍대 샘플역"),
+    "seoul-seongsu": (37.5473, 127.0559, "성수 샘플역"),
+}
+MODE_CASES = [
+    pytest.param("movement", b, where, id=f"movement:{where}:{b.id}")
+    for b in MOVEMENT_BASES
+    for where in ("region", "station")
+] + [
+    pytest.param("national", b, "region", id=f"national:region:{b.id}", marks=pytest.mark.national)
+    for b in NATIONAL_BASES
+]
+# M3 의 B (사용자가 고른 곳)
+ONWARD_B = {
+    ("movement", "seoul-hongdae"): "seoul-mm-west",
+    ("national", "seoul-hongdae"): "seoul-yeonnam",
+    ("national", "seoul-seongsu"): "seoul-kondae",
+}
+ONWARD_CASES = [
+    pytest.param(world, base, id=f"{world}:{base.id}", marks=marks)
+    for world, bases, marks in (
+        ("movement", MOVEMENT_BASES, ()),
+        ("national", NATIONAL_BASES, (pytest.mark.national,)),
+    )
+    for base in bases
+    if (world, base.region) in ONWARD_B
+]
+
+
+def _where(base: Base, where: str) -> dict[str, Any]:
+    if where == "region":
+        return {}
+    lat, lng, label = STATION[base.region]
+    return {"region": None, "origin": {"lat": lat, "lng": lng}, "origin_label": label}
+
+
+async def _anchor(planner: Planner, req: Any) -> GeoPoint:
+    if req.origin is not None:
+        return GeoPoint(req.origin.lat, req.origin.lng)
+    return await planner.region_center(req.region)
+
+
+def _legs(stops: Sequence[Any]) -> list[Any]:
+    """The legs of the promise: every stop's leg but the first (anchor → first stop is not one, docs/65 §6)."""
+    return list(stops[1:])
+
+
+def _promise_notes(plan: Plan) -> list[Any]:
+    return [w for c in plan.courses for w in c.warnings if w.get("code") == "MOVEMENT_PROMISE"]
+
+
+@pytest.mark.parametrize(("world", "base", "where"), MODE_CASES)
+async def test_i8_m1_all_within_r1_on_foot(planner: Planner, base: Base, where: str) -> None:
+    """I8: M1 → 모든 장소 R1(800m) 안 · 도보만 (한 구간 ≤ 20분, M1 ⊂ M2). 대표 + 대안 2 코스 모두."""
+    plan = await _plan(planner, base, movement="inside", alternatives=2, **_where(base, where))
+    assert plan.ok, f"{base.key} M1: {plan.describe()}"
+    anchor = await _anchor(planner, plan.req)
+    assert plan.ctx is not None and plan.ctx.promise is not None and plan.ctx.promise.center == anchor
+    for course in plan.courses:
+        for s in course.stops:
+            far = haversine_m(anchor, s.place.point)
+            assert far <= R1, f"{base.key} [{course.label}] {s.place.name} {far:.0f}m > {R1:.0f}m"
+        for s in _legs(course.stops):
+            assert s.leg_mode is None, f"{base.key} [{course.label}] {s.place.name}: {s.leg_mode} — 도보만"
+            assert s.travel_min_from_prev <= WALK_LEG_MAX, f"{s.place.name} 도보 {s.travel_min_from_prev}분"
+    assert not _promise_notes(plan)
+
+
+@pytest.mark.parametrize(("world", "base", "where"), MODE_CASES)
+async def test_i9_m2_all_within_r2_and_short_legs(planner: Planner, base: Base, where: str) -> None:
+    """I9: M2 → 모든 장소 R2(2km) 안 · 한 구간 ≤ 20분 도보(또는 대중교통 표시, 코스당 한 번).
+    movement 를 생략한 요청은 M2 와 같은 코스다(기본값)."""
+    plan = await _plan(planner, base, movement="around", alternatives=2, **_where(base, where))
+    assert plan.ok, f"{base.key} M2: {plan.describe()}"
+    anchor = await _anchor(planner, plan.req)
+    assert plan.ctx is not None and plan.ctx.promise is not None and plan.ctx.promise.center == anchor
+    for course in plan.courses:
+        for s in course.stops:
+            far = haversine_m(anchor, s.place.point)
+            assert far <= R2, f"{base.key} [{course.label}] {s.place.name} {far:.0f}m > {R2:.0f}m"
+        rides = [s for s in _legs(course.stops) if s.leg_mode == "transit"]
+        assert len(rides) <= 1, f"{base.key} [{course.label}] 대중교통 {len(rides)}번"
+        for s in _legs(course.stops):
+            if s.leg_mode is None:
+                assert s.travel_min_from_prev <= WALK_LEG_MAX, (
+                    f"{s.place.name} 도보 {s.travel_min_from_prev}분"
+                )
+    assert not _promise_notes(plan)
+    omitted = await _plan(planner, base, alternatives=2, **_where(base, where))
+    assert [c.place_ids for c in omitted.courses] == [c.place_ids for c in plan.courses]
+
+
+@pytest.mark.parametrize(("world", "base"), ONWARD_CASES)
+async def test_i10_m3_one_hop_no_return(planner: Planner, world: str, base: Base) -> None:
+    """I10: M3 → 무리 A, 이동 1회, 무리 B · 역방향 없음 (docs/65 §6: 이동 뒤 장소는 모두 A 보다 B 에 가깝다).
+    읽기: 두 무리는 각자 기준점의 M2 를 지킨다(R2 안 · 무리 안 한 구간 ≤ 20분 도보 또는 대중교통 한 번),
+    장소마다 'A 쪽 · B 쪽'(더 가까운 기준점)을 붙이면 A…A B…B — 바뀌는 곳이 정확히 한 번(이동)."""
+    b_slug = ONWARD_B[(world, base.region)]
+    plan = await _plan(planner, base, movement="onward", onward_to={"region": b_slug})
+    assert plan.ok, f"{base.key} M3 → {b_slug}: {plan.describe()}"
+    assert plan.ctx is not None and plan.ctx.promise is not None and plan.ctx.onward_promise is not None
+    a, b = await _anchor(planner, plan.req), await planner.region_center(b_slug)
+    assert plan.ctx.promise.center == a and plan.ctx.onward_promise.center == b
+    stops = plan.stops
+    sides = ["A" if haversine_m(a, s.place.point) < haversine_m(b, s.place.point) else "B" for s in stops]
+    detail = f"{base.key} → {b_slug}: {sides}\n{plan.describe()}"
+    assert sides[0] == "A" and sides[-1] == "B", detail
+    hops = [i for i in range(1, len(sides)) if sides[i] != sides[i - 1]]
+    assert len(hops) == 1, "이동은 한 번, 돌아오지 않는다 — " + detail
+    hop = hops[0]
+    assert [seg["from_position"] for seg in plan.ctx.segments] == [1, hop + 1], detail
+    for anchor, cluster in ((a, stops[:hop]), (b, stops[hop:])):
+        for s in cluster:
+            assert haversine_m(anchor, s.place.point) <= R2, f"{s.place.name} — " + detail
+        rides = [s for s in _legs(cluster) if s.leg_mode == "transit"]
+        assert len(rides) <= 1, detail
+        for s in _legs(cluster):
+            if s.leg_mode is None:
+                assert s.travel_min_from_prev <= WALK_LEG_MAX, f"{s.place.name} — " + detail
+    assert not _promise_notes(plan)
+
+
+@pytest.mark.parametrize("movement", ["inside", "around", "onward"])
+async def test_each_mode_plans_and_the_ring_is_there(movement_planner: Planner, movement: str) -> None:
+    """I8 · I9 · I10 이 빈 말이 아니다: 모드마다 코스가 나오고, `movement` DB 에는 R1 · R2 밖의 가게가 있으며,
+    M2 코스 중에는 R1 밖 장소를 쓰는 것이 있다(그래서 M1 의 800m 가 실제로 무언가를 막는다)."""
+    extra = {"onward_to": {"region": "seoul-mm-west"}} if movement == "onward" else {}
+    for base in MOVEMENT_BASES:
+        if movement == "onward" and base.region != "seoul-hongdae":
+            continue
+        plan = await _plan(movement_planner, base, movement=movement, **extra)
+        assert plan.ok, f"{base.key} {movement}: {plan.describe()}"
+    hongdae = await movement_planner.region_center("seoul-hongdae")
+    beyond = [
+        s.place.name
+        for base in MOVEMENT_BASES
+        if base.region == "seoul-hongdae"
+        for c in (await _plan(movement_planner, base, movement="around", alternatives=2)).courses
+        for s in c.stops
+        if haversine_m(hongdae, s.place.point) > R1
+    ]
+    assert beyond, "M2 코스가 R1 밖을 한 번도 쓰지 않으면 I8 이 아무것도 보지 않는다"
+    pool = await ring_pool(movement_planner, hongdae)
+    assert any(d > R2 for d in pool), "R2 밖 가게가 DB 에 없으면 I9 가 아무것도 보지 않는다"
+
+
+async def ring_pool(planner: Planner, center: GeoPoint) -> list[float]:
+    from sqlalchemy import select
+
+    from app.infra.db.models import Place
+
+    async with planner.db.sessionmaker() as session:
+        rows = (await session.execute(select(Place.lat, Place.lng))).all()
+    return [haversine_m(center, GeoPoint(float(lat), float(lng))) for lat, lng in rows]
+
+
 # ── 아직 없는 입력 (docs/65 §2 · docs/64 R18) ────────────────────────────────────────────────
-
-
-@pytest.mark.skip(reason="TODO(docs/65 I8): 이동 모드 M1(역 안에서, R1=800m · 도보만)이 아직 엔진에 없다")
-def test_i8_m1_all_within_r1_on_foot() -> None:
-    """I8: M1 → 모든 장소 R1(800m) 안 · 도보만."""
-
-
-@pytest.mark.skip(reason="TODO(docs/65 I9): 이동 모드 M2(역 주변, R2=2km · 한 구간 도보 ≤20분)가 아직 없다")
-def test_i9_m2_all_within_r2_and_short_legs() -> None:
-    """I9: M2 → 모든 장소 R2(2km) 안 · 한 구간 ≤ 20분 도보(또는 대중교통 표시)."""
-
-
-@pytest.mark.skip(reason="TODO(docs/65 I10): 이동 모드 M3(A → B 한 번)가 아직 없다")
-def test_i10_m3_one_hop_no_return() -> None:
-    """I10: M3 → 무리 A, 이동 1회, 무리 B · 역방향 없음."""
 
 
 @pytest.mark.skip(reason="TODO(docs/65 I11): 아이 수 입력 `children`(R18)은 wip/r18-children 브랜치에 있다")

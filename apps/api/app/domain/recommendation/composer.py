@@ -17,6 +17,8 @@ from app.domain.recommendation import day_score
 from app.domain.recommendation.budget import SlotBudget, effective_budget
 from app.domain.recommendation.errand import end_pull
 from app.domain.recommendation.features import congestion_at, is_open
+from app.domain.recommendation.itinerary import hop_between, itinerary_rules
+from app.domain.recommendation.movement import TRANSIT, settle_leg
 from app.domain.recommendation.scorer import PlaceScorer, Score, ScoreInput
 from app.domain.recommendation.ticketed import (
     after_long_venue,
@@ -46,6 +48,15 @@ class PlannedStop:
     score: Score
     eff_budget: float
     congestion: float | None
+    mode: str | None = None  # "transit": a walk over the promise's limit ridden instead (docs/65 M2)
+    # what the day score prices that ridden leg at: the walk it replaced. The ride keeps the promise; it is
+    # not a shortcut that makes a far place cheaper to reach than it was (M2 stays as close to before)
+    priced_min: float | None = None
+
+    @property
+    def leg_min(self) -> float:
+        """The leg's minutes as the day score counts them."""
+        return self.leg.minutes if self.priced_min is None else self.priced_min
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +69,7 @@ class Partial:
     clock: datetime
     last_point: GeoPoint
     score_sum: float
+    transit_legs: int = 0  # legs ridden under the promise so far (since M3's hop)
 
     @property
     def keys(self) -> frozenset[tuple[bool, int]]:
@@ -146,11 +158,15 @@ class CourseComposer:
         self._stay_scale = stay_scale
         self._day0 = ctx.start_at.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def leg_limit(self) -> float:
+    def leg_limit(self, mode: str | None = None) -> float:
         """The longest single leg allowed. v1: a comfort limit used as a wall (20 min on foot).
-        v2: only what nobody would do with that mode; anything shorter is priced by the day score."""
-        mode = self._ctx.transport
+        v2: only what nobody would do with that mode; anything shorter is priced by the day score.
+        `mode`: the leg's own mode when it is not the course's (a walk ridden under the promise)."""
+        mode = mode or self._ctx.transport
         limit = self._params.hard_leg_min(mode) if self._ctx.is_v2 else self._params.max_leg_min(mode)
+        promise = self._ctx.promise
+        if promise is not None and promise.walk_only and mode == "walk":  # M1: on foot, within the limit
+            limit = min(limit, promise.walk_leg_max_min)
         # at night a long walk between two places is not a stroll: the night condition caps it (walk only)
         return min(limit, self._ctx.leg_cap_min) if self._ctx.leg_cap_min and mode == "walk" else limit
 
@@ -209,7 +225,31 @@ class CourseComposer:
         inside = within_gate(place, previous)
         if inside:  # the few minutes inside the gate, not a walk out to the street and back in
             leg = Leg(min(leg.minutes, ticketed_venues().leg_cap_min), leg.distance_m, leg.source)
-        if strict and partial.stops and not pinned and leg.minutes > self.leg_limit():
+        # 이동 모드 (docs/65, recommendation.movement): a walk over the promise's limit is ridden instead —
+        # once; past that (or in M1, at all) the combination is thrown away, a pinned stop included
+        mode: str | None = None
+        priced: float | None = None
+        transit_legs = partial.transit_legs
+        promise = ctx.promise
+        # a re-plan of an M3 course: the hop is the one move between the anchors, ridden as itinerary rides it
+        hop = promise is not None and promise.hop_index == len(partial.stops)
+        if hop:
+            ride = hop_between(partial.last_point, place.point, ctx.transport, itinerary_rules())
+            leg = Leg(float(ride.minutes), float(ride.distance_m), ride.mode)
+            mode = ride.mode if ride.mode != ctx.transport else None
+            transit_legs = 0
+        elif partial.stops and not inside:
+            settled = settle_leg(promise, ctx.transport, leg, partial.last_point, place.point, transit_legs)
+            if settled is None:
+                if strict:
+                    return None
+            else:
+                walked = leg
+                leg, mode = settled
+                if mode == TRANSIT:
+                    transit_legs += 1
+                    priced = max(walked.minutes, leg.minutes)
+        if strict and partial.stops and not pinned and not hop and leg.minutes > self.leg_limit(mode):
             return None
         # docs/59 #13: after a long venue (a theme park) one meal or café near its gate, then the day is over
         wrap = ticketed_venues().wrap
@@ -259,16 +299,19 @@ class CourseComposer:
             and leave > self._day0 + timedelta(minutes=ctx.soft_end_min + WINDOW_GRACE_MIN)
         ):
             return None
-        stop = PlannedStop(place, sb, arrive, leave, leg, score, eff, congestion_at(place, arrive))
+        stop = PlannedStop(
+            place, sb, arrive, leave, leg, score, eff, congestion_at(place, arrive), mode, priced
+        )
         return Partial(
             stops=(*partial.stops, stop),
             spent=partial.spent + place.price,
             planned=partial.planned + sb.budget,
-            travel_min=partial.travel_min + round(leg.minutes),
+            travel_min=partial.travel_min + round(stop.leg_min),
             distance_m=partial.distance_m + leg.distance_m,
             clock=leave,
             last_point=place.point,
             score_sum=partial.score_sum + score.total,
+            transit_legs=transit_legs,
         )
 
     def search(

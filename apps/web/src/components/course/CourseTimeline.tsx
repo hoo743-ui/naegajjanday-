@@ -150,7 +150,10 @@ export function CourseTimeline({ course, transport, style, partySize, activeStop
         const mode = leg?.mode ?? "walk";
         const Icon = MODE_ICON[mode] ?? Footprints;
         // 장소 사이의 구간은 경로 API 의 값을 쓴다: 실측(네이버 · 보행 라우터) · 추정(엔진) · 계산 못 함을 구분해서 말한다
-        const measured = i > 0 ? route?.legs.find((l) => l.to_seq === stop.position) : undefined;
+        // 걷는 코스 안의 대중교통 한 구간 (docs/65 §6 M2): 길찾기가 걸어서 잰 값이면 쓰지 않고 "대중교통 약 N분"으로 말한다
+        const transitHop = mode === "transit" && transport !== "transit";
+        const routed = i > 0 ? route?.legs.find((l) => l.to_seq === stop.position) : undefined;
+        const measured = transitHop && routed?.mode !== "transit" ? undefined : routed;
         const unavailable = measured?.source === "unavailable";
         const estimated = !measured || measured.source === "estimate";
         const travelMin = measured?.duration_min ?? leg?.travel_min ?? 0;

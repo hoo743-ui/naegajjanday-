@@ -16,6 +16,8 @@ Pace = Literal["relaxed", "packed", "foodie", "special"]
 Wish = Literal["night", "walk", "exhibition", "value", "romantic", "quiet", "indoor", "photo", "free"]
 SwapStrategy = Literal["cheaper", "closer", "higher_rated", "random_top"]
 Familiarity = Literal["first", "regular"]
+# 이동 모드 (docs/65): inside = M1 역 안에서 · around = M2 역 주변 돌아보기(기본) · onward = M3 다른 역으로
+Movement = Literal["inside", "around", "onward"]
 
 
 class Preferences(BaseModel):
@@ -31,6 +33,22 @@ class AnchorRef(BaseModel):
 
     kind: Literal["university"] = "university"
     id: str = Field(min_length=1, max_length=64, description="캠퍼스 장소의 public id (/meta/universities)")
+
+
+class OnwardTarget(BaseModel):
+    """M3 의 B (docs/65): 넘어갈 동네(region slug) 또는 지점(origin) 중 하나."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    region: str | None = Field(default=None, max_length=64, examples=["seoul-yeonnam"])
+    origin: LatLng | None = None
+    label: str | None = Field(default=None, max_length=40, description="B 의 표시 이름(역·장소)")
+
+    @model_validator(mode="after")
+    def _one_of(self) -> OnwardTarget:
+        if (self.region is None) == (self.origin is None):
+            raise ValueError("onward_to 는 region 과 origin 중 하나만 주세요")
+        return self
 
 
 class CourseGenerateRequest(BaseModel):
@@ -133,6 +151,18 @@ class CourseGenerateRequest(BaseModel):
         "생략하면 로그인 사용자는 지난 코스로 추론(180일 안에 이 동네나 그 상위 구에서 "
         "코스를 만든 날이 이틀 이상이면 regular), 비로그인은 first",
     )
+    movement: Movement | None = Field(
+        default=None,
+        description="이동 모드 (docs/65): inside=역 안에서(기준점 800m 안 · 도보만 · 한 구간 ≤20분) · "
+        "around=역 주변 돌아보기(2km 안 · 한 구간 도보 ≤20분, 넘으면 코스당 한 번 대중교통) · "
+        "onward=다른 역으로 넘어가기(A 무리 → 이동 한 번 → B 무리, 각 무리는 around). 생략=around. "
+        "역 · 동네 하루 코스에만 적용 — 시 · 도 여행, regions[] 여러 동네, nights>0 은 무시한다(약속 없음)",
+    )
+    onward_to: OnwardTarget | None = Field(
+        default=None,
+        description="movement=onward 의 B. 생략하면 엔진이 A 에서 대중교통(탑승만) 15분 안의 명물 동네를 "
+        "고른다 — 없으면 around 로 짜고 ONWARD_NONE 경고",
+    )
     alternatives: int = Field(default=2, ge=0, le=3)
     replaces: str | None = Field(
         default=None,
@@ -142,6 +172,8 @@ class CourseGenerateRequest(BaseModel):
 
     @model_validator(mode="after")
     def _region_or_origin(self) -> CourseGenerateRequest:
+        if self.onward_to is not None and self.movement != "onward":
+            raise ValueError("onward_to 는 movement=onward 일 때만 쓸 수 있어요")
         if len(self.regions) >= 2:
             self.region, self.origin, self.origin_label = self.regions[0], None, None
             # a day holds three neighbourhoods at most; a trip has room for three a day
@@ -261,7 +293,10 @@ class PlaceBrief(BaseModel):
 class FromPrev(BaseModel):
     travel_min: int
     distance_m: int
-    mode: Transport
+    mode: Transport = Field(
+        description="이 구간의 수단. 걷는 코스에서도 20분 넘는 도보 구간을 대중교통으로 바꾼 곳"
+        "(docs/65 M2)과 다른 동네로 넘어가는 구간은 transit — 화면은 '대중교통 약 N분'"
+    )
     hop_to: str | None = Field(default=None, description="다른 동네로 넘어가는 구간이면 그 동네 이름")
 
 
@@ -537,6 +572,16 @@ class AnchorEcho(BaseModel):
     festival: str | None = Field(default=None, description="이 코스에 들어간 그날의 행사 이름")
 
 
+class MovementAnchor(BaseModel):
+    """이동 모드의 기준점과 반경 (docs/65): 역을 골랐으면 역 좌표, 동네면 동네 중심.
+    엔진이 옮긴 출발점이 아니다."""
+
+    label: str | None = None
+    lat: float
+    lng: float
+    radius_m: int
+
+
 class CourseRequestEcho(BaseModel):
     """The conditions the course was generated with — the result page shows them next to the totals,
     and "다시 짜기" sends them back so the new course is planned around the same spot and taste."""
@@ -593,6 +638,18 @@ class CourseRequestEcho(BaseModel):
         description="asked=요청에 있었다(다시 짤 때 familiarity 로 그대로 보낸다) · "
         "history=지난 코스에서 추론 · 없음=기본(처음)",
     )
+    movement: Movement | None = Field(
+        default=None,
+        description="이 코스가 지킨 이동 모드 (docs/65). null = 약속 없음(모드 이전 코스 · 시 · 도 여행 · "
+        "여러 동네 · 몇 박) — 화면은 모드 줄을 숨긴다. 다시 짤 때 movement 로 그대로 보낸다",
+    )
+    movement_anchor: MovementAnchor | None = Field(
+        default=None, description="모드의 기준점(M3 은 A)과 반경 — '이 범위' 표시용"
+    )
+    onward_to: OnwardTarget | None = Field(
+        default=None, description="M3 의 B (고른 것 · 엔진이 제안한 것 모두). 다시 짤 때 그대로 보낸다"
+    )
+    onward_anchor: MovementAnchor | None = Field(default=None, description="M3 의 B 기준점과 반경")
 
 
 class SiblingRef(BaseModel):

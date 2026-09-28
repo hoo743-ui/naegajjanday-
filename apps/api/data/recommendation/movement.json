@@ -1,0 +1,15 @@
+{
+  "_note": "이동 모드 (docs/65 §2 · §6, app/domain/recommendation/movement.py) 의 조정 가능한 값. 약속의 숫자(M1 800m · M2 2km · 한 구간 도보 20분)는 여기 없다 — 잣대 잠금(data/eval/yardstick.lock.json › invariants)에서만 읽는다. max_transit_legs: M2 에서 20분 넘는 도보 구간을 대중교통으로 바꿀 수 있는 횟수(코스당, M3 는 무리마다) — 넘으면 그 조합은 버린다. onward_ride_max_min: M3 의 B 를 엔진이 제안할 때 A 기준점에서 대중교통 탑승 시간(대기 제외)의 상한 — 잠금 숫자가 아니다(§6 제안).",
+  "max_transit_legs": 1,
+  "onward_ride_max_min": 15,
+  "labels": {
+    "inside": "역 안에서",
+    "around": "역 주변 돌아보기",
+    "onward": "다른 역으로 넘어가기"
+  },
+  "notices": {
+    "outside": "{name}은(는) 이 범위 밖이라 뺐어요.",
+    "onward_none": "근처에 넘어갈 만한 다른 동네를 찾지 못해 이 주변에서 짰어요.",
+    "promise": "이동 범위 약속을 다 지키지 못한 구간이 있어요."
+  }
+}

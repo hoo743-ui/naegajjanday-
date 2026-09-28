@@ -266,6 +266,27 @@ class ScoringProfile:
         return {k: v / total for k, v in w.items()}
 
 
+@dataclass(frozen=True, slots=True)
+class Promise:
+    """이동 모드의 약속 (docs/65 §2 · §6, recommendation.movement): where every stop of the course lies
+    and how it is reached. Built from the yardstick lock (the numbers are the founder's, not the engine's).
+
+    `center` is the anchor the user chose (the station, or the neighbourhood's centre) — never the point the
+    engine moves its own origin to. `away_from` (M3): every stop is nearer `center` than that point.
+    `hop_index` (a re-plan of an M3 course): the stop reached by the hop between the two anchors — its leg is
+    the one move of the day, not a walk, and the transit budget starts again after it."""
+
+    mode: str  # inside (M1) | around (M2) | onward (M3, one cluster of it)
+    center: GeoPoint
+    radius_m: float
+    walk_only: bool
+    walk_leg_max_min: float
+    max_transit_legs: int
+    label: str | None = None
+    away_from: GeoPoint | None = None
+    hop_index: int | None = None
+
+
 @dataclass(slots=True)
 class RequestContext:
     origin: GeoPoint
@@ -358,6 +379,11 @@ class RequestContext:
     # a regular's past places here: left out while the neighbourhood has enough else within reach — not a
     # veto like exclude_place_ids (a 35-minute walk to avoid the pub they know is the worse day)
     been_place_ids: set[int] = field(default_factory=set)
+    # 이동 모드 (docs/65): the promise every stop and leg keeps — None = no promise (a trip, a whole city,
+    # several neighbourhoods, or a course made before the modes existed)
+    promise: Promise | None = None
+    # M3: the second anchor's promise (the first is `promise`) — set on the context `dry_run` returns
+    onward_promise: Promise | None = None
 
     @property
     def kept_keys(self) -> frozenset[tuple[bool, int]]:
@@ -390,6 +416,9 @@ class StopResult:
     slot_share: float = 0.0
     slot_base_budget: float = 0.0
     reason_codes: list[str] = field(default_factory=list)  # why this place (docs/29 §15)
+    # how the leg into this stop is made when it is not the course's own transport: "transit" = the one
+    # walk over the promise's limit taken by public transit (docs/65 M2). None = the course's transport
+    leg_mode: str | None = None
 
 
 @dataclass(slots=True)

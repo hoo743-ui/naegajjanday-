@@ -17,7 +17,10 @@ async def test_spots_finds_our_places_by_name(client: httpx.AsyncClient) -> None
 
 async def test_an_errand_with_time_starts_the_course_after_it(client: httpx.AsyncClient) -> None:
     body = {k: v for k, v in GENERATE_BODY.items() if k != "region"}
-    errand = {"name": "애플 가로수길", "lat": 37.5205, "lng": 127.0229, "minutes": 40}
+    # the errand is the centre of the day, and the day keeps M2 (docs/65, the default): within 2 km of it.
+    # The seed DB has places only in 홍대 · 성수 · 서면 — so the errand stands in 성수 (가로수길 had nothing
+    # within 2 km; the course used to be planned 4 km away, in 성수, and called "near" the errand)
+    errand = {"name": "성수 팝업스토어", "lat": 37.5476, "lng": 127.0559, "minutes": 40}
     body |= {
         "budget_total": 62000,
         "alternatives": 0,
@@ -28,14 +31,14 @@ async def test_an_errand_with_time_starts_the_course_after_it(client: httpx.Asyn
     assert made.status_code == 200, made.text
     course = made.json()["courses"][0]
     note = next(w for w in course["warnings"] if w["code"] == "ERRAND")
-    assert "애플 가로수길에서 40분" in note["detail"] and "14:40" in note["detail"]
+    assert "성수 팝업스토어에서 40분" in note["detail"] and "14:40" in note["detail"]
     assert course["stops"][0]["arrive_at"] >= "2026-09-20T14:40"
     detail = (await client.get(f"/v1/courses/{course['id']}")).json()["request"]
-    assert detail["errand"]["name"] == "애플 가로수길" and detail["errand"]["minutes"] == 40
+    assert detail["errand"]["name"] == "성수 팝업스토어" and detail["errand"]["minutes"] == 40
     assert detail["start_at"].startswith(
         "2026-09-20T14:00"
     )  # what was asked, so a reroll does not shift twice
-    assert detail["origin_label"] == "애플 가로수길"
+    assert detail["origin_label"] == "성수 팝업스토어"
 
 
 async def test_one_of_our_places_without_time_is_a_stop(client: httpx.AsyncClient) -> None:

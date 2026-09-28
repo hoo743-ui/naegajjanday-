@@ -657,6 +657,7 @@ def build_course(
             slot_share=s.sb.share,
             slot_base_budget=s.sb.budget,
             reason_codes=day_score.reason_codes(s, partial.stops, ctx, profile.params),
+            leg_mode=s.mode,
         )
         for i, s in enumerate(partial.stops)
     ]

@@ -316,9 +316,31 @@ export interface GenerateCourseRequest {
   keep_place_ids?: string[];
   /** 처음 · 자주 (docs/59 #1): first = 대표 코스(명물 · 볼거리) · regular = 안 가 본 곳 위주. 생략 = 로그인이면 지난 코스로 추론, 아니면 처음 */
   familiarity?: Familiarity;
+  /** 이동 모델 (docs/65): inside = 역 안에서(800m, 도보만) · around = 역 주변(2km, 기본) · onward = 다른 동네로 한 번 넘어가기. 생략 = around */
+  movement?: Movement;
+  /** onward 일 때 넘어갈 곳. 비우면 엔진이 대중교통 15분 안의 명물 동네를 고른다 */
+  onward_to?: OnwardTo;
 }
 
 export type Familiarity = "first" | "regular";
+
+/** 이동 모델 (docs/65 §2): 모드는 약속(반경 · 이동 횟수), move_style 은 그 안의 점수 */
+export type Movement = "inside" | "around" | "onward";
+
+/** M3 의 두 번째 기준점 B. 요청에는 region 과 origin 중 정확히 하나(label ≤ 40자). 에코는 없는 쪽을 null 로 준다 */
+export interface OnwardTo {
+  region?: string | null;
+  origin?: LatLng | null;
+  label?: string | null;
+}
+
+/** 이 코스가 지킨 범위의 기준점 (역 좌표 또는 동네 중심) */
+export interface MovementAnchor {
+  label: string | null;
+  lat: number;
+  lng: number;
+  radius_m: number;
+}
 
 export type CourseStyle = "efficient" | "fun";
 
@@ -448,6 +470,8 @@ export interface CourseWarning {
   message?: string;
   detail?: string;
   role?: CourseRole;
+  /** 코드마다 다르다. KEPT_PLACE_DROPPED: {place_id, name, reason: "outside_movement", movement} (docs/65) */
+  meta?: Record<string, unknown> | null;
 }
 
 export interface Course {
@@ -564,6 +588,13 @@ export interface CourseDetail extends Course {
     familiarity?: Familiarity;
     /** asked = 요청에 있었다(다시 짤 때 그대로 보낸다) · history = 지난 코스에서 추론 · 없음 = 기본(처음) */
     familiarity_source?: "asked" | "history" | null;
+    /** 이동 모델 (docs/65). null · 없음 = 모드 전에 만든 코스 · 시 · 도 여행 · 여러 동네 (한 줄을 숨긴다) */
+    movement?: Movement | null;
+    movement_anchor?: MovementAnchor | null;
+    /** M3 의 B (고른 것이든 엔진이 제안한 것이든). 다시 짤 때 그대로 보낸다 */
+    onward_to?: OnwardTo | null;
+    /** M3 의 B 기준점 + 반경 */
+    onward_anchor?: MovementAnchor | null;
   };
   /** 같은 요청에서 나온 대안 코스들(자기 자신 포함, 탭 순서) */
   siblings: { id: string; label: string }[];

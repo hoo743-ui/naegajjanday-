@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { ApiError } from "@/lib/api/client";
 import { encodeCampus, useAccessHints, useAlongTheWay, usePlaceSignals, useCourse, useCourseNarrative, useCourseRoute, useGenerateCourse, useRemoveStop, useReorderStops, useSaveCourse, useSwapStop } from "@/lib/api/hooks";
-import type { CourseWarning, Familiarity, GenerateCourseRequest, SwapStrategy } from "@/lib/api/types";
+import type { CourseWarning, Familiarity, GenerateCourseRequest, Movement, OnwardTo, SwapStrategy } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { clock, dateLabel, obj, transportLabel, won, wonCompact } from "@/lib/format";
 import type { Transport } from "@/lib/api/types";
@@ -21,6 +21,7 @@ import { mascotCopyForError, type JjaniMood } from "@/lib/mascot-copy";
 import { BudgetTools } from "./BudgetTools";
 import { DaySummary } from "./DaySummary";
 import { FamiliarityLine } from "./FamiliarityLine";
+import { MovementLine } from "./MovementLine";
 import { LeftoverCard } from "./LeftoverCard";
 import { LocalCard } from "./LocalCard";
 import { MoreHere } from "./MoreHere";
@@ -78,6 +79,23 @@ function uniqueWarnings(warnings: CourseWarning[]): CourseWarning[] {
     seen.add(text);
     return true;
   });
+}
+
+/** 문구 없이 온 이동 모델 경고 (docs/65) */
+function warningFallback(w: CourseWarning): string | undefined {
+  if (w.code === "KEPT_PLACE_DROPPED" && w.meta?.reason === "outside_movement") {
+    return typeof w.meta.name === "string" && w.meta.name ? `${w.meta.name}은(는) 이 범위 밖이라 뺐어요.` : "고정한 곳이 이 범위 밖이라 뺐어요.";
+  }
+  if (w.code === "ONWARD_NONE") return "넘어갈 만한 동네를 찾지 못해 이 동네 안에서 짰어요.";
+  return undefined;
+}
+
+/** 에코의 onward_to → 요청 모양 (null 은 빼고, region 이 있으면 region 만 — 둘 다 없으면 보내지 않는다) */
+function onwardRequest(o: OnwardTo): OnwardTo {
+  return {
+    ...(o.region ? { region: o.region } : o.origin ? { origin: o.origin } : {}),
+    ...(o.label ? { label: o.label.slice(0, 40) } : {}),
+  };
 }
 
 export function CourseView({ id }: { id: string }) {
@@ -383,6 +401,10 @@ export function CourseView({ id }: { id: string }) {
         ...(request.errand ? { errand: request.errand } : {}),
         // 처음 · 자주 (docs/59 #1): 직접 고른 것만 그대로 보낸다. 지난 코스로 알아챈 것은 서버가 다시 알아챈다
         ...(request.familiarity_source === "asked" && request.familiarity ? { familiarity: request.familiarity } : {}),
+        // 이동 모델 (docs/65): 다시 짜기 · 설정 · 옵션을 바꿔도 고른 범위(역 안 · 주변 · 다른 동네로)는 그대로
+        ...(request.movement ? { movement: request.movement } : {}),
+        // 같은 B 로: 에코는 없는 쪽을 null 로 주지만 요청은 region · origin 중 정확히 하나만 받는다
+        ...(request.movement === "onward" && (request.onward_to?.region || request.onward_to?.origin) ? { onward_to: onwardRequest(request.onward_to!) } : {}),
         preferences: {
           liked_tags: request.preferences?.liked_tags ?? [],
           disliked_tags: request.preferences?.disliked_tags ?? [],
@@ -501,6 +523,30 @@ export function CourseView({ id }: { id: string }) {
       next === "regular" ? "이 조건에서는 안 가 본 곳이 모자라요. 예산이나 시간을 조금 바꿔 보세요." : undefined,
     );
   };
+
+  /**
+   * 이동 모델 (docs/65 §2): 역 안에서 · 역 주변 · 다른 동네로. 고정한 곳은 두되 범위 밖이면 서버가 빼고 알린다.
+   * 지금 장소를 빼지 않는다 — 새 범위 안이면 그 자리에 남아도 된다. 넘어갈 동네는 서버가 다시 고른다.
+   */
+  const onMovement = (next: Movement) => {
+    setForking(false);
+    setChangingSettings(false);
+    track("movement_changed", { course_id: id, to: next });
+    regenerate(
+      {
+        ...baseRequest,
+        movement: next,
+        onward_to: undefined,
+        ...(tripDay ? { replaces: id } : {}),
+        ...(keep.length ? { keep_place_ids: keep } : {}),
+        preferences: { ...baseRequest.preferences!, exclude_place_ids: [] },
+      },
+      next === "inside" ? "역 근처에서만으로는 맞는 곳이 모자라요. 조금 더 돌아보기로 짜 보세요." : undefined,
+    );
+  };
+  // 역 · 동네 하루 코스에만 (docs/65 §6): 시 · 도 여행 · 여러 동네 · 몇 박 여행 · 모드 전에 만든 코스는 숨긴다
+  const movementAnchorLabel = request.movement_anchor?.label || request.origin_label || request.region?.name || "";
+  const showMovement = !readOnly && !request.city && !tripDay && (request.regions?.length ?? 0) < 2 && Boolean(request.movement) && Boolean(movementAnchorLabel);
 
   const regenerate = (body: GenerateCourseRequest, emptyDetail = "지금 코스의 장소를 빼면 남는 곳이 모자라요. 예산이나 시간을 바꿔서 새로 짜 보세요.") => {
     reroll.mutate(
@@ -785,6 +831,17 @@ export function CourseView({ id }: { id: string }) {
               ) : null}
               {/* 처음 · 자주: 위저드에 묻지 않고 여기 한 줄 (docs/59 #1) */}
               {!readOnly ? <FamiliarityLine familiarity={request.familiarity ?? "first"} source={request.familiarity_source} busy={reroll.isPending} onChange={onFamiliarity} /> : null}
+              {/* 얼마나 움직일지: 위저드에 묻지 않고 여기 한 줄 (docs/65 §2, docs/61) */}
+              {showMovement ? (
+                <MovementLine
+                  movement={request.movement!}
+                  anchorLabel={movementAnchorLabel}
+                  radiusM={request.movement_anchor?.radius_m}
+                  onwardLabel={request.onward_to?.label || request.onward_anchor?.label || data.stops.find((s) => s.from_prev?.hop_to)?.from_prev?.hop_to}
+                  busy={reroll.isPending}
+                  onChange={onMovement}
+                />
+              ) : null}
               <h1 className="sr-only">
                 {data.label}: {data.summary}
               </h1>
@@ -825,7 +882,8 @@ export function CourseView({ id }: { id: string }) {
               <hr aria-hidden className="tear-line my-1 max-lg:hidden" />
 
               {/* 돈 이야기는 첫 화면에 한 번 — 위의 남은 돈 숫자가 한다 (docs/59 #3). 예산 초과 알림은 거기서 이미 분홍 숫자다 */}
-              {uniqueWarnings(data.warnings).filter((w) => w.code !== "BUDGET_OVER").map((w, i) => (
+              {/* MOVEMENT_PROMISE 는 엔진의 약속 점검이 남기는 버그 신호라 사람에게는 보이지 않는다 (docs/65) */}
+              {uniqueWarnings(data.warnings).filter((w) => w.code !== "BUDGET_OVER" && w.code !== "MOVEMENT_PROMISE").map((w, i) => (
                 <p
                   key={`${w.code}-${w.role ?? ""}-${i}`}
                   role="status"
@@ -833,7 +891,7 @@ export function CourseView({ id }: { id: string }) {
                 >
                   {/* DURATION_FIT 은 경고가 아니라 "시간에 맞췄다"는 안내다 */}
                   {w.code === "DURATION_FIT" ? <Clock aria-hidden className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />}
-                  {w.message ?? w.detail}
+                  {w.message ?? w.detail ?? warningFallback(w)}
                 </p>
               ))}
 

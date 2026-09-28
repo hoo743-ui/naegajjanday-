@@ -20,6 +20,7 @@
 
 ### 다음 순서 (docs/64)
 1. 위 답 → docs/65 확정 → `tests/metamorphic/` 불변식 I1~I12 를 CI 에.
+   - 2026-09-29: 이동 모드 M1 · M2 · M3 API(`movement` · `onward_to`, 기본 M2) + I8 · I9 · I10 테스트 — docs/65 §7 · docs/03 부록. 잠금 숫자(`M1_radius_m` · `M2_radius_m` · `M2_walk_leg_max_min`)는 엔진과 **다른 커밋**(`Yardstick-Approved: R17`). 웹 계약 임시본 docs/65-api-contract.tmp.md.
 2. `app.cli sensitivity` — 값 하나 ±10% 에 코스가 얼마나 바뀌나.
 3. 그 다음에야 대기열(16 밥때 식사 · 17 대안 차별화 · R18 이어서) — 에이전트는 합격 기준을 바꾸지 않는 조건으로.
 4. 정리는 `python scripts/housekeeping.py`(보고만, 삭제는 창업자).

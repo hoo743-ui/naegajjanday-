@@ -74,6 +74,18 @@ from app.domain.recommendation.itinerary import (
     merge_legs,
     regions_by_day,
 )
+from app.domain.recommendation.movement import (
+    AROUND,
+    DEFAULT_MODE,
+    ONWARD,
+    holds,
+    make_promise,
+    movement_rules,
+    rank_onward,
+    violations,
+    within_promise,
+)
+from app.domain.recommendation.movement import MODES as MOVEMENT_MODES
 from app.domain.recommendation.preference import (
     WISH_AVOID_ROLES,
     WISH_CONDITIONS,
@@ -107,7 +119,7 @@ from app.domain.recommendation.style import (
     with_role,
 )
 from app.domain.recommendation.ticketed import after_long_venue, may_follow, ticketed_venues
-from app.domain.region_draws import shop_draw
+from app.domain.region_draws import draws_for, shop_draw
 from app.domain.region_intro import editorial_intros
 from app.domain.routing.travel_time import TravelTimeProvider, encode_polyline, haversine_m
 from app.domain.signature import get_signature_rules
@@ -195,6 +207,12 @@ class CourseService:
         self._errand_end: GeoPoint | None = None
         self._familiar = Familiar()  # 처음 · 자주 of the request under way (see `_familiarity_for`)
         self._dry_been: tuple[str, ...] = ()  # dry_run: a regular's past places, given (no signed-in user)
+        # 이동 모드 (docs/65) of the request under way: None = no promise (a trip, a whole city, several
+        # neighbourhoods — or the day of a trip being planned again)
+        self._movement: str | None = None
+        self._trip_day = False  # generate: planning one day of a trip again (`replaces`) — no promise
+        self._outside: dict[str, str] = {}  # pinned places left out for lying outside the mode's range
+        self._onward_to: dto.OnwardTarget | None = None  # M3: the B the course went to (asked or suggested)
         self._courses = SqlCourseRepository(session)
         self._users = SqlUserRepository(session)
         self._tz = ZoneInfo(settings.timezone)
@@ -210,6 +228,8 @@ class CourseService:
         self._familiar = await self._familiarity_for(req, user)
         req, earlier = self._earlier_for_scene(req)
         days = await self._city_days(req)
+        self._movement = await self._movement_for(req, days)
+        self._outside, self._onward_to = {}, None
         # one plan asks for the same candidates again and again (rescale passes, the v2 structure
         # alternative, each day of a trip): read once, per plan only
         self._reads = CandidateReads(self._places)
@@ -229,7 +249,9 @@ class CourseService:
                 ):
                     why = self._kept_dropped(req.errand.place_id or "", req.party_size, req.budget_total)
                     errand = errand | {
-                        "detail": why["detail"] + " 그 근처로 짰어요."
+                        "detail": why["detail"]
+                        if why["meta"].get("reason") == "outside_movement"
+                        else why["detail"] + " 그 근처로 짰어요."
                         if why["meta"].get("reason") == "admission"
                         else f"{req.errand.name}은(는) 이 시간이나 예산에 맞지 않아 넣지 못했고, "
                         "그 근처로 짰어요."
@@ -240,6 +262,20 @@ class CourseService:
                 for bucket in (planned[5].warnings, *(c.warnings for c in planned[5].courses)):
                     bucket.insert(0, note)
         return planned
+
+    async def _movement_for(self, req: dto.CourseGenerateRequest, days: Sequence[Any]) -> str | None:
+        """이동 모드 (docs/65 §6): only a one-day course around a station or a neighbourhood makes the
+        promise. A whole city or province (its well-visited areas, or a level-1 region), several
+        neighbourhoods, a trip of several nights (or one day of it planned again) keep what they do: ignored
+        (no 422: the web hides the mode line there, and a stale value must not break a reroll)."""
+        if self._trip_day or req.nights > 0 or len(req.regions) >= 2 or days:
+            return None
+        if req.region and req.anchor is None:
+            region = await self._regions.get_by_slug(req.region)
+            city_level = int((itinerary_rules().get("city") or {}).get("from_level", 1))
+            if region is not None and region.level <= city_level:
+                return None
+        return req.movement or DEFAULT_MODE
 
     async def _familiarity_for(self, req: dto.CourseGenerateRequest, user: User | None) -> Familiar:
         """처음 오는 사람 · 자주 오는 사람 (docs/59 #1). Asked for: that. Not asked and signed in: read off
@@ -416,6 +452,20 @@ class CourseService:
 
     def _kept_dropped(self, pid: str, party: int = 1, budget_total: int = 0) -> dict[str, Any]:
         place = self._kept.get(pid)
+        # docs/65 §6: the mode's range is narrower than where the pinned place is
+        if place is not None and pid in self._outside:
+            name = get_tag_rules().sign_name(place.name)
+            notice = str((movement_rules().get("notices") or {}).get("outside") or "{name}은(는) 뺐어요.")
+            return {
+                "code": "KEPT_PLACE_DROPPED",
+                "detail": notice.format(name=name),
+                "meta": {
+                    "place_id": pid,
+                    "name": name,
+                    "reason": "outside_movement",
+                    "movement": self._outside[pid],
+                },
+            }
         venue = ticketed_venues().by_key(place.ticket_venue) if place is not None else None
         if place is not None and venue is not None and place.price * party > 0.8 * budget_total:
             # the ticket alone takes the day's money (a pinned 롯데월드 at 12만 원 for three)
@@ -482,8 +532,10 @@ class CourseService:
             planned = await self._plan_across(req, user, areas)
         elif len(req.regions) >= 2:
             planned = await self._plan_across(req, user)
+        elif self._movement == ONWARD:
+            planned = await self._plan_onward(req, user)
         else:
-            planned = await self._plan_one(req, user)
+            planned = await self._plan_one(req, user, movement=self._movement)
         night = day_conditions().get("night")
         if night and is_night(self._local(req.start_at)):
             notices = [night_notice(night)]
@@ -606,35 +658,48 @@ class CourseService:
         )
 
     async def _plan_across(
-        self, req: dto.CourseGenerateRequest, user: User | None, areas: Sequence[Area] | None = None
+        self,
+        req: dto.CourseGenerateRequest,
+        user: User | None,
+        areas: Sequence[Area] | None = None,
+        spots: list[dict[str, Any]] | None = None,
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         """One day across several neighbourhoods: each is planned as a leg of its own, and money and
-        time are handed forward (see `domain.recommendation.itinerary`)."""
+        time are handed forward (see `domain.recommendation.itinerary`).
+        `spots` (M3, docs/65): the two anchors given. Each leg keeps M2 around its own anchor and stays on
+        its own side of the other one (`movement.holds`)."""
         rules = itinerary_rules()
         slugs = list(dict.fromkeys(req.regions))[: int(rules["max_regions"])]
         city = rules.get("city") or {}
+        onward = spots is not None
         # where each leg happens: a neighbourhood (by slug) or, for a whole-city trip, a well-visited area
-        spots: list[dict[str, Any]] = (
-            [
-                {
-                    "region": None,
-                    "origin": LatLng(lat=a.point.lat, lng=a.point.lng),
-                    "origin_label": a.name,
-                    "name": f"{a.name}{city.get('label_suffix', '')}",
-                }
-                for a in areas
-            ]
-            if areas
-            else [{"region": slug, "origin": None, "origin_label": None, "name": None} for slug in slugs]
-        )
+        if spots is None:
+            spots = (
+                [
+                    {
+                        "region": None,
+                        "origin": LatLng(lat=a.point.lat, lng=a.point.lng),
+                        "origin_label": a.name,
+                        "name": f"{a.name}{city.get('label_suffix', '')}",
+                        "point": a.point,
+                    }
+                    for a in areas
+                ]
+                if areas
+                else [
+                    {"region": slug, "origin": None, "origin_label": None, "name": None, "point": None}
+                    for slug in slugs
+                ]
+            )
         remaining = req.budget_total
         minutes_left = req.duration_min
         start_at = self._local(req.start_at)
         excluded = list(req.preferences.exclude_place_ids)
         kept_by_leg: list[list[str]] = [[] for _ in spots]
         if req.keep_place_ids:
-            points = [a.point for a in areas] if areas else [await self._region_point(slug) for slug in slugs]
+            points = [spot["point"] or await self._region_point(spot["region"]) for spot in spots]
             kept_by_leg = self._split_kept(req.keep_place_ids, points)
+        promises: list[Any] = []
         legs: list[CourseResult] = []
         hops: list[Hop] = []
         segments: list[dict[str, Any]] = []
@@ -662,8 +727,13 @@ class CourseService:
                 }
             )
             pinned = areas[k].place_ids[: int(city.get("pin_top", 3))] if areas else ()
-            planned = await self._plan_one(leg_req, user, pinned)
-            region, leg_origin, _purpose, _ctx, _profile, out = planned
+            if onward:  # M3: this cluster keeps M2 around its anchor, on its own side of the other one
+                other = spots[1 - k]["point"] if len(spots) == 2 else None
+                planned = await self._plan_one(leg_req, user, pinned, movement=ONWARD, away_from=other)
+            else:
+                planned = await self._plan_one(leg_req, user, pinned)
+            region, leg_origin, _purpose, leg_ctx, _profile, out = planned
+            promises.append(leg_ctx.promise)
             first = first or planned
             course = out.courses[0]
             candidates += out.candidates_count
@@ -687,12 +757,12 @@ class CourseService:
             remaining = max(0, remaining - course.total_price)
             excluded += [s.place.public_id for s in course.stops if not s.place.is_event]
             if k + 1 < len(spots):
-                if areas:
-                    ahead = areas[k + 1].point
+                if spots[k + 1]["point"] is not None:
+                    ahead = spots[k + 1]["point"]
                 else:
-                    nxt = await self._regions.get_by_slug(slugs[k + 1])
+                    nxt = await self._regions.get_by_slug(spots[k + 1]["region"])
                     if nxt is None:
-                        raise errors.RegionNotFound(f"'{slugs[k + 1]}' 지역은 아직 없어요.")
+                        raise errors.RegionNotFound(f"'{spots[k + 1]['region']}' 지역은 아직 없어요.")
                     ahead = GeoPoint(nxt.center_lat, nxt.center_lng)
                 last = course.stops[-1]
                 hop = hop_between(last.place.point, ahead, req.transport, rules)
@@ -707,15 +777,30 @@ class CourseService:
         ctx.segments = segments
         ctx.budget_total = req.budget_total
         ctx.duration_min = req.duration_min
+        if onward and len(promises) == 2:
+            ctx.onward_promise = promises[1]
         merged_out = replace(
             out, courses=[merged], candidates_count=candidates, warnings=list(merged.warnings)
         )
         return region, origin, purpose, ctx, profile, merged_out
 
     async def _plan_one(
-        self, req: dto.CourseGenerateRequest, user: User | None, must_visit: Sequence[int] = ()
+        self,
+        req: dto.CourseGenerateRequest,
+        user: User | None,
+        must_visit: Sequence[int] = (),
+        *,
+        movement: str | None = None,
+        away_from: GeoPoint | None = None,
     ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
         region, origin = await self._resolve_region(req)
+        # 이동 모드 (docs/65 §6): the anchor is the station asked for, else the neighbourhood's centre — taken
+        # here, before the engine moves its own origin (onto a wanted place, into the liveliest pocket)
+        promise = (
+            make_promise(movement, origin, label=req.origin_label or region.name, away_from=away_from)
+            if movement
+            else None
+        )
         purposes = await self._purposes(req)
         purpose = purposes[0]  # the first one gives the day its shape; all of them weigh in below
         profile = blend_profiles([await self._config.scoring_profile(p.id, p.code) for p in purposes])
@@ -748,6 +833,12 @@ class CourseService:
             user=user,
         )
         ctx.area_names = area_names_of(region.name)
+        if promise is not None:
+            ctx.promise = promise
+            ctx.radius_m = min(ctx.radius_m, int(promise.radius_m))
+            outside = [p for p in kept if not holds(promise, p.point)]
+            self._outside |= {p.public_id: promise.mode for p in outside}  # said by `_note_kept`
+            kept = [p for p in kept if holds(promise, p.point)]
         # docs/29: which engine plans this course, and how far this person is happy to go for better
         ctx.algorithm = req.algorithm or self._settings.recommendation_algorithm
         ctx.move_style = req.move_style or "balanced"
@@ -819,6 +910,8 @@ class CourseService:
         festival_missing = False
         if req.anchor is not None:  # docs/34: a campus day — the same engine, a few knobs set by the anchor
             templates, festival_missing = await self._apply_anchor(req, purpose, ctx, list(templates))
+            if promise is not None:  # the campus rings end where the mode's range does (docs/65 §6)
+                ctx.radius_m = min(ctx.radius_m, int(promise.radius_m))
         plain_templates, plain_keep = list(templates), ctx.keep_roles
         if kept:  # the stops the user pinned: a slot of its own role each, never trimmed, never excluded
             ticketed_venues().price(kept, ctx)  # a pinned venue's share is what this party pays that day
@@ -827,7 +920,8 @@ class CourseService:
             ctx.keep_roles = ctx.keep_roles | {p.course_role for p in kept}
             ctx.exclude_place_ids -= {p.id for p in kept if not p.is_event}
             ctx.been_place_ids -= {p.id for p in kept if not p.is_event}
-        engine = RecommendationEngine(self._reads or self._places, self._travel)
+        # every candidate the engine reads goes through the promise (movement.WithinPromise)
+        engine = RecommendationEngine(within_promise(self._reads or self._places, promise), self._travel)
         try:
             try:
                 out = await engine.generate(ctx, templates, profile)
@@ -849,9 +943,111 @@ class CourseService:
             raise errors.NoCourseAvailable(
                 f"{region.name}에서 조건에 맞는 코스를 찾지 못했어요. 예산이나 시간을 바꿔 볼까요?"
             ) from exc
+        if promise is not None:  # the post-condition: planned within the promise, checked on the result
+            self._check_promise(out, promise, req.transport)
         # the engine may have moved the origin (onto a ballpark asked for, or the liveliest walkable pocket
         # of a wide district): the course starts where it was planned from
         return region, ctx.origin, purpose, ctx, profile, out
+
+    @staticmethod
+    def _check_promise(out: EngineOutput, promise: Any, transport: str) -> None:
+        """A course that breaks its mode's promise is a bug (docs/65 I8 · I9 · I10) — never silent. The engine
+        plans within it; what can still break it is the real router measuring a leg longer after the search
+        (only a second transit leg cannot be settled then)."""
+        for course in out.courses:
+            found = violations(course.stops, promise, transport)
+            if not found:
+                continue
+            logger.warning("movement_promise_broken", mode=promise.mode, violations=found)
+            course.warnings.append(
+                {
+                    "code": "MOVEMENT_PROMISE",
+                    "detail": str((movement_rules().get("notices") or {}).get("promise") or ""),
+                    "meta": {"movement": promise.mode, "violations": found},
+                }
+            )
+
+    async def _plan_onward(
+        self, req: dto.CourseGenerateRequest, user: User | None
+    ) -> tuple[Region, GeoPoint, Purpose, RequestContext, ScoringProfile, EngineOutput]:
+        """M3 다른 역으로 넘어가기 (docs/65): A's cluster, one hop, B's cluster. B is the one asked for, or
+        the one suggested (`_suggest_onward`); with none, the day stays around A (M2) and says so."""
+        region_a, point_a = await self._resolve_region(req)
+        target = await self._onward_spot(req, region_a, point_a)
+        if target is None:
+            self._movement = AROUND
+            planned = await self._plan_one(req, user, movement=AROUND)
+            notice = {
+                "code": "ONWARD_NONE",
+                "detail": str((movement_rules().get("notices") or {}).get("onward_none") or ""),
+                "meta": {"movement": AROUND},
+            }
+            out = planned[5]
+            out.warnings.insert(0, notice)
+            for course in out.courses:
+                course.warnings.insert(0, notice)
+            return planned
+        here = {
+            "region": req.region,
+            "origin": req.origin,
+            "origin_label": req.origin_label,
+            "name": req.origin_label,
+            "point": point_a,
+        }
+        return await self._plan_across(req, user, spots=[here, target])
+
+    async def _onward_spot(
+        self, req: dto.CourseGenerateRequest, region_a: Region, point_a: GeoPoint
+    ) -> dict[str, Any] | None:
+        """M3's B as a leg of `_plan_across`: the neighbourhood or point asked for, else the suggested one."""
+        asked = req.onward_to
+        if asked is not None and asked.origin is not None:
+            self._onward_to = asked
+            point = GeoPoint(asked.origin.lat, asked.origin.lng)
+            return {
+                "region": None,
+                "origin": asked.origin,
+                "origin_label": asked.label,
+                "name": asked.label,
+                "point": point,
+            }
+        if asked is not None and asked.region:
+            region = await self._regions.get_by_slug(asked.region)
+            if region is None:
+                raise errors.RegionNotFound(f"'{asked.region}' 지역은 아직 없어요.")
+            if region.status != "active":
+                raise errors.RegionNotReady(
+                    f"{region.name}은(는) 장소를 모으는 중이에요. 조금만 기다려 주세요!"
+                )
+            self._onward_to = asked
+        else:
+            found = await self._suggest_onward(region_a, point_a)
+            if found is None:
+                return None
+            region = found
+            self._onward_to = dto.OnwardTarget(region=region.slug, label=region.name[:40])
+        label = asked.label if asked is not None and asked.label else region.name
+        return {
+            "region": region.slug,
+            "origin": None,
+            "origin_label": None,
+            "name": label,
+            "point": GeoPoint(region.center_lat, region.center_lng),
+        }
+
+    async def _suggest_onward(self, region_a: Region, point_a: GeoPoint) -> Region | None:
+        """M3's B when none was named ("근처 다른 역으로도", docs/65 §2 · §6): a neighbourhood people come
+        to for something (it has draws), not A, within the ride (movement.rank_onward: time on board only,
+        no wait). The strongest draw first, then the nearest, then the slug: the same request, the same B."""
+        active = [r for r in await self._regions.list_all() if r.status == "active"]
+        by_slug = {r.slug: r for r in active}
+        candidates = [
+            (r.slug, r.name, GeoPoint(r.center_lat, r.center_lng), float(len(d.eat) + len(d.see)))
+            for r in active
+            if (d := draws_for(r.slug)) is not None
+        ]
+        ranked = rank_onward(point_a, candidates, exclude=region_a.slug)
+        return by_slug[ranked[0][0]] if ranked else None
 
     async def _day_to_replace(self, req: dto.CourseGenerateRequest, user: User | None) -> Course | None:
         """`replaces` names one day of a trip. Anything else (an ordinary course) is an ordinary reroll."""
@@ -1042,6 +1238,44 @@ class CourseService:
             return "festival" if anchor.get("festival") else "university"
         return "specific_place" if around_point and snapshot.get("origin_label") else "general_area"
 
+    def _movement_snapshot(self, ctx: RequestContext) -> dict[str, Any] | None:
+        """What `get` echoes and a re-plan rebuilds the promise from: the mode, its anchor (M3: both)."""
+        promise = ctx.promise
+        if self._movement is None or promise is None or ctx.days:
+            return None
+
+        def anchor(p: Any) -> dict[str, Any]:
+            return {"label": p.label, "lat": p.center.lat, "lng": p.center.lng, "radius_m": int(p.radius_m)}
+
+        snap: dict[str, Any] = {"mode": self._movement, **anchor(promise)}
+        if self._movement == ONWARD and ctx.onward_promise is not None:
+            snap["onward"] = anchor(ctx.onward_promise)
+            snap["onward_to"] = self._onward_to.model_dump(mode="json") if self._onward_to else None
+        return snap
+
+    def _promise_at(self, row: Course, position: int) -> Any:
+        """The promise a stop of a saved course keeps (docs/65 §6: only courses made with one). M3: the anchor
+        of the cluster the position falls in, on its side of the other; its hop is the one move of the day."""
+        snap = (row.request or {}).get("movement")
+        if not snap or snap.get("mode") not in MOVEMENT_MODES:
+            return None
+        mode = str(snap["mode"])
+        here = GeoPoint(float(snap["lat"]), float(snap["lng"]))
+        onward = snap.get("onward") if mode == ONWARD else None
+        if not onward:
+            return make_promise(mode, here, label=snap.get("label"))
+        there = GeoPoint(float(onward["lat"]), float(onward["lng"]))
+        segments = (row.request or {}).get("segments") or []
+        hop_at = int(segments[1]["from_position"]) if len(segments) >= 2 else None
+        in_b = hop_at is not None and position >= hop_at
+        return make_promise(
+            ONWARD,
+            there if in_b else here,
+            label=onward.get("label") if in_b else snap.get("label"),
+            away_from=here if in_b else there,
+            hop_index=hop_at - 1 if hop_at is not None else None,
+        )
+
     def _anchor_snapshot(self, req: dto.CourseGenerateRequest) -> dict[str, Any] | None:
         if req.anchor is None or req.anchor.id not in self._anchors:
             return None
@@ -1062,6 +1296,7 @@ class CourseService:
         `been`: public ids of the places a regular has been to — what a signed-in regular's own history
         gives (`_familiarity_for`); the concept scorecard's paired sample (docs/58)."""
         self._dry_been = tuple(been)
+        self._trip_day = False
         req = await self._with_anchor(req)
         region, _origin, _purpose, ctx, _profile, out = await self._plan(req, None)
         return region, ctx, out
@@ -1087,6 +1322,7 @@ class CourseService:
                 return dto.CourseGenerateResponse.model_validate(cached)
 
         replaced = await self._day_to_replace(req, user)
+        self._trip_day = replaced is not None  # a day of a trip keeps the trip's behaviour (docs/65 §6)
         if replaced is not None:
             req = await self._as_that_day(req, replaced)
         # a new day of an anonymous trip keeps the trip's key (its days are saved and edited together)
@@ -1143,6 +1379,9 @@ class CourseService:
             "origin_label": req.origin_label if req.origin else self._errand_label,
             # docs/34: the campus the day was planned around, and the festival that made it into the course
             "anchor": self._anchor_snapshot(req),
+            # 이동 모드 (docs/65): the promise this course was made with — a swap, a reorder, a suggestion
+            # keep it. A course without it (made before the modes, or a trip) is never held to one.
+            "movement": self._movement_snapshot(ctx),
             # a whole-city trip: planning this day again must ask for the city, not for the district the
             # first area happens to lie in
             "city": req.region
@@ -1415,10 +1654,11 @@ class CourseService:
                     from_prev=dto.FromPrev(
                         travel_min=s.travel_min_from_prev,
                         distance_m=s.distance_m_from_prev,
-                        # the ride into the next neighbourhood is not the walk the rest of the day is
+                        # the ride into the next neighbourhood is not the walk the rest of the day is, nor is
+                        # the one walk over the mode's limit ridden instead (docs/65 M2)
                         mode=(hops[s.position]["hop"] or {}).get("mode", row.transport)
                         if s.position in hops
-                        else row.transport,
+                        else s.leg_mode or row.transport,
                         hop_to=hops[s.position]["name"] if s.position in hops else None,
                     ),
                     score=s.score,
@@ -1537,6 +1777,7 @@ class CourseService:
                     slot_share=float((s.slot or {}).get("share", 0.0)),
                     slot_base_budget=float((s.slot or {}).get("budget", 0.0)),
                     reason_codes=list(s.reason_codes or []),
+                    leg_mode=(s.slot or {}).get("leg_mode"),
                 )
             )
         return row, stops, GeoPoint(row.origin_lat, row.origin_lng)
@@ -1630,6 +1871,7 @@ class CourseService:
                 else None,
                 familiarity=REGULAR if snapshot.get("familiarity") == REGULAR else FIRST,
                 familiarity_source=snapshot.get("familiarity_source"),
+                **movement_echo(snapshot.get("movement")),
             ),
             local=await self._signature_out(region) if region else None,
             siblings=[
@@ -1721,6 +1963,8 @@ class CourseService:
             | {str(university_rules()["category"])}
             | understood.blocked_categories
         )
+        # 이동 모드 (docs/65 §6): the course keeps the promise it was made with — none for an older course
+        ctx.promise = self._promise_at(row, 1)
         stay_scale = float((row.request or {}).get("stay_scale", 1.0))
         return ctx, profile, CourseComposer(PlaceScorer(profile, ctx), ctx, stay_scale=stay_scale)
 
@@ -1867,6 +2111,8 @@ class CourseService:
         pool = [p for p in hard_filter(pool, fc, profile.params) if p.public_id != target.place.public_id]
         if ctx.is_v2:  # the same reach as generation: a standout a little further may replace it (docs/29)
             pool = await self._with_ring(pool, target, origin, radius, fc, ctx, profile)
+        if (promise := self._promise_at(row, target.position)) is not None:  # within the mode's range
+            pool = [p for p in pool if holds(promise, p.point)]
 
         options: list[tuple[PlaceCandidate, Partial]] = []
         for cand in pool:
@@ -2048,6 +2294,7 @@ class CourseService:
         wishes = (row.request or {}).get("wishes") or []
         vetoed |= {r for w in wishes for r in WISH_AVOID_ROLES.get(w, ())} - asked_roles
         reach_m = float(rules["max_walk_min"]) * float(rules["walk_m_per_min"])
+        promise = self._promise_at(row, len(stops) + 1)  # an added place stays within the mode's range too
         arrive_at = last.leave_at + timedelta(minutes=5)
         minute = evening_minute(self._local(arrive_at))  # 00:01 is the same evening, not a morning
         found: list[tuple[str, PlaceCandidate, int, int]] = []
@@ -2057,7 +2304,11 @@ class CourseService:
             pool = await self._places.fetch(role, last.place.point, reach_m, arrive_at.date())
             fc = FilterContext.build(ctx, role, per_person, arrive_at)
             # budget, hours, dislikes: all checked here; behind a ticket gate only after its own venue
-            open_now = [p for p in hard_filter(pool, fc, profile.params) if may_follow(p, last.place)]
+            open_now = [
+                p
+                for p in hard_filter(pool, fc, profile.params)
+                if may_follow(p, last.place) and (promise is None or holds(promise, p.point))
+            ]
             if not open_now:
                 continue
 
@@ -2474,6 +2725,31 @@ def _slot_snapshot(s: StopResult) -> dict[str, Any]:
         # the neighbourhood draw it matched (docs/59 #15) — kept, because a reload no longer knows the request
         "draw_word": s.place.local_word if s.place.local_draw else None,
         "draw_sight": bool(s.place.local_draw and not s.place.local_word),
+        # docs/65 M2: the leg into this stop was ridden (a walk over the limit) — "대중교통 약 N분"
+        **({"leg_mode": s.leg_mode} if s.leg_mode else {}),
+    }
+
+
+def movement_echo(snap: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The echo's movement fields (docs/65) from the course's snapshot — all null for a course without one."""
+    if not snap or snap.get("mode") not in MOVEMENT_MODES:
+        return {}
+
+    def anchor(raw: Mapping[str, Any]) -> dto.MovementAnchor:
+        return dto.MovementAnchor(
+            label=raw.get("label"),
+            lat=float(raw["lat"]),
+            lng=float(raw["lng"]),
+            radius_m=int(raw["radius_m"]),
+        )
+
+    onward = snap.get("onward")
+    onward_to = snap.get("onward_to")
+    return {
+        "movement": snap["mode"],
+        "movement_anchor": anchor(snap),
+        "onward_to": dto.OnwardTarget.model_validate(onward_to) if onward_to else None,
+        "onward_anchor": anchor(onward) if onward else None,
     }
 
 

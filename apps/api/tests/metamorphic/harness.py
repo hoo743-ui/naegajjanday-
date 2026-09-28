@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from app.core import errors
 from app.core.cache import MemoryCache
 from app.core.config import Settings
-from app.domain.models import CourseResult, RequestContext, StopResult
+from app.domain.models import CourseResult, GeoPoint, RequestContext, StopResult
 from app.evaluation.harness import Scenario, judge, load_spec
 from app.infra.analytics.base import NoopTracker
 from app.infra.db.session import Database
@@ -115,6 +115,19 @@ class Planner:
         self.db = db
         self.settings = settings
         self.world = world
+
+    async def region_center(self, slug: str) -> GeoPoint:
+        """A neighbourhood's centre straight from the DB — the invariants measure from here, not from what the
+        engine says its anchor was."""
+        from sqlalchemy import select
+
+        from app.infra.db.models import Region
+
+        async with self.db.sessionmaker() as session:
+            row = (
+                await session.execute(select(Region.center_lat, Region.center_lng).where(Region.slug == slug))
+            ).one()
+        return GeoPoint(float(row[0]), float(row[1]))
 
     async def plan(self, req: dto.CourseGenerateRequest) -> Plan:
         async with self.db.sessionmaker() as session:

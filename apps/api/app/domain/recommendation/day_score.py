@@ -183,7 +183,9 @@ def breakdown(
     out["reliability"] = w["reliability"] * reliable / n
     comfort = comfort_min(params, ctx)
     # every leg counts, the first one too: people start at the station of the area they picked and walk it
-    legs = [s.leg.minutes for s in stops]
+    legs = [
+        s.leg_min for s in stops
+    ]  # a leg ridden under the promise (docs/65) counts as the walk it replaced
     # a day total, not a per-stop average: one 35-minute walk is a real cost however many stops there are
     out["travel"] = -w["travel"] * sum(leg_penalty(m, comfort, params.travel_curve) for m in legs)
     if b > 0:
@@ -251,7 +253,7 @@ def reason_codes(
     if f.get("budget", 0.0) >= 0.75:
         found.add("BUDGET_FIT")
     first = stops[0] is stop if stops else True
-    if not first and stop.leg.minutes <= comfort_min(params, ctx):
+    if not first and stop.leg_min <= comfort_min(params, ctx):
         found.add("ROUTE_BALANCE")
     return [r for r in REASONS if r in found][:MAX_REASONS]
 

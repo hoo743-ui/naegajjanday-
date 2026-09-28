@@ -247,3 +247,20 @@ SSE 이벤트: `token`(텍스트) · `tool_call` · `course`(코스 카드 paylo
 | `GET /courses/{id}` echo | `city {slug, name}` | 도시 여행이면 그 도시. 다시 짤 때 `region` 으로 이 값을 보낸다(첫 구역이 속한 구가 아니라). `regions[]` 에는 구역 이름("송도해수욕장 주변")이 온다 |
 | `GET /attractions` | — | `type` 필터를 300곳을 자르기 **전에** 건다(전체 지역 · 공원이 비던 문제). 정렬: 그 장소의 사진 → 티맵 인기도 → 최신. 여러 유형이면 유형별로 번갈아 |
 | 좌표로 지역 찾기(`origin`) | — | 핫스팟이 가까우면 핫스팟, 아니면 그 좌표가 속한 시군구(60km 까지). 예전에는 핫스팟 55곳만 후보라 전국 대부분에서 404 였다 |
+
+## 부록: 2026-09-29 이동 모드 (docs/65 M1 · M2 · M3)
+
+`POST /v1/courses/generate` 요청에 두 필드. 역 · 동네 **하루** 코스에만 적용한다 — `regions[]`(2곳 이상) · `nights>0` · 시 · 도(level 1) 요청과 여행의 하루 다시 짜기(`replaces`)에서는 무시한다(422 아님, echo `movement: null`).
+
+| 필드 | 뜻 |
+|---|---|
+| `movement: "inside" \| "around" \| "onward"` | 생략 = `around`. **inside**(M1 역 안에서): 기준점에서 직선 800m 안, 도보만, 한 구간 ≤ 20분. **around**(M2 역 주변): 직선 2km 안, 한 구간 도보 ≤ 20분 — 넘는 구간은 코스당 한 번 대중교통(`from_prev.mode = "transit"`), 둘째는 그 조합을 버린다. **onward**(M3): A 무리 → 이동 한 번 → B 무리, 각 무리는 자기 기준점의 around 이고 모든 장소는 다른 기준점보다 자기 기준점에 가깝다. 숫자는 잣대 잠금(`data/eval/yardstick.lock.json › invariants`)에서만 온다 |
+| `onward_to: {region \| origin, label?}` | M3 의 B. `region`(slug) 과 `origin`(좌표) 중 정확히 하나, `movement="onward"` 일 때만(아니면 422). 모르는 slug 는 404. 생략하면 A 에서 대중교통 **탑승 시간만** 15분 안(대기 제외)의 명물 동네(`data/regions/draws.json`)를 명물 수 → 거리 → slug 순으로 고른다. 없으면 around 로 짜고 경고 `ONWARD_NONE` |
+
+- **기준점**: `origin`(역)을 주면 그 좌표, 아니면 동네 중심(구 단위도 중심). 엔진이 옮기는 출발점(`_settle_on_foot` · 부탁한 곳으로 옮김)과 따로 저장한다. 캠퍼스 기준 코스는 캠퍼스 좌표, 캠퍼스 둘레도 모드 반경으로 자른다.
+- **구간**: 기준점 → 첫 장소는 구간에 넣지 않는다. 20분은 실제 길찾기로 다시 잰 시간(재측정 뒤 둘째 대중교통이 생기면 경고 `MOVEMENT_PROMISE`). 차 · 대중교통으로 고르면 반경 약속만, 도보 규칙은 없다.
+- 대중교통으로 바꾼 구간의 시간은 탑승 + 대기(`multi_region.json › hop_*`), 점수(하루 점수의 이동 비용)는 그 구간을 걸었을 때로 매긴다 — 약속을 지키는 수단이지 먼 곳을 싸게 만드는 지름길이 아니다.
+- 고정한 곳(`keep_place_ids` · 꼭 들를 곳)이 반경 밖이면 빼고 `KEPT_PLACE_DROPPED`(`meta.reason = "outside_movement"`, `meta.movement`) — "○○은(는) 이 범위 밖이라 뺐어요." 반경 밖에만 있는 옵션(야구장 · 영화관)은 기존 `EXTRA_UNAVAILABLE`.
+- 조정 가능한 값(대중교통 횟수 · 15분 · 문구): `data/recommendation/movement.json`.
+
+`GET /v1/courses/{id}` 의 `request`(echo)에 `movement`(null = 약속 없음: 이전 코스 · 적용 밖 요청), `movement_anchor {label, lat, lng, radius_m}`, `onward_to`(M3 의 B — 고른 것이든 제안된 것이든, 다시 짤 때 그대로), `onward_anchor`. 저장된 코스의 바꾸기 · 후보 · 순서 변경 · 끝에 넣기 · 모자란 코스 채우기는 `movement` 가 있는 코스만 같은 약속을 지킨다(M3 은 스톱이 속한 무리의 기준점으로). 스톱 스냅숏의 `leg_mode` 가 다시 읽을 때 `from_prev.mode` 가 된다.
