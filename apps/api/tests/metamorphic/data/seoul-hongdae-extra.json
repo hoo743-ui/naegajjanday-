@@ -1,0 +1,418 @@
+{
+  "_sample": true,
+  "_note": "메타모픽 테스트(docs/65 §3) 전용 허구의 샘플 — tests/metamorphic 의 고정 DB 에만 들어간다. 씨앗 데이터(data/seed)에 없는 가게(SHOP) · 멀티플렉스(MOVIE)를 더해 옵션 불변식(I5)을 볼 수 있게 한다.",
+  "region": "seoul-hongdae",
+  "provider": "file",
+  "places": [
+    {
+      "external_id": "mm-hongdae-001",
+      "name": "짠 소품가게",
+      "category": "shop.goods",
+      "lat": 37.55662,
+      "lng": 126.92391,
+      "address": "서울 마포구 샘플로1길 1 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "문구와 엽서를 파는 작은 소품가게",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.4,
+          0.5,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.7,
+          0.7,
+          0.5,
+          0.3,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3,
+          0.5,
+          0.7,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.7,
+          0.6,
+          0.4,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 310
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 120,
+        "aspects": {
+          "mood": 0.85,
+          "price": 0.7,
+          "service": 0.75
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "실내": 0.8
+      }
+    },
+    {
+      "external_id": "mm-hongdae-002",
+      "name": "데이 캐릭터샵",
+      "category": "shop.character",
+      "lat": 37.55791,
+      "lng": 126.92548,
+      "address": "서울 마포구 샘플로2길 2 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "캐릭터 인형과 굿즈를 파는 가게",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.4,
+          0.5,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.7,
+          0.7,
+          0.5,
+          0.3,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3,
+          0.5,
+          0.7,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.7,
+          0.6,
+          0.4,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 310
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 120,
+        "aspects": {
+          "mood": 0.85,
+          "price": 0.7,
+          "service": 0.75
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "실내": 0.8
+      }
+    },
+    {
+      "external_id": "mm-hongdae-003",
+      "name": "오래된 옷장 빈티지",
+      "category": "shop.vintage",
+      "lat": 37.55589,
+      "lng": 126.92502,
+      "address": "서울 마포구 샘플로3길 3 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "구제 옷과 빈티지 잡화",
+      "thumbnail_url": null,
+      "price_per_person": null,
+      "is_free": true,
+      "menus": [],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "11:00",
+          "close": "21:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.4,
+          0.5,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.7,
+          0.7,
+          0.5,
+          0.3,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3,
+          0.5,
+          0.7,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.7,
+          0.6,
+          0.4,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.4,
+        "count": 310
+      },
+      "sentiment": {
+        "score": 0.6,
+        "count": 120,
+        "aspects": {
+          "mood": 0.85,
+          "price": 0.7,
+          "service": 0.75
+        }
+      },
+      "tags": {
+        "감성적인": 0.8,
+        "실내": 0.8
+      }
+    },
+    {
+      "external_id": "mm-hongdae-004",
+      "name": "짠 시네마 홍대",
+      "category": "activity.cinema",
+      "lat": 37.5563,
+      "lng": 126.9226,
+      "address": "서울 마포구 샘플로4길 4 (샘플)",
+      "road_address": null,
+      "phone": null,
+      "description": "상영관 여섯 개의 멀티플렉스",
+      "thumbnail_url": null,
+      "price_per_person": 14000,
+      "is_free": false,
+      "menus": [
+        {
+          "name": "일반 관람권",
+          "price": 14000,
+          "is_signature": true
+        }
+      ],
+      "opening_hours": [
+        {
+          "dow": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "open": "09:00",
+          "close": "00:00"
+        }
+      ],
+      "popular_times": {
+        "weekday": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2,
+          0.4,
+          0.5,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.7,
+          0.7,
+          0.5,
+          0.3,
+          0.1,
+          0.0
+        ],
+        "weekend": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3,
+          0.5,
+          0.7,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.7,
+          0.6,
+          0.4,
+          0.2,
+          0.0
+        ]
+      },
+      "rating": {
+        "avg": 4.2,
+        "count": 900
+      },
+      "sentiment": {
+        "score": 0.5,
+        "count": 300,
+        "aspects": {
+          "mood": 0.8,
+          "price": 0.6,
+          "service": 0.7
+        }
+      },
+      "tags": {
+        "실내": 0.9,
+        "우천OK": 0.9
+      }
+    }
+  ]
+}
