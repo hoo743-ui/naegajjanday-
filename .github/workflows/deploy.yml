@@ -59,14 +59,14 @@ jobs:
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Image tag = git sha
         id: meta
         run: echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials (OIDC, build role)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_BUILD_ROLE_ARN }}
           role-session-name: gha-build-${{ github.run_id }}
@@ -76,7 +76,7 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       # Repositories use IMMUTABLE tags, so a re-run must not push the same tag again.
       - name: Which images already exist?
@@ -93,7 +93,7 @@ jobs:
 
       - name: Build & push api
         if: steps.existing.outputs.api != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/api
           push: true
@@ -109,7 +109,7 @@ jobs:
       # environment specific: one build per environment, same git sha.
       - name: Build & push web (staging)
         if: steps.existing.outputs.web_staging != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/web
           push: true
@@ -124,7 +124,7 @@ jobs:
 
       - name: Build & push web (production)
         if: steps.existing.outputs.web_production != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/web
           push: true
